@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "svelte.svelte-vscode",
+        "biomejs.biome",
+        "inlang.vs-code-extension",
+    ]
+}

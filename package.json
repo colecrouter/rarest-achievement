@@ -1,0 +1,39 @@
+{
+	"name": "rarest-achievement",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"test:unit": "vitest",
+		"test": "npm run test:unit -- --run",
+		"lint": "biome lint ./src && tsc --noEmit",
+		"lint:fix": "biome lint ./src --fix && tsc --noEmit",
+		"format": "prettier --log-level silent src && biome check ./src",
+		"format:fix": "prettier --log-level silent --write src && biome check ./src --fix --unsafe"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@sveltejs/adapter-cloudflare": "^5.0.1",
+		"@sveltejs/kit": "^2.16.0",
+		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/svelte": "^5.2.4",
+		"jsdom": "^26.0.0",
+		"prettier": "^3.5.3",
+		"prettier-plugin-svelte": "^3.3.3",
+		"svelte": "^5.0.0",
+		"svelte-check": "^4.0.0",
+		"typescript": "^5.0.0",
+		"vite": "^6.0.0",
+		"vitest": "^3.0.0"
+	},
+	"dependencies": {
+		"@inlang/paraglide-sveltekit": "^0.15.5"
+	}
+}

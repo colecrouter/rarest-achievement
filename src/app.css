@@ -7,3 +7,37 @@
 @import "@skeletonlabs/skeleton/themes/cerberus";
 
 @source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+
+html {
+    background-image:
+        radial-gradient(
+            at 24% 25%,
+            color-mix(in oklab, var(--color-primary-500) 30%, transparent) 0px,
+            transparent 30%
+        ),
+        radial-gradient(
+            at 35% 13%,
+            color-mix(in oklab, var(--color-success-500) 18%, transparent) 0px,
+            transparent 30%
+        ),
+        radial-gradient(
+            at 100% 64%,
+            color-mix(in oklab, var(--color-error-500) 3%, transparent) 0px,
+            transparent 40%
+        );
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+@utility container {
+    margin-inline: auto;
+    padding-inline: 1rem;
+}
+
+@layer base {
+    body {
+        background-color: transparent;
+    }
+}

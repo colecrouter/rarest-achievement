@@ -69,6 +69,7 @@ const STEAM_ID_DEC_REGEX = /^7656119[0-9]{10}$/;
 const STEAM_ID2_REGEX = /^(STEAM_[0-5]:[01]:[0-9]+)$/i;
 const STEAM_ID3_REGEX = /^\[([iIUMGAPCgTLca]):([01]):([0-9]+)\]$/;
 const STEAM_ACCOUNT_ID_REGEX = /^[0-9]{1,9}$/;
+const STEAM_COMMUNITY_USERNAME_REGEX = /^[a-zA-Z0-9_]{2,32}$/;
 
 export const resolveSteamID = async (s: string) => {
     // https://steamcommunity.com/id/username
@@ -107,6 +108,16 @@ export const resolveSteamID = async (s: string) => {
     // 12345678
     if (STEAM_ACCOUNT_ID_REGEX.test(s)) {
         return SteamID.fromSteamID(`7656119${s}`);
+    }
+
+    // username
+    if (STEAM_COMMUNITY_USERNAME_REGEX.test(s)) {
+        const response = await fetch(`https://steamcommunity.com/id/${s}/?xml=1`);
+        const data = await response.text();
+        const steamID = data.match(/<steamID64>([0-9]{17})<\/steamID64>/)?.[1];
+        if (!steamID) throw new Error("Invalid Steam ID");
+
+        return SteamID.fromSteamID(steamID);
     }
 
     throw new Error("Invalid Steam ID");

@@ -1,18 +1,24 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 
-import type { SteamAuthenticatedAPIClient } from "$lib/steam/api/steampowered/auth/client";
-import type { SteamStoreAPIClient } from "$lib/steam/api/store/client";
+import type { SteamAuthenticatedAPIClient } from "$lib/server/api/steampowered/client";
+import type { SteamStoreAPIClient } from "$lib/server/api/store/client";
+import type { KVNamespace } from "@cloudflare/workers-types";
 
 // for information about these interfaces
 declare global {
     namespace App {
         // interface Error {}
         interface Locals {
-            steamAuthenticated: SteamAuthenticatedAPIClient;
-            steamStore: SteamStoreAPIClient;
+            steamClient: SteamAuthenticatedAPIClient;
+            steamStoreClient: SteamStoreAPIClient;
         }
         // interface PageData {}
         // interface PageState {}
-        // interface Platform {}
+        interface Platform {
+            env: {
+                /** Used to cache Steam API responses */
+                STEAM_CACHE: KVNamespace;
+            };
+        }
     }
 }

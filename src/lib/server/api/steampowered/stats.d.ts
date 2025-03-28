@@ -1,7 +1,6 @@
-export type GetUserStatsForGameQuery<L extends string | undefined> = {
+export type GetUserStatsForGameQuery = {
     steamid: string; // 64-bit Steam ID
     appid: number; // AppID
-    l?: L; // Language code
 };
 
 export type GetUserStatsForGameResponse = {

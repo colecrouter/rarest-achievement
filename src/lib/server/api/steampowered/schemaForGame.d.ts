@@ -2,6 +2,7 @@
 
 export type GetSchemaForGameQuery = {
     appid: number; // AppID
+    l?: string; // Language (optional)
 };
 
 export type GetSchemaForGameResponse = {

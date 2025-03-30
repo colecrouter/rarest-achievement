@@ -5,7 +5,7 @@ type DurationArg = `${number}${"s" | "m" | "h" | "d" | "w" | "mo"}`;
 type Duration = DurationArg | `${DurationArg} ${DurationArg}`;
 
 export abstract class BaseSteamAPIClient {
-    protected applyOptions<T extends Record<string, string | number | string[] | number[] | undefined>>(
+    protected applyOptions<T extends Record<string, string | number | string[] | number[] | boolean | undefined>>(
         url: URL,
         options: T,
     ) {

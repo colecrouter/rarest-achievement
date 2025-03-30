@@ -6,12 +6,13 @@ import type {
     GetPlayerAchievementsResponse,
 } from "$lib/server/api/steampowered/playerAchievement";
 import type { GetPlayerSummariesResponse } from "$lib/server/api/steampowered/playerSummary";
-import type { GetSchemaForGameResponse } from "$lib/server/api/steampowered/schemaForGame";
+import type { GetSchemaForGameQuery, GetSchemaForGameResponse } from "$lib/server/api/steampowered/schemaForGame";
 import type { GetUserStatsForGameQuery, GetUserStatsForGameResponse } from "$lib/server/api/steampowered/stats";
 import type {
     GetGlobalAchievementPercentagesForAppQuery,
     GetGlobalAchievementPercentagesForAppResponse,
 } from "$lib/server/api/steampowered/globalAchevement";
+import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "$lib/server/api/steampowered/owned";
 
 export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     #key: string;
@@ -30,7 +31,6 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
 
     async getGlobalAchievementPercentagesForApp(options: GetGlobalAchievementPercentagesForAppQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2");
-        url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
         return this.fetchJSON<GetGlobalAchievementPercentagesForAppResponse>(url, "1w");
     }
@@ -56,10 +56,17 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
         return this.fetchJSON<GetUserStatsForGameResponse>(url, "1h");
     }
 
-    async getSchemaForGame(appId: number) {
+    async getSchemaForGame(options: GetSchemaForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2");
         url.searchParams.set("key", this.#key);
-        url.searchParams.set("appid", String(appId));
+        this.applyOptions(url, options);
         return this.fetchJSON<GetSchemaForGameResponse>(url, "1w");
+    }
+
+    async getOwnedGames<T extends boolean>(options: GetOwnedGamesQuery<T>) {
+        const url = new URL("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1");
+        url.searchParams.set("key", this.#key);
+        this.applyOptions(url, options);
+        return this.fetchJSON<GetOwnedGamesResponse<T>>(url, "1d");
     }
 }

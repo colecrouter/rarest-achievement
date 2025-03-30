@@ -1,13 +1,6 @@
 <script lang="ts">
-    import { Tabs, Tooltip } from "@skeletonlabs/skeleton-svelte";
-    import {
-        Award,
-        Crown,
-        Medal,
-        Search,
-        SortAsc,
-        SortDesc,
-    } from "lucide-svelte";
+    import { Tabs } from "@skeletonlabs/skeleton-svelte";
+    import { Award, Crown, Medal, Search } from "lucide-svelte";
     import AchievementCard from "./AchievementCard.svelte";
 
     let { data } = $props();
@@ -23,15 +16,17 @@
         achievements
             .filter(
                 (achievement) =>
-                    achievement.name
+                    achievement.displayName
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()) ||
-                    achievement.name
+                    achievement.displayName
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()),
             )
             .sort((a, b) =>
-                sortOrder === "asc" ? a.rarity - b.rarity : b.rarity - a.rarity,
+                sortOrder === "asc"
+                    ? a.globalPercentage - b.globalPercentage
+                    : b.globalPercentage - a.globalPercentage,
             ),
     );
 </script>
@@ -46,7 +41,7 @@
             Your Rarest Achievements
         </h2>
         <div
-            class="relative mb-8 flex h-[400px] items-end justify-center gap-4"
+            class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
         >
             <!-- Second Place -->
             <div class="relative z-10 flex w-[200px] flex-col items-center">
@@ -56,28 +51,25 @@
                         >2nd Place</span
                     >
                     <span class="text-xs text-amber-500"
-                        >{topThree[1].rarity}% of players</span
+                        >{topThree[1].globalPercentage}% of players</span
                     >
                 </div>
                 <div
                     class="flex w-full flex-col items-center rounded-t-lg border border-gray-700 bg-gray-800 p-4"
                 >
-                    <div class="relative mb-2">
-                        <div class="absolute -top-12 left-1/2 -translate-x-1/2">
-                            <img
-                                src={topThree[1].icon || "/placeholder.svg"}
-                                alt={topThree[1].name}
-                                width="64"
-                                height="64"
-                                class="rounded-md border-2 border-gray-700 bg-gray-900"
-                            />
-                        </div>
-                    </div>
-                    <h3 class="mt-8 text-center font-bold">
-                        {topThree[1].name}
+                    <img
+                        src={topThree[1].icon || "/placeholder.svg"}
+                        alt={topThree[1].displayName}
+                        width="64"
+                        height="64"
+                        class="rounded-md border-2 border-gray-700 bg-gray-900"
+                    />
+
+                    <h3 class="mt-2 text-center font-bold">
+                        {topThree[1].displayName}
                     </h3>
                     <p class="mt-1 text-center text-xs text-gray-400">
-                        {topThree[1].game.name}
+                        {topThree[1].app.name}
                     </p>
                 </div>
                 <div
@@ -93,33 +85,25 @@
                         >1st Place</span
                     >
                     <span class="text-xs text-amber-500"
-                        >{topThree[0].rarity}% of players</span
+                        >{topThree[0].globalPercentage}% of players</span
                     >
                 </div>
                 <div
                     class="flex w-full flex-col items-center rounded-t-lg border border-amber-600/30 bg-gray-800 p-4 shadow-lg shadow-amber-900/20"
                 >
-                    <div class="relative mb-2">
-                        <div class="absolute -top-14 left-1/2 -translate-x-1/2">
-                            <div class="relative">
-                                <div
-                                    class="absolute inset-0 animate-pulse rounded-full bg-amber-500/20"
-                                ></div>
-                                <img
-                                    src={topThree[0].icon || "/placeholder.svg"}
-                                    alt={topThree[0].name}
-                                    width="80"
-                                    height="80"
-                                    class="relative z-10 rounded-md border-2 border-amber-500 bg-gray-900"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <h3 class="mt-10 text-center font-bold text-amber-100">
-                        {topThree[0].name}
+                    <img
+                        src={topThree[0].icon || "/placeholder.svg"}
+                        alt={topThree[0].displayName}
+                        width="80"
+                        height="80"
+                        class="z-10 rounded-md border-2 border-amber-500 bg-gray-900"
+                    />
+
+                    <h3 class="mt-2 text-center font-bold text-amber-100">
+                        {topThree[0].displayName}
                     </h3>
                     <p class="mt-1 text-center text-xs text-amber-300/70">
-                        {topThree[0].game.name}
+                        {topThree[0].app.name}
                     </p>
                 </div>
                 <div
@@ -135,28 +119,25 @@
                         >3rd Place</span
                     >
                     <span class="text-xs text-amber-500"
-                        >{topThree[2].rarity}% of players</span
+                        >{topThree[2].globalPercentage}% of players</span
                     >
                 </div>
                 <div
                     class="flex w-full flex-col items-center rounded-t-lg border border-gray-700 bg-gray-800 p-4"
                 >
-                    <div class="relative mb-2">
-                        <div class="absolute -top-10 left-1/2 -translate-x-1/2">
-                            <img
-                                src={topThree[2].icon || "/placeholder.svg"}
-                                alt={topThree[2].name}
-                                width="56"
-                                height="56"
-                                class="rounded-md border-2 border-gray-700 bg-gray-900"
-                            />
-                        </div>
-                    </div>
-                    <h3 class="mt-8 text-center font-bold">
-                        {topThree[2].name}
+                    <img
+                        src={topThree[2].icon || "/placeholder.svg"}
+                        alt={topThree[2].displayName}
+                        width="56"
+                        height="56"
+                        class="rounded-md border-2 border-gray-700 bg-gray-900"
+                    />
+
+                    <h3 class="mt-2 text-center font-bold">
+                        {topThree[2].displayName}
                     </h3>
                     <p class="mt-1 text-center text-xs text-gray-400">
-                        {topThree[2].game.name}
+                        {topThree[2].app.name}
                     </p>
                 </div>
                 <div
@@ -230,14 +211,16 @@
                         class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                     >
                         {#each filteredAchievements as achievement}
-                            <AchievementCard
-                                icon={achievement.icon}
-                                name={achievement.name}
-                                game={achievement.game.name}
-                                description={achievement.description}
-                                unlocked={achievement.unlocked}
-                                rarity={achievement.rarity}
-                            />
+                            {#if achievement.unlocked !== null}
+                                <AchievementCard
+                                    icon={achievement.icon}
+                                    name={achievement.displayName}
+                                    game={achievement.app.name}
+                                    description={achievement.description}
+                                    unlocked={achievement.unlocked}
+                                    rarity={achievement.globalPercentage}
+                                />
+                            {/if}
                         {/each}
                     </div>
                 </Tabs.Panel>
@@ -275,54 +258,58 @@
                             </thead>
                             <tbody class="divide-y divide-gray-700">
                                 {#each filteredAchievements as achievement}
-                                    <tr
-                                        class="transition-colors hover:bg-gray-700/30"
-                                    >
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <div
-                                                class="flex items-center gap-3"
+                                    {#if achievement.unlocked !== null}
+                                        <tr
+                                            class="transition-colors hover:bg-gray-700/30"
+                                        >
+                                            <td
+                                                class="px-4 py-3 whitespace-nowrap"
                                             >
-                                                <img
-                                                    src={achievement.icon ||
-                                                        "/placeholder.svg"}
-                                                    alt={achievement.name}
-                                                    width="32"
-                                                    height="32"
-                                                    class="rounded-md border border-gray-700 bg-gray-900"
-                                                />
-                                                <div>
-                                                    <div
-                                                        class="text-sm font-medium text-gray-100"
-                                                    >
-                                                        {achievement.name}
-                                                    </div>
-                                                    <div
-                                                        class="line-clamp-1 text-xs text-gray-400"
-                                                    >
-                                                        {achievement.description}
+                                                <div
+                                                    class="flex items-center gap-3"
+                                                >
+                                                    <img
+                                                        src={achievement.icon ||
+                                                            "/placeholder.svg"}
+                                                        alt={achievement.displayName}
+                                                        width="32"
+                                                        height="32"
+                                                        class="rounded-md border border-gray-700 bg-gray-900"
+                                                    />
+                                                    <div>
+                                                        <div
+                                                            class="text-sm font-medium text-gray-100"
+                                                        >
+                                                            {achievement.displayName}
+                                                        </div>
+                                                        <div
+                                                            class="line-clamp-1 text-xs text-gray-400"
+                                                        >
+                                                            {achievement.description}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-sm whitespace-nowrap text-gray-400"
-                                            >{achievement.game}</td
-                                        >
-                                        <td class="px-4 py-3 whitespace-nowrap">
-                                            <span
-                                                class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500"
+                                            </td>
+                                            <td
+                                                class="px-4 py-3 text-sm whitespace-nowrap text-gray-400"
+                                                >{achievement.app.name}</td
                                             >
-                                                {achievement.rarity}%
-                                            </span>
-                                        </td>
-                                        <td
-                                            class="px-4 py-3 text-sm whitespace-nowrap text-gray-400"
-                                        >
-                                            {new Date(
-                                                achievement.unlocked,
-                                            ).toLocaleDateString()}
-                                        </td>
-                                    </tr>
+                                            <td
+                                                class="px-4 py-3 whitespace-nowrap"
+                                            >
+                                                <span
+                                                    class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500"
+                                                >
+                                                    {achievement.globalPercentage}%
+                                                </span>
+                                            </td>
+                                            <td
+                                                class="px-4 py-3 text-sm whitespace-nowrap text-gray-400"
+                                            >
+                                                {achievement.unlocked.toLocaleDateString()}
+                                            </td>
+                                        </tr>
+                                    {/if}
                                 {/each}
                             </tbody>
                         </table>

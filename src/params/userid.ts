@@ -1,0 +1,7 @@
+import type { ParamMatcher } from "@sveltejs/kit";
+
+// Match the Steam decimal ID format (7656119XXXXXXXXXX)
+
+export const match: ParamMatcher = (param) => {
+    return /^[0-9]{17}$/.test(param);
+};

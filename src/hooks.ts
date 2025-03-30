@@ -1,6 +1,7 @@
 import { i18n } from "$lib/i18n";
 import { SteamApp } from "$lib/steam/data/SteamApp";
 import { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
+import { SteamOwnedGame } from "$lib/steam/data/SteamOwnedGame";
 import { SteamUser } from "$lib/steam/data/SteamUser";
 import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
 import type { Transport } from "@sveltejs/kit";
@@ -35,6 +36,13 @@ export const transport: Transport = {
         decode: (data: ReturnType<SteamAppAchievement["serialize"]>) => {
             const { app, global, lang, stats } = data;
             return new SteamAppAchievement(app, stats, global, lang);
+        },
+    },
+    SteamOwnedGame: {
+        encode: (data) => data instanceof SteamOwnedGame && data.serialize(),
+        decode: (data: ReturnType<SteamOwnedGame["serialize"]>) => {
+            const { owned } = data;
+            return new SteamOwnedGame(owned);
         },
     },
 };

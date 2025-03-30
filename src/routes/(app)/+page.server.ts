@@ -20,7 +20,7 @@ export const actions = {
     login: async ({ url }) => {
         const baseUrl = new URL("https://steamcommunity.com/openid/login");
 
-        const redirectUrl = new URL(url, "/auth/steam/callback");
+        const redirectUrl = new URL("/auth/steam/callback", url.origin);
 
         // These parameters follow the OpenID 2.0 spec for Steam.
         const params = new URLSearchParams({
@@ -39,5 +39,11 @@ export const actions = {
         // This will initiate the OpenID authentication process.
         baseUrl.search = params.toString();
         redirect(302, baseUrl);
+    },
+    logout: async ({ cookies }) => {
+        // Clear the Steam ID cookie to log out the user.
+        cookies.delete("steamid", { path: "/" });
+        // Optionally, redirect the user to a different page after logging out.
+        return { status: 302, headers: { Location: "/" } };
     },
 };

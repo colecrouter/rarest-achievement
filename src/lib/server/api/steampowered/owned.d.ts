@@ -7,8 +7,9 @@ export type GetOwnedGamesQuery<T extends boolean> = {
 
 export type OwnedGame<T extends boolean> = {
     appid: number; // AppID
-    playtime_2weeks: number; // Playtime in the last 2 weeks in minutes
-    playtime_forever: number; // Total playtime in minutes
+    playtime_2weeks?: number; // Playtime in the last 2 weeks in minutes
+    playtime_forever?: number; // Total playtime in minutes
+    rtime_last_played?: number; // Last time played in Unix timestamp seconds
 } & (T extends true
     ? {
           name: string; // Game name
@@ -19,8 +20,13 @@ export type OwnedGame<T extends boolean> = {
     : object);
 
 export type GetOwnedGamesResponse<T extends boolean> = {
-    response: {
-        game_count: number; // Number of owned games
-        games: OwnedGame<T>[];
-    };
+    response:
+        | {
+              game_count: number; // Number of owned games
+              games: OwnedGame<T>[];
+          }
+        | {
+              game_count: 0; // No games found
+              games: undefined;
+          };
 };

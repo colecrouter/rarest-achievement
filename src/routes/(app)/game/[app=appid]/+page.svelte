@@ -1,93 +1,94 @@
 <script lang="ts">
+    import Chart from "chart.js/auto";
     import {
         ArrowLeft,
         Calendar,
-        Check,
-        Clock,
-        Filter,
         GamepadIcon,
-        Lock,
         Search,
         Server,
-        SortAsc,
-        Star,
         Trophy,
-        User,
     } from "lucide-svelte";
+    import colors from "tailwindcss/colors";
+    import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
+    import { SteamUserStatus } from "$lib/steam/data/SteamUser";
+
+    let { data } = $props();
+    let { app, achievements, friends } = $derived(data);
 
     let isSignedIn = true;
     let achievementFilter: "all" | "unlocked" | "locked" = "all";
     let searchQuery = "";
     let sortOrder: "name" | "rarity" | "date" = "rarity";
     let sortDirection: "asc" | "desc" = "asc";
+    let donutchart: HTMLCanvasElement | null = null;
 
-    let { data } = $props();
-    let { app, achievements } = $derived(data);
+    const rarities = [
+        [5, "Ultra-Rare (<5%)"],
+        [10, "Rare (<10%)"],
+        [50, "Uncommon"],
+        [100, "Common"],
+    ] as const;
+    let achievementsGroupedByRarity = $derived([
+        ...Map.groupBy(achievements, (achievement) => {
+            return (
+                rarities.find(
+                    ([percentage]) =>
+                        achievement.globalPercentage <= percentage,
+                )?.[1] ?? "Unknown"
+            );
+        }),
+    ]);
 
-    // const app = {
-    //     id: "mass-effect-2",
-    //     name: "Mass Effect 2",
-    //     developer: "BioWare",
-    //     publisher: "Electronic Arts",
-    //     releaseDate: "2010-01-26T00:00:00Z",
-    //     lastPlayed: "2023-05-15T14:32:00Z",
-    //     playtime: 86,
-    //     icon: "/placeholder.svg?height=128&width=128",
-    //     banner: "/placeholder.svg?height=400&width=1200",
-    //     description:
-    //         "Mass Effect 2 is an action role-playing video game developed by BioWare and published by Electronic Arts...",
-    //     achievementStats: {
-    //         total: 50,
-    //         unlocked: 42,
-    //         completion: 84,
-    //         rarityDistribution: [
-    //             { name: "Common (>50%)", value: 15, color: "#60A5FA" },
-    //             { name: "Uncommon (10-50%)", value: 18, color: "#34D399" },
-    //             { name: "Rare (5-10%)", value: 7, color: "#F59E0B" },
-    //             { name: "Ultra Rare (<5%)", value: 10, color: "#EF4444" },
-    //         ],
-    //         recentUnlocks: [
-    //             {
-    //                 id: "against-all-odds",
-    //                 name: "Against All Odds",
-    //                 description:
-    //                     "Complete the final mission on Insane difficulty without any squad member dying",
-    //                 rarity: 0.8,
-    //                 icon: "/placeholder.svg?height=48&width=48",
-    //                 unlocked: "2023-05-15T14:32:00Z",
-    //             },
-    //             {
-    //                 id: "insanity",
-    //                 name: "Insanity",
-    //                 description: "Complete the game on Insanity difficulty",
-    //                 rarity: 1.2,
-    //                 icon: "/placeholder.svg?height=48&width=48",
-    //                 unlocked: "2023-05-14T20:15:00Z",
-    //             },
-    //             {
-    //                 id: "survivor",
-    //                 name: "Survivor",
-    //                 description:
-    //                     "Complete the Suicide Mission with all squad members surviving",
-    //                 rarity: 15.4,
-    //                 icon: "/placeholder.svg?height=48&width=48",
-    //                 unlocked: "2023-05-13T13:40:00Z",
-    //             },
-    //         ],
-    //     },
-    // };
-    const friendsWhoPlay = [
-        {
-            id: 1,
-            name: "GamerPro99",
-            avatar: "/placeholder.svg?height=48&width=48",
-            status: "online",
-            achievements: 45,
-            completion: 90,
-            lastPlayed: "2023-06-01T10:15:00Z",
-        },
-        // ...other friends...
-    ];
+    $effect(() => {
+        if (!donutchart) return;
+
+        new Chart(donutchart, {
+            type: "doughnut",
+            data: {
+                labels: rarities.map(([, label]) => label),
+                datasets: [
+                    {
+                        label: "Achievements",
+                        data: achievementsGroupedByRarity.map(
+                            ([, achievements]) => achievements.length,
+                        ),
+                        backgroundColor: [
+                            // Tailwind CSS colors
+                            colors.slate[600],
+                            colors.gray[500],
+                            colors.gray[400],
+                            colors.amber[500],
+                        ],
+                        borderWidth: 4,
+                        borderColor: colors.gray[800],
+                        borderRadius: 4,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "right",
+                        labels: {
+                            color: colors.gray[300],
+                            font: {
+                                size: 14,
+                                family: "Segoe UI",
+                            },
+                        },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label(tooltipItem) {
+                                return `${tooltipItem.label}: ${tooltipItem.raw}%`;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    });
 
     let filteredAchievements = $derived(
         achievements
@@ -104,7 +105,7 @@
                 //     return false;
                 if (
                     searchQuery &&
-                    !achievement.displayName
+                    !achievement.name
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()) &&
                     !achievement.description
@@ -117,8 +118,8 @@
             .sort((a, b) => {
                 if (sortOrder === "name")
                     return sortDirection === "asc"
-                        ? a.displayName.localeCompare(b.displayName)
-                        : b.displayName.localeCompare(a.displayName);
+                        ? a.name.localeCompare(b.name)
+                        : b.name.localeCompare(a.name);
 
                 if (sortOrder === "rarity")
                     return sortDirection === "asc"
@@ -151,11 +152,7 @@
     <div
         class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"
     ></div>
-    <img
-        src={app.banner || "/placeholder.svg"}
-        alt={app.name}
-        class="h-full w-full object-cover"
-    />
+    <img src={app.banner} alt={app.name} class="h-full w-full object-cover" />
     <div class="absolute right-0 -bottom-2 left-0 container mx-auto px-4 py-6">
         <div class="flex items-end gap-6">
             <div class="relative translate-y-10">
@@ -166,7 +163,7 @@
                     class="relative rounded-xl border border-gray-700 bg-gray-800 p-2"
                 >
                     <img
-                        src={app.icon || "/placeholder.svg"}
+                        src={app.icon}
                         alt={app.name}
                         width="256"
                         class="rounded-lg"
@@ -203,7 +200,7 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <a href="steam://run/{app.appId}">
+                <a href="steam://run/{app.id}">
                     <button class="btn preset-filled-primary-500 group flex">
                         <GamepadIcon
                             class="transition-all group-hover:rotate-12"
@@ -211,7 +208,7 @@
                         Play on Steam
                     </button>
                 </a>
-                <a href="https://steamdb.info/app/{app.appId}/" target="_blank">
+                <a href="https://steamdb.info/app/{app.id}/" target="_blank">
                     <button class="btn preset-outlined-surface-500 group flex">
                         <Server class="h-4 w-4" />
                         <span>View on SteamDB</span>
@@ -239,14 +236,14 @@
     <!-- Game Overview -->
     <div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <!-- Achievement Progress -->
-        <!-- <div class="border border-gray-700 bg-gray-800 p-4 lg:col-span-2"> -->
-        <h2 class="mb-1 text-xl font-bold">Achievement Progress</h2>
-        <!-- <p class="mb-4">
+        <div class="border border-gray-700 bg-gray-800 p-4 lg:col-span-2">
+            <h2 class="mb-1 text-xl font-bold">Achievement Progress</h2>
+            <!-- <p class="mb-4">
             You've unlocked {app.achievementStats.unlocked} of {app
                 .achievementStats.total} achievements
         </p> -->
-        <div class="mb-6">
-            <!-- <div class="mb-2 flex items-center justify-between">
+            <div class="mb-6">
+                <!-- <div class="mb-2 flex items-center justify-between">
                 <span class="text-sm text-gray-400">Completion</span>
                 <span class="text-sm font-medium"
                     >{app.achievementStats.completion}%</span
@@ -258,13 +255,13 @@
                     style="width: {app.achievementStats.completion}%"
                 ></div>
             </div> -->
-        </div>
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div class="h-[200px]">
-                <!-- For the pie chart, you may use a Svelte charting library or embed Recharts via a web component -->
-                <!-- ...chart code... -->
             </div>
-            <!-- <div>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div class="w-full p-4">
+                    <canvas bind:this={donutchart} class="h-full w-full"
+                    ></canvas>
+                </div>
+                <!-- <div>
                 <h3 class="mb-3 text-lg font-medium">Recent Unlocks</h3>
                 <div class="space-y-3">
                     {#each app.achievementStats.recentUnlocks as achievement}
@@ -299,134 +296,96 @@
                             </div>
                         </a>
                     {/each}
+                    </div> -->
+            </div>
+        </div>
+
+        <div class="border border-gray-700 bg-gray-800 p-4">
+            <h2 class="mb-3 text-xl font-bold">Game Information</h2>
+            <div class="space-y-4 text-sm">
+                <div>
+                    <div class="mb-1 text-gray-400">Developer</div>
+                    <div>
+                        {#each app.developers as developer, index}
+                            {index > 0 ? ", " : ""}
+                            {developer}
+                        {/each}
+                    </div>
                 </div>
-            </div> -->
+                <div>
+                    <div class="mb-1 text-gray-400">Publisher</div>
+                    <div>
+                        {#each app.publishers as publisher, index}
+                            {index > 0 ? ", " : ""}
+                            {publisher}
+                        {/each}
+                    </div>
+                    <div>
+                        <div class="mb-1 text-gray-400">Release Date</div>
+                        <div>
+                            {app.releaseDate?.toLocaleDateString() ??
+                                "Unreleased"}
+                        </div>
+                    </div>
+                    {#if isSignedIn}
+                        <!-- <div>
+                            <div class="mb-1 text-gray-400">Your Playtime</div>
+                            <div>{app.playtime} hours</div>
+                        </div>
+                        <div>
+                            <div class="mb-1 text-gray-400">Last Played</div>
+                            <div>
+                                {format(parseISO(app.lastPlayed), "MMMM d, yyyy")}
+                            </div>
+                        </div> -->
+                    {/if}
+                    <div>
+                        <div class="mb-1 text-gray-400">Description</div>
+                        <p class="text-gray-300">{app.description}</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a
+                        href={`https://store.steampowered.com/app/${app.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <button class="btn preset-outlined-surface-500 w-full">
+                            View on Steam
+                        </button>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Game Info -->
-    <div class="border border-gray-700 bg-gray-800 p-4">
-        <h2 class="mb-3 text-xl font-bold">Game Information</h2>
-        <div class="space-y-4 text-sm">
-            <div>
-                <div class="mb-1 text-gray-400">Developer</div>
-                <div>
-                    {#each app.developers as developer, index}
-                        {index > 0 ? ", " : ""}
-                        {developer}
-                    {/each}
+    <!-- Achievements List -->
+    <div class="mb-8">
+        <div
+            class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center"
+        >
+            <h2 class="text-2xl font-bold">Achievements</h2>
+            <div class="flex w-full flex-wrap items-center gap-3 md:w-auto">
+                <div class="relative flex-1 md:w-64">
+                    <Search
+                        class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
+                    />
+                    <input
+                        type="search"
+                        placeholder="Search achievements..."
+                        bind:value={searchQuery}
+                        class="w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
+                    />
                 </div>
-            </div>
-            <div>
-                <div class="mb-1 text-gray-400">Publisher</div>
-                <div>
-                    {#each app.publishers as publisher, index}
-                        {index > 0 ? ", " : ""}
-                        {publisher}
-                    {/each}
-                </div>
-                <div>
-                    <div class="mb-1 text-gray-400">Release Date</div>
-                    <div>
-                        {app.releaseDate?.toLocaleDateString() ?? "Unreleased"}
-                    </div>
-                </div>
-                {#if isSignedIn}
-                    <!-- <div>
-                        <div class="mb-1 text-gray-400">Your Playtime</div>
-                        <div>{app.playtime} hours</div>
-                    </div>
-                    <div>
-                        <div class="mb-1 text-gray-400">Last Played</div>
-                        <div>
-                            {format(parseISO(app.lastPlayed), "MMMM d, yyyy")}
-                        </div>
-                    </div> -->
-                {/if}
-                <div>
-                    <div class="mb-1 text-gray-400">Description</div>
-                    <p class="text-gray-300">{app.description}</p>
-                </div>
-            </div>
-            <div class="mt-4">
-                <a
-                    href={`https://store.steampowered.com/app/${app.appId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <button class="btn preset-outlined-surface-500 w-full">
-                        View on Steam
-                    </button>
-                </a>
             </div>
         </div>
 
-        <!-- Achievements List -->
-        <div class="mb-8">
-            <div
-                class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center"
-            >
-                <h2 class="text-2xl font-bold">Achievements</h2>
-                <div class="flex w-full flex-wrap items-center gap-3 md:w-auto">
-                    <div class="relative flex-1 md:w-64">
-                        <Search
-                            class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
-                        />
-                        <input
-                            type="search"
-                            placeholder="Search achievements..."
-                            bind:value={searchQuery}
-                            class="w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
-                        />
-                    </div>
-                    <!-- Filter Dropdown -->
-                    <div>
-                        <button
-                            on:click={() =>
-                                (achievementFilter =
-                                    achievementFilter === "all"
-                                        ? "unlocked"
-                                        : achievementFilter === "unlocked"
-                                          ? "locked"
-                                          : "all")}
-                            class="flex items-center gap-2 border-gray-700 bg-gray-800 px-3 py-2 hover:bg-gray-700"
-                        >
-                            <Filter class="h-4 w-4" />
-                            <span
-                                >{achievementFilter === "all"
-                                    ? "All"
-                                    : achievementFilter}</span
-                            >
-                        </button>
-                    </div>
-                    <!-- Sort Dropdown -->
-                    <div>
-                        <button
-                            on:click={() => {
-                                if (sortOrder === "name") {
-                                    sortDirection =
-                                        sortDirection === "asc"
-                                            ? "desc"
-                                            : "asc";
-                                } else {
-                                    sortOrder = "name";
-                                    sortDirection = "asc";
-                                }
-                            }}
-                            class="flex items-center gap-2 border-gray-700 bg-gray-800 px-3 py-2 hover:bg-gray-700"
-                        >
-                            <SortAsc class="h-4 w-4" />
-                            <span>Sort</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            >
-                {#each filteredAchievements as achievement}
-                    <!-- <div
+        <div
+            class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        >
+            {#each filteredAchievements as achievement}
+                <AchievementCard {achievement} />
+                <!-- <div
                         class="overflow-hidden border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600 {achievement.status ===
                         'locked'
                             ? 'opacity-70'
@@ -504,133 +463,133 @@
                             </div>
                         </div>
                     </div> -->
-                {/each}
-            </div>
-            {#if filteredAchievements.length === 0}
-                <div
-                    class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
-                >
-                    <Trophy class="mx-auto mb-4 h-12 w-12 text-gray-600" />
-                    <h3 class="mb-2 text-xl font-bold">
-                        No achievements found
-                    </h3>
-                    <p class="mx-auto max-w-md text-gray-400">
-                        No achievements match your current filters. Try
-                        adjusting your search or filter settings.
-                    </p>
-                </div>
-            {/if}
+            {/each}
         </div>
-
-        <!-- Friends Who Play -->
-        {#if isSignedIn}
-            <div class="mb-8">
-                <h2 class="mb-6 text-2xl font-bold">Friends Who Play</h2>
-                <div
-                    class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
-                >
-                    {#each friendsWhoPlay as friend}
-                        <div class="border border-gray-700 bg-gray-800 p-4">
-                            <div class="mb-4 flex items-center gap-3">
-                                <div class="relative">
-                                    <img
-                                        src={friend.avatar ||
-                                            "/placeholder.svg"}
-                                        alt={friend.name}
-                                        width="48"
-                                        height="48"
-                                        class="rounded-full border border-gray-700"
-                                    />
-                                    <div
-                                        class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status ===
-                                        'online'
-                                            ? 'bg-green-500'
-                                            : 'bg-gray-500'}"
-                                    ></div>
-                                </div>
-                                <div>
-                                    <div class="font-medium">{friend.name}</div>
-                                    <div class="text-xs text-gray-400">
-                                        <!-- Last played {format(
-                                            parseISO(friend.lastPlayed),
-                                            "MMM d",
-                                        )} -->
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div
-                                    class="mb-1 flex items-center justify-between"
-                                >
-                                    <div class="text-xs text-gray-400">
-                                        Achievement Progress
-                                    </div>
-                                    <div class="text-xs font-medium">
-                                        {friend.completion}%
-                                    </div>
-                                </div>
-                                <div class="h-1.5 rounded bg-gray-700">
-                                    <div
-                                        class="h-full rounded-full {friend.completion ===
-                                        100
-                                            ? 'bg-green-500'
-                                            : friend.completion > 75
-                                              ? 'bg-amber-500'
-                                              : 'bg-blue-500'}"
-                                        style="width: {friend.completion}%"
-                                    ></div>
-                                </div>
-                            </div>
-                            <div
-                                class="flex items-center justify-between text-xs text-gray-400"
-                            >
-                                <span>
-                                    <!-- {friend.achievements} / {app
-                                        .achievementStats.total} achievements -->
-                                </span>
-                                <button
-                                    class="h-7 px-2 text-gray-400 hover:text-gray-100"
-                                >
-                                    Compare
-                                </button>
-                            </div>
-                        </div>
-                    {/each}
-                </div>
+        {#if filteredAchievements.length === 0}
+            <div
+                class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
+            >
+                <Trophy class="mx-auto mb-4 h-12 w-12 text-gray-600" />
+                <h3 class="mb-2 text-xl font-bold">No achievements found</h3>
+                <p class="mx-auto max-w-md text-gray-400">
+                    No achievements match your current filters. Try adjusting
+                    your search or filter settings.
+                </p>
             </div>
         {/if}
+    </div>
 
-        <!-- Similar Games -->
-        <div>
-            <h2 class="mb-6 text-2xl font-bold">Similar Games</h2>
-            <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-                {#each Array(6) as _, index}
-                    <div
-                        class="border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
-                    >
-                        <div class="relative aspect-square">
-                            <img
-                                src={`/placeholder.svg?height=200&width=200&text=Game ${index + 1}`}
-                                alt={`Similar Game ${index + 1}`}
-                                class="h-full w-full rounded-t-lg object-cover"
-                            />
-                        </div>
-                        <div class="p-3">
-                            <h3 class="mb-1 text-sm font-medium">
-                                Similar Game {index + 1}
-                            </h3>
-                            <div class="flex items-center justify-between">
-                                <div class="text-xs text-gray-400">
-                                    {Math.floor(Math.random() * 50) + 10} achievements
+    <!-- Friends Who Play -->
+    {#if isSignedIn}
+        <div class="mb-8">
+            <h2 class="mb-6 text-2xl font-bold">Friends Who Play</h2>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {#each friends as f}
+                    {@const friend = f.user}
+                    {@const owned = f.owned}
+                    {@const completion =
+                        (f.achievements.filter((a) => a.unlocked).length /
+                            achievements.length) *
+                        100}
+                    <div class="border border-gray-700 bg-gray-800 p-4">
+                        <div class="mb-4 flex items-center gap-3">
+                            <div class="relative">
+                                <img
+                                    src={friend.avatar || "/placeholder.svg"}
+                                    alt={friend.displayName}
+                                    width="48"
+                                    height="48"
+                                    class="rounded-full border border-gray-700"
+                                />
+                                <div
+                                    class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status !==
+                                    SteamUserStatus.Offline
+                                        ? 'bg-green-500'
+                                        : 'bg-gray-500'}"
+                                ></div>
+                            </div>
+                            <div>
+                                <div class="font-medium">
+                                    {friend.displayName}
                                 </div>
-                                <div class="text-xs font-medium text-amber-500">
-                                    {Math.floor(Math.random() * 80) + 20}%
+                                <div class="text-xs text-gray-400">
+                                    {#if owned.playtime}
+                                        {(owned.playtime / 60).toFixed(1)} hours
+                                        played
+                                    {/if}
                                 </div>
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="mb-1 flex items-center justify-between">
+                                <div class="text-xs text-gray-400">
+                                    Achievement Progress
+                                </div>
+                                <div class="text-xs font-medium">
+                                    {completion.toFixed(0)}%
+                                </div>
+                            </div>
+                            <div class="h-1.5 rounded bg-gray-700">
+                                <div
+                                    class="h-full rounded-full {completion ===
+                                    100
+                                        ? 'bg-green-500'
+                                        : completion > 75
+                                          ? 'bg-amber-500'
+                                          : 'bg-blue-500'}"
+                                    style="width: {completion}%"
+                                ></div>
+                            </div>
+                        </div>
+                        <div
+                            class="flex items-center justify-between text-xs text-gray-400"
+                        >
+                            <span>
+                                <!-- {friend.achievements} / {app
+                                        .achievementStats.total} achievements -->
+                            </span>
+                            <button
+                                class="h-7 px-2 text-gray-400 hover:text-gray-100"
+                            >
+                                Compare
+                            </button>
                         </div>
                     </div>
                 {/each}
             </div>
+        </div>
+    {/if}
+
+    <!-- Similar Games -->
+    <div>
+        <h2 class="mb-6 text-2xl font-bold">Similar Games</h2>
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+            {#each Array(6) as _, index}
+                <div
+                    class="border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
+                >
+                    <div class="relative aspect-square">
+                        <img
+                            src={`/placeholder.svg?height=200&width=200&text=Game ${index + 1}`}
+                            alt={`Similar Game ${index + 1}`}
+                            class="h-full w-full rounded-t-lg object-cover"
+                        />
+                    </div>
+                    <div class="p-3">
+                        <h3 class="mb-1 text-sm font-medium">
+                            Similar Game {index + 1}
+                        </h3>
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs text-gray-400">
+                                {Math.floor(Math.random() * 50) + 10} achievements
+                            </div>
+                            <div class="text-xs font-medium text-amber-500">
+                                {Math.floor(Math.random() * 80) + 20}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {/each}
         </div>
     </div>
 </main>

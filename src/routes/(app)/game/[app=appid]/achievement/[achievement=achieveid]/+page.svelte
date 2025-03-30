@@ -28,11 +28,11 @@
             .sort((a, b) => a.globalPercentage - b.globalPercentage)
             .map((current) => ({
                 name:
-                    current.displayName.length > 20
-                        ? `${current.displayName.substring(0, 20)}...`
-                        : current.displayName,
+                    current.name.length > 20
+                        ? `${current.name.substring(0, 20)}...`
+                        : current.name,
                 rarity: current.globalPercentage,
-                isCurrent: current.internalName === achievement.internalName,
+                isCurrent: current.id === achievement.id,
             })),
     );
 
@@ -45,11 +45,11 @@
             Back to Dashboard
         </a>
         <span>/</span>
-        <a href={"/game/" + achievement.app.appId} class="hover:text-gray-100">
+        <a href={"/game/" + achievement.app.id} class="hover:text-gray-100">
             {achievement.app.name}
         </a>
         <span>/</span>
-        <span class="text-gray-100">{achievement.displayName}</span>
+        <span class="text-gray-100">{achievement.name}</span>
     </div>
 
     <div
@@ -59,7 +59,8 @@
             class="relative h-40 bg-gradient-to-r from-amber-900/30 to-gray-800"
         >
             <div
-                class="absolute inset-0 bg-[url('/placeholder.svg')] bg-cover bg-center opacity-10"
+                class="absolute inset-0 bg-cover bg-center opacity-50"
+                style:background-image={`url("${app.banner}")`}
             ></div>
             <div
                 class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-amber-500 to-amber-600"
@@ -75,7 +76,7 @@
                         >
                             <img
                                 src={achievement.icon || "/placeholder.svg"}
-                                alt={achievement.displayName}
+                                alt={achievement.name}
                                 width="96"
                                 height="96"
                                 class="rounded-md"
@@ -84,18 +85,20 @@
                     </div>
                     <div>
                         <div class="mb-1 flex items-center gap-3">
-                            <img
-                                src={app.icon || "/placeholder.svg"}
-                                alt={achievement.app.name}
-                                width="64"
-                                class="rounded-md"
-                            />
-                            <span class="text-gray-300"
-                                >{achievement.app.name}</span
-                            >
+                            <a href={"/game/" + achievement.app.id}>
+                                <img
+                                    src={app.icon || "/placeholder.svg"}
+                                    alt={achievement.app.name}
+                                    width="64"
+                                    class="rounded-md"
+                                />
+                                <span class="text-gray-300"
+                                    >{achievement.app.name}</span
+                                >
+                            </a>
                         </div>
                         <h1 class="mb-1 text-3xl font-bold">
-                            {achievement.displayName}
+                            {achievement.name}
                         </h1>
                         <p class="text-gray-300">
                             {achievement.description}
@@ -175,8 +178,8 @@
                 <div class="rounded-lg border border-gray-700 bg-gray-800 p-4">
                     <h2 class="font-bold">Achievement Rarity Comparison</h2>
                     <p class="text-sm text-gray-400">
-                        How {achievement.displayName} compares to other achievements
-                        in {achievement.app}
+                        How {achievement.name} compares to other achievements in
+                        {achievement.app}
                     </p>
                     <div class="h-[400px]">...chart goes here...</div>
                 </div>
@@ -245,8 +248,7 @@
                     <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                         {#each gameAchievements as currentAchievement}
                             {@const isCurrent =
-                                currentAchievement.internalName ===
-                                achievement.internalName}
+                                currentAchievement.id === achievement.id}
                             <div
                                 class="flex items-start gap-3 rounded-lg p-3 {isCurrent
                                     ? 'border border-amber-500/30 bg-amber-500/10'
@@ -255,7 +257,7 @@
                                 <img
                                     src={currentAchievement.icon ||
                                         "/placeholder.svg"}
-                                    alt={currentAchievement.displayName}
+                                    alt={currentAchievement.name}
                                     width="48"
                                     height="48"
                                     class="rounded-md {isCurrent
@@ -271,7 +273,7 @@
                                                 ? "font-bold text-amber-400"
                                                 : "font-bold text-gray-100"}
                                         >
-                                            {currentAchievement.displayName}
+                                            {currentAchievement.name}
                                         </h3>
                                         <div
                                             class="rounded-full px-2 py-0.5 text-xs font-medium {currentAchievement.globalPercentage <
@@ -321,7 +323,7 @@
                                 </h2>
                                 <p class="text-sm text-gray-400">
                                     {friendsWithAchievement.length} of your friends
-                                    have unlocked "{achievement.displayName}"
+                                    have unlocked "{achievement.name}"
                                 </p>
                             </div>
                             <button
@@ -409,7 +411,7 @@
                 <div class="rounded-lg border border-gray-700 bg-gray-800 p-4">
                     <h2 class="font-bold">Tips & Strategies</h2>
                     <p class="text-sm text-gray-400">
-                        Community guides for unlocking "{achievement.displayName}"
+                        Community guides for unlocking "{achievement.name}"
                     </p>
                     <div
                         class="mb-6 flex gap-3 rounded-lg border border-gray-700 bg-gray-900/50 p-4"
@@ -443,7 +445,7 @@
                         <div class="relative flex-shrink-0">
                             <img
                                 src={achievement.icon || "/placeholder.svg"}
-                                alt={achievement.displayName}
+                                alt={achievement.name}
                                 width="48"
                                 height="48"
                                 class="rounded-md border border-gray-700 bg-gray-900"

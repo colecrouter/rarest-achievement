@@ -1,10 +1,10 @@
 <script lang="ts">
     import Footer from "./Footer.svelte";
     import Navbar from "./Navbar.svelte";
-    const { children } = $props();
+    const { children, data } = $props();
 </script>
 
-<Navbar />
+<Navbar user={data.user} />
 
 {@render children()}
 

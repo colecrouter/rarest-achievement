@@ -38,9 +38,9 @@ export class SteamAppAchievement {
             const { locals } = getRequestEvent();
             const { steamClient } = locals;
 
-            const schema = await steamClient.getSchemaForGame({ appid: game.appId, l: lang });
+            const schema = await steamClient.getSchemaForGame({ appid: game.id, l: lang });
             const achievementPercentages = await steamClient.getGlobalAchievementPercentagesForApp({
-                gameid: game.appId,
+                gameid: game.id,
             });
 
             if (!schema || !achievementPercentages) {
@@ -65,11 +65,11 @@ export class SteamAppAchievement {
         throw new Error("Cannot fetch app achievements in a browser context.");
     }
 
-    get internalName() {
+    get id() {
         return this.#meta.name;
     }
 
-    get displayName() {
+    get name() {
         return this.#meta.displayName;
     }
 

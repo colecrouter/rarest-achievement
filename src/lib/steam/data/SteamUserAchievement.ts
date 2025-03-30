@@ -43,19 +43,19 @@ export class SteamUserAchievement extends SteamAppAchievement {
             const { getRequestEvent } = await import("$app/server");
             const { steamClient } = getRequestEvent().locals;
 
-            const schema = await steamClient.getSchemaForGame({ appid: game.appId, l: lang }).catch(() => null);
+            const schema = await steamClient.getSchemaForGame({ appid: game.id, l: lang }).catch(() => null);
             if (!schema) return [];
 
             const achievementPercentages = await steamClient
                 .getGlobalAchievementPercentagesForApp({
-                    gameid: game.appId,
+                    gameid: game.id,
                 })
                 .catch(() => null);
             if (!achievementPercentages) return [];
             const userAchievements = await steamClient
                 .getPlayerAchievements({
                     steamid: userId,
-                    appid: game.appId,
+                    appid: game.id,
                 })
                 .catch(() => null);
 

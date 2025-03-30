@@ -26,7 +26,7 @@ export class SteamApp {
             const data1 = await steamStoreClient.getAppDetails(appId, { l: lang });
             const data = data1[appId.toString()];
             if (!data.success) {
-                return null;
+                throw new Error("Failed to fetch Steam app details.");
             }
             return new SteamApp(data.data, lang);
         }
@@ -42,7 +42,7 @@ export class SteamApp {
         return SteamUserAchievement.fetchUserAchievements(this, userId, this.#lang);
     }
 
-    get appId() {
+    get id() {
         return this.#app.steam_appid;
     }
 

@@ -1,7 +1,8 @@
 <script lang="ts">
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
-    import { Award, Crown, Medal, Search } from "lucide-svelte";
+    import Search from "lucide-svelte/icons/search";
     import AchievementCard from "./AchievementCard.svelte";
+    import Podium from "./Podium.svelte";
 
     let { data } = $props();
     let achievements = $derived(data.achievements);
@@ -16,10 +17,10 @@
         achievements
             .filter(
                 (achievement) =>
-                    achievement.displayName
+                    achievement.name
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()) ||
-                    achievement.displayName
+                    achievement.name
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()),
             )
@@ -31,7 +32,7 @@
     );
 </script>
 
-<!-- Header -->
+{#snippet podium()}{/snippet}
 
 <!-- Main Content -->
 <main class="container mx-auto px-4 py-8">
@@ -40,110 +41,15 @@
         <h2 class="mb-6 text-center text-2xl font-bold">
             Your Rarest Achievements
         </h2>
+
         <div
             class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
         >
-            <!-- Second Place -->
-            <div class="relative z-10 flex w-[200px] flex-col items-center">
-                <div class="mb-2 flex flex-col items-center">
-                    <Medal class="h-8 w-8 text-gray-300" />
-                    <span class="text-sm font-medium text-gray-300"
-                        >2nd Place</span
-                    >
-                    <span class="text-xs text-amber-500"
-                        >{topThree[1].globalPercentage}% of players</span
-                    >
-                </div>
-                <div
-                    class="flex w-full flex-col items-center rounded-t-lg border border-gray-700 bg-gray-800 p-4"
-                >
-                    <img
-                        src={topThree[1].icon || "/placeholder.svg"}
-                        alt={topThree[1].displayName}
-                        width="64"
-                        height="64"
-                        class="rounded-md border-2 border-gray-700 bg-gray-900"
-                    />
+            <Podium place={2} achievement={topThree[1]} />
 
-                    <h3 class="mt-2 text-center font-bold">
-                        {topThree[1].displayName}
-                    </h3>
-                    <p class="mt-1 text-center text-xs text-gray-400">
-                        {topThree[1].app.name}
-                    </p>
-                </div>
-                <div
-                    class="h-[120px] w-full border-x border-gray-700 bg-gradient-to-t from-gray-700 to-gray-800"
-                ></div>
-            </div>
+            <Podium place={1} achievement={topThree[0]} />
 
-            <!-- First Place -->
-            <div class="relative z-20 flex w-[220px] flex-col items-center">
-                <div class="mb-2 flex flex-col items-center">
-                    <Crown class="h-10 w-10 text-amber-500" />
-                    <span class="text-sm font-bold text-amber-500"
-                        >1st Place</span
-                    >
-                    <span class="text-xs text-amber-500"
-                        >{topThree[0].globalPercentage}% of players</span
-                    >
-                </div>
-                <div
-                    class="flex w-full flex-col items-center rounded-t-lg border border-amber-600/30 bg-gray-800 p-4 shadow-lg shadow-amber-900/20"
-                >
-                    <img
-                        src={topThree[0].icon || "/placeholder.svg"}
-                        alt={topThree[0].displayName}
-                        width="80"
-                        height="80"
-                        class="z-10 rounded-md border-2 border-amber-500 bg-gray-900"
-                    />
-
-                    <h3 class="mt-2 text-center font-bold text-amber-100">
-                        {topThree[0].displayName}
-                    </h3>
-                    <p class="mt-1 text-center text-xs text-amber-300/70">
-                        {topThree[0].app.name}
-                    </p>
-                </div>
-                <div
-                    class="h-[160px] w-full border-x border-amber-700/30 bg-gradient-to-t from-amber-900/30 to-gray-800"
-                ></div>
-            </div>
-
-            <!-- Third Place -->
-            <div class="relative z-10 flex w-[180px] flex-col items-center">
-                <div class="mb-2 flex flex-col items-center">
-                    <Award class="h-7 w-7 text-amber-700" />
-                    <span class="text-sm font-medium text-amber-700"
-                        >3rd Place</span
-                    >
-                    <span class="text-xs text-amber-500"
-                        >{topThree[2].globalPercentage}% of players</span
-                    >
-                </div>
-                <div
-                    class="flex w-full flex-col items-center rounded-t-lg border border-gray-700 bg-gray-800 p-4"
-                >
-                    <img
-                        src={topThree[2].icon || "/placeholder.svg"}
-                        alt={topThree[2].displayName}
-                        width="56"
-                        height="56"
-                        class="rounded-md border-2 border-gray-700 bg-gray-900"
-                    />
-
-                    <h3 class="mt-2 text-center font-bold">
-                        {topThree[2].displayName}
-                    </h3>
-                    <p class="mt-1 text-center text-xs text-gray-400">
-                        {topThree[2].app.name}
-                    </p>
-                </div>
-                <div
-                    class="h-[100px] w-full border-x border-gray-700 bg-gradient-to-t from-gray-700 to-gray-800"
-                ></div>
-            </div>
+            <Podium place={3} achievement={topThree[2]} />
 
             <!-- Base -->
             <div
@@ -212,14 +118,7 @@
                     >
                         {#each filteredAchievements as achievement}
                             {#if achievement.unlocked !== null}
-                                <AchievementCard
-                                    icon={achievement.icon}
-                                    name={achievement.displayName}
-                                    game={achievement.app.name}
-                                    description={achievement.description}
-                                    unlocked={achievement.unlocked}
-                                    rarity={achievement.globalPercentage}
-                                />
+                                <AchievementCard {achievement} />
                             {/if}
                         {/each}
                     </div>
@@ -271,7 +170,7 @@
                                                     <img
                                                         src={achievement.icon ||
                                                             "/placeholder.svg"}
-                                                        alt={achievement.displayName}
+                                                        alt={achievement.name}
                                                         width="32"
                                                         height="32"
                                                         class="rounded-md border border-gray-700 bg-gray-900"
@@ -280,7 +179,7 @@
                                                         <div
                                                             class="text-sm font-medium text-gray-100"
                                                         >
-                                                            {achievement.displayName}
+                                                            {achievement.name}
                                                         </div>
                                                         <div
                                                             class="line-clamp-1 text-xs text-gray-400"

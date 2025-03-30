@@ -1,4 +1,4 @@
-import { getRequestEvent } from "$app/server";
+import { browser } from "$app/environment";
 import type { GetPlayerAchievementsResponse } from "$lib/server/api/steampowered/playerAchievement";
 import type { SteamApp } from "$lib/steam/data/SteamApp";
 import {
@@ -39,47 +39,50 @@ export class SteamUserAchievement extends SteamAppAchievement {
     }
 
     static async fetchUserAchievements(game: SteamApp, userId: string, lang = "english") {
-        const { locals } = getRequestEvent();
+        if (!browser) {
+            const { getRequestEvent } = await import("$app/server");
+            const { steamClient } = getRequestEvent().locals;
 
-        const { steamClient } = locals;
+            const schema = await steamClient.getSchemaForGame({ appid: game.appId, l: lang }).catch(() => null);
+            if (!schema) return [];
 
-        const schema = await steamClient.getSchemaForGame({ appid: game.appId, l: lang }).catch(() => null);
-        if (!schema) return [];
+            const achievementPercentages = await steamClient
+                .getGlobalAchievementPercentagesForApp({
+                    gameid: game.appId,
+                })
+                .catch(() => null);
+            if (!achievementPercentages) return [];
+            const userAchievements = await steamClient
+                .getPlayerAchievements({
+                    steamid: userId,
+                    appid: game.appId,
+                })
+                .catch(() => null);
 
-        const achievementPercentages = await steamClient
-            .getGlobalAchievementPercentagesForApp({
-                gameid: game.appId,
-            })
-            .catch(() => null);
-        if (!achievementPercentages) return [];
-        const userAchievements = await steamClient
-            .getPlayerAchievements({
-                steamid: userId,
-                appid: game.appId,
-            })
-            .catch(() => null);
+            // Notice how we don't throw if userAchievements is empty
+            if (!schema || !achievementPercentages) {
+                throw new Error("Failed to fetch schema or achievement percentages.");
+            }
 
-        // Notice how we don't throw if userAchievements is empty
-        if (!schema || !achievementPercentages) {
-            throw new Error("Failed to fetch schema or achievement percentages.");
+            const stats = schema.game.availableGameStats?.achievements;
+            if (!stats) return [];
+
+            const achievements = new Array<SteamUserAchievement>();
+            for (const stat of stats) {
+                const global = achievementPercentages.achievementpercentages.achievements.find(
+                    (achievement) => achievement.name === stat.name,
+                );
+                if (!global) throw new Error("No global achievement found.");
+
+                const userStat = userAchievements?.playerstats.achievements.find(
+                    (achievement) => achievement.apiname === stat.name,
+                );
+                achievements.push(new SteamUserAchievement(game, userId, stat, global, userStat ?? null, lang));
+            }
+            return achievements;
         }
 
-        const stats = schema.game.availableGameStats?.achievements;
-        if (!stats) return [];
-
-        const achievements = new Array<SteamUserAchievement>();
-        for (const stat of stats) {
-            const global = achievementPercentages.achievementpercentages.achievements.find(
-                (achievement) => achievement.name === stat.name,
-            );
-            if (!global) throw new Error("No global achievement found.");
-
-            const userStat = userAchievements?.playerstats.achievements.find(
-                (achievement) => achievement.apiname === stat.name,
-            );
-            achievements.push(new SteamUserAchievement(game, userId, stat, global, userStat ?? null, lang));
-        }
-        return achievements;
+        throw new Error("Cannot fetch user achievements in browser context.");
     }
 
     get unlocked() {

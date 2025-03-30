@@ -1,4 +1,4 @@
-import { getRequestEvent } from "$app/server";
+import { browser } from "$app/environment";
 import type { AppDetailsData, GetAppDetailsResponse } from "$lib/server/api/store/appdetails";
 import { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
 import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
@@ -19,17 +19,19 @@ export class SteamApp {
     }
 
     static async fetchSteamApp(appId: number, lang = "english") {
-        const { locals } = getRequestEvent();
-
-        const { steamStoreClient } = locals;
-
-        const data1 = await steamStoreClient.getAppDetails(appId, { l: lang });
-        const data = data1[appId.toString()];
-        if (!data.success) {
-            return null;
+        if (!browser) {
+            const { getRequestEvent } = await import("$app/server");
+            const { locals } = getRequestEvent();
+            const { steamStoreClient } = locals;
+            const data1 = await steamStoreClient.getAppDetails(appId, { l: lang });
+            const data = data1[appId.toString()];
+            if (!data.success) {
+                return null;
+            }
+            return new SteamApp(data.data, lang);
         }
 
-        return new SteamApp(data.data, lang);
+        throw new Error("Cannot fetch Steam app details in a browser context.");
     }
 
     async getAchievements() {

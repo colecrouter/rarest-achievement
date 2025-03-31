@@ -1,4 +1,3 @@
-import { browser } from "$app/environment";
 import type { GetGlobalAchievementPercentagesForAppResponse } from "$lib/server/api/steampowered/globalAchevement";
 import type { GetSchemaForGameResponse } from "$lib/server/api/steampowered/schemaForGame";
 import type { SteamApp } from "$lib/steam/data/SteamApp";
@@ -30,39 +29,6 @@ export class SteamAppAchievement {
             global: this.#globalStats,
             lang: this.#lang,
         };
-    }
-
-    static async fetchAppAchievements(game: SteamApp, lang = "english") {
-        if (!browser) {
-            const { getRequestEvent } = await import("$app/server");
-            const { locals } = getRequestEvent();
-            const { steamClient } = locals;
-
-            const schema = await steamClient.getSchemaForGame({ appid: game.id, l: lang });
-            const achievementPercentages = await steamClient.getGlobalAchievementPercentagesForApp({
-                gameid: game.id,
-            });
-
-            if (!schema || !achievementPercentages) {
-                throw new Error("Failed to fetch schema or achievement percentages.");
-            }
-
-            const stats = schema.game.availableGameStats?.achievements;
-            if (!stats) throw new Error("No achievements found in schema.");
-
-            const achievements = new Array<SteamAppAchievement>();
-            for (const stat of stats) {
-                const global = achievementPercentages.achievementpercentages.achievements.find(
-                    (achievement) => achievement.name === stat.name,
-                );
-                if (!global) throw new Error("No global achievement found.");
-
-                achievements.push(new SteamAppAchievement(game, stat, global, lang));
-            }
-            return achievements;
-        }
-
-        throw new Error("Cannot fetch app achievements in a browser context.");
     }
 
     get id() {

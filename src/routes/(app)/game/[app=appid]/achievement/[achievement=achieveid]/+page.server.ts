@@ -1,9 +1,9 @@
-import { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
+import { fetchAppAchievements } from "$lib/server/classes";
 
 export const load = async ({ parent }) => {
     const data = await parent();
 
-    const gameAchievements = await SteamAppAchievement.fetchAppAchievements(data.app);
+    const gameAchievements = await fetchAppAchievements(data.app);
 
     return {
         gameAchievements,

@@ -1,10 +1,9 @@
-import { browser } from "$app/environment";
 import type { GetPlayerAchievementsResponse } from "$lib/server/api/steampowered/playerAchievement";
 import type { SteamApp } from "$lib/steam/data/SteamApp";
 import {
-    SteamAppAchievement,
     type AchievementGlobalStats,
     type AchievementMeta,
+    SteamAppAchievement,
 } from "$lib/steam/data/SteamAppAchievement";
 
 type AchievementUserStats = NonNullable<GetPlayerAchievementsResponse<string>>["playerstats"]["achievements"][number];
@@ -38,56 +37,7 @@ export class SteamUserAchievement extends SteamAppAchievement {
         };
     }
 
-    static async fetchUserAchievements(game: SteamApp, userId: string, lang = "english") {
-        if (!browser) {
-            const { getRequestEvent } = await import("$app/server");
-            const { steamClient } = getRequestEvent().locals;
-
-            const schema = await steamClient.getSchemaForGame({ appid: game.id, l: lang }).catch(() => null);
-            if (!schema) return [];
-
-            const achievementPercentages = await steamClient
-                .getGlobalAchievementPercentagesForApp({
-                    gameid: game.id,
-                })
-                .catch(() => null);
-            if (!achievementPercentages) return [];
-            const userAchievements = await steamClient
-                .getPlayerAchievements({
-                    steamid: userId,
-                    appid: game.id,
-                })
-                .catch(() => null);
-
-            // Notice how we don't throw if userAchievements is empty
-            if (!schema || !achievementPercentages) {
-                throw new Error("Failed to fetch schema or achievement percentages.");
-            }
-
-            const stats = schema.game.availableGameStats?.achievements;
-            if (!stats) return [];
-
-            const achievements = new Array<SteamUserAchievement>();
-            for (const stat of stats) {
-                const global = achievementPercentages.achievementpercentages.achievements.find(
-                    (achievement) => achievement.name === stat.name,
-                );
-                if (!global) throw new Error("No global achievement found.");
-
-                const userStat = userAchievements?.playerstats.achievements.find(
-                    (achievement) => achievement.apiname === stat.name,
-                );
-                achievements.push(new SteamUserAchievement(game, userId, stat, global, userStat ?? null, lang));
-            }
-            return achievements;
-        }
-
-        throw new Error("Cannot fetch user achievements in browser context.");
-    }
-
     get unlocked() {
-        return this.#userStats && this.#userStats?.unlocktime !== 0
-            ? new Date(this.#userStats.unlocktime * 1000)
-            : null;
+        return this.#userStats && this.#userStats.unlocktime !== 0 ? new Date(this.#userStats.unlocktime * 1000) : null;
     }
 }

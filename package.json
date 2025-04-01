@@ -15,10 +15,14 @@
         "lint": "biome lint ./src && tsc --noEmit",
         "lint:fix": "biome lint ./src --fix && tsc --noEmit",
         "format": "prettier --log-level silent src && biome check ./src",
-        "format:fix": "prettier --log-level silent --write src && biome check ./src --fix --unsafe"
+        "format:fix": "prettier --log-level silent --write src && biome check ./src --fix --unsafe",
+        "db:push": "drizzle-kit push",
+        "db:migrate": "npx wrangler d1 migrations apply steam-data",
+        "db:studio": "drizzle-kit studio"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
+        "@inlang/paraglide-sveltekit": "^0.16.1",
         "@skeletonlabs/skeleton": "^3.1.0",
         "@skeletonlabs/skeleton-svelte": "^1.0.0",
         "@sveltejs/adapter-cloudflare": "^5.0.1",
@@ -31,6 +35,8 @@
         "@testing-library/svelte": "^5.2.4",
         "@tl3n/steam-api-wrapper": "^1.0.0",
         "chart.js": "^4.4.8",
+        "drizzle-kit": "^0.30.2",
+        "drizzle-orm": "^0.41.0",
         "jsdom": "^26.0.0",
         "lucide-svelte": "^0.485.0",
         "parse-duration": "^2.1.3",
@@ -43,8 +49,5 @@
         "typescript": "^5.0.0",
         "vite": "^6.0.0",
         "vitest": "^3.0.0"
-    },
-    "dependencies": {
-        "@inlang/paraglide-sveltekit": "^0.15.5"
     }
 }

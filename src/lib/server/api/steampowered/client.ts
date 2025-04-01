@@ -32,14 +32,41 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     async getGlobalAchievementPercentagesForApp(options: GetGlobalAchievementPercentagesForAppQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2");
         this.applyOptions(url, options);
-        return this.fetchJSON<GetGlobalAchievementPercentagesForAppResponse>(url, "1w");
+        try {
+            return await this.fetchJSON<GetGlobalAchievementPercentagesForAppResponse>(url, "1w");
+        } catch (e) {
+            if (!(e instanceof Error)) throw e;
+            if (e.message.includes("403")) {
+                return {
+                    achievementpercentages: {
+                        achievements: [],
+                    },
+                };
+            }
+
+            throw e;
+        }
     }
 
     async getPlayerAchievements<T extends Language | undefined>(options: GetPlayerAchievementsQuery<T>) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-        return this.fetchJSON<GetPlayerAchievementsResponse<T>>(url, "1d");
+
+        try {
+            return await this.fetchJSON<GetPlayerAchievementsResponse<T>>(url, "1d");
+        } catch (e) {
+            if (!(e instanceof Error)) throw e;
+            if (e.message.includes("400")) {
+                return {
+                    playerstats: {
+                        steamID: options.steamid,
+                        gameName: "",
+                        achievements: [],
+                    },
+                };
+            }
+        }
     }
 
     async getPlayerSummaries(steamids: string[]) {
@@ -56,6 +83,9 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
         return this.fetchJSON<GetUserStatsForGameResponse>(url, "1h");
     }
 
+    /**
+     * @throws {Error} If the steamid is not for a game
+     */
     async getSchemaForGame(options: GetSchemaForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2");
         url.searchParams.set("key", this.#key);
@@ -63,7 +93,7 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
         return this.fetchJSON<GetSchemaForGameResponse>(url, "1w");
     }
 
-    async getOwnedGames<T extends boolean>(options: GetOwnedGamesQuery<T>) {
+    async getOwnedGames<T extends boolean = false>(options: GetOwnedGamesQuery<T>) {
         const url = new URL("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);

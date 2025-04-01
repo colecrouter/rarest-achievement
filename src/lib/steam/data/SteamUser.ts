@@ -1,11 +1,11 @@
 import type { GetPlayerSummariesResponse } from "$lib/server/api/steampowered/playerSummary";
 
-type UserData = GetPlayerSummariesResponse["response"]["players"][number];
+export type SteamUserRaw = GetPlayerSummariesResponse["response"]["players"][number];
 
 export class SteamUser {
-    #player: UserData;
+    #player: SteamUserRaw;
 
-    constructor(data: UserData) {
+    constructor(data: SteamUserRaw) {
         this.#player = data;
     }
 

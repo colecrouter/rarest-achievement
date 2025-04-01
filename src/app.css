@@ -42,3 +42,7 @@ html {
         background-color: transparent;
     }
 }
+
+.card {
+    @apply overflow-hidden border-[1px] border-gray-700 bg-gray-800;
+}

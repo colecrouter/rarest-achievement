@@ -1,4 +1,10 @@
-import { fetchAppAchievements, fetchFriends, fetchOwnedGames, fetchUserAchievements } from "$lib/server/classes.js";
+import {
+    fetchSteamGameAchievements,
+    fetchSteamFriends,
+    fetchOwnedSteamGames,
+    fetchSteamUserAchievements,
+    fetchSteamApps,
+} from "$lib/server/classes.js";
 import type { SteamOwnedGame } from "$lib/steam/data/SteamOwnedGame.js";
 import type { SteamUser } from "$lib/steam/data/SteamUser";
 import type { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement.js";
@@ -6,7 +12,9 @@ import type { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement.
 export const load = async ({ parent, locals }) => {
     const { app } = await parent();
 
-    const achievements = await fetchAppAchievements(app);
+    const achievements = locals.steamUser
+        ? await fetchSteamUserAchievements([app], [locals.steamUser])
+        : await fetchSteamGameAchievements([app]);
 
     let friends: {
         user: SteamUser;
@@ -14,25 +22,32 @@ export const load = async ({ parent, locals }) => {
         achievements: SteamUserAchievement[];
     }[] = [];
     if (locals.steamUser) {
-        const f = await fetchFriends(locals.steamUser);
+        const f = (await fetchSteamFriends([locals.steamUser])).get(locals.steamUser.id);
+        if (!f) return { achievements, friends };
 
-        // @ts-ignore
-        friends = await Promise.all(
-            f
-                .map(async (friend) => {
-                    const ownedGames = await fetchOwnedGames(friend);
-                    const owned = ownedGames.find((game) => game.id === app.id);
-                    if (!owned) return null;
-                    const achievements = await fetchUserAchievements(owned, friend.id);
+        const owned = await fetchOwnedSteamGames(f);
 
-                    return {
-                        user: friend,
-                        owned,
-                        achievements,
-                    };
-                })
-                .filter((friend) => friend !== null),
-        ).then((friends) => friends.filter((friend) => friend !== null));
+        // ONLY FETCH THE CURRENT APP
+        const friendAchievements = await fetchSteamUserAchievements([app], f, "english");
+
+        // Map back into friends
+        friends = f
+            .map((friend) => {
+                const ownedGames = owned.get(friend.id);
+                const ownedGame = ownedGames?.find((game) => game.id === app.id);
+                if (!ownedGame?.playtime || ownedGame.playtime === 0) return null;
+                const achievements = friendAchievements.get(app.id)?.get(friend.id);
+                if (!achievements) return null;
+                const friendAchievementsList = [...achievements.values()].flat();
+                if (!friendAchievementsList) return null;
+                return {
+                    user: friend,
+                    owned: ownedGame,
+                    achievements: friendAchievementsList,
+                };
+            })
+            .filter((friend) => friend !== null)
+            .sort((a, b) => (b?.owned.playtime ?? 0) - (a?.owned.playtime ?? 0));
     }
 
     return {

@@ -20,13 +20,8 @@ export type OwnedGame<T extends boolean> = {
     : object);
 
 export type GetOwnedGamesResponse<T extends boolean> = {
-    response:
-        | {
-              game_count: number; // Number of owned games
-              games: OwnedGame<T>[];
-          }
-        | {
-              game_count: 0; // No games found
-              games: undefined;
-          };
+    response: {
+        game_count: number; // Number of owned games
+        games?: OwnedGame<T>[];
+    };
 };

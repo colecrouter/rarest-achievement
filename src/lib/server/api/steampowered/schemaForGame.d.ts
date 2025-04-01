@@ -26,4 +26,4 @@ export type GetSchemaForGameResponse = {
             }>;
         };
     };
-} | null;
+};

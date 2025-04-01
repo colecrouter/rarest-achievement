@@ -1,10 +1,11 @@
-import { fetchSteamApp } from "$lib/server/classes";
+import { fetchSteamApps } from "$lib/server/classes";
 import { error } from "@sveltejs/kit";
 
 export const load = async ({ params }) => {
-    const appId = params.app;
+    const appId = Number.parseInt(params.app);
+    const apps = await fetchSteamApps([appId]);
 
-    const app = await fetchSteamApp(Number.parseInt(appId), "english");
+    const app = apps.get(appId);
     if (!app) error(404, "Game not found");
 
     return {

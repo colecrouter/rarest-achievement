@@ -1,18 +1,16 @@
 import type { AppDetailsData, GetAppDetailsResponse } from "$lib/server/api/store/appdetails";
 
-type SteamAppData = (GetAppDetailsResponse<Array<keyof AppDetailsData>> & { success: true })[string]["data"];
+export type SteamAppRaw = (GetAppDetailsResponse<Array<keyof AppDetailsData>> & { success: true })[string]["data"];
 
 export class SteamApp {
-    #app: SteamAppData;
-    #lang: string;
+    #app: SteamAppRaw;
 
-    constructor(data: SteamAppData, lang: string) {
+    constructor(data: SteamAppRaw) {
         this.#app = data;
-        this.#lang = lang;
     }
 
     serialize() {
-        return { app: this.#app, lang: this.#lang };
+        return { app: this.#app };
     }
 
     get id() {

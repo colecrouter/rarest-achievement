@@ -10,19 +10,22 @@
     let { achievement }: Props = $props();
 </script>
 
-<div class="card overflow-hidden border-[1px] border-gray-700 bg-gray-800">
+<div class="card">
     <article class="flex h-full flex-col justify-between p-0">
         <div class="flex items-start gap-3 p-4">
             <div class="relative flex-shrink-0">
                 <img
                     src={achievement.icon || "/placeholder.svg"}
                     alt={achievement.name}
-                    width="48"
-                    height="48"
+                    width="64"
+                    height="64"
                     class="rounded-md border border-gray-700 bg-gray-900"
                 />
                 <div
-                    class="absolute -right-2 -bottom-2 rounded-full bg-amber-500 px-1.5 py-0.5 text-xs font-bold text-gray-900"
+                    class="absolute -right-2 -bottom-2 rounded-full {achievement.globalPercentage <=
+                    10
+                        ? 'bg-amber-500'
+                        : 'bg-gray-500'} px-1.5 py-0.5 text-xs font-bold text-gray-900"
                 >
                     {achievement.globalPercentage}%
                 </div>

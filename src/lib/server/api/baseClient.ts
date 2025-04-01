@@ -24,22 +24,9 @@ export abstract class BaseSteamAPIClient {
         const { platform, fetch } = getRequestEvent();
         if (!platform) throw new Error("Platform not found");
 
-        const { STEAM_CACHE } = platform.env;
-
-        const cacheKey = url.toString();
-        const cached = await STEAM_CACHE.get(cacheKey);
-        if (cached) return JSON.parse(cached);
-
         const response = await fetch(url.toString());
         if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
 
-        const json = await response.json();
-        const cacheMS = parse(ttl);
-        if (!cacheMS) throw new Error(`Invalid TTL: ${ttl}`);
-        if (cacheMS < 0) throw new Error(`TTL must be positive: ${ttl}`);
-
-        await STEAM_CACHE.put(cacheKey, JSON.stringify(json), { expirationTtl: cacheMS / 1000 });
-
-        return json;
+        return await response.json();
     }
 }

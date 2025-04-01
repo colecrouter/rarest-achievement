@@ -1,26 +1,28 @@
 import type { GetPlayerAchievementsResponse } from "$lib/server/api/steampowered/playerAchievement";
 import type { SteamApp } from "$lib/steam/data/SteamApp";
 import {
-    type AchievementGlobalStats,
-    type AchievementMeta,
+    type SteamAchievementRawGlobalStats,
+    type SteamAchievementRawMeta,
     SteamAppAchievement,
 } from "$lib/steam/data/SteamAppAchievement";
 
-type AchievementUserStats = NonNullable<GetPlayerAchievementsResponse<string>>["playerstats"]["achievements"][number];
+export type SteamUSerAchievementRawStats = NonNullable<
+    GetPlayerAchievementsResponse<undefined>
+>["playerstats"]["achievements"][number];
 
 export class SteamUserAchievement extends SteamAppAchievement {
     #steamid: string;
-    #userStats: AchievementUserStats | null;
+    #userStats: SteamUSerAchievementRawStats | null;
 
     constructor(
         game: SteamApp,
         steamid: string,
-        stats: AchievementMeta,
-        global: AchievementGlobalStats,
-        userStats: AchievementUserStats | null,
+        meta: SteamAchievementRawMeta,
+        global: SteamAchievementRawGlobalStats,
+        userStats: SteamUSerAchievementRawStats | null,
         lang: string,
     ) {
-        super(game, stats, global, lang);
+        super(game, meta, global, lang);
         this.#steamid = steamid;
         this.#userStats = userStats;
     }

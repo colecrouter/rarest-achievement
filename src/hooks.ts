@@ -1,6 +1,7 @@
 import { i18n } from "$lib/i18n";
 import { SteamApp } from "$lib/steam/data/SteamApp";
 import { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
+import { SteamFriendsList } from "$lib/steam/data/SteamFriendsList";
 import { SteamOwnedGame } from "$lib/steam/data/SteamOwnedGame";
 import { SteamUser } from "$lib/steam/data/SteamUser";
 import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
@@ -43,6 +44,13 @@ export const transport: Transport = {
         decode: (data: ReturnType<SteamOwnedGame["serialize"]>) => {
             const { owned } = data;
             return new SteamOwnedGame(owned);
+        },
+    },
+    SteamFriendsList: {
+        encode: (data) => data instanceof SteamFriendsList && data.serialize(),
+        decode: (data: ReturnType<SteamFriendsList["serialize"]>) => {
+            const { steamid, friends } = data;
+            return new SteamFriendsList(steamid, friends);
         },
     },
 };

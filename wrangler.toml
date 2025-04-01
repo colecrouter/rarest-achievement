@@ -18,3 +18,15 @@ NODE_VERSION = "22"
 
 [env.production.vars]
 NODE_VERSION = "22"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "steam-data"
+database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
+migrations_dir = "./drizzle"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "steam-data"
+database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
+migrations_dir = "./drizzle"

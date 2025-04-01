@@ -2,20 +2,20 @@ import type { GetGlobalAchievementPercentagesForAppResponse } from "$lib/server/
 import type { GetSchemaForGameResponse } from "$lib/server/api/steampowered/schemaForGame";
 import type { SteamApp } from "$lib/steam/data/SteamApp";
 
-export type AchievementMeta = NonNullable<
+export type SteamAchievementRawMeta = NonNullable<
     NonNullable<NonNullable<GetSchemaForGameResponse>["game"]["availableGameStats"]>["achievements"]
 >[number];
 
-export type AchievementGlobalStats =
+export type SteamAchievementRawGlobalStats =
     NonNullable<GetGlobalAchievementPercentagesForAppResponse>["achievementpercentages"]["achievements"][number];
 
 export class SteamAppAchievement {
     #app: SteamApp;
-    #meta: AchievementMeta;
-    #globalStats: AchievementGlobalStats;
+    #meta: SteamAchievementRawMeta;
+    #globalStats: SteamAchievementRawGlobalStats;
     #lang: string;
 
-    constructor(app: SteamApp, stats: AchievementMeta, global: AchievementGlobalStats, lang: string) {
+    constructor(app: SteamApp, stats: SteamAchievementRawMeta, global: SteamAchievementRawGlobalStats, lang: string) {
         this.#app = app;
         this.#meta = stats;
         this.#globalStats = global;

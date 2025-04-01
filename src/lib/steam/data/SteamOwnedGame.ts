@@ -1,9 +1,9 @@
 import type { OwnedGame } from "$lib/server/api/steampowered/owned";
 
 export class SteamOwnedGame {
-    #owned: OwnedGame<true>;
+    #owned: OwnedGame<false>;
 
-    constructor(data: OwnedGame<true>) {
+    constructor(data: OwnedGame<false>) {
         this.#owned = data;
     }
 

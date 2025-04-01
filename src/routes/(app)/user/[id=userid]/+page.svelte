@@ -32,8 +32,6 @@
     );
 </script>
 
-{#snippet podium()}{/snippet}
-
 <!-- Main Content -->
 <main class="container mx-auto px-4 py-8">
     <!-- Hero Section with Podium -->
@@ -45,11 +43,17 @@
         <div
             class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
         >
-            <Podium place={2} achievement={topThree[1]} />
+            {#if topThree.length === 3}
+                <Podium place={2} achievement={topThree[1]!} />
 
-            <Podium place={1} achievement={topThree[0]} />
+                <Podium place={1} achievement={topThree[0]!} />
 
-            <Podium place={3} achievement={topThree[2]} />
+                <Podium place={3} achievement={topThree[2]!} />
+            {:else}
+                <div class="flex h-full w-full items-center justify-center">
+                    <p class="text-gray-400">No achievements unlocked yet.</p>
+                </div>
+            {/if}
 
             <!-- Base -->
             <div

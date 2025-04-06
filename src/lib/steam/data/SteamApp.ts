@@ -1,6 +1,8 @@
 import type { AppDetailsData, GetAppDetailsResponse } from "$lib/server/api/store/appdetails";
 
-export type SteamAppRaw = (GetAppDetailsResponse<Array<keyof AppDetailsData>> & { success: true })[string]["data"];
+export type SteamAppRaw = NonNullable<
+    (GetAppDetailsResponse<Array<keyof AppDetailsData>> & { success: true })[number]["data"]
+>;
 
 export class SteamApp {
     #app: SteamAppRaw;

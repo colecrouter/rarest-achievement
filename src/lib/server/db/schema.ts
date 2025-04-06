@@ -9,7 +9,7 @@ import { foreignKey, index, integer, numeric, primaryKey, sqliteTable, text } fr
 export const users = sqliteTable(
     "users",
     {
-        id: text("id").notNull().primaryKey(),
+        id: text("user_id").notNull().primaryKey(),
         data: text("data", { mode: "json" }).notNull().$type<SteamUserRaw>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
@@ -21,8 +21,8 @@ export const users = sqliteTable(
 export const apps = sqliteTable(
     "apps",
     {
-        id: integer("appid").notNull().primaryKey(),
-        data: text("data", { mode: "json" }).notNull().$type<SteamAppRaw>(),
+        id: integer("app_id").notNull().primaryKey(),
+        data: text("data", { mode: "json" }).$type<SteamAppRaw>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
@@ -34,7 +34,7 @@ export const achievementsStats = sqliteTable(
     "achievements_stats",
     {
         app_id: integer("app_id").notNull().primaryKey(),
-        data: text("data", { mode: "json" }).notNull().$type<SteamAchievementRawGlobalStats[]>(),
+        data: text("data", { mode: "json" }).$type<SteamAchievementRawGlobalStats[]>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),

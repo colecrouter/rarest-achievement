@@ -22,81 +22,80 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
         this.#key = key;
     }
 
+    /**
+     * Success: 200 - {friendslist: {friends: [...]}}
+     * Private: 200 - {friendslist: {friends: []}} (weird lol)
+     */
     async getFriendsList(options: GetFriendsListQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUser/GetFriendList/v1");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-        return this.fetchJSON<GetFriendsListResponse>(url, "1h");
+        return this.fetchJSON<GetFriendsListResponse, false>(url, false);
     }
 
+    /**
+     * Success: 200 - {achievementpercentages: {achievements: [{"name":"TF_SCOUT_LONG_DISTANCE_RUNNER","percent":"50.8"}]}}
+     * Missing: 403 - {}
+     */
     async getGlobalAchievementPercentagesForApp(options: GetGlobalAchievementPercentagesForAppQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2");
         this.applyOptions(url, options);
-        try {
-            return await this.fetchJSON<GetGlobalAchievementPercentagesForAppResponse>(url, "1w");
-        } catch (e) {
-            if (!(e instanceof Error)) throw e;
-            if (e.message.includes("403")) {
-                return {
-                    achievementpercentages: {
-                        achievements: [],
-                    },
-                };
-            }
-
-            throw e;
-        }
+        return this.fetchJSON<GetGlobalAchievementPercentagesForAppResponse, true>(url, true);
     }
 
+    /**
+     * Success: 200 - {playerstats: {success: true, steamID: "76561198000000000", gameName: "GameName", achievements: [{apiname: "AchievementName", achieved: 1, unlocktime: 1234567890}]}}
+     * Private: 403 - {playerstats: {success: false, error: "Profile is not public"}}
+     * Missing: 403 - {playerstats: {success: false, error:"Invalid SteamID"}}}
+     */
     async getPlayerAchievements<T extends Language | undefined>(options: GetPlayerAchievementsQuery<T>) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-
-        try {
-            return await this.fetchJSON<GetPlayerAchievementsResponse<T>>(url, "1d");
-        } catch (e) {
-            if (!(e instanceof Error)) throw e;
-            if (e.message.includes("400")) {
-                return {
-                    playerstats: {
-                        steamID: options.steamid,
-                        gameName: "",
-                        achievements: [],
-                    },
-                };
-            }
-        }
+        return this.fetchJSON<GetPlayerAchievementsResponse<T>, true>(url, true);
     }
 
+    /**
+     * Success: 200 - {response: {players: [{steamid: "76561198000000000", personaname: "PlayerName"}]}}
+     * Missing: 200 - {response: {players: []}}
+     */
     async getPlayerSummaries(steamids: string[]) {
         const url = new URL("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2");
         url.searchParams.set("key", this.#key);
         url.searchParams.set("steamids", steamids.join(","));
-        return this.fetchJSON<GetPlayerSummariesResponse>(url, "1d");
+        return this.fetchJSON<GetPlayerSummariesResponse, false>(url, false);
     }
 
+    /**
+     * Success: 200 - {playerstats: {steamID: "76561198000000000", gameName: "GameName", achievements: [{apiname: "AchievementName", achieved: 1, unlocktime: 1234567890}]}}
+     * Missing: 403 - {}
+     */
     async getUserStatsForGame(options: GetUserStatsForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v2");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-        return this.fetchJSON<GetUserStatsForGameResponse>(url, "1h");
+        return this.fetchJSON<GetUserStatsForGameResponse, true>(url, true);
     }
 
     /**
-     * @throws {Error} If the steamid is not for a game
+     * Success: 200 - {"1":{"success":true,"game":{"gameName":"GameName","gameVersion":"1.0","availableGameStats":{"achievements":[{"name":"AchievementName","defaultvalue":0,"displayName":"Achievement Display Name","hidden":0,"description":"Achievement Description"}]}}}
+     * Missing: 200 - {"1":{"success":false}}
      */
     async getSchemaForGame(options: GetSchemaForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-        return this.fetchJSON<GetSchemaForGameResponse>(url, "1w");
+        return this.fetchJSON<GetSchemaForGameResponse, false>(url, false);
     }
 
+    /**
+     * Success: 200 - {response: {game_count: 1, games: [{appid: 123456, name: "GameName", playtime_forever: 120}]}}
+     * Missing: 400 - No actual response, just plain text "Bad Request"
+     */
     async getOwnedGames<T extends boolean = false>(options: GetOwnedGamesQuery<T>) {
         const url = new URL("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-        return this.fetchJSON<GetOwnedGamesResponse<T>>(url, "1d");
+        return this.fetchJSON<GetOwnedGamesResponse<T>, true>(url, true);
     }
 }

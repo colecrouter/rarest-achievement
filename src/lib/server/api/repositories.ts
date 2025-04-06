@@ -1,10 +1,10 @@
 import { browser } from "$app/environment";
 import { getRequestEvent } from "$app/server";
+import type { Language } from "$lib/server/api/lang";
 import type { OwnedGame } from "$lib/server/api/steampowered/owned";
 import type { SteamAppRaw } from "$lib/steam/data/SteamApp";
 import type { SteamAchievementRawGlobalStats, SteamAchievementRawMeta } from "$lib/steam/data/SteamAppAchievement";
 import type { SteamFriendsListRaw } from "$lib/steam/data/SteamFriendsList";
-import { SteamUser } from "$lib/steam/data/SteamUser";
 import type { SteamUSerAchievementRawStats } from "$lib/steam/data/SteamUserAchievement";
 
 export async function getSteamUsersAPI(user_id: string[]) {
@@ -16,23 +16,47 @@ export async function getSteamUsersAPI(user_id: string[]) {
     return new Map(response.players.map((user) => [user.steamid, user]));
 }
 
-export async function getSteamAppsAPI(app_id: number[], lang = "english") {
+export async function getSteamAppsAPI(app_id: number[], lang: Language = "english") {
     if (browser) throw new Error("Cannot fetch Steam app details in a browser context.");
     const { locals } = getRequestEvent();
     const { steamStoreClient } = locals;
 
     // We cannot fetch multiple apps at once
     // So we need to fetch them one by one
-    const data = new Map<number, SteamAppRaw>();
+    const data = new Map<number, SteamAppRaw | null>();
 
     // Not trying to do this concurrently, because it will hit the API limit
-    for (const appId of app_id) {
-        const appDetails = await steamStoreClient.getAppDetails(appId, { l: lang }).catch(() => null);
-        if (!appDetails?.[appId]) continue;
-        const appData = appDetails[appId];
-        if (!appData.success) continue;
-        data.set(appId, appData.data);
+    // for (const appId of app_id) {
+    //     const appDetails = await steamStoreClient.getAppDetails<undefined>(appId, { l: lang })
+    //     const appData = appDetails?.[appId];
+    //     if (appData?.success === false) continue;
+    //     data.set(appId, appData?.data ?? null);
+    // }
+
+    // await Promise.all(
+    //     app_id.map(async (appId) => {
+    //         const appDetails = await steamStoreClient.getAppDetails<undefined>(appId, { l: lang });
+    //         const appData = appDetails?.[appId];
+    //         if (appData?.success === false) return; // NOTE TO SELF this allows for null values in the map. THIS IS INTENTIONAL
+    //         data.set(appId, appData?.data ?? null);
+    //     }),
+    // );
+
+    // OK let's try grouping them by 5 to reduce change of rate limiting
+    // The rate limit fairly aggressive, at 200 requests per 5 minutes
+    const chunkSize = 5;
+    for (let i = 0; i < app_id.length; i += chunkSize) {
+        const chunk = app_id.slice(i, i + chunkSize);
+        await Promise.all(
+            chunk.map(async (appId) => {
+                const appDetails = await steamStoreClient.getAppDetails<undefined>(appId, { l: lang });
+                const appData = appDetails?.[appId];
+                if (appData?.success === false) return; // NOTE TO SELF this allows for null values in the map. THIS IS INTENTIONAL
+                data.set(appId, appData?.data ?? null);
+            }),
+        );
     }
+
     return data;
 }
 
@@ -45,12 +69,12 @@ export async function getOwnedSteamGamesAPI(user_id: string[]) {
 
     await Promise.all(
         user_id.map(async (steamId) => {
-            const { response } = await steamClient.getOwnedGames({
+            const res = await steamClient.getOwnedGames({
                 steamid: steamId,
                 include_played_free_games: true,
             });
-            if (response.games) {
-                responses.set(steamId, response.games);
+            if (res?.response.games) {
+                responses.set(steamId, res.response.games);
             }
         }),
     );
@@ -58,7 +82,7 @@ export async function getOwnedSteamGamesAPI(user_id: string[]) {
     return responses;
 }
 
-export async function getSteamUserAchievementsAPI(game_id: number[], user_id: string[], lang = "english") {
+export async function getSteamUserAchievementsAPI(game_id: number[], user_id: string[], lang: Language = "english") {
     if (browser) throw new Error("Cannot fetch user achievements in a browser context.");
     const { steamClient } = getRequestEvent().locals;
 
@@ -67,7 +91,7 @@ export async function getSteamUserAchievementsAPI(game_id: number[], user_id: st
     const validSchemas = new Map<number, Map<string, SteamAchievementRawMeta>>();
     await Promise.all(
         game_id.map(async (id) => {
-            const schema = await steamClient.getSchemaForGame({ appid: id, l: lang }).catch(() => null);
+            const schema = await steamClient.getSchemaForGame({ appid: id, l: lang });
             if (!schema) return;
 
             const achievements = schema.game.availableGameStats?.achievements;
@@ -101,9 +125,7 @@ export async function getSteamUserAchievementsAPI(game_id: number[], user_id: st
             // Get the global achievement percentages for each game
             const validAchievements = new Map<string, SteamAchievementRawGlobalStats>();
 
-            const percentages = await steamClient
-                .getGlobalAchievementPercentagesForApp({ gameid: gameId })
-                .catch(() => null);
+            const percentages = await steamClient.getGlobalAchievementPercentagesForApp({ gameid: gameId });
             if (!percentages) return null;
 
             // Add the global achievement percentages to the map
@@ -126,12 +148,11 @@ export async function getSteamUserAchievementsAPI(game_id: number[], user_id: st
             // Get the user achievements for each game
             await Promise.all(
                 user_id.map(async (id) => {
-                    const userAchievements = await steamClient
-                        .getPlayerAchievements({
-                            steamid: id,
-                            appid: gameId,
-                        })
-                        .catch(() => null);
+                    const userAchievements = await steamClient.getPlayerAchievements({
+                        steamid: id,
+                        appid: gameId,
+                        l: lang,
+                    });
                     if (!userAchievements) return null;
 
                     // Finally, add all the data to the map
@@ -167,7 +188,7 @@ export async function getSteamUserAchievementsAPI(game_id: number[], user_id: st
     return gameOutput;
 }
 
-export async function getSteamGameAchievementsAPI(game_id: number[], lang = "english") {
+export async function getSteamGameAchievementsAPI(game_id: number[], lang: Language = "english") {
     if (browser) throw new Error("Cannot fetch game achievements in a browser context.");
     const { steamClient } = getRequestEvent().locals;
 
@@ -175,7 +196,7 @@ export async function getSteamGameAchievementsAPI(game_id: number[], lang = "eng
     const validSchemas = new Map<number, Map<string, SteamAchievementRawMeta>>();
     await Promise.all(
         game_id.map(async (id) => {
-            const schema = await steamClient.getSchemaForGame({ appid: id, l: lang }).catch(() => null);
+            const schema = await steamClient.getSchemaForGame({ appid: id, l: lang });
             if (!schema) return;
             const achievements = schema.game.availableGameStats?.achievements;
             if (!achievements) return;
@@ -194,9 +215,7 @@ export async function getSteamGameAchievementsAPI(game_id: number[], lang = "eng
     // For each game, fetch global achievement percentages and map valid achievements
     await Promise.all(
         Array.from(validSchemas.entries()).map(async ([gameId, metaMap]) => {
-            const percentages = await steamClient
-                .getGlobalAchievementPercentagesForApp({ gameid: gameId })
-                .catch(() => null);
+            const percentages = await steamClient.getGlobalAchievementPercentagesForApp({ gameid: gameId });
             if (!percentages) return;
             const globalMap = new Map<string, SteamAchievementRawGlobalStats>();
             for (const achievement of percentages.achievementpercentages.achievements) {

@@ -1,13 +1,9 @@
 import {
-    fetchSteamGameAchievements,
-    fetchSteamFriends,
     fetchOwnedSteamGames,
+    fetchSteamFriends,
+    fetchSteamGameAchievements,
     fetchSteamUserAchievements,
-    fetchSteamApps,
 } from "$lib/server/classes.js";
-import type { SteamOwnedGame } from "$lib/steam/data/SteamOwnedGame.js";
-import type { SteamUser } from "$lib/steam/data/SteamUser";
-import type { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement.js";
 
 export const load = async ({ parent, locals }) => {
     const { app } = await parent();

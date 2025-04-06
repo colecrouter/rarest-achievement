@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "b0ca6236-2129-4fd2-8af0-31ac5f2c977f",
+  "id": "923d596d-e0f1-4ad0-8d15-6037a4fa2e13",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "achievements_meta": {
@@ -46,15 +46,15 @@
         }
       },
       "foreignKeys": {
-        "achievements_meta_app_id_apps_appid_fk": {
-          "name": "achievements_meta_app_id_apps_appid_fk",
+        "achievements_meta_app_id_apps_app_id_fk": {
+          "name": "achievements_meta_app_id_apps_app_id_fk",
           "tableFrom": "achievements_meta",
           "tableTo": "apps",
           "columnsFrom": [
             "app_id"
           ],
           "columnsTo": [
-            "appid"
+            "app_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -86,7 +86,7 @@
           "name": "data",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "updated_at": {
@@ -107,15 +107,15 @@
         }
       },
       "foreignKeys": {
-        "achievements_stats_app_id_apps_appid_fk": {
-          "name": "achievements_stats_app_id_apps_appid_fk",
+        "achievements_stats_app_id_apps_app_id_fk": {
+          "name": "achievements_stats_app_id_apps_app_id_fk",
           "tableFrom": "achievements_stats",
           "tableTo": "apps",
           "columnsFrom": [
             "app_id"
           ],
           "columnsTo": [
-            "appid"
+            "app_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -128,8 +128,8 @@
     "apps": {
       "name": "apps",
       "columns": {
-        "appid": {
-          "name": "appid",
+        "app_id": {
+          "name": "app_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -139,7 +139,7 @@
           "name": "data",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "updated_at": {
@@ -199,15 +199,15 @@
         }
       },
       "foreignKeys": {
-        "friends_user_id_users_id_fk": {
-          "name": "friends_user_id_users_id_fk",
+        "friends_user_id_users_user_id_fk": {
+          "name": "friends_user_id_users_user_id_fk",
           "tableFrom": "friends",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -252,15 +252,15 @@
         }
       },
       "foreignKeys": {
-        "owned_games_user_id_users_id_fk": {
-          "name": "owned_games_user_id_users_id_fk",
+        "owned_games_user_id_users_user_id_fk": {
+          "name": "owned_games_user_id_users_user_id_fk",
           "tableFrom": "owned_games",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -312,28 +312,28 @@
         }
       },
       "foreignKeys": {
-        "user_achievements_stats_user_id_users_id_fk": {
-          "name": "user_achievements_stats_user_id_users_id_fk",
+        "user_achievements_stats_user_id_users_user_id_fk": {
+          "name": "user_achievements_stats_user_id_users_user_id_fk",
           "tableFrom": "user_achievements_stats",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "user_achievements_stats_app_id_apps_appid_fk": {
-          "name": "user_achievements_stats_app_id_apps_appid_fk",
+        "user_achievements_stats_app_id_apps_app_id_fk": {
+          "name": "user_achievements_stats_app_id_apps_app_id_fk",
           "tableFrom": "user_achievements_stats",
           "tableTo": "apps",
           "columnsFrom": [
             "app_id"
           ],
           "columnsTo": [
-            "appid"
+            "app_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -354,8 +354,8 @@
     "users": {
       "name": "users",
       "columns": {
-        "id": {
-          "name": "id",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": true,
           "notNull": true,

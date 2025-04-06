@@ -1,3 +1,4 @@
+import type { Language } from "$lib/server/api/lang";
 import {
     getOwnedSteamGamesAPI,
     getSteamAppsAPI,
@@ -30,7 +31,7 @@ import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
 export async function fetchSteamUserAchievements(
     games: Array<number | SteamApp | SteamOwnedGame>,
     user: Array<string | SteamUser>,
-    lang = "english",
+    lang: Language = "english",
 ) {
     const gameIds = games.map((game) => (typeof game === "number" ? game : game.id));
     const userIds = user.map((user) => (user instanceof SteamUser ? user.id : user));
@@ -105,29 +106,30 @@ export async function fetchOwnedSteamGames(user: Array<string | SteamUser>) {
     return ownedGames;
 }
 
-export async function fetchSteamGameAchievements(game: SteamApp[], lang = "english") {
+export async function fetchSteamGameAchievements(game: SteamApp[], lang: Language = "english") {
     const gameIds = game.map((game) => (game instanceof SteamOwnedGame ? game.id : game.id));
-    const achievements = await fetchAndUpsert(
+    const gameAchievementsRaw = await fetchAndUpsert(
         [gameIds],
         getSteamGameAchievementsDB,
         upsertGameAchievementsDB,
         getSteamGameAchievementsAPI,
     );
 
-    const gameAchievements = new Map<number, Map<string, SteamAppAchievement>>();
-    for (const [gameId, achievement] of achievements) {
+    const mappedGameAchievements = new Map<number, Map<string, SteamAppAchievement>>();
+    for (const [gameId, achievementsMap] of gameAchievementsRaw) {
         const gameAchievementsMap = new Map<string, SteamAppAchievement>();
 
         const gameData = game.find((game) => game.id === gameId);
         if (!gameData) continue;
 
-        for (const [achievementId, { global, meta }] of achievement) {
+        for (const [achievementId, { global, meta }] of achievementsMap) {
             const gameAchievement = new SteamAppAchievement(gameData, meta, global, lang);
             gameAchievementsMap.set(achievementId, gameAchievement);
         }
-        if (gameData) gameAchievements.set(gameId, gameAchievementsMap);
+        if (gameData) mappedGameAchievements.set(gameId, gameAchievementsMap);
     }
-    return gameAchievements;
+
+    return mappedGameAchievements;
 }
 
 export async function fetchSteamApps(app: Array<number | SteamOwnedGame>) {
@@ -136,6 +138,7 @@ export async function fetchSteamApps(app: Array<number | SteamOwnedGame>) {
 
     const steamApps = new Map<number, SteamApp>();
     for (const [, app] of apps) {
+        if (!app) continue;
         const steamApp = new SteamApp(app);
         steamApps.set(steamApp.id, steamApp);
     }

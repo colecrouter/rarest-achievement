@@ -13,7 +13,7 @@ export type PlayerAchievement<L extends string | undefined> = {
           name?: string; // Localized achievement name
           description?: string; // Localized achievement description
       }
-    : object);
+    : unknown);
 
 export type GetPlayerAchievementsResponse<L extends string | undefined> = {
     playerstats: {
@@ -21,4 +21,4 @@ export type GetPlayerAchievementsResponse<L extends string | undefined> = {
         gameName: string; // Game name
         achievements: PlayerAchievement<L>[];
     };
-} | null;
+};

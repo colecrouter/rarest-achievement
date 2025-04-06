@@ -1,8 +1,9 @@
 import { getRequestEvent } from "$app/server";
-import parse from "parse-duration";
 
-type DurationArg = `${number}${"s" | "m" | "h" | "d" | "w" | "mo"}`;
-type Duration = DurationArg | `${DurationArg} ${DurationArg}`;
+// Keeping these for when I need to build a backend DB "janitor"
+// import parse from "parse-duration";
+// type DurationArg = `${number}${"s" | "m" | "h" | "d" | "w" | "mo"}`;
+// type Duration = DurationArg | `${DurationArg} ${DurationArg}`;
 
 export abstract class BaseSteamAPIClient {
     protected applyOptions<T extends Record<string, string | number | string[] | number[] | boolean | undefined>>(
@@ -20,13 +21,21 @@ export abstract class BaseSteamAPIClient {
         }
     }
 
-    protected async fetchJSON<T>(url: URL, ttl: Duration): Promise<T> {
+    protected async fetchJSON<T, U extends boolean>(url: URL, allowEmpty: U): Promise<U extends true ? T | null : T> {
         const { platform, fetch } = getRequestEvent();
         if (!platform) throw new Error("Platform not found");
 
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Request failed with status ${response.status}: ${url.toString()}`);
+        if ([400, 403].includes(response.status) && allowEmpty) {
+            // When allowEmpty is true, a 403 returns null.
+            return null as U extends true ? T | null : T;
+        }
 
-        return await response.json();
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}: ${url.toString()}`);
+        }
+
+        const json = await response.json();
+        return json as U extends true ? T | null : T;
     }
 }

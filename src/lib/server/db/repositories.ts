@@ -4,9 +4,37 @@ import type { SteamAppRaw } from "$lib/steam/data/SteamApp";
 import type { SteamAchievementRawGlobalStats, SteamAchievementRawMeta } from "$lib/steam/data/SteamAppAchievement";
 import type { SteamFriendsListRaw } from "$lib/steam/data/SteamFriendsList";
 import type { SteamUSerAchievementRawStats } from "$lib/steam/data/SteamUserAchievement";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import {
+    and,
+    eq,
+    getTableColumns,
+    getTableName,
+    inArray,
+    sql,
+    type AnyTable,
+    type InferSelectModel,
+    type SQL,
+    type TableConfig,
+} from "drizzle-orm";
 import { achievementsMeta, achievementsStats, apps, friends, ownedGames, userAchievements, users } from "./schema";
 import type { SteamUserRaw } from "$lib/steam/data/SteamUser";
+import type { Language } from "$lib/server/api/lang";
+
+// https://github.com/drizzle-team/drizzle-orm/issues/555
+function getTableAliasedColumns<T extends AnyTable<TableConfig>>(table: T) {
+    type DataType = InferSelectModel<T>;
+    const tableName = getTableName(table);
+    const columns = getTableColumns(table);
+    return Object.entries(columns).reduce(
+        (acc, [columnName, column]) => {
+            (acc as Record<string, unknown>)[columnName] = sql`${column}`.as(`${tableName}_${columnName}`);
+            return acc;
+        },
+        {} as {
+            [P in keyof DataType]: SQL.Aliased<DataType[P]>;
+        },
+    );
+}
 
 export async function getSteamUsersDB(steamId: string[]) {
     const { locals } = getRequestEvent();
@@ -68,13 +96,13 @@ export async function getSteamAppsDB(appId: number[]) {
         results.push(...res);
     }
 
-    const map = new Map<number, SteamAppRaw>();
+    const map = new Map<number, SteamAppRaw | null>();
     for (const row of results) {
         const appId = row.id;
         const appData = row.data;
-        if (!appData) continue;
         map.set(appId, appData);
     }
+
     return map;
 }
 
@@ -86,6 +114,8 @@ export async function upsertSteamAppsDB(data: Awaited<ReturnType<typeof getSteam
         id: appId,
         data: app,
     }));
+
+    console.log("upsertSteamAppsDB", items.length, items[0]?.data?.name ?? "no data");
 
     for (let i = 0; i < items.length; i++) {
         const chunk = items.slice(i, i + 1);
@@ -138,7 +168,7 @@ export async function upsertOwnedGames(data: Awaited<ReturnType<typeof getOwnedS
         });
 }
 
-export async function getSteamUserAchievementsDB(appId: number[], userId: string[], lang = "english") {
+export async function getSteamUserAchievementsDB(appId: number[], userId: string[], lang: Language = "english") {
     const { locals } = getRequestEvent();
     const { steamCacheDB: db } = locals;
 
@@ -210,15 +240,8 @@ export async function getSteamUserAchievementsDB(appId: number[], userId: string
     const batches2 = batchedGameIds.map((ids) =>
         db
             .select({
-                achievements_stats: achievementsStats,
-                achievements_meta: {
-                    app_id: achievementsMeta.app_id,
-                    lang: achievementsMeta.lang,
-                    // Use COALESCE so that if achievementsMeta.data is null, it returns "[]" (which is valid JSON)
-                    // 🤬🤬🤬
-                    data: sql<SteamAchievementRawMeta[]>`COALESCE(${achievementsMeta.data}, '[]')`.as("data"),
-                    updated_at: achievementsMeta.updated_at,
-                },
+                achievements_stats: getTableAliasedColumns(achievementsStats),
+                achievements_meta: getTableAliasedColumns(achievementsMeta),
             })
             .from(achievementsStats)
             .leftJoin(
@@ -230,7 +253,19 @@ export async function getSteamUserAchievementsDB(appId: number[], userId: string
 
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const statsRes = await db.batch([batches2[0]!, ...batches2.slice(1)]);
-    const flattenedStats = statsRes.flat(1);
+    const flattenedStats = statsRes.flat(1).map((row) => ({
+        ...row,
+        achievements_stats: {
+            ...row.achievements_stats,
+            // @ts-ignore
+            data: JSON.parse(row.achievements_stats.data) as SteamAchievementRawGlobalStats[],
+        },
+        achievements_meta: {
+            ...row.achievements_meta,
+            // @ts-ignore
+            data: JSON.parse(row.achievements_meta.data) as SteamAchievementRawMeta[],
+        },
+    }));
 
     for (const row of flattenedAchievements) {
         const { app_id, user_id } = row;
@@ -266,7 +301,7 @@ export async function getSteamUserAchievementsDB(appId: number[], userId: string
 
 export async function upsertSteamUserAchievementsDB(
     data: Awaited<ReturnType<typeof getSteamUserAchievementsDB>>,
-    lang = "english",
+    lang: Language = "english",
 ) {
     const { locals } = getRequestEvent();
     const { steamCacheDB: db } = locals;
@@ -362,8 +397,8 @@ export async function upsertSteamUserAchievementsDB(
     }
 }
 
-export async function getSteamGameAchievementsDB(appId: number[], lang = "english") {
-    const { locals } = getRequestEvent();
+export async function getSteamGameAchievementsDB(appId: number[], lang: Language = "english") {
+    const { locals, platform } = getRequestEvent();
     const { steamCacheDB: db } = locals;
 
     const chunkSize = 100;
@@ -377,27 +412,41 @@ export async function getSteamGameAchievementsDB(appId: number[], lang = "englis
     const batches2 = batchedGameIds.map((ids) =>
         db
             .select({
-                achievements_stats: achievementsStats,
-                achievements_meta: {
-                    app_id: achievementsMeta.app_id,
-                    lang: achievementsMeta.lang,
-                    // Use COALESCE so that if achievementsMeta.data is null, it returns "[]" (which is valid JSON)
-                    // 🤬🤬🤬
-                    data: sql<SteamAchievementRawMeta[]>`COALESCE(${achievementsMeta.data}, '[]')`.as("data"),
-                    updated_at: achievementsMeta.updated_at,
-                },
+                achievements_stats: getTableAliasedColumns(achievementsStats),
+                achievements_meta: getTableAliasedColumns(achievementsMeta),
             })
             .from(achievementsStats)
             .leftJoin(
                 achievementsMeta,
-                and(eq(achievementsMeta.app_id, achievementsStats.app_id), eq(achievementsMeta.lang, lang)),
+                and(eq(achievementsStats.app_id, achievementsMeta.app_id), eq(achievementsMeta.lang, lang)),
             )
             .where(inArray(achievementsStats.app_id, ids)),
     );
 
+    // const rawSql = batches2[0]?.toSQL();
+    // if (!rawSql) throw new Error("No SQL generated for the first batch.");
+    // const rawResult = await platform?.env.DB.prepare(rawSql.sql)
+    //     .bind(...rawSql.params)
+    //     .all();
+    // console.log(rawResult);
+
+    // console.log(batches2[0]?.toSQL());
+
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const statsRes = await db.batch([batches2[0]!, ...batches2.slice(1)]);
-    const flattenedStats = statsRes.flat(1);
+    const flattenedStats = statsRes.flat(1).map((row) => ({
+        ...row,
+        achievements_stats: {
+            ...row.achievements_stats,
+            // @ts-ignore
+            data: JSON.parse(row.achievements_stats.data) as SteamAchievementRawGlobalStats[],
+        },
+        achievements_meta: {
+            ...row.achievements_meta,
+            // @ts-ignore
+            data: JSON.parse(row.achievements_meta.data) as SteamAchievementRawMeta[],
+        },
+    }));
 
     const gameOutput = new Map<
         number,
@@ -436,7 +485,7 @@ export async function getSteamGameAchievementsDB(appId: number[], lang = "englis
 
 export async function upsertGameAchievementsDB(
     data: Awaited<ReturnType<typeof getSteamGameAchievementsDB>>,
-    lang = "english",
+    lang: Language = "english",
 ) {
     const { locals } = getRequestEvent();
     const { steamCacheDB: db } = locals;

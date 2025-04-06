@@ -9,4 +9,4 @@ export type GetGlobalAchievementPercentagesForAppResponse = {
             percent: number; // Percentage of players who have unlocked the achievement
         }>;
     };
-} | null;
+};

@@ -137,8 +137,8 @@ export interface AppDetailsData {
 type AppDetailsDataHelper<T extends (keyof AppDetailsData)[] | undefined, U extends boolean> = U extends true
     ? T extends (keyof AppDetailsData)[]
         ? { success: true; data: Pick<AppDetailsData, T[number]> }
-        : { success: false; data: AppDetailsData }
-    : never;
+        : { success: true; data: AppDetailsData }
+    : { success: false; data: null };
 
 /**
  * Rate limit: 200 requests per 5 minutes

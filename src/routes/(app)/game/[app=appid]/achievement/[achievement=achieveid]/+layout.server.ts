@@ -7,7 +7,7 @@ export const load = async ({ params, parent }) => {
     const { app } = await parent();
 
     const achievements = await fetchSteamGameAchievements([app]);
-    const achievement = [...achievements.values()].flat().find((achieve) => achieve.id === achievementId);
+    const achievement = achievements.get(app.id)?.get(achievementId);
     if (!achievement) error(404, "Game not found");
 
     return {

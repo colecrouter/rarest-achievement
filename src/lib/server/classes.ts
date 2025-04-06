@@ -114,16 +114,18 @@ export async function fetchSteamGameAchievements(game: SteamApp[], lang = "engli
         getSteamGameAchievementsAPI,
     );
 
-    const gameAchievements = new Map<number, SteamAppAchievement[]>();
+    const gameAchievements = new Map<number, Map<string, SteamAppAchievement>>();
     for (const [gameId, achievement] of achievements) {
-        const gameAchievementList = new Array<SteamAppAchievement>();
+        const gameAchievementsMap = new Map<string, SteamAppAchievement>();
+
         const gameData = game.find((game) => game.id === gameId);
         if (!gameData) continue;
-        for (const [, { global, meta }] of achievement) {
+
+        for (const [achievementId, { global, meta }] of achievement) {
             const gameAchievement = new SteamAppAchievement(gameData, meta, global, lang);
-            gameAchievementList.push(gameAchievement);
+            gameAchievementsMap.set(achievementId, gameAchievement);
         }
-        if (gameData) gameAchievements.set(gameId, gameAchievementList);
+        if (gameData) gameAchievements.set(gameId, gameAchievementsMap);
     }
     return gameAchievements;
 }

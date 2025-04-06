@@ -13,17 +13,14 @@ export const load = async ({ parent, locals }) => {
     const { app } = await parent();
 
     const achievements = locals.steamUser
-        ? await fetchSteamUserAchievements([app], [locals.steamUser])
-        : await fetchSteamGameAchievements([app]);
+        ? (await fetchSteamUserAchievements([app], [locals.steamUser])).get(app.id)?.get(locals.steamUser.id)
+        : (await fetchSteamGameAchievements([app])).get(app.id);
 
-    let friends: {
-        user: SteamUser;
-        owned: SteamOwnedGame;
-        achievements: SteamUserAchievement[];
-    }[] = [];
-    if (locals.steamUser) {
+    const friends = (async () => {
+        if (!locals.steamUser) return [];
+
         const f = (await fetchSteamFriends([locals.steamUser])).get(locals.steamUser.id);
-        if (!f) return { achievements, friends };
+        if (!f) return [];
 
         const owned = await fetchOwnedSteamGames(f);
 
@@ -31,7 +28,7 @@ export const load = async ({ parent, locals }) => {
         const friendAchievements = await fetchSteamUserAchievements([app], f, "english");
 
         // Map back into friends
-        friends = f
+        return f
             .map((friend) => {
                 const ownedGames = owned.get(friend.id);
                 const ownedGame = ownedGames?.find((game) => game.id === app.id);
@@ -47,8 +44,8 @@ export const load = async ({ parent, locals }) => {
                 };
             })
             .filter((friend) => friend !== null)
-            .sort((a, b) => (b?.owned.playtime ?? 0) - (a?.owned.playtime ?? 0));
-    }
+            .sort((a, b) => (b.owned.playtime ?? 0) - (a.owned.playtime ?? 0));
+    })();
 
     return {
         achievements,

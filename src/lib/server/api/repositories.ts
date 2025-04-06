@@ -24,15 +24,15 @@ export async function getSteamAppsAPI(app_id: number[], lang = "english") {
     // We cannot fetch multiple apps at once
     // So we need to fetch them one by one
     const data = new Map<number, SteamAppRaw>();
-    await Promise.all(
-        app_id.map(async (appId) => {
-            const appDetails = await steamStoreClient.getAppDetails(appId, { l: lang });
-            if (!appDetails[appId]) return null;
-            const appData = appDetails[appId];
-            if (!appData.success) return null;
-            data.set(appId, appData.data);
-        }),
-    );
+
+    // Not trying to do this concurrently, because it will hit the API limit
+    for (const appId of app_id) {
+        const appDetails = await steamStoreClient.getAppDetails(appId, { l: lang }).catch(() => null);
+        if (!appDetails?.[appId]) continue;
+        const appData = appDetails[appId];
+        if (!appData.success) continue;
+        data.set(appId, appData.data);
+    }
     return data;
 }
 

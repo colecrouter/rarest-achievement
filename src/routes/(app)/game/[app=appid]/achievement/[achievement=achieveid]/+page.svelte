@@ -23,7 +23,7 @@
     let isSignedIn = true;
 
     const rarityChartData = $derived(
-        gameAchievements
+        [...(gameAchievements?.values() ?? [])]
             .slice()
             .sort((a, b) => a.globalPercentage - b.globalPercentage)
             .map((current) => ({
@@ -246,7 +246,7 @@
                         Your progress on all achievements in this game
                     </p>
                     <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {#each gameAchievements as currentAchievement}
+                        {#each gameAchievements?.values() ?? [] as currentAchievement}
                             {@const isCurrent =
                                 currentAchievement.id === achievement.id}
                             <div
@@ -437,7 +437,7 @@
     <div class="mt-8 mb-8">
         <h2 class="mb-4 text-2xl font-bold">You Might Also Like</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {#each gameAchievements.slice(1, 5) as achievement}
+            {#each [...(gameAchievements?.values() ?? [])].slice(1, 5) as achievement}
                 <div
                     class="overflow-hidden border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
                 >

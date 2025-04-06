@@ -24,8 +24,8 @@ export abstract class BaseSteamAPIClient {
         const { platform, fetch } = getRequestEvent();
         if (!platform) throw new Error("Platform not found");
 
-        const response = await fetch(url.toString());
-        if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Request failed with status ${response.status}: ${url.toString()}`);
 
         return await response.json();
     }

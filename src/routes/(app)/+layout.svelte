@@ -4,8 +4,12 @@
     const { children, data } = $props();
 </script>
 
-<Navbar user={data.user} />
+<div class="flex min-h-screen flex-col">
+    <Navbar user={data.user} />
 
-{@render children()}
+    <div class="grow">
+        {@render children()}
+    </div>
 
-<Footer />
+    <Footer />
+</div>

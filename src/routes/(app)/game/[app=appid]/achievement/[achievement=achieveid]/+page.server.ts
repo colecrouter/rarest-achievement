@@ -4,7 +4,7 @@ export const load = async ({ parent }) => {
     const data = await parent();
     const { app } = data;
 
-    const gameAchievements = (await fetchSteamGameAchievements([app])).get(app.id) ?? [];
+    const gameAchievements = (await fetchSteamGameAchievements([app])).get(app.id);
 
     return {
         gameAchievements,

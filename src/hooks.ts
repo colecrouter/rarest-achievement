@@ -19,8 +19,8 @@ export const transport: Transport = {
     SteamApp: {
         encode: (data) => data instanceof SteamApp && data.serialize(),
         decode: (data: ReturnType<SteamApp["serialize"]>) => {
-            const { app, lang } = data;
-            return new SteamApp(app, lang);
+            const { app } = data;
+            return new SteamApp(app);
         },
     },
     // SteamUserAchievement must come first, because it extends SteamAppAchievement
@@ -52,5 +52,9 @@ export const transport: Transport = {
             const { steamid, friends } = data;
             return new SteamFriendsList(steamid, friends);
         },
+    },
+    URL: {
+        encode: (data) => data instanceof URL && data.toString(),
+        decode: (data: string) => new URL(data),
     },
 };

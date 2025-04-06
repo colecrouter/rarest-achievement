@@ -95,7 +95,7 @@ export async function fetchAndUpsert<
             const { missingOuter, missingInner } = getMissingKeys2D(expectedOuter, expectedInner, data2D);
 
             if (missingOuter.length > 0 || missingInner.size > 0) {
-                console.log("Missing 2D data detected:", {
+                console.debug("Missing 2D data detected:", {
                     missingOuter,
                     missingInner,
                 });
@@ -107,7 +107,7 @@ export async function fetchAndUpsert<
             // 1D map case.
             const missing = getMissingKeys1D(expectedOuter, data as Map<unknown, unknown>);
             if (missing.length > 0) {
-                console.log("Missing 1D data detected:", missing);
+                console.debug("Missing 1D data detected:", missing);
                 const fetchedData = await fetchFromAPI(...args);
                 await upsertDB(fetchedData);
                 data = fetchedData;
@@ -117,7 +117,7 @@ export async function fetchAndUpsert<
         // The expected key arrays were not provided.
         // In such cases, you can either do a simple truthy check or skip.
         if (!data) {
-            console.log("Data is missing entirely.");
+            console.debug("Data is missing entirely.");
             const fetchedData = await fetchFromAPI(...args);
             await upsertDB(fetchedData);
             data = fetchedData;

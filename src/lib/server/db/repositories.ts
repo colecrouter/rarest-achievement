@@ -129,8 +129,6 @@ export async function upsertOwnedGames(data: Awaited<ReturnType<typeof getOwnedS
         data: games,
     }));
 
-    console.log("upsertOwnedGamesDB", d[0]?.data);
-
     await db
         .insert(ownedGames)
         .values(d)
@@ -143,6 +141,21 @@ export async function upsertOwnedGames(data: Awaited<ReturnType<typeof getOwnedS
 export async function getSteamUserAchievementsDB(appId: number[], userId: string[], lang = "english") {
     const { locals } = getRequestEvent();
     const { steamCacheDB: db } = locals;
+
+    const gameOutput = new Map<
+        number,
+        Map<
+            string,
+            Map<
+                string,
+                {
+                    meta: SteamAchievementRawMeta;
+                    global: SteamAchievementRawGlobalStats;
+                    userStats: SteamUSerAchievementRawStats | null;
+                }
+            >
+        >
+    >();
 
     // Determine chunk size based on count of parameters
     // Each SQL statement can have a maximum of 100 parameters
@@ -179,6 +192,10 @@ export async function getSteamUserAchievementsDB(appId: number[], userId: string
             ),
     );
 
+    if (!batches.length) {
+        return gameOutput;
+    }
+
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const achievementsRes = await db.batch([batches[0]!, ...batches.slice(1)]);
     const flattenedAchievements = achievementsRes.flat(1);
@@ -214,21 +231,6 @@ export async function getSteamUserAchievementsDB(appId: number[], userId: string
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
     const statsRes = await db.batch([batches2[0]!, ...batches2.slice(1)]);
     const flattenedStats = statsRes.flat(1);
-
-    const gameOutput = new Map<
-        number,
-        Map<
-            string,
-            Map<
-                string,
-                {
-                    meta: SteamAchievementRawMeta;
-                    global: SteamAchievementRawGlobalStats;
-                    userStats: SteamUSerAchievementRawStats | null;
-                }
-            >
-        >
-    >();
 
     for (const row of flattenedAchievements) {
         const { app_id, user_id } = row;

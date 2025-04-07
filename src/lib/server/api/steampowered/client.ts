@@ -78,14 +78,14 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     }
 
     /**
-     * Success: 200 - {"1":{"success":true,"game":{"gameName":"GameName","gameVersion":"1.0","availableGameStats":{"achievements":[{"name":"AchievementName","defaultvalue":0,"displayName":"Achievement Display Name","hidden":0,"description":"Achievement Description"}]}}}
-     * Missing: 200 - {"1":{"success":false}}
+     * Success: 200 - {game: {gameName: "GameName"}}
+     * Missing: 403 - {game:{}}
      */
     async getSchemaForGame(options: GetSchemaForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2");
         url.searchParams.set("key", this.#key);
         this.applyOptions(url, options);
-        return this.fetchJSON<GetSchemaForGameResponse, false>(url, false);
+        return this.fetchJSON<GetSchemaForGameResponse, true>(url, true);
     }
 
     /**

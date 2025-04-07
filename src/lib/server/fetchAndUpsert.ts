@@ -1,3 +1,5 @@
+export type Errable<T> = Promise<[T, Error | null]>;
+
 // This helper type recursively builds nested maps from an array tuple.
 type NestedMap<T extends unknown[]> = T extends [infer Head, ...infer Tail]
     ? Head extends Array<infer U>
@@ -86,7 +88,7 @@ export async function fetchAndUpsert<
     args: [...TArgs],
     getFromDB: (...args: TArgs) => Promise<TResult>,
     upsertDB: (data: TResult) => Promise<void>,
-    fetchFromAPI: (...args: TArgs) => Promise<TResult>,
+    fetchFromAPI: (...args: TArgs) => Errable<TResult>,
 ): Promise<TResult> {
     // Attempt to get data from the DB (or cache)
     let data = await getFromDB(...args);
@@ -94,14 +96,13 @@ export async function fetchAndUpsert<
     // Helper that performs the API fetch and DB upsert.
     // errorContext is used to customize error logging.
     async function upsertMissingData(errorContext: string): Promise<TResult> {
-        try {
-            const fetchedData = await fetchFromAPI(...args);
-            await upsertDB(fetchedData);
-            return fetchedData;
-        } catch (error) {
-            console.error(`Error fetching/upserting ${errorContext} data:`, error);
-            return data;
+        const [data, err] = await fetchFromAPI(...args);
+        await upsertDB(data);
+
+        if (err) {
+            console.error(`Error fetching ${errorContext} data:`, err);
         }
+        return data;
     }
 
     // If the expected keys are passed (as first argument) and the data is a Map,

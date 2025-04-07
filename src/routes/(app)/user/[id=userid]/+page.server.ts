@@ -27,13 +27,8 @@ export const load = async ({ params }) => {
 
         // Flatten the achievements map to get a list of all achievements
         const allGames = [...allAchievements.values()];
-        const allGamesForUser = allGames.map((m) => m.get(u.id));
-        const allAchievementsForUser = allGamesForUser.flat().reduce((acc, curr) => {
-            if (curr) {
-                acc.push(...curr.values());
-            }
-            return acc;
-        }, [] as SteamUserAchievement[]);
+        const allGamesForUser = allGames.map((m) => m.get(u.id)).filter((g) => !!g);
+        const allAchievementsForUser = [...allGamesForUser.map((m) => [...m.values()])].flat();
 
         // Process achievements: filter by unlocked, cast and sort, then slice
         const achievements = allAchievementsForUser

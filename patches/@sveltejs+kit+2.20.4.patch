@@ -1,0 +1,44 @@
+diff --git a/node_modules/@sveltejs/kit/src/runtime/server/page/render.js b/node_modules/@sveltejs/kit/src/runtime/server/page/render.js
+index 59d9229..aef0660 100644
+--- a/node_modules/@sveltejs/kit/src/runtime/server/page/render.js
++++ b/node_modules/@sveltejs/kit/src/runtime/server/page/render.js
+@@ -290,7 +290,8 @@ export async function render_response({
+ 		options,
+ 		branch.map((b) => b.server_data),
+ 		csp,
+-		global
++		global,
++		client.app ? s(prefixed(client.app)) : undefined
+ 	);
+ 
+ 	if (page_config.ssr && page_config.csr) {
+@@ -584,9 +585,10 @@ export async function render_response({
+  * @param {Array<import('types').ServerDataNode | null>} nodes
+  * @param {import('./csp.js').Csp} csp
+  * @param {string} global
++ * @param {string | undefined} app
+  * @returns {{ data: string, chunks: AsyncIterable<string> | null }}
+  */
+-function get_data(event, options, nodes, csp, global) {
++function get_data(event, options, nodes, csp, global, app) {
+ 	let promise_id = 1;
+ 	let count = 0;
+ 
+@@ -626,8 +628,15 @@ function get_data(event, options, nodes, csp, global) {
+ 						}
+ 
+ 						const nonce = csp.script_needs_nonce ? ` nonce="${csp.nonce}"` : '';
+-						push(`<script${nonce}>${global}.resolve(${str})</script>\n`);
+-						if (count === 0) done();
++						if (app) {
++							push(`<script${nonce}>
++						import(${app}).then((app) => {
++							${global}.resolve(${str})
++						});
++						</script>\n`);
++						} else {
++							push(`<script${nonce}>${global}.resolve(${str})</script>\n`);
++						}
+ 					}
+ 				);
+ 

@@ -16,7 +16,7 @@
         <!-- Logo and title -->
         <a href="/" class="flex items-center gap-2">
             <Trophy class="h-6 w-6 text-amber-500" />
-            <h1 class="text-xl font-bold">Achievement Vault</h1>
+            <h1 class="text-xl font-bold">Steam Vault</h1>
         </a>
 
         <!-- Search form -->

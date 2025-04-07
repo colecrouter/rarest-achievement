@@ -7,7 +7,7 @@
         <div class="flex flex-col items-center justify-between md:flex-row">
             <div class="mb-4 flex items-center gap-2 md:mb-0">
                 <Trophy class="h-6 w-6 text-amber-500" />
-                <span class="text-xl font-bold">Achievement Vault</span>
+                <span class="text-xl font-bold">Steam Vault</span>
             </div>
             <div
                 class="flex flex-wrap justify-center gap-6 text-sm text-gray-400"
@@ -23,7 +23,7 @@
         <div
             class="mt-8 border-t border-gray-800 pt-6 text-center text-sm text-gray-500"
         >
-            &copy; {new Date().getFullYear()} Achievement Vault. All rights reserved.
+            &copy; {new Date().getFullYear()} Steam Vault. All rights reserved.
         </div>
     </div>
 </footer>

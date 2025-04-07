@@ -6,20 +6,20 @@ import {
     SteamAppAchievement,
 } from "$lib/steam/data/SteamAppAchievement";
 
-export type SteamUSerAchievementRawStats = NonNullable<
+export type SteamUserAchievementRawStats = NonNullable<
     GetPlayerAchievementsResponse<undefined>
 >["playerstats"]["achievements"][number];
 
 export class SteamUserAchievement extends SteamAppAchievement {
     #steamid: string;
-    #userStats: SteamUSerAchievementRawStats | null;
+    #userStats: SteamUserAchievementRawStats | null;
 
     constructor(
         game: SteamApp,
         steamid: string,
         meta: SteamAchievementRawMeta,
         global: SteamAchievementRawGlobalStats,
-        userStats: SteamUSerAchievementRawStats | null,
+        userStats: SteamUserAchievementRawStats | null,
         lang: string,
     ) {
         super(game, meta, global, lang);

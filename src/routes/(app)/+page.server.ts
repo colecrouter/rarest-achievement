@@ -1,3 +1,4 @@
+import { EnhancedSteamRepository } from "$lib/server/enhanced/repo";
 import { type SteamID, resolveSteamID } from "$lib/steam/search/id.js";
 import { fail, redirect } from "@sveltejs/kit";
 
@@ -44,6 +45,27 @@ export const actions = {
         // Clear the Steam ID cookie to log out the user.
         cookies.delete("steamid", { path: "/" });
         // Optionally, redirect the user to a different page after logging out.
-        return { status: 302, headers: { Location: "/" } };
+        return redirect(302, "/");
     },
+};
+
+export const load = async () => {
+    const showcase2IDs = [
+        { game: 252950, achievement: "Spectacular" },
+        { game: 105600, achievement: "PURIFY_ENTIRE_WORLD" },
+        { game: 1085660, achievement: "ACH_23" },
+    ];
+
+    const repo = new EnhancedSteamRepository();
+
+    const { data: showcase2Apps } = await repo.getApps(showcase2IDs.map((m) => m.game));
+    const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()]);
+    const showcase2 = showcase2IDs
+        .map(({ game, achievement }) => showcase2Achievements.get(game)?.get(achievement))
+        .filter((m) => !!m);
+    if (showcase2.length !== 3) throw new Error("Missing achievements");
+
+    return {
+        showcase2,
+    };
 };

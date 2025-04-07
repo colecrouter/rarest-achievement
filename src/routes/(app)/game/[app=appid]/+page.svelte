@@ -34,7 +34,7 @@
     let unlockedCount = $derived(
         !user
             ? 0
-            : [...(achievements?.entries() ?? [])]
+            : [...(achievements?.values() ?? [])]
                   .filter((a) => a instanceof SteamUserAchievement)
                   .filter((achievement) => achievement.unlocked).length,
     );
@@ -579,56 +579,60 @@
         <!-- TODO island -->
         {#if isSignedIn}
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {#await friends then friends}
-                    {#each friends.values() as f}
-                        {@const friend = f.user}
-                        {@const owned = f.owned}
-                        {@const completion =
-                            (f.achievements.filter((a) => a.unlocked).length /
-                                totalCount) *
-                            100}
-                        <div class="card p-4">
-                            <div class="mb-4 flex items-center gap-3">
-                                <div class="relative">
-                                    <img
-                                        src={friend.avatar ||
-                                            "/placeholder.svg"}
-                                        alt={friend.displayName}
-                                        width="48"
-                                        height="48"
-                                        class="rounded-full border border-gray-700"
-                                    />
+                {#await friends then f}
+                    {#if f}
+                        {@const { data: friends, error } = f.friends}
+                        {#each friends?.values() as f}
+                            {@const friend = f.user}
+                            {@const owned = f.owned}
+                            {@const completion =
+                                (f.achievements.filter((a) => a.unlocked)
+                                    .length /
+                                    totalCount) *
+                                100}
+                            <div class="card p-4">
+                                <div class="mb-4 flex items-center gap-3">
+                                    <div class="relative">
+                                        <img
+                                            src={friend.avatar ||
+                                                "/placeholder.svg"}
+                                            alt={friend.displayName}
+                                            width="48"
+                                            height="48"
+                                            class="rounded-full border border-gray-700"
+                                        />
+                                        <div
+                                            class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status !==
+                                            SteamUserStatus.Offline
+                                                ? 'bg-green-500'
+                                                : 'bg-gray-500'}"
+                                        ></div>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium">
+                                            {friend.displayName}
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {#if owned.playtime}
+                                                {(owned.playtime / 60).toFixed(
+                                                    1,
+                                                )} hours played
+                                            {/if}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
                                     <div
-                                        class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status !==
-                                        SteamUserStatus.Offline
-                                            ? 'bg-green-500'
-                                            : 'bg-gray-500'}"
-                                    ></div>
-                                </div>
-                                <div>
-                                    <div class="font-medium">
-                                        {friend.displayName}
+                                        class="mb-1 flex items-center justify-between"
+                                    >
+                                        <div class="text-xs text-gray-400">
+                                            Achievement Progress
+                                        </div>
+                                        <div class="text-xs font-medium">
+                                            {completion.toFixed(0)}%
+                                        </div>
                                     </div>
-                                    <div class="text-xs text-gray-400">
-                                        {#if owned.playtime}
-                                            {(owned.playtime / 60).toFixed(1)} hours
-                                            played
-                                        {/if}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <div
-                                    class="mb-1 flex items-center justify-between"
-                                >
-                                    <div class="text-xs text-gray-400">
-                                        Achievement Progress
-                                    </div>
-                                    <div class="text-xs font-medium">
-                                        {completion.toFixed(0)}%
-                                    </div>
-                                </div>
-                                <!-- <div class="h-1.5 rounded bg-gray-700">
+                                    <!-- <div class="h-1.5 rounded bg-gray-700">
                                 <div
                                     class="h-full rounded-full {completion ===
                                     100
@@ -639,29 +643,30 @@
                                     style="width: {completion}%"
                                 ></div>
                             </div> -->
-                                <Progress
-                                    value={completion}
-                                    max={100}
-                                    meterBg={completion === 100
-                                        ? "bg-amber-500"
-                                        : "bg-blue-500"}
-                                ></Progress>
-                            </div>
-                            <div
-                                class="flex items-center justify-between text-xs text-gray-400"
-                            >
-                                <span>
-                                    <!-- {friend.achievements} / {app
+                                    <Progress
+                                        value={completion}
+                                        max={100}
+                                        meterBg={completion === 100
+                                            ? "bg-amber-500"
+                                            : "bg-blue-500"}
+                                    ></Progress>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between text-xs text-gray-400"
+                                >
+                                    <span>
+                                        <!-- {friend.achievements} / {app
                                         .achievementStats.total} achievements -->
-                                </span>
-                                <!-- <button
+                                    </span>
+                                    <!-- <button
                                 class="h-7 px-2 text-gray-400 hover:text-gray-100"
                             >
                                 Compare
                             </button> -->
+                                </div>
                             </div>
-                        </div>
-                    {/each}
+                        {/each}
+                    {/if}
                 {/await}
             </div>
         {/if}

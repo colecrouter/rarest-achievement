@@ -4,48 +4,15 @@
         Award,
         ChevronRight,
         Crown,
-        ExternalLink,
         Search,
-        Trophy,
         TrendingUp,
-        User,
+        Trophy,
         Users,
     } from "lucide-svelte";
+    import { fly } from "svelte/transition";
+    import AchievementCard from "./user/[id=userid]/AchievementCard.svelte";
 
-    // Featured achievements for the home page
-    const featuredAchievements = [
-        {
-            id: 1,
-            name: "Against All Odds",
-            description:
-                "Complete the final mission on Insane difficulty without any squad member dying",
-            game: "Mass Effect 2",
-            rarity: 0.8,
-            icon: "/placeholder.svg?height=64&width=64",
-            player: "SteamUser123",
-            playerAvatar: "/placeholder.svg?height=32&width=32",
-        },
-        {
-            id: 2,
-            name: "Platinum God",
-            description: "Collect all items and complete all challenges",
-            game: "The Binding of Isaac: Rebirth",
-            rarity: 1.2,
-            icon: "/placeholder.svg?height=64&width=64",
-            player: "GamerPro99",
-            playerAvatar: "/placeholder.svg?height=32&width=32",
-        },
-        {
-            id: 3,
-            name: "Mile High Club",
-            description: "Complete the epilogue mission on Veteran difficulty",
-            game: "Call of Duty 4: Modern Warfare",
-            rarity: 1.7,
-            icon: "/placeholder.svg?height=64&width=64",
-            player: "FPSMaster",
-            playerAvatar: "/placeholder.svg?height=32&width=32",
-        },
-    ];
+    let { data } = $props();
 
     // Stats for the home page
     const stats = [
@@ -53,6 +20,36 @@
         { label: "Active Users", value: "250K+", icon: Users },
         { label: "Games Supported", value: "12,000+", icon: TrendingUp },
     ];
+
+    const textCards = [
+        {
+            title: "Track Your Achievements",
+            description:
+                "View achievements for all your games in one place. See how you compare to others.",
+            icon: Award,
+        },
+        {
+            title: "Find Key Insights",
+            description:
+                "Discover more games & achievements. Find guides, stats, and more.",
+            icon: Search,
+        },
+        {
+            title: "Connect With Others",
+            description:
+                "Find other achievement hunters, compare stats, and make new friends.",
+            icon: Users,
+        },
+    ] satisfies Array<{
+        title: string;
+        description: string;
+        icon: typeof Trophy;
+    }>;
+
+    let animate = $state(false);
+    $effect(() => {
+        animate = true;
+    });
 </script>
 
 <main>
@@ -67,22 +64,22 @@
                     <h1
                         class="text-4xl leading-tight font-bold md:text-5xl lg:text-6xl"
                     >
-                        Showcase Your Rarest Gaming Achievements
+                        Showcase Your Rarest Achievements on Steam
                     </h1>
                     <p class="max-w-lg text-lg text-gray-300">
                         Track, display, and share your most impressive gaming
                         accomplishments. See how you stack up against other
-                        players with Achievement Vault.
+                        players with Steam Vault.
                     </p>
                     <div class="flex flex-wrap gap-4">
-                        <a href="/dashboard" class="inline-block">
+                        <form action="?/login" method="POST">
                             <button
                                 class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
                             >
-                                View Your Dashboard
+                                Sign In Now
                                 <ChevronRight class="ml-2 h-4 w-4" />
                             </button>
-                        </a>
+                        </form>
                         <button
                             class="btn preset-outlined-surface-500 flex items-center gap-2 rounded p-3"
                         >
@@ -103,7 +100,7 @@
                                     class="absolute inset-0 animate-pulse rounded-full bg-amber-500/20"
                                 ></div>
                                 <Crown
-                                    class="relative z-10 h-12 w-12 text-amber-500"
+                                    class="relative z-10 h-16 w-16 p-2 text-amber-500"
                                 />
                             </div>
                         </div>
@@ -153,6 +150,33 @@
         </div>
     </section>
 
+    <!-- Example achievements -->
+    <section class="py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="mb-8 text-center text-3xl font-bold">
+                Explore Your Achievements
+            </h2>
+            <div
+                class="grid grid-cols-1 gap-6 pt-4 transition-all md:grid-cols-3"
+            >
+                {#each data.showcase2 as achievement, i}
+                    {#if animate}
+                        <div
+                            transition:fly={{
+                                y: 20,
+                                duration: 300,
+                                delay: i * 100,
+                            }}
+                            class="rounded-xl shadow-amber-500/30 even:shadow-lg md:even:-translate-y-4"
+                        >
+                            <AchievementCard {achievement} />
+                        </div>
+                    {/if}
+                {/each}
+            </div>
+        </div>
+    </section>
+
     <!-- Stats Section -->
     <section class="bg-gray-900/30 py-16">
         <div class="container mx-auto px-4">
@@ -198,12 +222,11 @@
                 </a>
             </div>
 
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <!-- <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                 {#each featuredAchievements as achievement}
                     <div
                         class="overflow-hidden rounded border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
                     >
-                        <!-- Card Header -->
                         <div
                             class="flex items-start justify-between border-b border-gray-700 p-4"
                         >
@@ -230,13 +253,13 @@
                                 {achievement.rarity}%
                             </div>
                         </div>
-                        <!-- Card Content -->
+
                         <div class="p-4">
                             <p class="text-sm text-gray-300">
                                 {achievement.description}
                             </p>
                         </div>
-                        <!-- Card Footer -->
+                        
                         <div
                             class="flex items-center justify-between border-t border-gray-700 bg-gray-900/50 p-4 text-sm text-gray-400"
                         >
@@ -256,7 +279,7 @@
                         </div>
                     </div>
                 {/each}
-            </div>
+            </div> -->
         </div>
     </section>
 
@@ -264,55 +287,22 @@
     <section class="bg-gray-900/30 py-16">
         <div class="container mx-auto px-4">
             <h2 class="mb-12 text-center text-3xl font-bold">
-                Why Use Achievement Vault?
+                Why Use Steam Vault?
             </h2>
             <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-                <div
-                    class="rounded-xl border border-gray-700 bg-gray-800 p-6 text-center"
-                >
+                {#each textCards as card}
                     <div
-                        class="mb-4 inline-flex items-center justify-center rounded-full bg-amber-500/10 p-3"
+                        class="rounded-xl border border-gray-700 bg-gray-800 p-6 text-center"
                     >
-                        <Trophy class="h-6 w-6 text-amber-500" />
+                        <div
+                            class="mb-4 inline-flex items-center justify-center rounded-full bg-amber-500/10 p-3"
+                        >
+                            <card.icon class="h-6 w-6 text-amber-500" />
+                        </div>
+                        <h3 class="mb-2 text-xl font-bold">{card.title}</h3>
+                        <p class="text-gray-400">{card.description}</p>
                     </div>
-                    <h3 class="mb-2 text-xl font-bold">
-                        Track Your Achievements
-                    </h3>
-                    <p class="text-gray-400">
-                        Automatically sync and track all your gaming
-                        achievements across multiple platforms in one place.
-                    </p>
-                </div>
-                <div
-                    class="rounded-xl border border-gray-700 bg-gray-800 p-6 text-center"
-                >
-                    <div
-                        class="mb-4 inline-flex items-center justify-center rounded-full bg-amber-500/10 p-3"
-                    >
-                        <Award class="h-6 w-6 text-amber-500" />
-                    </div>
-                    <h3 class="mb-2 text-xl font-bold">
-                        Showcase Rare Accomplishments
-                    </h3>
-                    <p class="text-gray-400">
-                        Display your rarest and most impressive achievements
-                        with beautiful visualizations and statistics.
-                    </p>
-                </div>
-                <div
-                    class="rounded-xl border border-gray-700 bg-gray-800 p-6 text-center"
-                >
-                    <div
-                        class="mb-4 inline-flex items-center justify-center rounded-full bg-amber-500/10 p-3"
-                    >
-                        <Users class="h-6 w-6 text-amber-500" />
-                    </div>
-                    <h3 class="mb-2 text-xl font-bold">Connect With Gamers</h3>
-                    <p class="text-gray-400">
-                        Find and follow other achievement hunters, compare
-                        stats, and build your gaming community.
-                    </p>
-                </div>
+                {/each}
             </div>
         </div>
     </section>
@@ -327,14 +317,22 @@
                     Ready to Showcase Your Achievements?
                 </h2>
                 <p class="mx-auto mb-8 max-w-2xl text-gray-300">
-                    Join thousands of gamers who are tracking and sharing their
-                    gaming accomplishments with Achievement Vault.
+                    It's free, just sign in with your Steam account and start
+                    tracking your achievements.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
                     <a href="/dashboard" class="inline-block">
-                        <button class="btn preset-filled-primary-500">
+                        <!-- <button class="btn preset-filled-primary-500">
                             Get Started Now
-                        </button>
+                        </button> -->
+                        <form action="?/login" method="POST">
+                            <button
+                                class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
+                            >
+                                Sign In Now
+                                <ChevronRight class="ml-2 h-4 w-4" />
+                            </button>
+                        </form>
                     </a>
                     <button class="btn preset-outlined-surface-500">
                         Learn More

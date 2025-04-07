@@ -3,7 +3,7 @@ import type { SteamAppRaw } from "$lib/steam/data/SteamApp";
 import type { SteamAchievementRawGlobalStats, SteamAchievementRawMeta } from "$lib/steam/data/SteamAppAchievement";
 import type { SteamFriendsListRaw } from "$lib/steam/data/SteamFriendsList";
 import type { SteamUserRaw } from "$lib/steam/data/SteamUser";
-import type { SteamUSerAchievementRawStats } from "$lib/steam/data/SteamUserAchievement";
+import type { SteamUserAchievementRawStats } from "$lib/steam/data/SteamUserAchievement";
 import { foreignKey, index, integer, numeric, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable(
@@ -67,7 +67,7 @@ export const userAchievements = sqliteTable(
     {
         user_id: text("user_id").notNull(),
         app_id: integer("app_id").notNull(),
-        data: text("data", { mode: "json" }).$type<SteamUSerAchievementRawStats[]>(),
+        data: text("data", { mode: "json" }).$type<SteamUserAchievementRawStats[]>(),
         updated_at: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
     },
     (table) => [

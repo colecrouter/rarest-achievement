@@ -38,6 +38,22 @@ export class SteamUser {
     get status() {
         return this.#player.personastate as SteamUserStatus;
     }
+
+    get private() {
+        return "timecreated" in this.#player;
+    }
+
+    get realName() {
+        return "realname" in this.#player ? this.#player.realname : undefined;
+    }
+
+    get created() {
+        return "timecreated" in this.#player ? new Date(this.#player.timecreated * 1000) : undefined;
+    }
+
+    get lastLoggedIn() {
+        return "lastlogoff" in this.#player ? new Date(this.#player.lastlogoff * 1000) : undefined;
+    }
 }
 
 export enum SteamUserStatus {

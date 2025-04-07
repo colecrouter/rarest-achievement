@@ -2,7 +2,7 @@ import { STEAM_API_KEY } from "$env/static/private";
 import { i18n } from "$lib/i18n";
 import { SteamAuthenticatedAPIClient } from "$lib/server/api/steampowered/client";
 import { SteamStoreAPIClient } from "$lib/server/api/store/client";
-import { fetchSteamUsers } from "$lib/server/classes";
+import { EnhancedSteamRepository } from "$lib/server/enhanced/repo";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
@@ -17,11 +17,13 @@ const hook: Handle = async ({ event, resolve }) => {
     if (!event.platform) throw new Error("Platform not found");
     event.locals.steamCacheDB = drizzle(event.platform.env.DB);
 
+    const repo = new EnhancedSteamRepository();
+
     // Get details for the logged-in user
     event.locals.steamUser = null; // Default to null if no steamId is found
     const steamId = event.cookies.get("steamid");
     if (steamId) {
-        const users = await fetchSteamUsers([steamId]);
+        const { data: users } = await repo.getUsers([steamId]);
         const user = users.get(steamId);
         if (!user) {
             // Remove the cookie if the user is not found

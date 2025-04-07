@@ -1,11 +1,13 @@
-import { fetchSteamApps } from "$lib/server/classes";
+import { EnhancedSteamRepository } from "$lib/server/enhanced/repo";
 import { error } from "@sveltejs/kit";
 
 export const load = async ({ params }) => {
-    const appId = Number.parseInt(params.app);
-    const apps = await fetchSteamApps([appId]);
+    const repo = new EnhancedSteamRepository();
 
-    const app = apps.get(appId);
+    const appId = Number.parseInt(params.app);
+    const results = await repo.getApps([appId]);
+
+    const app = results.data.get(appId);
     if (!app) error(404, "Game not found");
 
     return {

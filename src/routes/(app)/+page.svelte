@@ -184,10 +184,7 @@
                 {#each stats as stat}
                     <div class="flex flex-col items-center text-center">
                         <div class="mb-4 rounded-full bg-amber-500/10 p-4">
-                            <svelte:component
-                                this={stat.icon}
-                                class="h-8 w-8 text-amber-500"
-                            />
+                            <stat.icon class="h-8 w-8 text-amber-500" />
                         </div>
                         <div class="mb-2 text-4xl font-bold">{stat.value}</div>
                         <div class="text-gray-400">{stat.label}</div>

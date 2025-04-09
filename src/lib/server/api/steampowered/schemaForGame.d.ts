@@ -15,7 +15,7 @@ export type GetSchemaForGameResponse = {
                 defaultvalue: number;
                 displayName: string;
                 hidden: number;
-                description: string;
+                description?: string;
                 icon: string;
                 icongray: string;
             }>;

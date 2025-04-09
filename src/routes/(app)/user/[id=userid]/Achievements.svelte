@@ -4,6 +4,7 @@
     import Search from "lucide-svelte/icons/search";
     import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";
+    import { fly } from "svelte/transition";
 
     interface Props {
         achievements: SteamUserAchievement[];
@@ -20,11 +21,14 @@
         achievements
             .filter(
                 (achievement) =>
-                    achievement.name
+                    achievement.app.name
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()) ||
                     achievement.name
                         .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                    achievement.description
+                        ?.toLowerCase()
                         .includes(searchQuery.toLowerCase()),
             )
             .sort((a, b) =>
@@ -119,9 +123,13 @@
                 <div
                     class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 >
-                    {#each filteredAchievements as achievement}
+                    {#each filteredAchievements as achievement (achievement)}
                         {#if achievement.unlocked !== null}
-                            <AchievementCard {achievement} />
+                            <div
+                                transition:fly|global={{ y: 20, duration: 200 }}
+                            >
+                                <AchievementCard {achievement} />
+                            </div>
                         {/if}
                     {/each}
                 </div>

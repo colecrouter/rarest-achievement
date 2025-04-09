@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { SteamUser } from "$lib/steam/data/SteamUser";
-    import { Trophy, User } from "lucide-svelte";
+    import { User } from "lucide-svelte";
 
     interface Props {
         user: SteamUser | null;
@@ -15,7 +15,61 @@
     >
         <!-- Logo and title -->
         <a href="/" class="flex items-center gap-2">
-            <Trophy class="h-6 w-6 text-amber-500" />
+            <div class="relative h-6 w-6">
+                <!-- Vault-->
+                <svg
+                    class="absolute h-6 w-6 text-amber-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><rect width="18" height="18" x="3" y="3" rx="2"
+                    ></rect><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"
+                    ></circle><path d="m7.9 7.9 2.7 2.7"></path><circle
+                        cx="16.5"
+                        cy="7.5"
+                        r=".5"
+                        fill="currentColor"
+                    ></circle><path d="m13.4 10.6 2.7-2.7"></path><circle
+                        cx="7.5"
+                        cy="16.5"
+                        r=".5"
+                        fill="currentColor"
+                    ></circle><path d="m7.9 16.1 2.7-2.7"></path><circle
+                        cx="16.5"
+                        cy="16.5"
+                        r=".5"
+                        fill="currentColor"
+                    ></circle><path d="m13.4 13.4 2.7 2.7"></path><circle
+                        cx="12"
+                        cy="12"
+                        r="2"
+                    ></circle>
+                </svg>
+
+                <!-- Smoke -->
+                <svg
+                    class="absolute -top-5.5 text-gray-300"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M11 21c0-2.5 2-2.5 2-5"></path>
+                    <path d="M16 21c0-2.5 2-2.5 2-5"></path>
+                    <path d="M6 21c0-2.5 2-2.5 2-5"></path>
+                </svg>
+            </div>
             <h1 class="text-xl font-bold">Steam Vault</h1>
         </a>
 

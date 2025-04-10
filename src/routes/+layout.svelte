@@ -2,9 +2,17 @@
     import "../app.css";
     import { i18n } from "$lib/i18n";
     import { ParaglideJS } from "@inlang/paraglide-sveltekit";
-    const { children } = $props();
+    import Transition from "$lib/Transition.svelte";
+    import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    const { children, data } = $props();
 </script>
 
 <ParaglideJS {i18n}>
-    {@render children()}
+    <TransitionWrapper>
+        {#key data.paths[0]}
+            <Transition>
+                {@render children()}
+            </Transition>
+        {/key}
+    </TransitionWrapper>
 </ParaglideJS>

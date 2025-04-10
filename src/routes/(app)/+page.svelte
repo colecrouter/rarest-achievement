@@ -80,11 +80,12 @@
                                 <ChevronRight class="ml-2 h-4 w-4" />
                             </button>
                         </form>
-                        <button
+                        <a
+                            href="/about"
                             class="btn preset-outlined-surface-500 flex items-center gap-2 rounded p-3"
                         >
                             Learn More
-                        </button>
+                        </a>
                     </div>
                 </div>
                 <div class="relative">
@@ -331,9 +332,9 @@
                             </button>
                         </form>
                     </a>
-                    <button class="btn preset-outlined-surface-500">
+                    <a href="/about" class="btn preset-outlined-surface-500">
                         Learn More
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

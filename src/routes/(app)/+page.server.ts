@@ -13,6 +13,7 @@ export const actions = {
             id = await resolveSteamID(query);
         } catch (e) {
             // TODO
+            console.error(e);
             return fail(400, { msg: (e as Error).message });
         }
 

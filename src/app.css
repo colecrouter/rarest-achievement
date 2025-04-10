@@ -12,6 +12,9 @@
 html {
     @apply bg-gradient-to-b from-gray-900 to-gray-950;
     /* background-image: radial-gradient(
+
+    @media print {
+
         at 24% 25%,
         color-mix(in oklab, var(--color-primary-500) 30%, transparent) 0px,
         transparent 30%
@@ -45,4 +48,34 @@ html {
 
 .card {
     @apply overflow-hidden border-[1px] border-gray-700 bg-gray-800;
+}
+
+.prose h2 {
+    @apply mt-8 mb-4 text-2xl font-bold;
+}
+.prose ul {
+    @apply list-disc space-y-2 pl-6;
+}
+.prose blockquote {
+    @apply blockquote;
+}
+.prose section {
+    @apply mb-8;
+}
+.prose > section > * ~ * {
+    @apply mb-4;
+}
+
+/* Printing nonsense */
+
+@media not print {
+    .prose {
+        @apply prose prose-invert;
+    }
+}
+
+@media print {
+    * {
+        @apply text-gray-900;
+    }
 }

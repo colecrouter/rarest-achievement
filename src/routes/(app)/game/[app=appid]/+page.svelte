@@ -312,7 +312,7 @@
                         ? "bg-amber-500"
                         : "bg-blue-500"}
                 >
-                    {((unlockedCount / totalCount) * 100).toFixed(0)}%
+                    {((unlockedCount / totalCount) * 100).toFixed(1)}%
                 </Progress>
             </div>
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">

@@ -1,9 +1,8 @@
-import tailwindcss from "@tailwindcss/vite";
 import { paraglide } from "@inlang/paraglide-sveltekit/vite";
-import { svelteTesting } from "@testing-library/svelte/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
+import tailwindcss from "@tailwindcss/vite";
+import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineConfig } from "vite";
-import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
     plugins: [

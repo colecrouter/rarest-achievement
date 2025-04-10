@@ -91,6 +91,7 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     /**
      * Success: 200 - {response: {game_count: 1, games: [{appid: 123456, name: "GameName", playtime_forever: 120}]}}
      * Missing: 400 - No actual response, just plain text "Bad Request"
+     * Private: 200 - {response: {}}
      */
     async getOwnedGames<T extends boolean = false>(options: GetOwnedGamesQuery<T>) {
         const url = new URL("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1");

@@ -2,7 +2,7 @@ import { getRequestEvent } from "$app/server";
 import type { Language } from "$lib/server/api/lang";
 import { SteamAPIRepository } from "$lib/server/api/repo";
 import { SteamCacheDBRepository } from "$lib/server/db/repo";
-import { Errable } from "$lib/server/error";
+import { Errable } from "$lib/error";
 import { SteamApp } from "$lib/steam/data/SteamApp";
 import { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
 import { SteamOwnedGame } from "$lib/steam/data/SteamOwnedGame";
@@ -252,30 +252,27 @@ function getMissingKeys2D<TOuter, TInner>(
     expectedInner: TInner[],
     data: Map<TOuter, Map<TInner, unknown>>,
 ): { missingOuter: TOuter[]; missingInner: TInner[] } {
-    // Get missing outer keys using getMissingKeys1D.
-    const missingOuter = getMissingKeys1D(expectedOuter, data, "2D Map Outer");
-    const missingInner = new Set<TInner>();
+    const missingOuterSet = new Set<TOuter>();
+    const missingInnerMap = new Map<TOuter, TInner[]>();
 
-    // For each expected outer key, check inner keys.
     for (const outer of expectedOuter) {
-        if (data.has(outer)) {
-            const innerMap = data.get(outer);
-            if (!innerMap) continue; // Defensive check.
-            const innerMissing = getMissingKeys1D(expectedInner, innerMap, `2D Map Inner for Outer Key: ${outer}`);
-            if (innerMissing.length > 0) {
-                for (const inner of innerMissing) {
-                    missingInner.add(inner);
-                }
-            }
+        const innerMap = data.get(outer);
+        if (!innerMap) {
+            // Outer key entirely missing.
+            missingOuterSet.add(outer);
         } else {
-            // When outer key is completely missing, all inner keys are missing.
-            for (const inner of expectedInner) {
-                missingInner.add(inner);
+            const missingForOuter = expectedInner.filter((key) => !innerMap.has(key));
+            if (missingForOuter.length > 0) {
+                missingOuterSet.add(outer);
+                missingInnerMap.set(outer, missingForOuter);
             }
         }
     }
 
-    return { missingOuter, missingInner: [...missingInner] };
+    const missingOuter = [...missingOuterSet];
+    const missingInner = [...new Set([...missingInnerMap.values()].flat())];
+
+    return { missingOuter, missingInner };
 }
 
 // New helper type to extract the missing-keys portion from TArgs.

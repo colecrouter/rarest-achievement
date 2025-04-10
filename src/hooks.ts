@@ -1,4 +1,5 @@
 import { i18n } from "$lib/i18n";
+import { Errable } from "$lib/error";
 import { SteamApp } from "$lib/steam/data/SteamApp";
 import { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
 import { SteamFriendsList } from "$lib/steam/data/SteamFriendsList";
@@ -56,5 +57,12 @@ export const transport: Transport = {
     URL: {
         encode: (data) => data instanceof URL && data.toString(),
         decode: (data: string) => new URL(data),
+    },
+    Errable: {
+        encode: (data) => data instanceof Errable && { data: data.data, error: data.error },
+        decode: (data: { data: unknown; error: Error | null }) => {
+            const { data: dataValue, error: errorValue } = data;
+            return new Errable(dataValue, errorValue);
+        },
     },
 };

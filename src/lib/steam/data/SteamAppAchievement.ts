@@ -1,5 +1,7 @@
+import { dev } from "$app/environment";
 import type { GetGlobalAchievementPercentagesForAppResponse } from "$lib/server/api/steampowered/globalAchevement";
 import type { GetSchemaForGameResponse } from "$lib/server/api/steampowered/schemaForGame";
+import { replaceCdnUrl } from "$lib/steam/data/dev";
 import type { SteamApp } from "$lib/steam/data/SteamApp";
 
 export type SteamAchievementRawMeta = NonNullable<
@@ -40,7 +42,8 @@ export class SteamAppAchievement {
     }
 
     get icon() {
-        return this.#meta.icon;
+        // return this.#meta.icon;
+        return dev ? replaceCdnUrl(this.#meta.icon) : this.#meta.icon;
     }
 
     get description() {

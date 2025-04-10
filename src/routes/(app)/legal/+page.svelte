@@ -3,6 +3,7 @@
     import { page } from "$app/state";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import { ArrowLeft, Shield } from "lucide-svelte";
+    import Breadcrumbs from "../Breadcrumbs.svelte";
 
     let activeTab = $derived.by(() => {
         switch (page.url.searchParams.get("tab")) {
@@ -12,11 +13,15 @@
                 return "privacy";
         }
     });
+
+    const { breadcrumbs } = $props();
 </script>
 
 <!-- Main content translated from React (skipping header and footer) -->
 <main class="container mx-auto px-4 py-8">
     <!-- Breadcrumb Navigation -->
+    <Breadcrumbs path={breadcrumbs} />
+
     <div class="mb-6 flex items-center gap-2 text-sm text-gray-400">
         <a href="/" class="flex items-center hover:text-gray-100">
             <ArrowLeft class="mr-1 h-4 w-4" />

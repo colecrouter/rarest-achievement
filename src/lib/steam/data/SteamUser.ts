@@ -1,4 +1,6 @@
+import { dev } from "$app/environment";
 import type { GetPlayerSummariesResponse } from "$lib/server/api/steampowered/playerSummary";
+import { replaceCdnUrl } from "$lib/steam/data/dev";
 
 export type SteamUserRaw = GetPlayerSummariesResponse["response"]["players"][number];
 
@@ -24,7 +26,7 @@ export class SteamUser {
     }
 
     get avatar() {
-        return this.#player.avatarfull;
+        return dev ? replaceCdnUrl(this.#player.avatarfull) : this.#player.avatarfull;
     }
 
     get profileUrl() {
@@ -40,7 +42,7 @@ export class SteamUser {
     }
 
     get private() {
-        return "timecreated" in this.#player;
+        return !("timecreated" in this.#player);
     }
 
     get realName() {

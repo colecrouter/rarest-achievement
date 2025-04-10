@@ -4,7 +4,7 @@ import type { Language } from "$lib/server/api/lang";
 import type { SteamAuthenticatedAPIClient } from "$lib/server/api/steampowered/client";
 import type { OwnedGame } from "$lib/server/api/steampowered/owned";
 import type { SteamStoreAPIClient } from "$lib/server/api/store/client";
-import { Errable } from "$lib/server/error";
+import { Errable } from "$lib/error";
 import type { SteamAppRaw } from "$lib/steam/data/SteamApp";
 import type { SteamAchievementRawGlobalStats, SteamAchievementRawMeta } from "$lib/steam/data/SteamAppAchievement";
 import type { SteamFriendsListRaw } from "$lib/steam/data/SteamFriendsList";
@@ -31,7 +31,7 @@ export class SteamAPIRepository {
         return new SteamAPIRepository(locals.steamStoreClient, locals.steamClient);
     }
 
-    getApps = async (app_id: number[], lang: Language = "english") => {
+    async getApps(app_id: number[], lang: Language = "english") {
         const data = new Map<number, SteamAppRaw | null>();
         let error: Error | null = null;
 
@@ -56,9 +56,9 @@ export class SteamAPIRepository {
         }
 
         return new Errable(data, error);
-    };
+    }
 
-    getUsers = async (user_id: string[]) => {
+    async getUsers(user_id: string[]) {
         let result = new Map<string, SteamUserRaw>();
         let error: Error | null = null;
 
@@ -70,9 +70,9 @@ export class SteamAPIRepository {
         }
 
         return new Errable(result, error);
-    };
+    }
 
-    getOwnedGames = async (user_id: string[]) => {
+    async getOwnedGames(user_id: string[]) {
         const data = new Map<string, OwnedGame<false>[]>();
         let error: Error | null = null;
 
@@ -83,8 +83,10 @@ export class SteamAPIRepository {
                         steamid: steamId,
                         include_played_free_games: true,
                     });
-                    if (res?.response.games) {
+                    if (res && "games" in res.response && res.response.games) {
                         data.set(steamId, res.response.games);
+                    } else {
+                        data.set(steamId, []);
                     }
                 }),
             );
@@ -93,9 +95,9 @@ export class SteamAPIRepository {
         }
 
         return new Errable(data, error);
-    };
+    }
 
-    getUserAchievements = async (game_id: number[], user_id: string[]) => {
+    async getUserAchievements(game_id: number[], user_id: string[]) {
         const data = new Map<number, Map<string, Map<string, SteamUserAchievementRawStats>>>();
         let error: Error | null = null;
 
@@ -136,9 +138,9 @@ export class SteamAPIRepository {
         }
 
         return new Errable(data, error);
-    };
+    }
 
-    getGameAchievements = async (game_id: number[], lang: Language = "english") => {
+    async getGameAchievements(game_id: number[], lang: Language = "english") {
         const data = new Map<
             number,
             Map<string, { meta: SteamAchievementRawMeta; global: SteamAchievementRawGlobalStats }>
@@ -186,9 +188,9 @@ export class SteamAPIRepository {
         }
 
         return new Errable(data, error);
-    };
+    }
 
-    getFriends = async (user_id: string[]) => {
+    async getFriends(user_id: string[]) {
         const data = new Map<string, SteamFriendsListRaw>();
         let error: Error | null = null;
 
@@ -209,5 +211,5 @@ export class SteamAPIRepository {
         }
 
         return new Errable(data, error);
-    };
+    }
 }

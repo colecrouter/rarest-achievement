@@ -1,4 +1,6 @@
+import { dev } from "$app/environment";
 import type { AppDetailsData, GetAppDetailsResponse } from "$lib/server/api/store/appdetails";
+import { replaceCdnUrl } from "$lib/steam/data/dev";
 
 export type SteamAppRaw = NonNullable<
     (GetAppDetailsResponse<Array<keyof AppDetailsData>> & { success: true })[number]["data"]
@@ -24,11 +26,11 @@ export class SteamApp {
     }
 
     get icon() {
-        return this.#app.header_image;
+        return dev ? replaceCdnUrl(this.#app.header_image) : this.#app.header_image;
     }
 
     get banner() {
-        return this.#app.background;
+        return dev ? replaceCdnUrl(this.#app.background) : this.#app.background;
     }
 
     get developers() {

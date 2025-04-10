@@ -3,12 +3,15 @@
     import Transition from "$lib/Transition.svelte";
     import { TriangleAlert } from "lucide-svelte";
     import Achievements from "./Achievements.svelte";
+    import Breadcrumbs from "../../Breadcrumbs.svelte";
 
     let { data } = $props();
 </script>
 
 <!-- Main Content -->
 <main class="container mx-auto px-4 py-8">
+    <Breadcrumbs path={data.breadcrumbs} />
+
     {#await data.achievements}
         <Transition>
             <Splash message={data.message} />

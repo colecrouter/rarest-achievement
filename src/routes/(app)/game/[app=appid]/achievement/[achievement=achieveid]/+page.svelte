@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import Breadcrumbs from "../../../../Breadcrumbs.svelte";
     import { SteamUserStatus } from "$lib/steam/data/SteamUser";
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
@@ -35,7 +36,7 @@
         const ctx = statsChart?.getContext("2d");
         if (!ctx) return;
 
-        new Chart(ctx, {
+        const chart = new Chart(ctx, {
             type: "bar",
             data: {
                 labels: rarityChartData.map((data) => data.name),
@@ -94,6 +95,8 @@
                 },
             },
         });
+
+        return () => chart.destroy();
     });
 
     let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "tips">(
@@ -111,17 +114,7 @@
 </script>
 
 <main class="container mx-auto px-4 py-8">
-    <div class="mb-6 flex items-center gap-2 text-sm text-gray-400">
-        <a href="/dashboard" class="flex items-center hover:text-gray-100">
-            Back to Dashboard
-        </a>
-        <span>/</span>
-        <a href={"/game/" + achievement.app.id} class="hover:text-gray-100">
-            {achievement.app.name}
-        </a>
-        <span>/</span>
-        <span class="text-gray-100">{achievement.name}</span>
-    </div>
+    <Breadcrumbs path={data.breadcrumbs} />
 
     <div
         class="mb-8 overflow-hidden rounded-xl border border-gray-700 bg-gray-800"
@@ -498,11 +491,10 @@
                                         </h3>
                                         <p class="mb-6 max-w-md text-gray-400">
                                             Sign in to see which of your friends
-                                            have unlocked this achievement and
-                                            compare your progress.
+                                            have unlocked this achievement.
                                         </p>
                                         <button
-                                            class="bg-amber-500 px-4 py-2 text-gray-900 hover:bg-amber-600"
+                                            class="btn preset-filled-primary-500 px-4 py-2"
                                             >Sign In</button
                                         >
                                     </div>

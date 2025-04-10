@@ -134,7 +134,18 @@ export class SteamCacheDBRepository {
     }
 
     async getOwnedGames(userId: string[]) {
-        const res = await this.#db.select().from(ownedGames).where(inArray(ownedGames.user_id, userId));
+        const chunkSize = 100;
+        const idBatches: string[][] = [];
+        for (let i = 0; i < userId.length; i += chunkSize) {
+            idBatches.push(userId.slice(i, i + chunkSize));
+        }
+
+        const batches = idBatches.map((ids) =>
+            this.#db.select().from(ownedGames).where(inArray(ownedGames.user_id, ids)),
+        );
+        if (!batches[0]) return new Map();
+        const results = await this.#db.batch([batches[0], ...batches.slice(1)]);
+        const res = results.flat(1);
 
         const result = new Map<string, OwnedGame<false>[]>();
         for (const row of res) {

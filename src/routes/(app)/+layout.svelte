@@ -5,7 +5,7 @@
 </script>
 
 <div class="flex min-h-screen flex-col">
-    <Navbar user={data.user} />
+    <Navbar user={data.loggedIn} />
 
     <div class="grow">
         {@render children()}

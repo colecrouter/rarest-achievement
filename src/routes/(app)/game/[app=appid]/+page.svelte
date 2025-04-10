@@ -13,9 +13,10 @@
     import { SteamUserStatus } from "$lib/steam/data/SteamUser";
     import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
+    import Breadcrumbs from "../../Breadcrumbs.svelte";
 
     let { data } = $props();
-    let { app, achievements, friends, user } = $derived(data);
+    let { app, achievements, friends, loggedIn: user } = $derived(data);
 
     let recentUnlocks = $derived(
         !user
@@ -217,7 +218,12 @@
         class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"
     ></div>
     <img src={app.banner} alt={app.name} class="h-full w-full object-cover" />
-    <div class="absolute right-0 -bottom-2 left-0 container mx-auto px-4 py-6">
+    <div class="absolute top-0 right-0 left-0 container pt-8">
+        <!-- Breadcrumb Navigation -->
+        <Breadcrumbs path={data.breadcrumbs} />
+    </div>
+
+    <div class="absolute right-0 -bottom-2 left-0 container mx-auto px-4 pb-6">
         <div class="flex items-end gap-6">
             <div class="relative translate-y-10">
                 <div
@@ -284,19 +290,6 @@
 </div>
 
 <main class="container mx-auto mt-4 px-4 py-8">
-    <!-- Breadcrumb Navigation -->
-    <div class="mb-6 flex items-center gap-2 text-sm text-gray-400">
-        <a
-            href="/dashboard"
-            class="flex items-center gap-1 hover:text-gray-100"
-        >
-            <ArrowLeft class="h-4 w-4" />
-            <span>Back to Dashboard</span>
-        </a>
-        <span>/</span>
-        <span class="text-gray-100">{app.name}</span>
-    </div>
-
     <div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <!-- Achievement Progress -->
         <div class="card p-4 lg:col-span-2">

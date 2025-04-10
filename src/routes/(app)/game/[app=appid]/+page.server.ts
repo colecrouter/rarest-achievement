@@ -1,5 +1,5 @@
 import { EnhancedSteamRepository } from "$lib/server/enhanced/repo";
-import { Errable } from "$lib/server/error";
+import { Errable } from "$lib/error";
 import type { SteamAppAchievement } from "$lib/steam/data/SteamAppAchievement";
 
 export const load = async ({ parent, locals }) => {

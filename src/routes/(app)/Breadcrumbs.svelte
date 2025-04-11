@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Breadcrumb } from "$lib/breadcrumbs/breadcrumbs";
+    import type { Breadcrumb } from "$lib/breadcrumbs";
     import { House } from "lucide-svelte";
     import { ChevronRight } from "lucide-svelte";
 

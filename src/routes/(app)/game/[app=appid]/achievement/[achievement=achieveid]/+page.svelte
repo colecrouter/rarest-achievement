@@ -1,18 +1,23 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import Breadcrumbs from "../../../../Breadcrumbs.svelte";
-    import { SteamUserStatus } from "$lib/steam/data/SteamUser";
+    import IndexError from "$lib/IndexError.svelte";
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    import { SteamUserStatus } from "$lib/steam/data/SteamUser";
     import Chart from "chart.js/auto";
     import { TrophyIcon } from "lucide-svelte";
     import Colors from "tailwindcss/colors";
+    import Breadcrumbs from "../../../../Breadcrumbs.svelte";
+    import { getRarity } from "$lib/rarity";
+    import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
 
     let { data } = $props();
 
     let { achievement, gameAchievements, app, friendsWithAchievement } =
         $derived(data);
+
+    let rarity = $derived(getRarity(achievement.globalPercentage));
 
     let isSignedIn = true;
 
@@ -117,7 +122,7 @@
     <Breadcrumbs path={data.breadcrumbs} />
 
     <div
-        class="mb-8 overflow-hidden rounded-xl border border-gray-700 bg-gray-800"
+        class="text mb-8 overflow-hidden rounded-xl border border-gray-700 bg-gray-800"
     >
         <div
             class="relative h-40 bg-gradient-to-r from-amber-900/30 to-gray-800"
@@ -127,19 +132,19 @@
                 style:background-image={`url("${app.banner}")`}
             ></div>
             <div
-                class="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-amber-500 to-amber-600"
+                class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"
             ></div>
             <div class="relative flex h-full items-center px-6">
                 <div class="flex items-center gap-6">
                     <div class="relative">
                         <div
-                            class="absolute -inset-1 rounded-lg bg-amber-500/20 blur-sm"
+                            class="bg-{rarity}/20 absolute -inset-1 rounded-lg blur-sm"
                         ></div>
                         <div
-                            class="relative rounded-lg border border-amber-500/50 bg-gray-900 p-1"
+                            class="border-{rarity}/50 relative rounded-lg border bg-gray-900 p-1"
                         >
                             <img
-                                src={achievement.icon || "/placeholder.svg"}
+                                src={achievement.icon}
                                 alt={achievement.name}
                                 width="96"
                                 height="96"
@@ -150,12 +155,6 @@
                     <div>
                         <div class="mb-1 flex items-center gap-3">
                             <a href={"/game/" + achievement.app.id}>
-                                <img
-                                    src={app.icon || "/placeholder.svg"}
-                                    alt={achievement.app.name}
-                                    width="64"
-                                    class="rounded-md"
-                                />
                                 <span class="text-gray-300"
                                     >{achievement.app.name}</span
                                 >
@@ -171,12 +170,12 @@
                 </div>
                 <div class="ml-auto flex flex-col items-end">
                     <div
-                        class="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2"
+                        class="border-{rarity}/30 bg-{rarity}/10 mb-2 rounded-lg border px-4 py-2"
                     >
-                        <div class="text-sm font-medium text-amber-500">
-                            Ultra Rare
+                        <div class="text-sm font-medium text-{rarity}">
+                            {rarity}
                         </div>
-                        <div class="text-2xl font-bold text-amber-400">
+                        <div class="text-2xl font-bold text-{rarity}-dark">
                             {achievement.globalPercentage}%
                         </div>
                         <div class="text-xs text-gray-400">of players</div>
@@ -317,7 +316,7 @@
                             class="rounded-lg border border-gray-700 bg-gray-800 p-4"
                         >
                             <h2 class="font-bold">
-                                Other Achievements in {achievement.app}
+                                Other Achievements in {achievement.app.name}
                             </h2>
                             <p class="text-sm text-gray-400">
                                 Your progress on all achievements in this game
@@ -329,14 +328,16 @@
                                     {@const isCurrent =
                                         currentAchievement.id ===
                                         achievement.id}
+                                    {@const color = getRarity(
+                                        currentAchievement.globalPercentage,
+                                    )}
                                     <div
                                         class="flex items-start gap-3 rounded-lg p-3 {isCurrent
                                             ? 'border border-amber-500/30 bg-amber-500/10'
                                             : 'border border-gray-700 bg-gray-900/50 hover:bg-gray-700/30'}"
                                     >
                                         <img
-                                            src={currentAchievement.icon ||
-                                                "/placeholder.svg"}
+                                            src={currentAchievement.icon}
                                             alt={currentAchievement.name}
                                             width="48"
                                             height="48"
@@ -356,13 +357,7 @@
                                                     {currentAchievement.name}
                                                 </h3>
                                                 <div
-                                                    class="rounded-full px-2 py-0.5 text-xs font-medium {currentAchievement.globalPercentage <
-                                                    5
-                                                        ? 'bg-amber-500/10 text-amber-500'
-                                                        : currentAchievement.globalPercentage <
-                                                            10
-                                                          ? 'bg-orange-500/10 text-orange-500'
-                                                          : 'bg-blue-500/10 text-blue-500'}"
+                                                    class="rounded-full px-2 py-0.5 text-xs font-medium bg-{color}/20 text-{color}-light"
                                                 >
                                                     {currentAchievement.globalPercentage}%
                                                 </div>
@@ -394,113 +389,159 @@
             {:else if activeTab === "friends"}
                 <Transition>
                     <section class="container mt-6">
-                        {#await friendsWithAchievement then { data: friends }}
-                            {#if friends !== null}
-                                <div class="card p-4">
-                                    <div
-                                        class="flex items-center justify-between"
-                                    >
-                                        <div>
-                                            <h2 class="font-bold">
-                                                Friends Who Unlocked This
-                                                Achievement
-                                            </h2>
-                                            <p class="text-sm text-gray-400">
-                                                {friends?.length} of your friends
-                                                have unlocked "{achievement.name}"
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4 space-y-4">
-                                        {#each friends as f}
-                                            {@const { friend, achievement } = f}
+                        <div class="card min-h-[300px] p-4">
+                            <TransitionWrapper>
+                                {#await friendsWithAchievement}
+                                    <div class="flex w-full flex-col gap-2">
+                                        {#each new Array(4)}
                                             <div
-                                                class="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900/50 p-3"
+                                                class="flex w-full items-center gap-2"
                                             >
                                                 <div
-                                                    class="flex items-center gap-3"
+                                                    class="aspect-square h-16 animate-pulse rounded-full bg-gray-600"
+                                                ></div>
+                                                <div
+                                                    class="flex w-full grow flex-col gap-2"
                                                 >
-                                                    <div class="relative">
-                                                        <img
-                                                            src={friend.avatar ||
-                                                                "/placeholder.svg"}
-                                                            alt={friend.displayName}
-                                                            width="48"
-                                                            height="48"
-                                                            class="rounded-full border border-gray-700"
-                                                        />
+                                                    <div
+                                                        class="h-4 animate-pulse rounded bg-gray-600"
+                                                    ></div>
+                                                    <div
+                                                        class="grid grid-cols-2 gap-2"
+                                                    >
                                                         <div
-                                                            class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status ===
-                                                            SteamUserStatus.Online
-                                                                ? 'bg-green-500'
-                                                                : 'bg-gray-500'}"
+                                                            class="h-4 animate-pulse rounded bg-gray-600"
+                                                        ></div>
+                                                        <div
+                                                            class="h-4 animate-pulse rounded bg-gray-600"
                                                         ></div>
                                                     </div>
-                                                    <div>
-                                                        <div
-                                                            class="font-medium"
-                                                        >
-                                                            {friend.displayName}
-                                                        </div>
-                                                        <div
-                                                            class="text-xs text-gray-400"
-                                                        >
-                                                            Unlocked {achievement?.unlocked?.toLocaleDateString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    class="flex items-center gap-2"
-                                                >
-                                                    <button
-                                                        class="text-sm text-gray-400 hover:text-gray-100"
-                                                        >View Profile</button
-                                                    >
-                                                    <button
-                                                        class="h-8 w-8 border border-gray-700 bg-gray-800 hover:bg-gray-700"
-                                                    ></button>
                                                 </div>
                                             </div>
                                         {/each}
-                                        {#if friends.length === 0}
+                                    </div>
+                                {:then { data: friends, error }}
+                                    <Transition>
+                                        {#if error}
+                                            <IndexError />
+                                        {/if}
+
+                                        {#if friends !== null}
                                             <div
-                                                class="mb-4 flex flex-col items-center justify-center gap-2"
+                                                class="flex items-center justify-between"
                                             >
-                                                <TrophyIcon
-                                                    class="h-32 w-32 text-gray-400"
-                                                />
-                                                <div
-                                                    class="text-sm text-gray-400"
-                                                >
-                                                    No friends have unlocked
-                                                    this achievement yet.
+                                                <div>
+                                                    <h2 class="font-bold">
+                                                        Friends Who Unlocked
+                                                        This Achievement
+                                                    </h2>
+                                                    <p
+                                                        class="text-sm text-gray-400"
+                                                    >
+                                                        {friends?.length} of your
+                                                        friends have unlocked "{achievement.name}"
+                                                    </p>
                                                 </div>
                                             </div>
+                                            <div class="mt-4 space-y-4">
+                                                {#each friends as f}
+                                                    {@const {
+                                                        friend,
+                                                        achievement,
+                                                    } = f}
+                                                    <div
+                                                        class="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900/50 p-3"
+                                                    >
+                                                        <div
+                                                            class="flex items-center gap-3"
+                                                        >
+                                                            <div
+                                                                class="relative"
+                                                            >
+                                                                <img
+                                                                    src={friend.avatar ||
+                                                                        "/placeholder.svg"}
+                                                                    alt={friend.displayName}
+                                                                    width="48"
+                                                                    height="48"
+                                                                    class="rounded-full border border-gray-700"
+                                                                />
+                                                                <div
+                                                                    class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status ===
+                                                                    SteamUserStatus.Online
+                                                                        ? 'bg-green-500'
+                                                                        : 'bg-gray-500'}"
+                                                                ></div>
+                                                            </div>
+                                                            <div>
+                                                                <div
+                                                                    class="font-medium"
+                                                                >
+                                                                    {friend.displayName}
+                                                                </div>
+                                                                <div
+                                                                    class="text-xs text-gray-400"
+                                                                >
+                                                                    Unlocked {achievement?.unlocked?.toLocaleDateString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div
+                                                            class="flex items-center gap-2"
+                                                        >
+                                                            <button
+                                                                class="text-sm text-gray-400 hover:text-gray-100"
+                                                                >View Profile</button
+                                                            >
+                                                            <button
+                                                                class="h-8 w-8 border border-gray-700 bg-gray-800 hover:bg-gray-700"
+                                                            ></button>
+                                                        </div>
+                                                    </div>
+                                                {/each}
+                                                {#if friends.length === 0}
+                                                    <div
+                                                        class="mb-4 flex flex-col items-center justify-center gap-2"
+                                                    >
+                                                        <TrophyIcon
+                                                            class="h-32 w-32 text-gray-400"
+                                                        />
+                                                        <div
+                                                            class="text-sm text-gray-400"
+                                                        >
+                                                            No friends have
+                                                            unlocked this
+                                                            achievement yet.
+                                                        </div>
+                                                    </div>
+                                                {/if}
+                                            </div>
+                                        {:else}
+                                            <div
+                                                class="flex flex-col items-center justify-center py-12"
+                                            >
+                                                <h3
+                                                    class="mb-2 text-xl font-bold"
+                                                >
+                                                    Sign in to see friends
+                                                </h3>
+                                                <p
+                                                    class="mb-6 max-w-md text-gray-400"
+                                                >
+                                                    Sign in to see which of your
+                                                    friends have unlocked this
+                                                    achievement.
+                                                </p>
+                                                <button
+                                                    class="btn preset-filled-primary-500 px-4 py-2"
+                                                    >Sign In</button
+                                                >
+                                            </div>
                                         {/if}
-                                    </div>
-                                </div>
-                            {:else}
-                                <div
-                                    class="rounded-lg border border-gray-700 bg-gray-800 p-4 text-center"
-                                >
-                                    <div
-                                        class="flex flex-col items-center justify-center py-12"
-                                    >
-                                        <h3 class="mb-2 text-xl font-bold">
-                                            Sign in to see friends
-                                        </h3>
-                                        <p class="mb-6 max-w-md text-gray-400">
-                                            Sign in to see which of your friends
-                                            have unlocked this achievement.
-                                        </p>
-                                        <button
-                                            class="btn preset-filled-primary-500 px-4 py-2"
-                                            >Sign In</button
-                                        >
-                                    </div>
-                                </div>
-                            {/if}
-                        {/await}
+                                    </Transition>
+                                {/await}
+                            </TransitionWrapper>
+                        </div>
                     </section>
                 </Transition>
             {:else if activeTab === "tips"}

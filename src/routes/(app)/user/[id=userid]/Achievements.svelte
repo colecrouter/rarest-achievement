@@ -175,8 +175,7 @@
                                                 class="flex items-center gap-3"
                                             >
                                                 <img
-                                                    src={achievement.icon ||
-                                                        "/placeholder.svg"}
+                                                    src={achievement.icon}
                                                     alt={achievement.name}
                                                     width="32"
                                                     height="32"

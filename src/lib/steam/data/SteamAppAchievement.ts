@@ -41,9 +41,18 @@ export class SteamAppAchievement {
         return this.#meta.displayName;
     }
 
-    get icon() {
+    get iconUnlocked() {
         // return this.#meta.icon;
         return dev ? replaceCdnUrl(this.#meta.icon) : this.#meta.icon;
+    }
+
+    get iconLocked() {
+        // return this.#meta.iconGray;
+        return dev ? replaceCdnUrl(this.#meta.icongray) : this.#meta.icongray;
+    }
+
+    get icon() {
+        return this.iconUnlocked;
     }
 
     get description() {

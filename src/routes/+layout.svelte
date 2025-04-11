@@ -9,7 +9,7 @@
 
 <ParaglideJS {i18n}>
     <TransitionWrapper>
-        {#key data.paths[0]}
+        {#key data.paths.join("/")}
             <Transition>
                 {@render children()}
             </Transition>

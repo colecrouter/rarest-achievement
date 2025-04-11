@@ -3,7 +3,7 @@ import { Errable } from "$lib/error";
 
 export const load = async ({ parent, url }) => {
     const data = await parent();
-    const { app, user, achievement } = data;
+    const { app, loggedIn, achievement } = data;
 
     const repo = new EnhancedSteamRepository();
 
@@ -11,7 +11,7 @@ export const load = async ({ parent, url }) => {
     const gameAchievements = game.data.get(app.id);
 
     const friendsWithAchievement = (async () => {
-        if (!user) return new Errable(null, null);
+        if (!loggedIn) return new Errable(null, null);
         if (url.searchParams.get("tab") !== "friends") return new Errable(null, null);
 
         const oneMonthAgo = new Date();
@@ -20,7 +20,7 @@ export const load = async ({ parent, url }) => {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
         // Fetch friends who own the game
-        const { data: friends, error: err1 } = await repo.getFriends([user]);
+        const { data: friends, error: err1 } = await repo.getFriends([loggedIn]);
         const filteredFriends = [...friends.values()]
             .flat()
             .filter((f) => {

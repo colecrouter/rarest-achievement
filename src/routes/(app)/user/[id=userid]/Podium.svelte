@@ -135,7 +135,7 @@
                 transition:fade={{ duration: 300, delay: 100 * place + 400 }}
             >
                 <img
-                    src={achievement.icon || "/placeholder.svg"}
+                    src={achievement.icon}
                     alt={achievement.name}
                     width={config.iconSize.width}
                     height={config.iconSize.height}

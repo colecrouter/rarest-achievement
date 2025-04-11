@@ -14,6 +14,7 @@
     import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
+    import type { Rarity } from "$lib/rarity";
 
     let { data } = $props();
     let { app, achievements, friends, loggedIn: user } = $derived(data);
@@ -94,6 +95,18 @@
             return group ? group[1].length : 0;
         });
 
+        const style = getComputedStyle(document.body);
+        const bgVars = [
+            "--color-ultra-rare",
+            "--color-rare",
+            "--color-uncommon",
+            "--color-common",
+            "--color-locked",
+        ];
+        const bgPrimary = bgVars.map((key) => style.getPropertyValue(key));
+        const bgSecondary = bgVars.map((key) =>
+            style.getPropertyValue(`${key}-dark`),
+        );
         new Chart(donutchart, {
             type: "doughnut",
             data: {
@@ -102,13 +115,7 @@
                     {
                         label: "Achievements",
                         data: achievementCounts,
-                        backgroundColor: [
-                            colors.amber[500],
-                            colors.gray[400],
-                            colors.gray[500],
-                            colors.slate[600],
-                            colors.gray[700],
-                        ],
+                        backgroundColor: bgPrimary,
                         borderWidth: 4,
                         borderColor: colors.gray[800],
                         borderRadius: 4,
@@ -116,13 +123,7 @@
                     {
                         label: "Unlocked Achievements",
                         data: unlockedAchievementCounts,
-                        backgroundColor: [
-                            colors.amber[500],
-                            colors.gray[400],
-                            colors.gray[500],
-                            colors.slate[600],
-                            colors.gray[700],
-                        ],
+                        backgroundColor: bgSecondary,
                         borderWidth: 4,
                         borderColor: colors.gray[800],
                         borderRadius: 4,
@@ -174,46 +175,33 @@
                         .toLowerCase()
                         .includes(searchQuery.toLowerCase()) &&
                     !achievement.description
-                        .toLowerCase()
+                        ?.toLowerCase()
                         .includes(searchQuery.toLowerCase())
                 )
                     return false;
                 return true;
             })
             .sort((a, b) => {
-                if (sortOrder === "name")
-                    return sortDirection === "asc"
-                        ? a.name.localeCompare(b.name)
-                        : b.name.localeCompare(a.name);
-
                 if (sortOrder === "rarity")
                     return sortDirection === "asc"
                         ? a.globalPercentage - b.globalPercentage
                         : b.globalPercentage - a.globalPercentage;
-                if (sortOrder === "date") {
-                    // if (a.status === "locked" && b.status === "unlocked")
-                    //     return 1;
-                    // if (a.status === "unlocked" && b.status === "locked")
-                    //     return -1;
-                    // if (a.status === "locked" && b.status === "locked")
-                    //     return 0;
-                    // const dateA = a.unlocked
-                    //     ? new Date(a.unlocked).getTime()
-                    //     : 0;
-                    // const dateB = b.unlocked
-                    //     ? new Date(b.unlocked).getTime()
-                    //     : 0;
-                    // return sortDirection === "asc"
-                    //     ? dateA - dateB
-                    //     : dateB - dateA;
-                }
                 return 0;
             }),
     );
+
+    const barColor = (ratio: number): Rarity => {
+        if (ratio >= 1) return "ultra-rare";
+        if (ratio >= 0.75) return "rare";
+        if (ratio >= 0.5) return "uncommon";
+        return "common";
+    };
+
+    let progressColor = $derived(barColor(unlockedCount / totalCount));
 </script>
 
 <!-- Game Banner -->
-<div class="relative h-[300px]">
+<div class="relative h-[200px]">
     <div
         class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"
     ></div>
@@ -301,9 +289,7 @@
                 <Progress
                     value={unlockedCount}
                     max={totalCount}
-                    meterBg={unlockedCount === totalCount
-                        ? "bg-amber-500"
-                        : "bg-blue-500"}
+                    meterBg="bg-{progressColor}"
                 >
                     {((unlockedCount / totalCount) * 100).toFixed(1)}%
                 </Progress>
@@ -320,7 +306,7 @@
                             {#each recentUnlocks as achievement}
                                 <a
                                     href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
-                                    class="flex items-start gap-3 rounded-lg border border-gray-700 bg-gray-900/50 p-2 hover:bg-gray-700/30"
+                                    class="card flex items-center gap-3 !bg-gray-900/50 p-2 hover:bg-gray-700/30"
                                 >
                                     <img
                                         src={achievement.icon ||
@@ -461,7 +447,7 @@
                         type="search"
                         placeholder="Search achievements..."
                         bind:value={searchQuery}
-                        class="w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
+                        class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
                     />
                 </div>
             </div>
@@ -583,6 +569,7 @@
                                     .length /
                                     totalCount) *
                                 100}
+                            {@const color = barColor(completion / 100)}
                             <div class="card p-4">
                                 <div class="mb-4 flex items-center gap-3">
                                     <div class="relative">
@@ -639,9 +626,7 @@
                                     <Progress
                                         value={completion}
                                         max={100}
-                                        meterBg={completion === 100
-                                            ? "bg-amber-500"
-                                            : "bg-blue-500"}
+                                        meterBg={`bg-${color}`}
                                     ></Progress>
                                 </div>
                                 <div

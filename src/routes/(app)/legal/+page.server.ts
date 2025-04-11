@@ -1,4 +1,4 @@
-import type { Breadcrumb } from "$lib/breadcrumbs/breadcrumbs";
+import type { Breadcrumb } from "$lib/breadcrumbs";
 
 export const load = async () => {
     const breadcrumbs = [

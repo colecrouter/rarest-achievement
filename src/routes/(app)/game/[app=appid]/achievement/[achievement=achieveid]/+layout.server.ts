@@ -1,4 +1,4 @@
-import type { Breadcrumb } from "$lib/breadcrumbs/breadcrumbs";
+import type { Breadcrumb } from "$lib/breadcrumbs";
 import { EnhancedSteamRepository } from "$lib/server/enhanced/repo";
 import { error } from "@sveltejs/kit";
 

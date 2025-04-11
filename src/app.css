@@ -1,13 +1,32 @@
 @import "tailwindcss";
+@import "@skeletonlabs/skeleton";
+@import "@skeletonlabs/skeleton/optional/presets";
+@import "./theme";
+
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
-@import "@skeletonlabs/skeleton";
-@import "@skeletonlabs/skeleton/optional/presets";
-
-@import "./theme";
-
 @source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+
+@source inline("{bg,text,border,to,from}-{ultra-rare,rare,uncommon,common,locked}{-dark,-light,}{/10,/20,/30,/50,}");
+
+@theme {
+    --color-ultra-rare: var(--color-amber-500);
+    --color-ultra-rare-dark: var(--color-amber-600);
+    --color-ultra-rare-light: var(--color-amber-400);
+    --color-rare: var(--color-gray-400);
+    --color-rare-dark: var(--color-gray-500);
+    --color-rare-light: var(--color-gray-300);
+    --color-uncommon: var(--color-orange-800);
+    --color-uncommon-dark: var(--color-orange-900);
+    --color-uncommon-light: var(--color-orange-700);
+    --color-common: var(--color-slate-500);
+    --color-common-dark: var(--color-slate-600);
+    --color-common-light: var(--color-slate-400);
+    --color-locked: var(--color-gray-700);
+    --color-locked-dark: var(--color-gray-900);
+    --color-locked-light: var(--color-gray-600);
+}
 
 html {
     @apply bg-gradient-to-b from-gray-900 to-gray-950;

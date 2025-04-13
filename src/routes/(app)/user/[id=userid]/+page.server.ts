@@ -19,6 +19,12 @@ export const load = async ({ params, parent }) => {
         // Batch fetch achievements for all valid games and the user in one call
         const { data: allAchievements, error: err3 } = await repo.getUserAchievements(gameApps, [u], "english");
 
+        // Log all game ids, where an achievement is present
+        const gameIdsWithAchievements = [...allAchievements.keys()];
+        const gameIdsWithAchievementsSet = new Set(gameIdsWithAchievements);
+        const gameIdsWithAchievementsFiltered = gameIds.filter((id) => gameIdsWithAchievementsSet.has(id));
+        console.log("Game IDs with achievements:", gameIdsWithAchievementsFiltered.slice(-20));
+
         // Flatten the achievements map to get a list of all achievements
         const allGames = [...allAchievements.values()];
         const allGamesForUser = allGames.map((m) => m.get(u.id)).filter((g) => !!g);

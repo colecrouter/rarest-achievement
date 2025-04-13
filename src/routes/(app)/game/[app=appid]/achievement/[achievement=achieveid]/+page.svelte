@@ -121,22 +121,24 @@
 <main class="container mx-auto px-4 py-8">
     <Breadcrumbs path={data.breadcrumbs} />
 
-    <div
-        class="text mb-8 overflow-hidden rounded-xl border border-gray-700 bg-gray-800"
-    >
+    <div class="text mb-8 rounded-xl border border-gray-700 bg-gray-800">
         <div
-            class="relative h-40 bg-gradient-to-r from-amber-900/30 to-gray-800"
+            class="relative min-h-40 rounded-xl bg-gradient-to-r from-amber-900/30 to-gray-800"
         >
             <div
-                class="absolute inset-0 bg-cover bg-center opacity-50"
+                class="absolute inset-0 rounded-xl bg-cover bg-center opacity-50"
                 style:background-image={`url("${app.banner}")`}
             ></div>
+            <div class="absolute inset-0 overflow-hidden rounded-xl">
+                <div
+                    class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"
+                ></div>
+            </div>
             <div
-                class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"
-            ></div>
-            <div class="relative flex h-full items-center px-6">
-                <div class="flex items-center gap-6">
-                    <div class="relative">
+                class="relative flex flex-col items-center px-6 py-4 md:flex-row"
+            >
+                <div class="mb-2 flex items-center gap-6">
+                    <div class="relative min-w-[96px]">
                         <div
                             class="bg-{rarity}/20 absolute -inset-1 rounded-lg blur-sm"
                         ></div>
@@ -168,9 +170,12 @@
                         </p>
                     </div>
                 </div>
-                <div class="ml-auto flex flex-col items-end">
+                <!-- Tinted card with "ultra-rare 1.1% of players" -->
+                <div
+                    class="flex w-full flex-col items-center md:ml-auto md:items-end"
+                >
                     <div
-                        class="border-{rarity}/30 bg-{rarity}/10 mb-2 rounded-lg border px-4 py-2"
+                        class="w-full text-center md:w-auto md:text-left border-{rarity}/30 bg-{rarity}/10 mb-2 rounded-lg border px-4 py-2"
                     >
                         <div class="text-sm font-medium text-{rarity}">
                             {rarity}
@@ -582,7 +587,7 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {#each [...(gameAchievements?.values() ?? [])].slice(1, 5) as achievement}
                 <div
-                    class="overflow-hidden border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
+                    class="border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
                 >
                     <div class="flex items-start gap-3 p-4">
                         <div class="relative flex-shrink-0">
@@ -594,7 +599,7 @@
                                 class="rounded-md border border-gray-700 bg-gray-900"
                             />
                             <div
-                                class="absolute -right-1 -bottom-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-xs font-bold text-gray-900"
+                                class=" rounded-full bg-amber-500 px-1.5 py-0.5 text-xs font-bold text-gray-900"
                             >
                                 {achievement.globalPercentage}%
                             </div>

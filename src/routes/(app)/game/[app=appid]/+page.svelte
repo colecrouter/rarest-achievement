@@ -201,7 +201,7 @@
 </script>
 
 <!-- Game Banner -->
-<div class="relative h-[200px]">
+<div class="relative flex h-[200px] flex-col justify-end">
     <div
         class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"
     ></div>
@@ -210,69 +210,70 @@
         <!-- Breadcrumb Navigation -->
         <Breadcrumbs path={data.breadcrumbs} />
     </div>
+</div>
 
-    <div class="absolute right-0 -bottom-2 left-0 container mx-auto px-4 pb-6">
-        <div class="flex items-end gap-6">
-            <div class="relative translate-y-10">
-                <div
-                    class="absolute -inset-2 rounded-xl bg-gray-900/50 blur-sm"
-                ></div>
-                <div
-                    class="relative rounded-xl border border-gray-700 bg-gray-800 p-2"
+<!-- Game Header -->
+<div
+    class="container mx-auto -mb-[160px] -translate-y-[160px] px-4 pt-8 pb-6 md:pt-0"
+>
+    <div class="flex translate-y-0 flex-wrap items-end gap-6 md:translate-y-10">
+        <div>
+            <div class="rounded-xl bg-gray-900/50 blur-sm"></div>
+            <div class="rounded-xl border border-gray-700 bg-gray-800 p-2">
+                <img
+                    src={app.icon}
+                    alt={app.name}
+                    width="256"
+                    class="rounded-lg"
+                />
+            </div>
+        </div>
+        <div class="flex h-full h-full flex-col items-start">
+            <h1 class="mb-2 text-4xl font-bold drop-shadow-md">
+                {app.name}
+            </h1>
+            <div class="items-center gap-4 text-sm text-gray-300">
+                <div class="flex items-center gap-1">
+                    <GamepadIcon class="h-4 w-4" />
+                    <span>
+                        {#each app.developers as developer, index}
+                            {index > 0 ? ", " : ""}
+                            {developer}
+                        {/each}
+                    </span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <Calendar class="h-4 w-4" />
+                    <span
+                        >{app.releaseDate?.toLocaleDateString() ??
+                            "Unreleased"}</span
+                    >
+                </div>
+                {#if isSignedIn}
+                    <!-- <div class="flex items-center gap-1">
+                            <Clock class="h-4 w-4" />
+                            <span>{app.playtime} hours played</span>
+                        </div> -->
+                {/if}
+            </div>
+        </div>
+        <div class="flex grow flex-col justify-end gap-2 md:flex-row">
+            <a href="steam://run/{app.id}">
+                <button
+                    class="btn preset-filled-primary-500 group flex w-full md:w-auto"
                 >
-                    <img
-                        src={app.icon}
-                        alt={app.name}
-                        width="256"
-                        class="rounded-lg"
-                    />
-                </div>
-            </div>
-            <div class="flex-1">
-                <h1 class="mb-2 text-4xl font-bold drop-shadow-md">
-                    {app.name}
-                </h1>
-                <div class="flex items-center gap-4 text-sm text-gray-300">
-                    <div class="flex items-center gap-1">
-                        <GamepadIcon class="h-4 w-4" />
-                        <span>
-                            {#each app.developers as developer, index}
-                                {index > 0 ? ", " : ""}
-                                {developer}
-                            {/each}
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <Calendar class="h-4 w-4" />
-                        <span
-                            >{app.releaseDate?.toLocaleDateString() ??
-                                "Unreleased"}</span
-                        >
-                    </div>
-                    {#if isSignedIn}
-                        <!-- <div class="flex items-center gap-1">
-                                <Clock class="h-4 w-4" />
-                                <span>{app.playtime} hours played</span>
-                            </div> -->
-                    {/if}
-                </div>
-            </div>
-            <div class="flex flex-col gap-2 md:flex-row">
-                <a href="steam://run/{app.id}">
-                    <button class="btn preset-filled-primary-500 group flex">
-                        <GamepadIcon
-                            class="transition-all group-hover:rotate-12"
-                        />
-                        Play on Steam
-                    </button>
-                </a>
-                <a href="https://steamdb.info/app/{app.id}/" target="_blank">
-                    <button class="btn preset-outlined-surface-500 group flex">
-                        <Server class="h-4 w-4" />
-                        <span>View on SteamDB</span>
-                    </button>
-                </a>
-            </div>
+                    <GamepadIcon class="transition-all group-hover:rotate-12" />
+                    Play on Steam
+                </button>
+            </a>
+            <a href="https://steamdb.info/app/{app.id}/" target="_blank">
+                <button
+                    class="btn preset-outlined-surface-500 group flex w-full md:w-auto"
+                >
+                    <Server class="h-4 w-4" />
+                    <span>View on SteamDB</span>
+                </button>
+            </a>
         </div>
     </div>
 </div>

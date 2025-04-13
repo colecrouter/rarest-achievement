@@ -96,8 +96,8 @@
                         </div>
                         <h3 class="mb-2 font-bold">Achievement Tracking</h3>
                         <p class="mb-4 text-center text-sm text-gray-300">
-                            Automatically sync and track achievements across
-                            multiple gaming platforms.
+                            Automatically sync and update achievements across
+                            Steam.
                         </p>
                     </div>
                     <p class="text-sm text-gray-300">

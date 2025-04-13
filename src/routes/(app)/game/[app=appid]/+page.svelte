@@ -1,7 +1,10 @@
 <script lang="ts">
+    import { getRarity, type Rarity } from "$lib/rarity";
+    import { SteamUserStatus } from "$lib/steam/data/SteamUser";
+    import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
+    import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
     import {
-        ArrowLeft,
         Calendar,
         GamepadIcon,
         Search,
@@ -9,12 +12,8 @@
         Trophy,
     } from "lucide-svelte";
     import colors from "tailwindcss/colors";
-    import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
-    import { SteamUserStatus } from "$lib/steam/data/SteamUser";
-    import { SteamUserAchievement } from "$lib/steam/data/SteamUserAchievement";
-    import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
-    import type { Rarity } from "$lib/rarity";
+    import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
 
     let { data } = $props();
     let { app, achievements, friends, loggedIn: user } = $derived(data);
@@ -305,6 +304,9 @@
                     <div class="space-y-3">
                         {#if recentUnlocks}
                             {#each recentUnlocks as achievement}
+                                {@const rarity = getRarity(
+                                    achievement.globalPercentage,
+                                )}
                                 <a
                                     href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
                                     class="card flex items-center gap-3 !bg-gray-900/50 p-2 hover:bg-gray-700/30"
@@ -327,7 +329,7 @@
                                                 {achievement.name}
                                             </h4>
                                             <div
-                                                class="rounded-full bg-amber-500 px-1.5 py-0.5 text-xs font-medium text-gray-900"
+                                                class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-medium text-gray-950"
                                             >
                                                 {achievement.globalPercentage}%
                                             </div>
@@ -361,11 +363,18 @@
                                     Sign in to view your recent unlocks and
                                     progress.
                                 </p>
-                                <a
-                                    href="/login"
-                                    class="mt-4 inline-block rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-amber-400"
-                                    >Sign In</a
-                                >
+                                <form action="/?/login" method="POST">
+                                    <input
+                                        type="hidden"
+                                        name="redirect"
+                                        value={location.pathname}
+                                    />
+                                    <button
+                                        class="btn preset-filled-primary-500 mt-4 inline-block rounded-lg"
+                                    >
+                                        Sign In
+                                    </button>
+                                </form>
                             </div>
                         {/if}
                     </div>

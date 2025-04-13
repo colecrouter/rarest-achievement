@@ -12,7 +12,7 @@
             <div
                 class="flex flex-wrap justify-center gap-6 text-sm text-gray-400"
             >
-                <a href="/acout" class="hover:text-gray-100">About</a>
+                <a href="/about" class="hover:text-gray-100">About</a>
                 <a href="/legal#support" class="hover:text-gray-100">Support</a>
                 <a href="/legal" class="hover:text-gray-100">Privacy</a>
                 <a href="/legal?tab=terms" class="hover:text-gray-100">Terms</a>

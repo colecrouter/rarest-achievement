@@ -257,7 +257,7 @@
                     {/if}
                 </div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-col gap-2 md:flex-row">
                 <a href="steam://run/{app.id}">
                     <button class="btn preset-filled-primary-500 group flex">
                         <GamepadIcon

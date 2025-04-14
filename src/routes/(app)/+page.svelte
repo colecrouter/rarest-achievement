@@ -71,22 +71,7 @@
                         accomplishments. See how you stack up against other
                         players with Steam Vault.
                     </p>
-                    <div class="flex flex-wrap gap-4">
-                        <form action="?/login" method="POST">
-                            <button
-                                class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
-                            >
-                                Sign In Now
-                                <ChevronRight class="ml-2 h-4 w-4" />
-                            </button>
-                        </form>
-                        <a
-                            href="/about"
-                            class="btn preset-outlined-surface-500 flex items-center gap-2 rounded p-3"
-                        >
-                            Learn More
-                        </a>
-                    </div>
+                    {@render buttons()}
                 </div>
                 <div class="relative">
                     <div
@@ -318,25 +303,37 @@
                     It's free, just sign in with your Steam account and start
                     tracking your achievements.
                 </p>
-                <div class="flex flex-wrap justify-center gap-4">
-                    <a href="/dashboard" class="inline-block">
-                        <!-- <button class="btn preset-filled-primary-500">
-                            Get Started Now
-                        </button> -->
-                        <form action="?/login" method="POST">
-                            <button
-                                class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
-                            >
-                                Sign In Now
-                                <ChevronRight class="ml-2 h-4 w-4" />
-                            </button>
-                        </form>
-                    </a>
-                    <a href="/about" class="btn preset-outlined-surface-500">
-                        Learn More
-                    </a>
+                <div class="flex justify-center">
+                    {@render buttons()}
                 </div>
             </div>
         </div>
     </section>
 </main>
+
+{#snippet buttons()}
+    <div class="flex flex-wrap gap-4">
+        {#if !data.loggedIn}
+            <form action="?/login" method="POST">
+                <button
+                    class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
+                >
+                    Sign In Now
+                    <ChevronRight class="ml-2 h-4 w-4" />
+                </button>
+            </form>
+        {:else}
+            <a
+                href="/user/{data.loggedIn.id}"
+                class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
+            >
+                Go to Dashboard
+                <ChevronRight class="ml-2 h-4 w-4" />
+            </a>
+        {/if}
+
+        <a href="/about" class="btn preset-outlined-surface-500">
+            Learn More
+        </a>
+    </div>
+{/snippet}

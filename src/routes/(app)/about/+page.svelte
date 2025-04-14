@@ -1,5 +1,12 @@
 <script lang="ts">
-    import { Trophy, ArrowRight, Github, Mail, Twitter } from "lucide-svelte";
+    import {
+        Trophy,
+        ArrowRight,
+        Github,
+        Mail,
+        Twitter,
+        ChevronRight,
+    } from "lucide-svelte";
 
     let team = [
         {
@@ -33,6 +40,8 @@
     ];
 
     let openFaq: number | null = null;
+
+    let { data } = $props();
 </script>
 
 <div
@@ -309,12 +318,26 @@
                     Join thousands of gamers who are tracking and sharing their
                     gaming accomplishments with Steam Vault.
                 </p>
+
                 <div class="flex flex-wrap justify-center gap-4">
-                    <form action="/?/login" method="post">
-                        <button class="btn preset-filled-primary-500 px-6 py-3">
-                            Get Started Now
-                        </button>
-                    </form>
+                    {#if !data.loggedIn}
+                        <form action="?/login" method="POST">
+                            <button
+                                class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
+                            >
+                                Sign In Now
+                                <ChevronRight class="ml-2 h-4 w-4" />
+                            </button>
+                        </form>
+                    {:else}
+                        <a
+                            href="/user/{data.loggedIn.id}"
+                            class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
+                        >
+                            Go to Dashboard
+                            <ChevronRight class="ml-2 h-4 w-4" />
+                        </a>
+                    {/if}
                 </div>
             </div>
         </section>

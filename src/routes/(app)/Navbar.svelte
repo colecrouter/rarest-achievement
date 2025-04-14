@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { SteamUser } from "$lib/steam/data/SteamUser";
-    import { User } from "lucide-svelte";
+    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
+    import { LogOut, User } from "lucide-svelte";
 
     interface Props {
         user: SteamUser | null;
@@ -25,8 +26,13 @@
         </form>
 
         {#if user}
-            <User class="mr-2 h-5 w-5" />
-            <span>{user.displayName}</span>
+            <a
+                href="/user/{user.id}"
+                class="btn btn-sm preset-outlined-primary-500"
+            >
+                <User class="mr-2 h-6 w-6" />
+                <span>{user.displayName}</span>
+            </a>
             <form
                 action="/?/logout"
                 method="post"
@@ -34,8 +40,11 @@
             >
                 <button
                     class="btn btn-sm preset-outlined-surface-500"
-                    type="submit">Logout</button
+                    type="submit"
                 >
+                    <LogOut class="my-1 h-4 w-4" />
+                    <span hidden> Logout </span>
+                </button>
             </form>
         {:else}
             <form

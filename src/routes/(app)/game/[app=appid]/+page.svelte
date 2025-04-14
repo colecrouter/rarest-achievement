@@ -348,6 +348,22 @@
                                     </div>
                                 </a>
                             {/each}
+                            {#if recentUnlocks.length === 0}
+                                <div
+                                    class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
+                                >
+                                    <Trophy
+                                        class="mx-auto mb-4 h-12 w-12 text-gray-600"
+                                    />
+                                    <h3 class="mb-2 text-xl font-bold">
+                                        No Recent Unlocks
+                                    </h3>
+                                    <p class="mx-auto max-w-md text-gray-400">
+                                        You haven't unlocked any achievements
+                                        recently.
+                                    </p>
+                                </div>
+                            {/if}
                         {:else}
                             <!-- Call to action -> sign in -->
                             <div

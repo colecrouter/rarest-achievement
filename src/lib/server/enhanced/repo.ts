@@ -91,7 +91,6 @@ export class EnhancedSteamRepository {
         );
 
         // Because we can pass in ids instead of just SteamApp objects, we need to fetch the games again if we don't have them
-
         let newGames: SteamApp[];
         let err3: Error | null = null;
         if (games[0] instanceof SteamApp) {
@@ -104,23 +103,22 @@ export class EnhancedSteamRepository {
         }
 
         const achievements = new Map<number, Map<string, Map<string, SteamUserAchievement>>>();
-        // Updated loop using userAchievements as primary source
-        for (const [gameId, userMap] of userAchievements) {
+        // New loop: use gameAchievements as base and iterate over each provided user.
+        for (const [gameId, gameAchMap] of gameAchievements) {
             const gameData = newGames.find((game) => game.id === gameId);
             if (!gameData) continue;
-            for (const [userId, achMap] of userMap) {
-                for (const [achievementId, userAchData] of achMap) {
-                    const gameAch = gameAchievements.get(gameId)?.get(achievementId);
-                    if (!gameAch) continue;
-                    const { global, meta } = gameAch;
-                    const userAchievement = new SteamUserAchievement(gameData, userId, meta, global, userAchData, lang);
-                    if (!achievements.has(gameId)) {
-                        achievements.set(gameId, new Map());
-                    }
-                    if (!achievements.get(gameId)?.has(userId)) {
-                        achievements.get(gameId)?.set(userId, new Map());
-                    }
-                    achievements.get(gameId)?.get(userId)?.set(achievementId, userAchievement);
+            for (const u of userIds) {
+                if (!achievements.has(gameId)) {
+                    achievements.set(gameId, new Map());
+                }
+                if (!achievements.get(gameId)?.has(u)) {
+                    achievements.get(gameId)?.set(u, new Map());
+                }
+                for (const [achievementId, { global, meta }] of gameAchMap) {
+                    // Check user's achievement data; pass null if missing.
+                    const userAchData = userAchievements.get(gameId)?.get(u)?.get(achievementId) || null;
+                    const userAchievement = new SteamUserAchievement(gameData, u, meta, global, userAchData, lang);
+                    achievements.get(gameId)?.get(u)?.set(achievementId, userAchievement);
                 }
             }
         }

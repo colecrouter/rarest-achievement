@@ -26,3 +26,7 @@ src/lib/paraglide
 
 # SQLite
 *.db
+
+/python/xgboost_model/steam_model.json
+venv
+/packages/lib/steam_model.json

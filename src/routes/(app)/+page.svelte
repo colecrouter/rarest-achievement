@@ -52,6 +52,27 @@
     });
 </script>
 
+<svelte:head>
+    <title>Steam Vault - Showcase Your Achievements</title>
+    <meta
+        name="description"
+        content="Track, display, and share your most impressive gaming accomplishments. See how you stack up against other players with Steam Vault."
+    />
+    <meta
+        name="keywords"
+        content="Steam, achievements, gaming, showcase, leaderboard"
+    />
+    <meta
+        property="og:title"
+        content="Steam Vault - Showcase Your Achievements"
+    />
+    <meta
+        property="og:description"
+        content="Track, display, and share your most impressive gaming accomplishments. See how you stack up against other players with Steam Vault."
+    />
+    <link rel="canonical" href="/" />
+</svelte:head>
+
 <main>
     <!-- Hero Section -->
     <section class="relative overflow-hidden py-20">

@@ -17,6 +17,21 @@
     const { breadcrumbs } = $props();
 </script>
 
+<svelte:head>
+    <title>Steam Vault - Legal</title>
+    <meta
+        name="description"
+        content="Privacy Policy and Terms of Service for Steam Vault."
+    />
+    <link rel="canonical" href="/legal" />
+    <meta property="og:title" content="Steam Vault - Legal" />
+    <meta
+        property="og:description"
+        content="Privacy Policy and Terms of Service for Steam Vault."
+    />
+    <meta property="og:type" content="website" />
+</svelte:head>
+
 <!-- Main content translated from React (skipping header and footer) -->
 <main class="container mx-auto px-4 py-8">
     <!-- Breadcrumb Navigation -->

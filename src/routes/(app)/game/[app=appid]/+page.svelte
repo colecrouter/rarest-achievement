@@ -199,6 +199,18 @@
     let progressColor = $derived(barColor(unlockedCount / totalCount));
 </script>
 
+<svelte:head>
+    <title>{app.name} - Achievements</title>
+    <meta name="description" content={app.description} />
+    <link rel="icon" href={app.icon} />
+    <link rel="apple-touch-icon" href={app.icon} />
+    <meta property="og:title" content={app.name} />
+    <meta property="og:description" content={app.description} />
+    <meta property="og:image" content={app.banner} />
+    <meta property="og:type" content="summary" />
+    <meta property="twitter:card" content="summary" />
+</svelte:head>
+
 <!-- Game Banner -->
 <div class="relative flex h-[200px] flex-col justify-end">
     <div

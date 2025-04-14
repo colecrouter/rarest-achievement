@@ -44,6 +44,20 @@
     let { data } = $props();
 </script>
 
+<svelte:head>
+    <title>About Steam Vault</title>
+    <meta
+        name="description"
+        content="Learn more about Steam Vault, our goal, and how we help gamers track their achievements."
+    />
+    <link rel="canonical" href="/about" />
+    <meta property="og:title" content="About Steam Vault" />
+    <meta
+        property="og:description"
+        content="Learn more about Steam Vault, our goal, and how we help gamers track their achievements."
+    />
+</svelte:head>
+
 <div
     class="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950 text-gray-100"
 >

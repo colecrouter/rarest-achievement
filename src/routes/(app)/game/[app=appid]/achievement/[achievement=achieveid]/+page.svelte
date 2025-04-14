@@ -118,6 +118,27 @@
     );
 </script>
 
+<svelte:head>
+    <title>{achievement.name} - {app.name}</title>
+    <meta
+        name="description"
+        content={`View the ${achievement.name} achievement for ${app.name}.`}
+    />
+    <link
+        rel="canonical"
+        href={`/game/${app.id}/achievement/${achievement.id}`}
+    />
+    <meta property="og:title" content={achievement.name} />
+    <meta property="og:description" content={achievement.description} />
+    <meta property="og:image" content={achievement.icon} />
+    <meta
+        property="og:url"
+        content={`/game/${app.id}/achievement/${achievement.id}`}
+    />
+    <meta property="og:type" content="summary" />
+    <meta property="twitter:card" content="summary" />
+</svelte:head>
+
 <main class="container mx-auto px-4 py-8">
     <Breadcrumbs path={data.breadcrumbs} />
 

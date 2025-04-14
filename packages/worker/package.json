@@ -1,0 +1,10 @@
+{
+    "name": "worker",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "build": "echo \"\"",
+        "lint": "tsc --noEmit --skipLibCheck --pretty"
+    },
+    "dependencies": {}
+}

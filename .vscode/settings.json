@@ -6,19 +6,7 @@
         "editor.defaultFormatter": "biomejs.biome"
     },
     "[typescript]": {
-        "editor.defaultFormatter": "biomejs.biome"
+        "editor.defaultFormatter": "biomejs.biome",
+        "typescript.preferences.importModuleSpecifier": "relative",
     },
-    "dbcode.connections": [
-        {
-            "connectionId": "eqXfINThaICytoDTSzc0W",
-            "name": "D1",
-            "driver": "sqlite",
-            "socket": "rarest-achievement/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/8a58c34c43f4816e1d8141ccb7adb5217b630c50a2dd4bf26239ffbae1ca08d5.sqlite",
-            "readOnly": false,
-            "driverOptions": {
-                "extensions": []
-            },
-            "connectionType": "socket"
-        }
-    ],
 }

@@ -1,0 +1,23 @@
+{
+    "name": "lib",
+    "version": "1.0.0",
+    "private": true,
+    "main": "index.js",
+    "types": "index.d.ts",
+    "exports": {
+        ".": "./src/index.js",
+        "./models": "./src/models/index.js",
+        "./search": "./src/search/index.js",
+        "./repositories": "./src/steam/repositories/index.js"
+    },
+    "scripts": {
+        "build": "echo \"\"",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio",
+        "lint": "tsc --noEmit --skipLibCheck --pretty"
+    },
+    "devDependencies": {
+        "drizzle-kit": "^0.30.6",
+        "drizzle-orm": "^0.41.0"
+    }
+}

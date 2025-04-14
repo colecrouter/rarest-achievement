@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "allowJs": true,
+        "checkJs": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": false,
+        "sourceMap": true,
+        "strict": true,
+        "moduleResolution": "bundler",
+        "noUncheckedIndexedAccess": true,
+        "target": "ESNext",
+        "module": "ESNext"
+    }
+}

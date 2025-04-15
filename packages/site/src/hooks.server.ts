@@ -4,7 +4,7 @@ import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
 import { EnhancedSteamRepository, SteamAuthenticatedAPIClient, SteamStoreAPIClient, setBypassCdnEnabled } from "lib";
-import { paraglideMiddleware } from "./paraglide/server";
+import { paraglideMiddleware } from "$lib/paraglide/server";
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>

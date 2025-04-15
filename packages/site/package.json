@@ -7,7 +7,7 @@
         "build": "vite build",
         "preview": "vite preview",
         "db:migrate": "wrangler d1 migrations apply steam-data",
-        "prepare": "svelte-kit sync || echo ''",
+        "prepare": "cd ../lib && python3 -m venv ../../python/xgboost_model/venv && ../../python/xgboost_model/venv/bin/python -m pip install --upgrade pip && ../../python/xgboost_model/venv/bin/python -m pip install -r ../../python/xgboost_model/requirements.txt && ../../python/xgboost_model/venv/bin/python ../../python/xgboost_model/train_model.py",
         "lint": "svelte-kit sync && svelte-check --ignore ../../node_modules --no-tsconfig",
         "machine-translate": "inlang machine translate --project project.inlang"
     },

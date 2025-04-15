@@ -21,6 +21,7 @@ import type {
 } from "../../models";
 import type { Language } from "../../repositories/api/lang";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
+import type schema from "./schema";
 import { achievementsMeta, achievementsStats, apps, friends, ownedGames, userAchievements, users } from "./schema";
 
 // https://github.com/drizzle-team/drizzle-orm/issues/555
@@ -51,10 +52,6 @@ export class SteamCacheDBRepository {
 
     constructor(db: DrizzleD1Database<typeof schema>) {
         this.#db = db;
-    }
-
-    static fromLocals(locals: App.Locals): SteamCacheDBRepository {
-        return new SteamCacheDBRepository(locals.steamCacheDB);
     }
 
     async getUsers(steamId: string[]) {
@@ -109,12 +106,25 @@ export class SteamCacheDBRepository {
             results.push(...res);
         }
 
-        const map = new Map<number, SteamAppRaw | null>();
-        for (const row of results) {
-            const appId = row.id;
-            const appData = row.data;
-            map.set(appId, appData);
-        }
+        const map = new Map(
+            results.map((row) => {
+                const appId = row.id;
+                const appData = row.data;
+                const estimatedPlayers = row.estimated_players;
+
+                if (appData && estimatedPlayers) {
+                    return [
+                        appId,
+                        {
+                            data: appData,
+                            estimated_players: estimatedPlayers,
+                        },
+                    ];
+                }
+
+                return [appId, null];
+            }),
+        );
 
         return map;
     }
@@ -122,7 +132,8 @@ export class SteamCacheDBRepository {
     async putApps(data: Awaited<ReturnType<typeof this.getApps>>) {
         const items = [...data.entries()].map(([appId, app]) => ({
             id: appId,
-            data: app,
+            data: app?.data,
+            estimated_players: app?.estimated_players,
         }));
 
         for (const item of items) {

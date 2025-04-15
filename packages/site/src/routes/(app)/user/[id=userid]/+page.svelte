@@ -2,7 +2,6 @@
     import IndexError from "$lib/IndexError.svelte";
     import Transition from "$lib/Transition.svelte";
     import Splash from "$lib/loading/Splash.svelte";
-    import { TriangleAlert } from "lucide-svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
     import Achievements from "./Achievements.svelte";
 

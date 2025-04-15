@@ -17,6 +17,7 @@
         "format:fix": "prettier --log-level silent --write ./packages/*/src && biome check ./packages/* --fix --unsafe",
         "db:push": "npm run db:push --workspaces",
         "db:migrate": "npm run db:migrate --workspaces",
+        "db:migration": "npm run db:migration --workspace=lib",
         "postinstall": "patch-package"
     },
     "devDependencies": {

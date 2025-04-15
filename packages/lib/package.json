@@ -4,6 +4,7 @@
     "private": true,
     "main": "index.js",
     "types": "index.d.ts",
+    "type": "module",
     "exports": {
         ".": "./src/index.js",
         "./models": "./src/models/index.js",
@@ -14,6 +15,7 @@
         "build": "echo \"\"",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
+        "db:migration": "drizzle-kit generate",
         "lint": "tsc --noEmit --skipLibCheck --pretty",
         "prepare": "python3 -m venv ../../python/xgboost_model/venv && ../../python/xgboost_model/venv/bin/python -m pip install --upgrade pip && ../../python/xgboost_model/venv/bin/python -m pip install -r ../../python/xgboost_model/requirements.txt && ../../python/xgboost_model/venv/bin/python ../../python/xgboost_model/train_model.py"
     },

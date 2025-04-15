@@ -4,10 +4,9 @@
 // type Duration = DurationArg | `${DurationArg} ${DurationArg}`;
 
 export abstract class BaseSteamAPIClient {
-    protected applyOptions<T extends Record<string, string | number | string[] | number[] | boolean | undefined>>(
-        url: URL,
-        options: T,
-    ) {
+    protected static applyOptions<
+        T extends Record<string, string | number | string[] | number[] | boolean | undefined>,
+    >(url: URL, options: T) {
         for (const [key, value] of Object.entries(options)) {
             if (value === undefined) continue;
             if (Array.isArray(value)) {
@@ -19,9 +18,12 @@ export abstract class BaseSteamAPIClient {
         }
     }
 
-    protected async fetchJSON<T, U extends boolean>(url: URL, allowEmpty: U): Promise<U extends true ? T | null : T> {
+    protected static async fetchJSON<T, U extends boolean>(
+        url: URL,
+        allowEmpty: U,
+    ): Promise<U extends true ? T | null : T> {
         const response = await fetch(url);
-        if ([400, 403].includes(response.status) && allowEmpty) {
+        if ([400, 403, 404].includes(response.status) && allowEmpty) {
             // When allowEmpty is true, a 403 returns null.
             return null as U extends true ? T | null : T;
         }

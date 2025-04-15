@@ -1,6 +1,10 @@
 import { EnhancedSteamRepository, type SteamUserAchievement } from "lib";
 
-export const load = async ({ params, parent, locals }) => {
+export const load = async ({ url, parent, locals }) => {
+    const sortMethod = (
+        url.searchParams.get("sort") === "count" ? "globalCount" : "globalPercentage"
+    ) satisfies keyof SteamUserAchievement;
+
     const achievements = (async () => {
         const repo = new EnhancedSteamRepository(locals);
         const { user: u } = await parent();
@@ -21,8 +25,6 @@ export const load = async ({ params, parent, locals }) => {
         // Log all game ids, where an achievement is present
         const gameIdsWithAchievements = [...allAchievements.keys()];
         const gameIdsWithAchievementsSet = new Set(gameIdsWithAchievements);
-        const gameIdsWithAchievementsFiltered = gameIds.filter((id) => gameIdsWithAchievementsSet.has(id));
-        console.log("Game IDs with achievements:", gameIdsWithAchievementsFiltered.slice(-20));
 
         // Flatten the achievements map to get a list of all achievements
         const allGames = [...allAchievements.values()];
@@ -32,8 +34,7 @@ export const load = async ({ params, parent, locals }) => {
         // Process achievements: filter by unlocked, cast and sort, then slice
         const achievements = allAchievementsForUser
             .filter((achieve) => achieve?.unlocked)
-            .map((achieve) => achieve as SteamUserAchievement)
-            .sort((a, b) => (a.globalPercentage ?? 0) - (b.globalPercentage ?? 0))
+            .sort((a, b) => a[sortMethod] - b[sortMethod])
             .slice(0, 24);
 
         return {

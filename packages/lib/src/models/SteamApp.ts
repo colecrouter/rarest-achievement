@@ -10,9 +10,11 @@ export type SteamAppRaw = NonNullable<
 
 export class SteamApp {
     #app: SteamAppRaw;
+    #estimatedPlayers: number;
 
-    constructor(data: SteamAppRaw) {
+    constructor(data: SteamAppRaw, estimatedPlayers: number) {
         this.#app = data;
+        this.#estimatedPlayers = estimatedPlayers;
     }
 
     serialize() {
@@ -49,5 +51,9 @@ export class SteamApp {
 
     get description() {
         return this.#app.short_description;
+    }
+
+    get estimatedPlayers() {
+        return this.#estimatedPlayers;
     }
 }

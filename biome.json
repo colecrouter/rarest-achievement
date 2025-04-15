@@ -20,6 +20,9 @@
         "rules": {
             "style": {
                 "useConst": "off"
+            },
+            "complexity": {
+                "noStaticOnlyClass": "off"
             }
         }
     }

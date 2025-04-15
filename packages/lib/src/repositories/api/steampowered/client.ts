@@ -26,8 +26,8 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     async getFriendsList(options: GetFriendsListQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUser/GetFriendList/v1");
         url.searchParams.set("key", this.#key);
-        this.applyOptions(url, options);
-        return this.fetchJSON<GetFriendsListResponse, false>(url, false);
+        SteamAuthenticatedAPIClient.applyOptions(url, options);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetFriendsListResponse, false>(url, false);
     }
 
     /**
@@ -36,8 +36,8 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
      */
     async getGlobalAchievementPercentagesForApp(options: GetGlobalAchievementPercentagesForAppQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2");
-        this.applyOptions(url, options);
-        return this.fetchJSON<GetGlobalAchievementPercentagesForAppResponse, true>(url, true);
+        SteamAuthenticatedAPIClient.applyOptions(url, options);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetGlobalAchievementPercentagesForAppResponse, true>(url, true);
     }
 
     /**
@@ -48,8 +48,8 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     async getPlayerAchievements<T extends Language | undefined>(options: GetPlayerAchievementsQuery<T>) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1");
         url.searchParams.set("key", this.#key);
-        this.applyOptions(url, options);
-        return this.fetchJSON<GetPlayerAchievementsResponse<T>, true>(url, true);
+        SteamAuthenticatedAPIClient.applyOptions(url, options);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetPlayerAchievementsResponse<T>, true>(url, true);
     }
 
     /**
@@ -60,7 +60,7 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
         const url = new URL("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2");
         url.searchParams.set("key", this.#key);
         url.searchParams.set("steamids", steamids.join(","));
-        return this.fetchJSON<GetPlayerSummariesResponse, false>(url, false);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetPlayerSummariesResponse, false>(url, false);
     }
 
     /**
@@ -70,8 +70,8 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     async getUserStatsForGame(options: GetUserStatsForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v2");
         url.searchParams.set("key", this.#key);
-        this.applyOptions(url, options);
-        return this.fetchJSON<GetUserStatsForGameResponse, true>(url, true);
+        SteamAuthenticatedAPIClient.applyOptions(url, options);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetUserStatsForGameResponse, true>(url, true);
     }
 
     /**
@@ -81,8 +81,8 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     async getSchemaForGame(options: GetSchemaForGameQuery) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2");
         url.searchParams.set("key", this.#key);
-        this.applyOptions(url, options);
-        return this.fetchJSON<GetSchemaForGameResponse, true>(url, true);
+        SteamAuthenticatedAPIClient.applyOptions(url, options);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetSchemaForGameResponse, true>(url, true);
     }
 
     /**
@@ -93,7 +93,7 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
     async getOwnedGames<T extends boolean = false>(options: GetOwnedGamesQuery<T>) {
         const url = new URL("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1");
         url.searchParams.set("key", this.#key);
-        this.applyOptions(url, options);
-        return this.fetchJSON<GetOwnedGamesResponse<T>, true>(url, true);
+        SteamAuthenticatedAPIClient.applyOptions(url, options);
+        return SteamAuthenticatedAPIClient.fetchJSON<GetOwnedGamesResponse<T>, true>(url, true);
     }
 }

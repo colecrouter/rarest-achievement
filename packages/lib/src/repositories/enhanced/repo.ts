@@ -1,3 +1,5 @@
+import type { DrizzleD1Database } from "drizzle-orm/d1";
+import type { schema } from "..";
 import { Errable } from "../../error";
 import { SteamApp, SteamAppAchievement, SteamOwnedGame, SteamUser, SteamUserAchievement } from "../../models";
 import type { Language } from "../api/lang";
@@ -20,10 +22,10 @@ export class EnhancedSteamRepository {
 
     constructor(locals: {
         steamClient: SteamAuthenticatedAPIClient;
-        steamStoreClient: SteamStoreAPIClient;
+        steamCacheDB: DrizzleD1Database<typeof schema>;
     }) {
-        this.#apiRepository = SteamAPIRepository.fromLocals(locals);
-        this.#cacheRepository = SteamCacheDBRepository.fromLocals(locals);
+        this.#apiRepository = new SteamAPIRepository(locals.steamClient);
+        this.#cacheRepository = new SteamCacheDBRepository(locals.steamCacheDB);
     }
 
     async getApps(app: Array<number | SteamOwnedGame | SteamApp>) {
@@ -38,7 +40,7 @@ export class EnhancedSteamRepository {
         const steamApps = new Map<number, SteamApp>();
         for (const [, app] of apps) {
             if (!app) continue;
-            const steamApp = new SteamApp(app);
+            const steamApp = new SteamApp(app.data, app.estimated_players);
             steamApps.set(steamApp.id, steamApp);
         }
         return new Errable(steamApps, err);
@@ -65,6 +67,18 @@ export class EnhancedSteamRepository {
         user: Array<string | SteamUser>,
         lang: Language = "english",
     ) {
+        // Because we can pass in ids instead of just SteamApp objects, we need to fetch the games again if we don't have them
+        let newGames: SteamApp[];
+        let err3: Error | null = null;
+        if (games[0] instanceof SteamApp) {
+            newGames = games as SteamApp[];
+        } else {
+            const gameIds = games.map((game) => (typeof game === "number" ? game : game.id));
+            const { data: gameApps, error: err } = await this.getApps(gameIds);
+            newGames = [...gameApps.values()];
+            err3 = err;
+        }
+
         const gameIds = games.map((game) => (typeof game === "number" ? game : game.id));
         const userIds = user.map((user) => (user instanceof SteamUser ? user.id : user));
 
@@ -81,18 +95,6 @@ export class EnhancedSteamRepository {
             (_) => this.#cacheRepository.putGameAchievements(_),
             (_) => this.#apiRepository.getGameAchievements(_),
         );
-
-        // Because we can pass in ids instead of just SteamApp objects, we need to fetch the games again if we don't have them
-        let newGames: SteamApp[];
-        let err3: Error | null = null;
-        if (games[0] instanceof SteamApp) {
-            newGames = games as SteamApp[];
-        } else {
-            const gameIds = games.map((game) => (typeof game === "number" ? game : game.id));
-            const { data: gameApps, error: err } = await this.getApps(gameIds);
-            newGames = [...gameApps.values()];
-            err3 = err;
-        }
 
         const achievements = new Map<number, Map<string, Map<string, SteamUserAchievement>>>();
         // New loop: use gameAchievements as base and iterate over each provided user.
@@ -241,28 +243,22 @@ function getMissingKeys2D<TOuter, TInner>(
     expectedOuter: TOuter[],
     expectedInner: TInner[],
     data: Map<TOuter, Map<TInner, unknown>>,
-): { missingOuter: TOuter[]; missingInner: TInner[] } {
-    const missingOuterSet = new Set<TOuter>();
-    const missingInnerMap = new Map<TOuter, TInner[]>();
-
+): { missingPairs: Array<[TOuter, TInner]> } {
+    // Determine global missing inner keys: if any outer is missing an inner key, mark it missing for all.
+    const globalMissingInner = expectedInner.filter((inner) =>
+        expectedOuter.some((outer) => {
+            const innerMap = data.get(outer);
+            return !innerMap || !innerMap.has(inner);
+        }),
+    );
+    const missingPairs: Array<[TOuter, TInner]> = [];
     for (const outer of expectedOuter) {
-        const innerMap = data.get(outer);
-        if (!innerMap) {
-            // Outer key entirely missing.
-            missingOuterSet.add(outer);
-        } else {
-            const missingForOuter = expectedInner.filter((key) => !innerMap.has(key));
-            if (missingForOuter.length > 0) {
-                missingOuterSet.add(outer);
-                missingInnerMap.set(outer, missingForOuter);
-            }
+        for (const inner of globalMissingInner) {
+            missingPairs.push([outer, inner]);
         }
     }
 
-    const missingOuter = [...missingOuterSet];
-    const missingInner = [...new Set([...missingInnerMap.values()].flat())];
-
-    return { missingOuter, missingInner };
+    return { missingPairs };
 }
 
 // New helper type to extract the missing-keys portion from TArgs.
@@ -309,6 +305,7 @@ async function fetchAndUpsert<
         if (result.error) {
             console.error(`Error fetching ${errorContext} data:`, result.error);
         }
+
         return result;
     }
 
@@ -321,10 +318,13 @@ async function fetchAndUpsert<
         // the Map are also Maps.
         if (args.length > 1 && Array.isArray(args[1]) && [...accumulatedData.values()].every((v) => v instanceof Map)) {
             const expectedInner = args[1];
-            const { missingOuter, missingInner } = getMissingKeys2D(expectedOuter, expectedInner, accumulatedData);
-            if (missingOuter.length > 0 || missingInner.length > 0) {
+            const { missingPairs } = getMissingKeys2D(expectedOuter, expectedInner, accumulatedData);
+            if (missingPairs.length > 0) {
                 // Call using the computed missing keys.
-                const missing = [missingOuter, missingInner] as MissingArgs<TArgs>;
+                const missing = [
+                    missingPairs.map((pair) => pair[0]),
+                    missingPairs.map((pair) => pair[1]),
+                ] as MissingArgs<TArgs>;
                 const result = await upsertMissingData("2D", missing);
                 if (result.error) {
                     error = result.error;

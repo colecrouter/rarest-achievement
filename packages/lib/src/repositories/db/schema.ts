@@ -29,6 +29,7 @@ export const apps = sqliteTable(
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
+        estimated_players: integer("estimated_players"),
     },
     (table) => [index("idx_apps_timestamp").on(table.updated_at)],
 );

@@ -5,6 +5,7 @@
     import { fly } from "svelte/transition";
     import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";
+    import SortMethodSwitch from "./SortMethodSwitch.svelte";
 
     interface Props {
         achievements: SteamUserAchievement[];
@@ -41,6 +42,10 @@
 
 <!-- Hero Section with Podium -->
 <section class="mb-12">
+    <div class="mb-6">
+        <SortMethodSwitch />
+    </div>
+
     <h2 class="mb-6 text-center text-2xl font-bold">
         Your Rarest Achievements
     </h2>

@@ -23,10 +23,10 @@ NODE_VERSION = "22"
 binding = "DB"
 database_name = "steam-data"
 database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
-migrations_dir = "./packages/lib/drizzle"
+migrations_dir = "../../packages/lib/drizzle"
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "steam-data"
 database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
-migrations_dir = "./packages/lib/drizzle"
+migrations_dir = "../../packages/lib/drizzle"

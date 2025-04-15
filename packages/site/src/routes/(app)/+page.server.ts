@@ -63,7 +63,6 @@ export const load = async ({ locals }) => {
     const showcase2 = showcase2IDs
         .map(({ game, achievement }) => showcase2Achievements.get(game)?.get(achievement))
         .filter((m) => !!m);
-    console.log(showcase2Apps);
     if (showcase2.length !== 3) throw new Error("Missing achievements");
 
     return {

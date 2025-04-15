@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
+    import { getSortManager } from "$lib/sortManager.svelte";
     import type { SteamAppAchievement } from "lib";
     // biome-ignore lint/style/useImportType: <explanation>
     import { SteamUserAchievement } from "lib";
@@ -11,50 +13,71 @@
     let { achievement }: Props = $props();
 
     let rarity = $derived(getRarity(achievement.globalPercentage));
+
+    const sortManager = getSortManager();
+
+    const intl = new Intl.NumberFormat(getLocale(), {
+        style: "decimal",
+        notation: "compact",
+        maximumFractionDigits: 0,
+    });
 </script>
 
 <div class="card">
     <article class="flex h-full flex-col justify-between p-0">
         <div class="flex items-start gap-4 p-4">
             <div class="relative flex-shrink-0">
-                {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
-                    <div class="icon-container">
-                        <!-- Locked icon -->
-                        <img
-                            src={achievement.iconLocked}
-                            alt={achievement.name}
-                            width="64"
-                            height="64"
-                            class="rounded-md border border-gray-700 bg-gray-900"
-                        />
-                        <!-- Unlocked icon shown on hover -->
-                        <img
-                            src={achievement.iconUnlocked}
-                            alt={achievement.name}
-                            width="64"
-                            height="64"
-                            class="unlocked rounded-md border border-gray-700 bg-gray-900"
-                        />
-                    </div>
-                {:else}
-                    <div class="icon-container">
-                        <!-- Single icon wrapped in container for universal effect -->
-                        <img
-                            src={achievement.icon}
-                            alt={achievement.name}
-                            width="64"
-                            height="64"
-                            class="rounded-md border border-gray-700 bg-gray-900"
-                        />
-                    </div>
-                {/if}
+                <a
+                    href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
+                    class="content"
+                >
+                    {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
+                        <div class="icon-container">
+                            <!-- Locked icon -->
+                            <img
+                                src={achievement.iconLocked}
+                                alt={achievement.name}
+                                width="64"
+                                height="64"
+                                class="rounded-md border border-gray-700 bg-gray-900"
+                            />
+                            <!-- Unlocked icon shown on hover -->
+                            <img
+                                src={achievement.iconUnlocked}
+                                alt={achievement.name}
+                                width="64"
+                                height="64"
+                                class="unlocked rounded-md border border-gray-700 bg-gray-900"
+                            />
+                        </div>
+                    {:else}
+                        <div class="icon-container">
+                            <!-- Single icon wrapped in container for universal effect -->
+                            <img
+                                src={achievement.icon}
+                                alt={achievement.name}
+                                width="64"
+                                height="64"
+                                class="rounded-md border border-gray-700 bg-gray-900"
+                            />
+                        </div>
+                    {/if}
+                </a>
+
+                <!-- Badge -->
                 <div
                     class="absolute -right-2 -bottom-2 rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-bold text-gray-900"
                 >
-                    {achievement.globalPercentage}%
+                    {#if sortManager.method === "globalPercentage"}
+                        {achievement.globalPercentage}%
+                    {:else if sortManager.method === "globalCount"}
+                        <!-- {achievement.globalCount} -->
+                        {intl.format(achievement.globalCount)}
+                    {/if}
                 </div>
             </div>
             <div>
+                <!-- Achievement name -->
                 <h3 class="text-sm font-bold">
                     <a
                         class="hover:underline"
@@ -63,6 +86,8 @@
                         {achievement.name}
                     </a>
                 </h3>
+
+                <!-- Game name -->
                 <p class="mb-1 text-xs text-gray-400">
                     <a
                         class="hover:underline"

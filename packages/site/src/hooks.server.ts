@@ -1,12 +1,21 @@
 import { dev } from "$app/environment";
 import { STEAM_API_KEY } from "$env/static/private";
-import { i18n } from "$lib/i18n";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
 import { EnhancedSteamRepository, SteamAuthenticatedAPIClient, SteamStoreAPIClient, setBypassCdnEnabled } from "lib";
+import { paraglideMiddleware } from "./paraglide/server";
 
-const handleParaglide: Handle = i18n.handle();
+// creating a handle to use the paraglide middleware
+const paraglideHandle: Handle = ({ event, resolve }) =>
+    paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+        event.request = localizedRequest;
+        return resolve(event, {
+            transformPageChunk: ({ html }) => {
+                return html.replace("%lang%", locale);
+            },
+        });
+    });
 
 const hook: Handle = async ({ event, resolve }) => {
     event.locals.steamClient = new SteamAuthenticatedAPIClient(STEAM_API_KEY);
@@ -35,7 +44,7 @@ const hook: Handle = async ({ event, resolve }) => {
     return resolve(event);
 };
 
-export const handle = sequence(handleParaglide, hook);
+export const handle = sequence(paraglideHandle, hook);
 
 export const init = () => {
     dev && setBypassCdnEnabled(true);

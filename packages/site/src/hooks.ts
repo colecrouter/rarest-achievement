@@ -1,5 +1,5 @@
-import { i18n } from "$lib/i18n";
-import type { Transport } from "@sveltejs/kit";
+import { deLocalizeUrl } from "$lib/paraglide/runtime";
+import type { Reroute, Transport } from "@sveltejs/kit";
 import {
     Errable,
     SteamApp,
@@ -9,7 +9,10 @@ import {
     SteamUser,
     SteamUserAchievement,
 } from "lib";
-export const reroute = i18n.reroute();
+
+export const reroute: Reroute = (request) => {
+    return deLocalizeUrl(request.url).pathname;
+};
 
 export const transport: Transport = {
     SteamUser: {
@@ -22,8 +25,8 @@ export const transport: Transport = {
     SteamApp: {
         encode: (data) => data instanceof SteamApp && data.serialize(),
         decode: (data: ReturnType<SteamApp["serialize"]>) => {
-            const { app } = data;
-            return new SteamApp(app);
+            const { app, estimatedPlayers } = data;
+            return new SteamApp(app, estimatedPlayers);
         },
     },
     // SteamUserAchievement must come first, because it extends SteamAppAchievement

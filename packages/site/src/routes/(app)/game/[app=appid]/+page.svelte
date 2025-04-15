@@ -1,5 +1,6 @@
 <script lang="ts">
     import { type Rarity, getRarity } from "$lib/rarity";
+    import { getSortManager } from "$lib/sortManager.svelte";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
     import { SteamUserAchievement, SteamUserStatus } from "lib";
@@ -13,6 +14,9 @@
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
     import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
+    import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
+
+    const sortManager = getSortManager();
 
     let { data } = $props();
     let { app, achievements, friends, loggedIn: user } = $derived(data);
@@ -179,13 +183,7 @@
                     return false;
                 return true;
             })
-            .sort((a, b) => {
-                if (sortOrder === "rarity")
-                    return sortDirection === "asc"
-                        ? a.globalPercentage - b.globalPercentage
-                        : b.globalPercentage - a.globalPercentage;
-                return 0;
-            }),
+            .sort((a, b) => a[sortManager.method] - b[sortManager.method]),
     );
 
     const barColor = (ratio: number): Rarity => {
@@ -477,17 +475,20 @@
             class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center"
         >
             <h2 class="text-2xl font-bold">Achievements</h2>
-            <div class="flex w-full flex-wrap items-center gap-3 md:w-auto">
-                <div class="relative flex-1 md:w-64">
-                    <Search
-                        class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
-                    />
-                    <input
-                        type="search"
-                        placeholder="Search achievements..."
-                        bind:value={searchQuery}
-                        class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
-                    />
+            <div class="flex gap-2">
+                <SortMethodSwitch />
+                <div class="flex w-full flex-wrap items-center gap-3 md:w-auto">
+                    <div class="relative flex-1 md:w-64">
+                        <Search
+                            class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
+                        />
+                        <input
+                            type="search"
+                            placeholder="Search achievements..."
+                            bind:value={searchQuery}
+                            class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
+                        />
+                    </div>
                 </div>
             </div>
         </div>

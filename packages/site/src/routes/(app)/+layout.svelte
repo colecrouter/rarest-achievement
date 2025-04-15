@@ -1,7 +1,11 @@
 <script lang="ts">
+    import { setSortManager } from "$lib/sortManager.svelte";
     import Footer from "./Footer.svelte";
     import Navbar from "./Navbar.svelte";
     const { children, data } = $props();
+
+    // Initialize the universal sort manager
+    setSortManager();
 </script>
 
 <svelte:head>

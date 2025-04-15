@@ -8,11 +8,13 @@
         "preview": "vite preview",
         "db:migrate": "wrangler d1 migrations apply steam-data",
         "prepare": "svelte-kit sync || echo ''",
-        "lint": "svelte-kit sync && svelte-check --ignore ../../node_modules --no-tsconfig"
+        "lint": "svelte-kit sync && svelte-check --ignore ../../node_modules --no-tsconfig",
+        "machine-translate": "inlang machine translate --project project.inlang"
     },
     "type": "module",
     "devDependencies": {
-        "@inlang/paraglide-sveltekit": "^0.16.1",
+        "@inlang/cli": "^3.0.0",
+        "@inlang/paraglide-js": "2.0.11",
         "@skeletonlabs/skeleton": "^3.1.0",
         "@skeletonlabs/skeleton-svelte": "^1.0.0",
         "@sveltejs/adapter-cloudflare": "^5.0.1",

@@ -6,6 +6,9 @@
     import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";
     import SortMethodSwitch from "./SortMethodSwitch.svelte";
+    import { getSortManager } from "$lib/sortManager.svelte";
+    import { invalidateAll } from "$app/navigation";
+    import { page } from "$app/state";
 
     interface Props {
         achievements: SteamUserAchievement[];
@@ -16,6 +19,8 @@
     let sortOrder = $state<"asc" | "desc">("asc");
     let searchQuery = $state("");
     let activeTab = $state("grid");
+
+    const sortManager = getSortManager();
 
     let topThree = $derived(achievements.slice(0, 3));
     let filteredAchievements = $derived(
@@ -32,20 +37,26 @@
                         ?.toLowerCase()
                         .includes(searchQuery.toLowerCase()),
             )
-            .sort((a, b) =>
-                sortOrder === "asc"
-                    ? a.globalPercentage - b.globalPercentage
-                    : b.globalPercentage - a.globalPercentage,
-            ),
+            .sort((a, b) => a[sortManager.method] - b[sortManager.method]),
     );
+
+    // Reload page data when sort method changes
+    // TODO something better
+    let lastMethod: string | null = null;
+    $effect(() => {
+        let currentMethod = sortManager.method;
+        // Avoid triggering invalidateAll() on the initial run
+        if (lastMethod !== null && currentMethod !== lastMethod) {
+            lastMethod = currentMethod;
+            invalidateAll();
+        } else {
+            lastMethod = currentMethod;
+        }
+    });
 </script>
 
 <!-- Hero Section with Podium -->
 <section class="mb-12">
-    <div class="mb-6">
-        <SortMethodSwitch />
-    </div>
-
     <h2 class="mb-6 text-center text-2xl font-bold">
         Your Rarest Achievements
     </h2>
@@ -77,18 +88,21 @@
     >
         <h2 class="text-2xl font-bold">Achievement Leaderboard</h2>
         <div class="flex w-full items-center gap-3 md:w-auto">
-            <div class="relative flex-1 md:w-64">
-                <Search
-                    class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
-                />
-                <input
-                    type="search"
-                    placeholder="Search achievements..."
-                    class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
-                    bind:value={searchQuery}
-                />
-            </div>
-            <!-- <Tooltip>
+            <div class="flex items-center gap-2">
+                <SortMethodSwitch />
+
+                <div class="relative flex-1 md:w-64">
+                    <Search
+                        class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
+                    />
+                    <input
+                        type="search"
+                        placeholder="Search achievements..."
+                        class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
+                        bind:value={searchQuery}
+                    />
+                </div>
+                <!-- <Tooltip>
                     {#snippet trigger()}
                         <div>
                             <button
@@ -113,6 +127,7 @@
                         </div>
                     {/snippet}
                 </Tooltip> -->
+            </div>
         </div>
     </div>
 

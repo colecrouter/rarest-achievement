@@ -17,9 +17,9 @@
     --color-rare: var(--color-gray-400);
     --color-rare-dark: var(--color-gray-500);
     --color-rare-light: var(--color-gray-300);
-    --color-uncommon: var(--color-orange-800);
-    --color-uncommon-dark: var(--color-orange-900);
-    --color-uncommon-light: var(--color-orange-700);
+    --color-uncommon: var(--color-amber-700);
+    --color-uncommon-dark: var(--color-amber-800);
+    --color-uncommon-light: var(--color-amber-600);
     --color-common: var(--color-slate-500);
     --color-common-dark: var(--color-slate-600);
     --color-common-light: var(--color-slate-400);

@@ -18,7 +18,7 @@ export class SteamApp {
     }
 
     serialize() {
-        return { app: this.#app };
+        return { app: this.#app, estimatedPlayers: this.#estimatedPlayers };
     }
 
     get id() {

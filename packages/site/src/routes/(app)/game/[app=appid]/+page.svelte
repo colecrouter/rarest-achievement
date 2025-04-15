@@ -224,9 +224,11 @@
 
 <!-- Game Header -->
 <div
-    class="container mx-auto -mb-[160px] -translate-y-[160px] px-4 pt-8 pb-6 md:pt-0"
+    class="pointer-events-none container mx-auto -mb-[160px] -translate-y-[160px] px-4 pt-8 pb-6 md:pt-0"
 >
-    <div class="flex translate-y-0 flex-wrap items-end gap-6 md:translate-y-10">
+    <div
+        class="pointer-events-auto flex translate-y-0 flex-wrap items-end gap-6 md:translate-y-10"
+    >
         <div>
             <div class="rounded-xl bg-gray-900/50 blur-sm"></div>
             <div class="rounded-xl border border-gray-700 bg-gray-800 p-2">

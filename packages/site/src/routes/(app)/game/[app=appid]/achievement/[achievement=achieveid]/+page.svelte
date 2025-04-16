@@ -7,7 +7,7 @@
     import { getRarity } from "$lib/rarity";
     import Chart from "chart.js/auto";
     import { SteamUserStatus } from "lib";
-    import { TrophyIcon } from "lucide-svelte";
+    import TrophyIcon from "@lucide/svelte/icons/trophy";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
 

@@ -1,26 +1,28 @@
 <script lang="ts">
+    import { invalidateAll } from "$app/navigation";
+    import { page } from "$app/state";
+    import { getSortManager, type SortMethod } from "$lib/sortManager.svelte";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import type { SteamUserAchievement } from "lib";
-    import Search from "lucide-svelte/icons/search";
+    import Search from "@lucide/svelte/icons/search";
     import { fly } from "svelte/transition";
     import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";
     import SortMethodSwitch from "./SortMethodSwitch.svelte";
-    import { getSortManager } from "$lib/sortManager.svelte";
-    import { invalidateAll } from "$app/navigation";
-    import { page } from "$app/state";
 
     interface Props {
-        achievements: SteamUserAchievement[];
+        achievements: Record<SortMethod, SteamUserAchievement[]>;
     }
-    let { achievements }: Props = $props();
+    let { achievements: achievementsRecord }: Props = $props();
+
+    const sortManager = getSortManager();
+
+    let achievements = $derived(achievementsRecord[sortManager.method]);
 
     // Mock data for achievements
     let sortOrder = $state<"asc" | "desc">("asc");
     let searchQuery = $state("");
     let activeTab = $state("grid");
-
-    const sortManager = getSortManager();
 
     let topThree = $derived(achievements.slice(0, 3));
     let filteredAchievements = $derived(
@@ -39,20 +41,6 @@
             )
             .sort((a, b) => a[sortManager.method] - b[sortManager.method]),
     );
-
-    // Reload page data when sort method changes
-    // TODO something better
-    let lastMethod: string | null = null;
-    $effect(() => {
-        let currentMethod = sortManager.method;
-        // Avoid triggering invalidateAll() on the initial run
-        if (lastMethod !== null && currentMethod !== lastMethod) {
-            lastMethod = currentMethod;
-            invalidateAll();
-        } else {
-            lastMethod = currentMethod;
-        }
-    });
 </script>
 
 <!-- Hero Section with Podium -->
@@ -65,12 +53,15 @@
         class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
     >
         {#if topThree.length === 3}
-            <Podium place={2} achievement={topThree[1]!} />
+            {#key achievements}
+                <Podium place={2} achievement={topThree[1]!} />
 
-            <Podium place={1} achievement={topThree[0]!} />
+                <Podium place={1} achievement={topThree[0]!} />
 
-            <Podium place={3} achievement={topThree[2]!} />
+                <Podium place={3} achievement={topThree[2]!} />
+            {/key}
         {:else}
+            <!-- Base thing -->
             <div class="flex h-full w-full items-center justify-center">
                 <p class="text-gray-400">No achievements unlocked yet.</p>
             </div>

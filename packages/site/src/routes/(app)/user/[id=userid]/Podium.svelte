@@ -85,9 +85,9 @@
 </script>
 
 <script lang="ts">
-    import Medal from "lucide-svelte/icons/medal";
-    import Crown from "lucide-svelte/icons/crown";
-    import Award from "lucide-svelte/icons/award";
+    import Medal from "@lucide/svelte/icons/medal";
+    import Crown from "@lucide/svelte/icons/crown";
+    import Award from "@lucide/svelte/icons/award";
     import { fade } from "svelte/transition";
     import { cubicOut } from "svelte/easing";
     import type { SteamAppAchievement } from "lib";

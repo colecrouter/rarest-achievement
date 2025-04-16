@@ -1,10 +1,6 @@
 import { EnhancedSteamRepository, type SteamUserAchievement } from "lib";
 
 export const load = async ({ url, parent, locals }) => {
-    const sortMethod = (
-        url.searchParams.get("sort") === "count" ? "globalCount" : "globalPercentage"
-    ) satisfies keyof SteamUserAchievement;
-
     const achievements = (async () => {
         const repo = new EnhancedSteamRepository(locals);
         const { user: u } = await parent();
@@ -32,13 +28,21 @@ export const load = async ({ url, parent, locals }) => {
         const allAchievementsForUser = [...allGamesForUser.map((m) => [...m.values()])].flat();
 
         // Process achievements: filter by unlocked, cast and sort, then slice
-        const achievements = allAchievementsForUser
+        const achievementsByPercent = allAchievementsForUser
             .filter((achieve) => achieve?.unlocked)
-            .sort((a, b) => a[sortMethod] - b[sortMethod])
+            .sort((a, b) => a.globalPercentage - b.globalPercentage)
+            .slice(0, 24);
+
+        const achievementsByCount = allAchievementsForUser
+            .filter((achieve) => achieve?.unlocked)
+            .sort((a, b) => a.globalCount - b.globalCount)
             .slice(0, 24);
 
         return {
-            achievements,
+            achievements: {
+                globalPercentage: achievementsByPercent,
+                globalCount: achievementsByCount,
+            },
             didErr: Boolean(err1 || err2 || err3),
         };
     })();

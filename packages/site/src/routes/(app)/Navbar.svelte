@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { SteamUser } from "lib";
-    import { LogOut, User } from "lucide-svelte";
+    import LogOut from "@lucide/svelte/icons/log-out";
+    import User from "@lucide/svelte/icons/user";
 
     interface Props {
         user: SteamUser | null;

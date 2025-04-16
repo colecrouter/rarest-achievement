@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Trophy } from "lucide-svelte";
+    import Trophy from "@lucide/svelte/icons/trophy";
 </script>
 
 <footer class="border-t border-gray-800 bg-gray-900 py-8">

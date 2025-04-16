@@ -1,12 +1,9 @@
 <script lang="ts">
-    import {
-        ArrowRight,
-        ChevronRight,
-        Github,
-        Mail,
-        Trophy,
-        Twitter,
-    } from "lucide-svelte";
+    import Trophy from "@lucide/svelte/icons/trophy";
+    import ArrowRight from "@lucide/svelte/icons/arrow-right";
+    import ChevronRight from "@lucide/svelte/icons/chevron-right";
+    import Github from "@lucide/svelte/icons/github";
+    import Mail from "@lucide/svelte/icons/mail";
 
     let team = [
         {

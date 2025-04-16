@@ -2,7 +2,8 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
-    import { ArrowLeft, Shield } from "lucide-svelte";
+    import ArrowLeft from "@lucide/svelte/icons/arrow-left";
+    import Shield from "@lucide/svelte/icons/shield";
     import Breadcrumbs from "../Breadcrumbs.svelte";
 
     let activeTab = $derived.by(() => {

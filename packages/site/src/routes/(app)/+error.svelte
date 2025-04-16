@@ -1,13 +1,9 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import {
-        ArrowLeft,
-        Home,
-        RefreshCcw,
-        Search,
-        Trophy,
-        User,
-    } from "lucide-svelte";
+
+    import ArrowLeft from "@lucide/svelte/icons/arrow-left";
+    import Home from "@lucide/svelte/icons/home";
+    import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
 
     let error = page.error;
 

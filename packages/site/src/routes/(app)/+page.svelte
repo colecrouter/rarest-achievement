@@ -1,14 +1,11 @@
 <script lang="ts">
-    // Import icons from lucide-svelte
-    import {
-        Award,
-        ChevronRight,
-        Crown,
-        Search,
-        TrendingUp,
-        Trophy,
-        Users,
-    } from "lucide-svelte";
+    import Award from "@lucide/svelte/icons/award";
+    import ChevronRight from "@lucide/svelte/icons/chevron-right";
+    import Crown from "@lucide/svelte/icons/crown";
+    import Search from "@lucide/svelte/icons/search";
+    import TrendingUp from "@lucide/svelte/icons/trending-up";
+    import Trophy from "@lucide/svelte/icons/trophy";
+    import Users from "@lucide/svelte/icons/users";
     import { fly } from "svelte/transition";
     import AchievementCard from "./user/[id=userid]/AchievementCard.svelte";
 

@@ -3,18 +3,16 @@
     import { getSortManager } from "$lib/sortManager.svelte";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
-    import { SteamUserAchievement, SteamUserStatus } from "lib";
-    import {
-        Calendar,
-        GamepadIcon,
-        Search,
-        Server,
-        Trophy,
-    } from "lucide-svelte";
+    import Calendar from "@lucide/svelte/icons/calendar";
+    import GamepadIcon from "@lucide/svelte/icons/gamepad";
+    import Search from "@lucide/svelte/icons/search";
+    import Server from "@lucide/svelte/icons/server";
+    import Trophy from "@lucide/svelte/icons/trophy";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
     import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
     import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
+    import { SteamUserAchievement, SteamUserStatus } from "lib";
 
     const sortManager = getSortManager();
 

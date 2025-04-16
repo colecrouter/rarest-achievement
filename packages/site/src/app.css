@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @import "@skeletonlabs/skeleton";
 @import "@skeletonlabs/skeleton/optional/presets";
 @import "./theme";
@@ -6,7 +7,7 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
-@source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+@source '../../../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
 @source inline("{bg,text,border,to,from}-{ultra-rare,rare,uncommon,common,locked}{-dark,-light,}{/10,/20,/30,/50,}");
 

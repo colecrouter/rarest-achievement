@@ -134,19 +134,23 @@
                 class="flex flex-col items-center"
                 transition:fade={{ duration: 300, delay: 100 * place + 400 }}
             >
-                <img
-                    src={achievement.icon}
-                    alt={achievement.name}
-                    width={config.iconSize.width}
-                    height={config.iconSize.height}
-                    class={config.iconSize.imgClass}
-                />
-                <h3 class={config.nameTextClass}>
-                    {achievement.name}
-                </h3>
+                <a href="/game/{achievement.app.id}">
+                    <img
+                        src={achievement.icon}
+                        alt={achievement.name}
+                        width={config.iconSize.width}
+                        height={config.iconSize.height}
+                        class={config.iconSize.imgClass}
+                    />
+                </a>
+                <a href="/game/{achievement.app.id}}">
+                    <h3 class="hover:underline {config.nameTextClass}">
+                        {achievement.name}
+                    </h3>
+                </a>
                 <a
-                    href={`/game/${achievement.app.id}`}
-                    class={`${config.appTextClass} hover:underline`}
+                    href="/game/{achievement.app.id}"
+                    class="hover:underline {config.appTextClass}"
                 >
                     {achievement.app.name}
                 </a>

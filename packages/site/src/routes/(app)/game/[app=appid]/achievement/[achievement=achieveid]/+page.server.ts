@@ -1,6 +1,8 @@
 import { EnhancedSteamRepository, Errable } from "lib";
 
-export const load = async ({ parent, url, locals }) => {
+export const load = async ({ parent, url, locals, platform }) => {
+    console.log(HTMLRewriter);
+
     const data = await parent();
     const { app, loggedIn, achievement } = data;
 

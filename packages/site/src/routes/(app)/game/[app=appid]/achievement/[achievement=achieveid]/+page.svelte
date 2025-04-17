@@ -793,7 +793,7 @@
         </TransitionWrapper>
     </div>
 
-    <div class="mt-8 mb-8">
+    <!-- <div class="mt-8 mb-8">
         <h2 class="mb-4 text-2xl font-bold">You Might Also Like</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {#each [...(gameAchievements?.values() ?? [])].slice(1, 5) as achievement}
@@ -829,21 +829,9 @@
                     </div>
                     <div
                         class="flex items-center justify-between bg-gray-900 px-4 py-2 text-xs text-gray-400"
-                    >
-                        <!-- <span
-                                >Unlocked: {format(
-                                    parseISO(achievement.unlocked),
-                                    "MMM d, yyyy",
-                                )}</span
-                            >
-                            <a
-                                href={`/achievement/${achievement.internalName}`}
-                                class="text-amber-500 hover:text-amber-400"
-                                >Details</a
-                            > -->
                     </div>
                 </div>
             {/each}
         </div>
-    </div>
+    </div> -->
 </main>

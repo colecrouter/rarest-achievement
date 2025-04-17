@@ -15,6 +15,7 @@
     import BookOpenText from "@lucide/svelte/icons/book-open-text";
     import Share from "@lucide/svelte/icons/share";
     import { Tooltip } from "@skeletonlabs/skeleton-svelte";
+    import AchievementCard from "../../../../user/[id=userid]/AchievementCard.svelte";
 
     let { data } = $props();
 
@@ -246,34 +247,21 @@
                                 </a>
                             {/snippet}
                         </Tooltip>
-                        <Tooltip
-                            open={shareHover}
-                            onOpenChange={(e) => (shareHover = e.open)}
-                            contentBase="bg-gray-100 p-4"
-                            contentBackground="rounded-sm text-gray-900"
-                            arrow
+                        <button
+                            class="btn preset-outlined-surface-500 p-2"
+                            onclick={() =>
+                                navigator.share({
+                                    title: `${achievement.name} - ${app.name}`,
+                                    text: `Check out this achievement!`,
+                                    url: page.url.toString(),
+                                })}
                         >
-                            {#snippet content()}
-                                Share
-                            {/snippet}
-                            {#snippet trigger()}
-                                <button
-                                    class="btn preset-outlined-surface-500 p-2"
-                                    onclick={() =>
-                                        navigator.share({
-                                            title: `${achievement.name} - ${app.name}`,
-                                            text: `Check out this achievement!`,
-                                            url: page.url.toString(),
-                                        })}
-                                >
-                                    <span hidden>Share</span>
-                                    <Share
-                                        class="text-surface-500 h-4 w-4"
-                                        aria-hidden="true"
-                                    />
-                                </button>
-                            {/snippet}
-                        </Tooltip>
+                            <span hidden>Share</span>
+                            <Share
+                                class="text-surface-500 h-4 w-4"
+                                aria-hidden="true"
+                            />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -409,7 +397,7 @@
                                 Your progress on all achievements in this game
                             </p>
                             <div
-                                class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+                                class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3"
                             >
                                 {#each gameAchievements?.values() ?? [] as currentAchievement}
                                     {@const isCurrent =
@@ -418,44 +406,10 @@
                                     {@const color = getRarity(
                                         currentAchievement.globalPercentage,
                                     )}
-                                    <div
-                                        class="flex items-start gap-3 rounded-lg p-3 {isCurrent
-                                            ? 'border border-amber-500/30 bg-amber-500/10'
-                                            : 'border border-gray-700 bg-gray-900/50 hover:bg-gray-700/30'}"
-                                    >
-                                        <img
-                                            src={currentAchievement.icon}
-                                            alt={currentAchievement.name}
-                                            width="48"
-                                            height="48"
-                                            class="rounded-md {isCurrent
-                                                ? 'border border-amber-500'
-                                                : 'border border-gray-700'}"
-                                        />
-                                        <div class="flex-1">
-                                            <div
-                                                class="flex items-center justify-between"
-                                            >
-                                                <h3
-                                                    class={isCurrent
-                                                        ? "font-bold text-amber-400"
-                                                        : "font-bold text-gray-100"}
-                                                >
-                                                    {currentAchievement.name}
-                                                </h3>
-                                                <div
-                                                    class="rounded-full px-2 py-0.5 text-xs font-medium bg-{color}/20 text-{color}-light"
-                                                >
-                                                    {currentAchievement.globalPercentage}%
-                                                </div>
-                                            </div>
-                                            <p
-                                                class="mt-1 line-clamp-2 text-xs text-gray-400"
-                                            >
-                                                {currentAchievement.description}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <AchievementCard
+                                        achievement={currentAchievement}
+                                        secondary
+                                    />
                                 {/each}
                             </div>
                         </div>

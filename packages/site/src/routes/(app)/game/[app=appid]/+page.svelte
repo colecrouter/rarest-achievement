@@ -316,46 +316,7 @@
                                 {@const rarity = getRarity(
                                     achievement.globalPercentage,
                                 )}
-                                <a
-                                    href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
-                                    class="card flex items-center gap-3 !bg-gray-900/50 p-2 hover:bg-gray-700/30"
-                                >
-                                    <img
-                                        src={achievement.icon ||
-                                            "/placeholder.svg"}
-                                        alt={achievement.name}
-                                        width="36"
-                                        height="36"
-                                        class="rounded-md border border-gray-700"
-                                    />
-                                    <div class="min-w-0 flex-1">
-                                        <div
-                                            class="flex items-center justify-between"
-                                        >
-                                            <h4
-                                                class="truncate text-sm font-medium"
-                                            >
-                                                {achievement.name}
-                                            </h4>
-                                            <div
-                                                class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-medium text-gray-950"
-                                            >
-                                                {achievement.globalPercentage}%
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="mt-0.5 text-xs text-gray-400"
-                                        >
-                                            {achievement.unlocked?.toLocaleString(
-                                                undefined,
-                                                {
-                                                    dateStyle: "short",
-                                                    timeStyle: "short",
-                                                },
-                                            )}
-                                        </div>
-                                    </div>
-                                </a>
+                                <AchievementCard {achievement} secondary />
                             {/each}
                             {#if recentUnlocks.length === 0}
                                 <div

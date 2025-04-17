@@ -72,4 +72,8 @@ export class SteamAppAchievement {
     get app() {
         return this.#app;
     }
+
+    get hidden() {
+        return !!this.#meta.hidden;
+    }
 }

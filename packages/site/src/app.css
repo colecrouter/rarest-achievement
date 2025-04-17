@@ -70,6 +70,10 @@ html {
     @apply overflow-hidden border-[1px] border-gray-700 bg-gray-800;
 }
 
+.card.secondary {
+    @apply bg-gray-900;
+}
+
 .prose h2 {
     @apply mt-8 mb-4 text-2xl font-bold;
 }

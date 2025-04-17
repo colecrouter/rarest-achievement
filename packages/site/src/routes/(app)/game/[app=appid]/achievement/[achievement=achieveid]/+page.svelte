@@ -12,6 +12,9 @@
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
     import YouTube from "@lucide/svelte/icons/youtube";
     import NotebookText from "@lucide/svelte/icons/notebook-text";
+    import BookOpenText from "@lucide/svelte/icons/book-open-text";
+    import Share from "@lucide/svelte/icons/share";
+    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
 
     let { data } = $props();
 
@@ -122,6 +125,9 @@
             }
         },
     );
+
+    let viewHover = $state(false);
+    let shareHover = $state(false);
 </script>
 
 <svelte:head>
@@ -213,12 +219,61 @@
                         <div class="text-xs text-gray-400">of players</div>
                     </div>
                     <div class="flex gap-2">
-                        <button
-                            class="h-8 w-8 border border-gray-700 bg-gray-800 hover:bg-gray-700"
-                        ></button>
-                        <button
-                            class="h-8 w-8 border border-gray-700 bg-gray-800 hover:bg-gray-700"
-                        ></button>
+                        <Tooltip
+                            open={viewHover}
+                            onOpenChange={(e) => (viewHover = e.open)}
+                            contentBase="bg-gray-100 p-4"
+                            contentBackground="rounded-sm text-gray-900"
+                            arrow
+                        >
+                            {#snippet content()}
+                                View on Steam
+                            {/snippet}
+                            {#snippet trigger()}
+                                <a
+                                    href="https://steamcommunity.com/app/{achievement
+                                        .app.id}/stats/{achievement.app
+                                        .id}/achievements"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="btn preset-outlined-surface-500 p-2"
+                                >
+                                    <span hidden> View on Steam </span>
+                                    <BookOpenText
+                                        class="text-surface-500 h-4 w-4"
+                                        aria-hidden="true"
+                                    />
+                                </a>
+                            {/snippet}
+                        </Tooltip>
+                        <Tooltip
+                            open={shareHover}
+                            onOpenChange={(e) => (shareHover = e.open)}
+                            contentBase="bg-gray-100 p-4"
+                            contentBackground="rounded-sm text-gray-900"
+                            arrow
+                        >
+                            {#snippet content()}
+                                Share
+                            {/snippet}
+                            {#snippet trigger()}
+                                <button
+                                    class="btn preset-outlined-surface-500 p-2"
+                                    onclick={() =>
+                                        navigator.share({
+                                            title: `${achievement.name} - ${app.name}`,
+                                            text: `Check out this achievement!`,
+                                            url: page.url.toString(),
+                                        })}
+                                >
+                                    <span hidden>Share</span>
+                                    <Share
+                                        class="text-surface-500 h-4 w-4"
+                                        aria-hidden="true"
+                                    />
+                                </button>
+                            {/snippet}
+                        </Tooltip>
                     </div>
                 </div>
             </div>

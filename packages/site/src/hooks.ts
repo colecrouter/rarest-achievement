@@ -70,4 +70,13 @@ export const transport: Transport = {
             return new Errable(dataValue, errorValue);
         },
     },
+    Error: {
+        encode: (data) => data instanceof Error && { message: data.message, stack: data.stack },
+        decode: (data: { message: string; stack?: string }) => {
+            const { message, stack } = data;
+            const error = new Error(message);
+            if (stack) error.stack = stack;
+            return error;
+        },
+    },
 };

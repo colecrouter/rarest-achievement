@@ -13,6 +13,7 @@
     import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
     import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
     import { SteamUserAchievement, SteamUserStatus } from "lib";
+    import IndexError from "$lib/IndexError.svelte";
 
     const sortManager = getSortManager();
 
@@ -556,10 +557,15 @@
         <h2 class="mb-6 text-2xl font-bold">Friends Who Play</h2>
         <!-- TODO island -->
         {#if isSignedIn}
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {#await friends then f}
-                    {#if f}
-                        {@const { data: friends, error } = f.friends}
+            {#await friends then f}
+                {#if f}
+                    {@const { data: friends, error } = f.friends}
+                    {#if error}
+                        <IndexError />
+                    {/if}
+                    <div
+                        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
+                    >
                         {#each friends?.values() as f}
                             {@const friend = f.user}
                             {@const owned = f.owned}
@@ -643,14 +649,14 @@
                                 </div>
                             </div>
                         {/each}
-                    {/if}
-                {/await}
-            </div>
+                    </div>
+                {/if}
+            {/await}
         {/if}
     </div>
 
     <!-- Similar Games -->
-    <div>
+    <!-- <div>
         <h2 class="mb-6 text-2xl font-bold">Similar Games</h2>
         <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
             {#each Array(6) as _, index}
@@ -680,5 +686,5 @@
                 </div>
             {/each}
         </div>
-    </div>
+    </div> -->
 </main>

@@ -31,28 +31,27 @@ export const load = async ({ parent, locals }) => {
         // ONLY FETCH THE CURRENT APP
         const { data: friendAchievements, error: err3 } = await repo.getUserAchievements([app], f, "english");
 
+        const friends = f
+            .map((friend) => {
+                const ownedGames = ownedMap.get(friend.id);
+                const ownedGame = ownedGames?.find((game) => game.id === app.id);
+                if (!ownedGame?.playtime || ownedGame.playtime === 0) return null;
+                const achievements = friendAchievements.get(app.id)?.get(friend.id);
+                if (!achievements) return null;
+                const friendAchievementsList = [...achievements.values()].flat();
+                if (!friendAchievementsList) return null;
+                return {
+                    user: friend,
+                    owned: ownedGame,
+                    achievements: friendAchievementsList,
+                };
+            })
+            .filter((friend) => friend !== null)
+            .sort((a, b) => (b.owned.playtime ?? 0) - (a.owned.playtime ?? 0));
+
         // Map back into friends
         return {
-            friends: new Errable(
-                f
-                    .map((friend) => {
-                        const ownedGames = ownedMap.get(friend.id);
-                        const ownedGame = ownedGames?.find((game) => game.id === app.id);
-                        if (!ownedGame?.playtime || ownedGame.playtime === 0) return null;
-                        const achievements = friendAchievements.get(app.id)?.get(friend.id);
-                        if (!achievements) return null;
-                        const friendAchievementsList = [...achievements.values()].flat();
-                        if (!friendAchievementsList) return null;
-                        return {
-                            user: friend,
-                            owned: ownedGame,
-                            achievements: friendAchievementsList,
-                        };
-                    })
-                    .filter((friend) => friend !== null)
-                    .sort((a, b) => (b.owned.playtime ?? 0) - (a.owned.playtime ?? 0)),
-                err1 || err2 || err3,
-            ),
+            friends: new Errable(friends, err1 || err2 || err3),
         };
     })();
 

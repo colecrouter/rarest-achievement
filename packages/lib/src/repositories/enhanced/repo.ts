@@ -322,8 +322,8 @@ async function fetchAndUpsert<
             if (missingPairs.length > 0) {
                 // Call using the computed missing keys.
                 const missing = [
-                    missingPairs.map((pair) => pair[0]),
-                    missingPairs.map((pair) => pair[1]),
+                    [...new Set(missingPairs.map((pair) => pair[0]))],
+                    [...new Set(missingPairs.map((pair) => pair[1]))],
                 ] as MissingArgs<TArgs>;
                 const result = await upsertMissingData("2D", missing);
                 if (result.error) {

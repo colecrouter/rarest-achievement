@@ -11,4 +11,18 @@ export class Errable<T> {
         this.data = data;
         this.error = error;
     }
+
+    static try<U>(fn: () => Promise<U>): Promise<Errable<U>>;
+    static try<U>(fn: () => U): Errable<U>;
+    static try(fn: () => unknown): unknown {
+        try {
+            const result = fn();
+            if (result instanceof Promise) {
+                return result.then((r) => new Errable(r, null));
+            }
+            return new Errable(result, null);
+        } catch (error) {
+            return new Errable(null as unknown, error as Error);
+        }
+    }
 }

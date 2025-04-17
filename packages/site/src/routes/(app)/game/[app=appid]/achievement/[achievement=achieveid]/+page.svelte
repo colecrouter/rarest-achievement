@@ -6,15 +6,22 @@
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
     import { getRarity } from "$lib/rarity";
     import Chart from "chart.js/auto";
-    import { SteamUserStatus } from "lib";
+    import { SteamUserAchievement, SteamUserStatus } from "lib";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
+    import YouTube from "@lucide/svelte/icons/youtube";
+    import NotebookText from "@lucide/svelte/icons/notebook-text";
 
     let { data } = $props();
 
-    let { achievement, gameAchievements, app, friendsWithAchievement } =
-        $derived(data);
+    let {
+        achievement,
+        gameAchievements,
+        app,
+        friendsWithAchievement,
+        articles,
+    } = $derived(data);
 
     let rarity = $derived(getRarity(achievement.globalPercentage));
 
@@ -103,13 +110,13 @@
         return () => chart.destroy();
     });
 
-    let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "tips">(
+    let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(
         () => {
             switch (page.url.searchParams.get("tab")) {
                 case "friends":
                     return "friends";
-                case "tips":
-                    return "tips";
+                case "articles":
+                    return "articles";
                 default:
                     return "stats";
             }
@@ -251,9 +258,9 @@
                 class:font-bold={activeTab === "friends"}>Friends</button
             >
             <button
-                onclick={() => goto("?tab=tips")}
+                onclick={() => goto("?tab=articles")}
                 class="py-2"
-                class:font-bold={activeTab === "tips"}>Tips & Guides</button
+                class:font-bold={activeTab === "articles"}>Tips & Guides</button
             >
         </div>
 
@@ -392,18 +399,6 @@
                                             >
                                                 {currentAchievement.description}
                                             </p>
-                                            {#if isSignedIn}
-                                                <!-- <div
-                            class="mt-1 text-xs text-gray-500"
-                            >
-                            Unlocked on {format(
-                                parseISO(
-                                    achievement.unlocked,
-                                    ),
-                                    "MMM d, yyyy",
-                                    )}
-                                    </div> -->
-                                            {/if}
                                         </div>
                                     </div>
                                 {/each}
@@ -413,7 +408,7 @@
                 </Transition>
             {:else if activeTab === "friends"}
                 <Transition>
-                    <section class="container mt-6">
+                    <section class="mt-6">
                         <div class="card min-h-[300px] p-4">
                             <TransitionWrapper>
                                 {#await friendsWithAchievement}
@@ -569,35 +564,176 @@
                         </div>
                     </section>
                 </Transition>
-            {:else if activeTab === "tips"}
+            {:else if activeTab === "articles"}
                 <Transition>
-                    <section class="container mt-6">
-                        <div
-                            class="rounded-lg border border-gray-700 bg-gray-800 p-4"
-                        >
-                            <h2 class="font-bold">Tips & Strategies</h2>
-                            <p class="text-sm text-gray-400">
-                                Community guides for unlocking "{achievement.name}"
-                            </p>
-                            <div
-                                class="mb-6 flex gap-3 rounded-lg border border-gray-700 bg-gray-900/50 p-4"
-                            >
-                                <div>
-                                    <h3 class="mb-1 font-medium">
-                                        Achievement Description
-                                    </h3>
-                                    <p class="text-sm text-gray-300">
-                                        {achievement.description}
-                                    </p>
-                                </div>
+                    <section class="mt-6">
+                        {#await articles}
+                            <!-- Loading state -->
+                            <div class="p-4 text-center text-gray-300">
+                                Loading tips & guides...
                             </div>
-                            <button
-                                class="w-full bg-gray-700 py-2 text-gray-100 hover:bg-gray-600"
-                                >View All Tips & Guides</button
-                            >
-                        </div>
-                    </section>
-                </Transition>
+                        {:then res}
+                            {#if res}
+                                {@const { data: articleResult, error } = res}
+                                {#if error}
+                                    <div class="p-4 text-red-400">
+                                        Error loading guides: {error.message}
+                                    </div>
+                                {:else}
+                                    <section class="mt-6 space-y-8">
+                                        <!-- Steam Community Guides Card -->
+                                        <div
+                                            class="rounded-lg border border-gray-700 bg-gray-800 p-4"
+                                        >
+                                            <h2 class="font-bold">
+                                                <NotebookText
+                                                    class="inline text-amber-500"
+                                                />
+                                                Steam Community Guides
+                                            </h2>
+                                            <p class="text-sm text-gray-400">
+                                                Official guides from the Steam
+                                                Community for unlocking this
+                                                achievement.
+                                            </p>
+                                            <div class="mt-4 space-y-4">
+                                                {#each articleResult.articles as article}
+                                                    <div
+                                                        class="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
+                                                    >
+                                                        <a
+                                                            href="https://steamcommunity.com/sharedfiles/filedetails/?id={article.id}"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <div
+                                                                class="flex gap-4"
+                                                            >
+                                                                <img
+                                                                    src={article.thumbnail ||
+                                                                        "/placeholder.svg"}
+                                                                    alt={article.title}
+                                                                    class="h-24 w-24 rounded-md object-cover"
+                                                                />
+                                                                <div>
+                                                                    <h3
+                                                                        class="font-bold text-amber-500"
+                                                                    >
+                                                                        {article.title}
+                                                                    </h3>
+                                                                    <span
+                                                                        class="text-sm text-gray-400"
+                                                                    >
+                                                                        {article.author}
+                                                                    </span>
+                                                                    <p
+                                                                        class="text-sm text-gray-300"
+                                                                    >
+                                                                        {article.description}
+                                                                    </p>
+                                                                    <!-- <a
+                                                                href={article.url}
+                                                                class="mt-2 inline-block text-xs text-amber-400 hover:underline"
+                                                            >
+                                                                Read More
+                                                            </a> -->
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </div>
+                                        <!-- YouTube Video Guides Card -->
+                                        <div
+                                            class="rounded-lg border border-gray-700 bg-gray-800 p-4"
+                                        >
+                                            <h2 class="font-bold">
+                                                <YouTube
+                                                    class="inline text-red-500"
+                                                />
+                                                YouTube Video Guides
+                                            </h2>
+                                            <p class="text-sm text-gray-400">
+                                                Helpful video tutorials for
+                                                unlocking this achievement.
+                                            </p>
+                                            <div class="mt-4 space-y-4">
+                                                {#each articleResult.videos as video}
+                                                    <div
+                                                        class="rounded-lg border border-gray-700 bg-gray-900/50 p-4"
+                                                    >
+                                                        <a
+                                                            href="https://www.youtube.com/watch?v={video.videoId}"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <div
+                                                                class="flex flex-col gap-4 md:flex-row"
+                                                            >
+                                                                <div
+                                                                    class="relative h-[135px] w-full flex-shrink-0 overflow-hidden rounded-md md:w-[240px]"
+                                                                >
+                                                                    <img
+                                                                        src="https://i.ytimg.com/vi/{video.videoId}/mqdefault.jpg"
+                                                                        alt={video.title}
+                                                                        class="h-full w-full object-cover"
+                                                                        width="240"
+                                                                        height="135"
+                                                                    />
+                                                                </div>
+                                                                <div
+                                                                    class="flex-1"
+                                                                >
+                                                                    <h3
+                                                                        class="mb-1 text-lg font-bold text-gray-100"
+                                                                    >
+                                                                        {video.title}
+                                                                    </h3>
+                                                                    <div
+                                                                        class="mb-2 flex items-center gap-2"
+                                                                    >
+                                                                        <!-- <img
+                                                                    src={video.channelAvatar ||
+                                                                        "/placeholder.svg"}
+                                                                    alt={video.channel}
+                                                                    width="20"
+                                                                    height="20"
+                                                                    class="rounded-full"
+                                                                /> -->
+                                                                        <span
+                                                                            class="text-sm text-gray-400"
+                                                                        >
+                                                                            {video.channel}
+                                                                        </span>
+                                                                        <!-- <span
+                                                                    class="text-xs text-gray-500"
+                                                                >
+                                                                    {video.date}
+                                                                </span> -->
+                                                                    </div>
+                                                                    <p
+                                                                        class="mb-3 text-sm text-gray-300"
+                                                                    >
+                                                                        {video.description}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </div>
+                                    </section>
+                                {/if}
+                            {/if}
+                        {:catch error}
+                            <div class="p-4 text-red-400">
+                                Error: {error.message}
+                            </div>
+                        {/await}
+                    </section></Transition
+                >
             {/if}
         </TransitionWrapper>
     </div>

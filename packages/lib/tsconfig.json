@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
+        "baseUrl": "src",
         "allowJs": true,
         "checkJs": true,
         "esModuleInterop": true,
@@ -12,6 +12,20 @@
         "moduleResolution": "bundler",
         "noUncheckedIndexedAccess": true,
         "target": "ESNext",
-        "module": "ESNext"
-    }
+        "module": "ESNext",
+        "paths": {
+            "@models": [
+                "./models"
+            ],
+            "@models/*": [
+                "./models/*"
+            ],
+            "@config": [
+                "./config"
+            ],
+            "@config/*": [
+                "./config/*"
+            ],
+        },
+    },
 }

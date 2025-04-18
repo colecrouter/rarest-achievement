@@ -39,7 +39,7 @@ def main():
     import os
     print("Current working directory:", os.getcwd())
 
-    csv_file = '../../python/xgboost_model/steam_data.csv'
+    csv_file = 'steam_data.csv'
     df = load_data(csv_file)
     X, y = preprocess_data(df)
     # Split data into training and testing sets (80% train, 20% test)
@@ -54,7 +54,7 @@ def main():
     r2 = r2_score(y_test, predictions)
     print(f"Test RMSE: {rmse} (which is {relative_rmse:.2f}% of mean ownership)")
     print(f"R2 score: {r2}")
-    save_model(model, 'steam_model.json')
+    save_model(model, '../../packages/lib/steam_model.json')
     print("Model training complete. Model saved to steam_model.json")
 
 if __name__ == '__main__':

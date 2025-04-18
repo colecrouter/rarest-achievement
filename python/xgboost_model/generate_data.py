@@ -104,8 +104,8 @@ def generate_csv(app_ids, output_file):
             writer.writerow(row)
 
 if __name__ == '__main__':
-    app_ids = [  2767030]
+    app_ids = [  2767030 ]
     
-    output_file = '../../python/xgboost_model/steam_data.csv'
+    output_file = 'steam_data.csv'
     generate_csv(app_ids, output_file)
     print("Data generation complete. See", output_file)

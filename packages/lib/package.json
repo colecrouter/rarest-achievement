@@ -17,7 +17,7 @@
         "db:studio": "drizzle-kit studio",
         "db:migration": "drizzle-kit generate",
         "lint": "tsc --noEmit --skipLibCheck --pretty",
-        "prepare": "python3 -m venv ../../python/xgboost_model/venv && ../../python/xgboost_model/venv/bin/python -m pip install --upgrade pip && ../../python/xgboost_model/venv/bin/python -m pip install -r ../../python/xgboost_model/requirements.txt && ../../python/xgboost_model/venv/bin/python ../../python/xgboost_model/train_model.py"
+        "prepare": "cd ../../python/xgboost_model && node setup-venv.js"
     },
     "devDependencies": {
         "drizzle-kit": "^0.30.6",

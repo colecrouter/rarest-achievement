@@ -8,6 +8,7 @@ import type {
     SteamUserRaw,
 } from "../../models";
 import type { OwnedGame } from "../api/steampowered/owned";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 
 export const users = sqliteTable(
     "users",
@@ -112,7 +113,7 @@ export const friends = sqliteTable(
     ],
 );
 
-export default {
+const schema = {
     users,
     apps,
     achievementsStats,
@@ -121,3 +122,7 @@ export default {
     ownedGames,
     friends,
 };
+
+export default schema;
+
+export type ProjectDB = DrizzleD1Database<typeof schema>;

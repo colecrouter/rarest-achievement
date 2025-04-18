@@ -3,8 +3,20 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-        "build": "echo \"\"",
-        "lint": "tsc --noEmit --skipLibCheck --pretty"
+        "deploy": "wrangler deploy",
+        "dev": "wrangler dev",
+        "start": "wrangler dev",
+        "test": "vitest",
+        "cf-typegen": "wrangler types",
+        "lint": "tsc --noEmit --skipLibCheck --pretty",
+        "postinstall": "npm run cf-typegen",
+        "db:migrate": "wrangler d1 migrations apply steam-data"
     },
-    "dependencies": {}
+    "devDependencies": {
+        "@cloudflare/vitest-pool-workers": "^0.7.5",
+        "@cloudflare/workers-types": "^4.20250418.0",
+        "drizzle-orm": "^0.42.0",
+        "typescript": "^5.5.2",
+        "wrangler": "^4.12.0"
+    }
 }

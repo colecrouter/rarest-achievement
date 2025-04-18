@@ -3,7 +3,8 @@
     "files": {
         "ignore": [
             "**/node_modules/**",
-            "**/.svelte-kit/**"
+            "**/.svelte-kit/**",
+            "**/worker-configuration.d.ts"
         ]
     },
     "formatter": {

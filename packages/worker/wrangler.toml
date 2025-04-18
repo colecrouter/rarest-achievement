@@ -1,0 +1,42 @@
+name = "rarest-achievement-janitor"
+main = "src/index.ts"
+compatibility_date = "2025-04-18"
+
+[observability]
+enabled = true
+
+# Smart Placement
+# placement = { mode = "smart" }
+
+# Bindings
+# ...existing code...
+
+# Environment Variables
+# vars = { MY_VARIABLE = "production_value" }
+
+# Note: Use secrets to store sensitive data.
+# ...existing code...
+
+# Static Assets
+# assets = { directory = "./public/", binding = "ASSETS" }
+
+# Service Bindings
+# services = [ { binding = "MY_SERVICE", service = "my-service" } ]
+
+[vars]
+NODE_VERSION = "22"
+
+[env.production.vars]
+NODE_VERSION = "22"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "steam-data"
+database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
+migrations_dir = "../../packages/lib/drizzle"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "steam-data"
+database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
+migrations_dir = "../../packages/lib/drizzle"

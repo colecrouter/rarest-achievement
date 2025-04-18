@@ -1,7 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { SteamAuthenticatedAPIClient, SteamStoreAPIClient, SteamUser, schema } from "lib";
+import type { ProjectDB, SteamAuthenticatedAPIClient, SteamStoreAPIClient, SteamUser } from "lib";
 
 // for information about these interfaces
 declare global {
@@ -11,7 +10,7 @@ declare global {
             steamClient: SteamAuthenticatedAPIClient;
             steamStoreClient: SteamStoreAPIClient;
             steamUser: SteamUser | null;
-            steamCacheDB: DrizzleD1Database<typeof schema>;
+            steamCacheDB: ProjectDB;
         }
         // interface PageData {}
         // interface PageState {}

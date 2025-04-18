@@ -4,4 +4,5 @@ export * from "./api/store/client";
 export * from "./api/lang";
 export * from "./api/steamcommunity/repo";
 export * from "./api/youtube/repo";
+export * from "./db/schema";
 export * as schema from "./db/schema";

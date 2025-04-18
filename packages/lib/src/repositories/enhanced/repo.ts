@@ -1,5 +1,5 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { schema } from "..";
+import type { ProjectDB, schema } from "..";
 import { Errable } from "../../error";
 import { SteamApp, SteamAppAchievement, SteamOwnedGame, SteamUser, SteamUserAchievement } from "../../models";
 import type { Language } from "../api/lang";
@@ -22,7 +22,7 @@ export class EnhancedSteamRepository {
 
     constructor(locals: {
         steamClient: SteamAuthenticatedAPIClient;
-        steamCacheDB: DrizzleD1Database<typeof schema>;
+        steamCacheDB: ProjectDB;
     }) {
         this.#apiRepository = new SteamAPIRepository(locals.steamClient);
         this.#cacheRepository = new SteamCacheDBRepository(locals.steamCacheDB);

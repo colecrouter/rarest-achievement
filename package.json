@@ -1,5 +1,5 @@
 {
-    "name": "rarest-achievement-monorepo",
+    "name": "rarest-achievement",
     "version": "1.0.0",
     "private": true,
     "workspaces": [

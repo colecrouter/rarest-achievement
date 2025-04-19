@@ -1,5 +1,5 @@
 {
-    "name": "site",
+    "name": "@project/site",
     "version": "1.0.0",
     "private": true,
     "scripts": {
@@ -15,6 +15,7 @@
         "@inlang/cli": "^3.0.0",
         "@inlang/paraglide-js": "2.0.11",
         "@lucide/svelte": "^0.488.0",
+        "@project/lib": "^1.0.0",
         "@skeletonlabs/skeleton": "^3.1.2",
         "@skeletonlabs/skeleton-svelte": "^1.2.1",
         "@sveltejs/adapter-cloudflare": "^5.0.1",

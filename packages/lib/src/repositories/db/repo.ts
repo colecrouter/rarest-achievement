@@ -7,6 +7,7 @@ import {
     eq,
     getTableColumns,
     getTableName,
+    gt,
     inArray,
     sql,
 } from "drizzle-orm";
@@ -14,7 +15,6 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type {
     SteamAchievementRawGlobalStats,
     SteamAchievementRawMeta,
-    SteamAppRaw,
     SteamFriendsListRaw,
     SteamUserAchievementRawStats,
     SteamUserRaw,
@@ -205,7 +205,7 @@ export class SteamCacheDBRepository {
         // Determine chunk size based on count of parameters
         // Each SQL statement can have a maximum of 100 parameters
         // For simplicity, we'll only fetch 1 appId at a time
-        const chunkSize = 100 / 3; // 50 for appId and 50 for userId
+        const chunkSize = 100 / 5; // 50 for appId and 50 for userId
         const crossProductPairs: [number, string][] = [];
         for (const app of appId) {
             for (const user of userId) {
@@ -219,8 +219,16 @@ export class SteamCacheDBRepository {
             batchedGameIds.push(appId.slice(i, i + chunkSize));
         }
 
+        // This will allow us to "refresh data" while I figure out what data I want to keep
+        // TODO
+        const ONE_DAY_AGO = new Date();
+        ONE_DAY_AGO.setDate(ONE_DAY_AGO.getDate() - 1);
+
         const batches2 = batchedGameIds.map((ids) =>
-            this.#db.select().from(userAchievements).where(inArray(userAchievements.app_id, ids)),
+            this.#db
+                .select()
+                .from(userAchievements)
+                .where(and(inArray(userAchievements.app_id, ids), gt(userAchievements.updated_at, ONE_DAY_AGO))),
         );
 
         if (!batches2[0]) return new Map();
@@ -230,6 +238,8 @@ export class SteamCacheDBRepository {
         const gameMap = new Map<number, Map<string, Map<string, SteamUserAchievementRawStats>>>();
 
         for (const row of flattenedStats) {
+            // Only process if there is achievement data
+            if (!row.data) continue;
             const appId = row.app_id;
             if (!gameMap.has(appId)) {
                 gameMap.set(appId, new Map());
@@ -267,6 +277,7 @@ export class SteamCacheDBRepository {
         }
 
         for (let i = 0; i < values.length; i += 20) {
+            console.log("Inserting user achievements", i, values.length);
             const chunk = values.slice(i, i + 20);
             await this.#db
                 .insert(userAchievements)

@@ -208,12 +208,6 @@ type NestedMap<T extends unknown[]> = T extends [infer Head, ...infer Tail]
         : unknown
     : unknown;
 
-// Add debug to compare expected keys and map keys
-function debugCompareKeys<T>(expectedKeys: T[], map: Map<T, unknown>, label: string): void {
-    const missingKeys = expectedKeys.filter((key) => !map.has(key));
-    if (missingKeys.length) console.debug(`${label} - Missing keys:`, missingKeys);
-}
-
 /**
  * For a 1D map, return the keys that are missing.
  *
@@ -223,10 +217,12 @@ function debugCompareKeys<T>(expectedKeys: T[], map: Map<T, unknown>, label: str
  * @returns An array of missing keys
  */
 function getMissingKeys1D<T>(expectedKeys: T[], data: Map<T, unknown>, debugLabel = "1D Map"): T[] {
-    debugCompareKeys(expectedKeys, data, debugLabel);
     const expectedSet = new Set(expectedKeys);
     const dataKeysSet = new Set(data.keys());
-    return Array.from(expectedSet.difference(dataKeysSet));
+    const difference = Array.from(expectedSet.difference(dataKeysSet));
+    console.debug(`${debugLabel} - Missing keys:`, difference);
+
+    return difference;
 }
 
 /**
@@ -245,6 +241,7 @@ function getMissingKeys2D<TOuter, TInner>(
     data: Map<TOuter, Map<TInner, unknown>>,
 ): { missingPairs: Array<[TOuter, TInner]> } {
     // Determine global missing inner keys: if any outer is missing an inner key, mark it missing for all.
+
     const globalMissingInner = expectedInner.filter((inner) =>
         expectedOuter.some((outer) => {
             const innerMap = data.get(outer);
@@ -257,6 +254,8 @@ function getMissingKeys2D<TOuter, TInner>(
             missingPairs.push([outer, inner]);
         }
     }
+    // Added logging for 2D missing keys.
+    console.debug("2D Map - Missing pairs:", missingPairs);
 
     return { missingPairs };
 }
@@ -329,12 +328,20 @@ async function fetchAndUpsert<
                 if (result.error) {
                     error = result.error;
                 }
-
-                accumulatedData = result.data as Awaited<TResult>;
+                // Merge API data into existing accumulatedData
+                for (const [outerKey, apiInnerMap] of result.data) {
+                    if (accumulatedData.has(outerKey)) {
+                        const existingInner = accumulatedData.get(outerKey)!;
+                        apiInnerMap.forEach((value, innerKey) => {
+                            existingInner.set(innerKey, value);
+                        });
+                    } else {
+                        accumulatedData.set(outerKey, apiInnerMap);
+                    }
+                }
             }
         } else {
             // 1D map case.
-            // console.log("1D map case", data);
             const missingKeys = getMissingKeys1D(expectedOuter, accumulatedData);
             if (missingKeys.length > 0) {
                 const result = await upsertMissingData("1D", [missingKeys] as MissingArgs<TArgs>);

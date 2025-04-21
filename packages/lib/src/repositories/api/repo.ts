@@ -29,7 +29,7 @@ export class SteamAPIRepository {
     }
 
     async getApps(app_id: number[], lang: Language = "english") {
-        const data = new Map<number, { data: SteamAppRaw; estimated_players: number } | null>();
+        const data = new Map<number, SteamAppRaw | null>();
         let error: Error | null = null;
 
         try {
@@ -38,33 +38,11 @@ export class SteamAPIRepository {
                 const chunk = app_id.slice(i, i + chunkSize);
                 await Promise.all(
                     chunk.map(async (appId) => {
-                        const [appDetails, appReviews, appPlayerCount] = await Promise.all([
-                            SteamStoreAPIClient.getAppDetails<undefined>(appId, { l: lang }),
-                            SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
-                            SteamChartsAPIClient.getAppChartData(appId),
-                        ]);
-
+                        const appDetails = await SteamStoreAPIClient.getAppDetails<undefined>(appId, { l: lang });
                         const appData = appDetails?.[appId];
-                        if (!appData?.data || !appReviews || !appPlayerCount) return data.set(appId, null);
+                        if (!appData?.data) return data.set(appId, null);
 
-                        // Call machine learning model to estimate player count
-                        const estimatedPlayers = estimatePlayerCount({
-                            all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
-                            avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
-                            day_peak: appPlayerCount
-                                .filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
-                                .reduce((acc, curr) => Math.max(acc, curr[1]), 0),
-                            release_date_numeric: new Date(appData?.data?.release_date?.date ?? 0).getTime() / 1000,
-                            review_score: appReviews.query_summary.review_score,
-                            total_reviews: appReviews.query_summary.total_reviews,
-                            is_free: appData?.data?.is_free ? 1 : 0,
-                            price: appData?.data?.price_overview?.final ?? 0,
-                        });
-
-                        data.set(appId, {
-                            data: appData.data,
-                            estimated_players: estimatedPlayers,
-                        });
+                        data.set(appId, appData.data);
                     }),
                 );
             }

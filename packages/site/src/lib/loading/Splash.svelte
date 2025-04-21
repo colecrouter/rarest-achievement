@@ -10,11 +10,11 @@
 
 <section class="flex min-h-[200px] w-full flex-col items-center justify-center">
     <div class="max-w-[800px]">
-        <h1 class="mt-8 mb-60 text-center text-2xl font-bold text-gray-200">
+        <h1 class="mt-8 text-center text-2xl font-bold text-gray-200">
             Loading...
         </h1>
 
-        <div class="show">
+        <div class="show flex min-h-[400px] flex-col justify-center">
             <h2 class="mb-4 text-center text-lg font-bold">
                 "{message.title}"
             </h2>

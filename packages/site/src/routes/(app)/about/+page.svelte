@@ -1,9 +1,10 @@
 <script lang="ts">
-    import Trophy from "@lucide/svelte/icons/trophy";
     import ArrowRight from "@lucide/svelte/icons/arrow-right";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Github from "@lucide/svelte/icons/github";
     import Mail from "@lucide/svelte/icons/mail";
+    import Trophy from "@lucide/svelte/icons/trophy";
+    import { Accordion } from "@skeletonlabs/skeleton-svelte";
 
     let team = [
         {
@@ -15,7 +16,15 @@
 
     let faqs = [
         {
-            question: "How do I connect my gaming accounts?",
+            question: "What is Steam Vault?",
+            answer: "Steam Vault is a platform that lets you view all of your achievements across Steam. We help you find your rarest achievements.",
+        },
+        {
+            question: "Why is Steam Vault special?",
+            answer: "Due to Steam's strict API guidelines, it is difficult to track achievement progress for many users, across thousands of games. Steam Vault aims to bridge that gap, while gathering as much data & insight as possible, and providing it to you (for free).",
+        },
+        {
+            question: "How do I connect my Steam account?",
             answer: "Simply press the sign in button on the top right corner of the page. Connect your Steam account to start tracking your achievements.",
         },
         {
@@ -34,9 +43,7 @@
             question: "How is achievement rarity calculated?",
             answer: 'Achievement rarity is calculated based on a few factors. The "percentage" stat is from Steam directly, and it is unknown how that number is calculated. Our "score" represents how many people have unlocked the achievement. It is calculated using a rough estimate of how many people have played the game. We are always looking for new ways to analyze and visualize your achievements.',
         },
-    ];
-
-    let openFaq: number | null = null;
+    ] satisfies Record<"question" | "answer", string>[];
 
     let { data } = $props();
 </script>
@@ -93,10 +100,10 @@
                         this. Steam Vault aims to change that.
                     </p>
                     <p class="text-gray-300">
-                        Our platform is designed to highlight the rarest and
-                        most impressive achievements, helping you stand out in
-                        the gaming community and discover new challenges to
-                        conquer.
+                        Our platform is designed to celebrate your gaming
+                        journey, allowing you to view your achievements in a new
+                        light. We also aim to provide you with insights and
+                        other info to keep you going.
                     </p>
                 </div>
             </div>
@@ -219,33 +226,27 @@
         </section>
 
         <!-- FAQ -->
-        <section class="mb-16">
+        <section class="mx-auto mb-16 max-w-[800px]">
             <h2 class="mb-8 text-center text-3xl font-bold">
                 Frequently Asked Questions
             </h2>
-            <div class="mx-auto max-w-3xl space-y-4">
+            <Accordion multiple>
                 {#each faqs as faq, index}
-                    <div class="rounded-xl border border-gray-700">
-                        <button
-                            class="w-full px-4 py-3 text-left focus:outline-none"
-                            on:click={() =>
-                                (openFaq = openFaq === index ? null : index)}
-                        >
-                            <div class="flex items-center justify-between">
-                                <span>{faq.question}</span>
-                                <span>{openFaq === index ? "-" : "+"}</span>
-                            </div>
-                        </button>
-                        {#if openFaq === index}
-                            <div
-                                class="border-t border-gray-700 px-4 py-3 text-gray-300"
+                    <Accordion.Item value={index.toString()}>
+                        {#snippet control()}{faq.question}{/snippet}
+                        {#snippet panel()}
+                            <p
+                                class="bg-surface-950 -mx-4 rounded-lg p-4 text-gray-300"
                             >
                                 {faq.answer}
-                            </div>
-                        {/if}
-                    </div>
+                            </p>
+                        {/snippet}
+                    </Accordion.Item>
+                    {#if index < faqs.length - 1}
+                        <hr class="hr" />
+                    {/if}
                 {/each}
-            </div>
+            </Accordion>
         </section>
 
         <!-- Contact -->

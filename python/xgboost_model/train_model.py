@@ -42,18 +42,20 @@ def main():
     csv_file = 'steam_data.csv'
     df = load_data(csv_file)
     X, y = preprocess_data(df)
-    # Split data into training and testing sets (80% train, 20% test)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Split data into training and testing sets
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train = X
+    y_train = y
     model = train_model(X_train, y_train)
     # Evaluate the model on the test set
-    predictions = model.predict(X_test)
-    rmse = root_mean_squared_error(y_test, predictions)
+    # predictions = model.predict(X_test)
+    # rmse = root_mean_squared_error(y_test, predictions)
     # Compute relative RMSE and R2 score
-    relative_rmse = (rmse / y_test.mean()) * 100
+    # relative_rmse = (rmse / y_test.mean()) * 100
     from sklearn.metrics import r2_score
-    r2 = r2_score(y_test, predictions)
-    print(f"Test RMSE: {rmse} (which is {relative_rmse:.2f}% of mean ownership)")
-    print(f"R2 score: {r2}")
+    # r2 = r2_score(y_test, predictions)
+    # print(f"Test RMSE: {rmse} (which is {relative_rmse:.2f}% of mean ownership)")
+    # print(f"R2 score: {r2}")
     save_model(model, '../../packages/lib/steam_model.json')
     print("Model training complete. Model saved to steam_model.json")
 

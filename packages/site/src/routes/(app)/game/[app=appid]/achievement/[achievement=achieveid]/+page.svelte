@@ -397,7 +397,7 @@
                                 Your progress on all achievements in this game
                             </p>
                             <div
-                                class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3"
+                                class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3"
                             >
                                 {#each gameAchievements?.values() ?? [] as currentAchievement}
                                     {@const isCurrent =

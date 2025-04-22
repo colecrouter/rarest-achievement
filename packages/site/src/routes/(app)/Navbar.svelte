@@ -15,9 +15,16 @@
         class="container mx-auto flex items-center justify-between gap-4 px-4 py-4"
     >
         <!-- Logo and title -->
-        <a href="/" class="flex items-center gap-2">
+        <a href="/" class="flex items-center gap-2 pr-2">
             <div class="logo bg-primary-500"></div>
-            <h1 class="hidden text-xl font-bold md:block">Steam Vault</h1>
+            <h1 class="relative hidden text-xl font-bold md:block">
+                Steam Vault
+                <span
+                    class="badge text-primary-500 badge-icon preset-outlined-primary-500 absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
+                >
+                    Beta
+                </span>
+            </h1>
         </a>
 
         <!-- Search form -->

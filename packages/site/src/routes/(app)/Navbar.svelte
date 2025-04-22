@@ -15,7 +15,7 @@
         class="container mx-auto flex items-center justify-between gap-4 px-4 py-4"
     >
         <!-- Logo and title -->
-        <a href="/" class="flex items-center gap-2 pr-2">
+        <a href="/" class="flex items-center gap-2 pr-4">
             <div class="logo bg-primary-500"></div>
             <h1 class="relative hidden text-xl font-bold md:block">
                 Steam Vault
@@ -29,7 +29,12 @@
 
         <!-- Search form -->
         <form class="flex-grow" action="/?/search" method="post">
-            <input class="input" type="text" name="q" placeholder="Search" />
+            <input
+                class="input"
+                type="text"
+                name="q"
+                placeholder="Enter a username..."
+            />
         </form>
 
         {#if user}

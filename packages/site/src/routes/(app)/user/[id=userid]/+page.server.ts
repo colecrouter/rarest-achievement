@@ -1,6 +1,6 @@
-import { EnhancedSteamRepository, type SteamUserAchievement } from "lib";
+import { EnhancedSteamRepository } from "lib";
 
-export const load = async ({ url, parent, locals }) => {
+export const load = async ({ parent, locals }) => {
     const achievements = (async () => {
         const repo = new EnhancedSteamRepository(locals);
         const { user: u } = await parent();
@@ -20,7 +20,6 @@ export const load = async ({ url, parent, locals }) => {
 
         // Log all game ids, where an achievement is present
         const gameIdsWithAchievements = [...allAchievements.keys()];
-        const gameIdsWithAchievementsSet = new Set(gameIdsWithAchievements);
 
         // Flatten the achievements map to get a list of all achievements
         const allGames = [...allAchievements.values()];

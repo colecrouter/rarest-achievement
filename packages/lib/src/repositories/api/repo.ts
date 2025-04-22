@@ -1,5 +1,4 @@
 import { Errable } from "../../error";
-import { estimatePlayerCount } from "../../ml/playerEstimate";
 import type {
     SteamAchievementRawGlobalStats,
     SteamAchievementRawMeta,
@@ -12,7 +11,6 @@ import type { Language } from "../../repositories/api/lang";
 import type { SteamAuthenticatedAPIClient } from "../../repositories/api/steampowered/client";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import { SteamStoreAPIClient } from "../../repositories/api/store/client";
-import { SteamChartsAPIClient } from "./steamcharts/client";
 
 /**
  * Repository for fetching data from the Steam API.

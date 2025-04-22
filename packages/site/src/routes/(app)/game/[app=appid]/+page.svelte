@@ -14,6 +14,7 @@
     import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
     import { SteamUserAchievement, SteamUserStatus } from "lib";
     import IndexError from "$lib/IndexError.svelte";
+    import { page } from "$app/state";
 
     const sortManager = getSortManager();
 
@@ -354,7 +355,7 @@
                                     <input
                                         type="hidden"
                                         name="redirect"
-                                        value={location.pathname}
+                                        value={page.url.pathname}
                                     />
                                     <button
                                         class="btn preset-filled-primary-500 mt-4 inline-block rounded-lg"

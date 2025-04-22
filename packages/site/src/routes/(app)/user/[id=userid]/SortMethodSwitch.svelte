@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getSortManager, type SortMethod } from "$lib/sortManager.svelte";
+    import { type SortMethod, getSortManager } from "$lib/sortManager.svelte";
     import { Segment } from "@skeletonlabs/skeleton-svelte";
 
     const sortManager = getSortManager();

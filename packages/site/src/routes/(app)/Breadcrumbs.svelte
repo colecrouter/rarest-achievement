@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Breadcrumb } from "$lib/breadcrumbs";
-    import House from "@lucide/svelte/icons/house";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
+    import House from "@lucide/svelte/icons/house";
 
     interface Props {
         path: Breadcrumb[];

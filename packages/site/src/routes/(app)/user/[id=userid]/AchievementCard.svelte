@@ -2,9 +2,9 @@
     import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
     import { getSortManager } from "$lib/sortManager.svelte";
-    import type { SteamAppAchievement } from "lib";
+    import type { SteamAppAchievement } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
-    import { SteamUserAchievement } from "lib";
+    import { SteamUserAchievement } from "@project/lib";
 
     interface Props {
         achievement: SteamUserAchievement | SteamAppAchievement;

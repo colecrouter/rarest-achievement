@@ -1,9 +1,9 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
+import { Errable } from "../../..";
 import type { Language } from "../lang";
 import { SteamCommunityClient } from "./client";
 import type { Article } from "./scrape";
-import { Errable } from "../../..";
 
 export class SteamCommunityRepo {
     #cache: KVNamespace;
@@ -22,7 +22,9 @@ export class SteamCommunityRepo {
 
         const articles = await Errable.try(async () => {
             const articles = await SteamCommunityClient.fetchArticles(achievement, lang, 5);
-            await this.#cache.put(cacheKey, JSON.stringify(articles), { expirationTtl: 60 * 60 * 24 }); // Cache for 24 hours
+            await this.#cache.put(cacheKey, JSON.stringify(articles), {
+                expirationTtl: 60 * 60 * 24,
+            }); // Cache for 24 hours
             return articles;
         });
 

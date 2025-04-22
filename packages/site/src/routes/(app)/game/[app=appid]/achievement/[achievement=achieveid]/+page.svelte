@@ -5,16 +5,16 @@
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
     import { getRarity } from "$lib/rarity";
-    import Chart from "chart.js/auto";
-    import { SteamUserAchievement, SteamUserStatus } from "lib";
+    import BookOpenText from "@lucide/svelte/icons/book-open-text";
+    import NotebookText from "@lucide/svelte/icons/notebook-text";
+    import Share from "@lucide/svelte/icons/share";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
+    import YouTube from "@lucide/svelte/icons/youtube";
+    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
+    import Chart from "chart.js/auto";
+    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
-    import YouTube from "@lucide/svelte/icons/youtube";
-    import NotebookText from "@lucide/svelte/icons/notebook-text";
-    import BookOpenText from "@lucide/svelte/icons/book-open-text";
-    import Share from "@lucide/svelte/icons/share";
-    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
     import AchievementCard from "../../../../user/[id=userid]/AchievementCard.svelte";
 
     let { data } = $props();

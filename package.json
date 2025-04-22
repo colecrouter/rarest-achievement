@@ -12,7 +12,7 @@
         "preview": "npm run preview --workspaces",
         "test": "npm run test --workspaces",
         "lint": "biome lint ./packages/* && npm run lint --workspaces",
-        "lint:fix": "biome lint ./packages/* --fix && npm run lint --workspaces",
+        "lint:fix": "biome lint ./packages/* --fix --unsafe && npm run lint --workspaces",
         "format": "prettier --log-level silent ./packages/*/src && biome check ./packages/*",
         "format:fix": "prettier --log-level silent --write ./packages/*/src && biome check ./packages/* --fix --unsafe",
         "db:push": "npm run db:push --workspaces",

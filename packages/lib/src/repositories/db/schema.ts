@@ -1,3 +1,4 @@
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { foreignKey, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type {
     SteamAchievementRawGlobalStats,
@@ -8,7 +9,6 @@ import type {
     SteamUserRaw,
 } from "../../models";
 import type { OwnedGame } from "../api/steampowered/owned";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 
 export const users = sqliteTable(
     "users",

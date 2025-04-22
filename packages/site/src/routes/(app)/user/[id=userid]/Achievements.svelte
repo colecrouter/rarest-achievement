@@ -2,7 +2,7 @@
     import { type SortMethod, getSortManager } from "$lib/sortManager.svelte";
     import Search from "@lucide/svelte/icons/search";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
-    import type { SteamUser, SteamUserAchievement } from "lib";
+    import type { SteamUser, SteamUserAchievement } from "@project/lib";
     import { fly } from "svelte/transition";
     import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";

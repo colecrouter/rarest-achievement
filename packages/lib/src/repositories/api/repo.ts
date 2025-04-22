@@ -36,7 +36,9 @@ export class SteamAPIRepository {
                 const chunk = app_id.slice(i, i + chunkSize);
                 await Promise.all(
                     chunk.map(async (appId) => {
-                        const appDetails = await SteamStoreAPIClient.getAppDetails<undefined>(appId, { l: lang });
+                        const appDetails = await SteamStoreAPIClient.getAppDetails<undefined>(appId, {
+                            l: lang,
+                        });
                         const appData = appDetails?.[appId];
                         if (!appData?.data) return data.set(appId, null);
 
@@ -167,7 +169,9 @@ export class SteamAPIRepository {
             await Promise.all(
                 game_id.map(async (gameId) => {
                     const metaMap = validSchemas.get(gameId);
-                    const percentages = await this.#apiClient.getGlobalAchievementPercentagesForApp({ gameid: gameId });
+                    const percentages = await this.#apiClient.getGlobalAchievementPercentagesForApp({
+                        gameid: gameId,
+                    });
                     const globalMap = new Map<string, SteamAchievementRawGlobalStats>();
                     for (const achievement of percentages?.achievementpercentages.achievements ?? []) {
                         globalMap.set(achievement.name, achievement);

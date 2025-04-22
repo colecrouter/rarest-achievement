@@ -1,7 +1,11 @@
+import {
+    type ProjectDB,
+    SteamAPIRepository,
+    type SteamAuthenticatedAPIClient,
+    SteamCacheDBRepository,
+    apps,
+} from "@project/lib";
 import { asc, lt } from "drizzle-orm";
-import { type ProjectDB, type SteamAuthenticatedAPIClient, apps } from "lib";
-import { SteamAPIRepository } from "../../lib/src/repositories/api/repo";
-import { SteamCacheDBRepository } from "../../lib/src/repositories/db/repo";
 
 export const refreshStaleApps = async (db: ProjectDB, api: SteamAuthenticatedAPIClient, count: number) => {
     const ONE_DAY_AGO = new Date();

@@ -14,18 +14,10 @@
         "target": "ESNext",
         "module": "ESNext",
         "paths": {
-            "@models": [
-                "./models"
-            ],
-            "@models/*": [
-                "./models/*"
-            ],
-            "@config": [
-                "./config"
-            ],
-            "@config/*": [
-                "./config/*"
-            ],
-        },
-    },
+            "@models": ["./models"],
+            "@models/*": ["./models/*"],
+            "@config": ["./config"],
+            "@config/*": ["./config/*"]
+        }
+    }
 }

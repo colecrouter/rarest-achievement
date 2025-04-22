@@ -1,6 +1,6 @@
 import type { Breadcrumb } from "$lib/breadcrumbs";
 import { error } from "@sveltejs/kit";
-import { EnhancedSteamRepository } from "lib";
+import { EnhancedSteamRepository } from "@project/lib";
 
 export const load = async ({ params, parent, locals }) => {
     const achievementId = params.achievement;

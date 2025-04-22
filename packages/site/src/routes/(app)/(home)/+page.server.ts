@@ -1,5 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { countDistinct, sql, sum, asc, eq, and, inArray } from "drizzle-orm";
+import { and, asc, countDistinct, eq, inArray, sql, sum } from "drizzle-orm";
 import {
     EnhancedSteamRepository,
     type SteamAchievementRawGlobalStats,
@@ -12,7 +12,7 @@ import {
     apps,
     resolveSteamID,
     userScores,
-} from "lib";
+} from "@project/lib";
 
 export const actions = {
     search: async ({ request }) => {
@@ -95,7 +95,9 @@ const getStats = async (locals: App.Locals) => {
         locals.steamCacheDB.select({ userCount: countDistinct(userScores.user_id) }).from(userScores),
         locals.steamCacheDB.select({ gameCount: countDistinct(apps.id) }).from(apps),
         locals.steamCacheDB
-            .select({ achievementCount: sum(sql<number>`json_array_length(${achievementsStats.data})`) })
+            .select({
+                achievementCount: sum(sql<number>`json_array_length(${achievementsStats.data})`),
+            })
             .from(achievementsStats),
     ]);
     const [userCount, gameCount, achievementCount] = [

@@ -492,7 +492,10 @@ export class SteamCacheDBRepository {
                 .values(rec)
                 .onConflictDoUpdate({
                     target: [estimatedPlayers.app_id],
-                    set: { updated_at: new Date(), estimated_players: sql`excluded.estimated_players` },
+                    set: {
+                        updated_at: new Date(),
+                        estimated_players: sql`excluded.estimated_players`,
+                    },
                 });
         }
     }

@@ -90,7 +90,7 @@
     import Award from "@lucide/svelte/icons/award";
     import { fade } from "svelte/transition";
     import { cubicOut } from "svelte/easing";
-    import type { SteamAppAchievement } from "lib";
+    import type { SteamAppAchievement } from "@project/lib";
 
     interface Props {
         place: 1 | 2 | 3;

@@ -8,7 +8,7 @@ import {
     SteamOwnedGame,
     SteamUser,
     SteamUserAchievement,
-} from "lib";
+} from "@project/lib";
 
 export const reroute: Reroute = (request) => {
     return deLocalizeUrl(request.url).pathname;
@@ -71,7 +71,11 @@ export const transport: Transport = {
         },
     },
     Error: {
-        encode: (data) => data instanceof Error && { message: data.message, stack: data.stack },
+        encode: (data) =>
+            data instanceof Error && {
+                message: data.message,
+                stack: data.stack,
+            },
         decode: (data: { message: string; stack?: string }) => {
             const { message, stack } = data;
             const error = new Error(message);

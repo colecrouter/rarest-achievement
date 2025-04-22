@@ -1,4 +1,4 @@
-import { EnhancedSteamRepository, userScores } from "lib";
+import { EnhancedSteamRepository, userScores } from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
     const achievements = (async () => {

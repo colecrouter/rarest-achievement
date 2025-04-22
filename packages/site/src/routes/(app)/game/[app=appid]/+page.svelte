@@ -1,20 +1,20 @@
 <script lang="ts">
+    import { page } from "$app/state";
+    import IndexError from "$lib/IndexError.svelte";
     import { type Rarity, getRarity } from "$lib/rarity";
     import { getSortManager } from "$lib/sortManager.svelte";
-    import { Progress } from "@skeletonlabs/skeleton-svelte";
-    import Chart from "chart.js/auto";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
     import Search from "@lucide/svelte/icons/search";
     import Server from "@lucide/svelte/icons/server";
     import Trophy from "@lucide/svelte/icons/trophy";
+    import { Progress } from "@skeletonlabs/skeleton-svelte";
+    import Chart from "chart.js/auto";
+    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
     import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
     import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
-    import { SteamUserAchievement, SteamUserStatus } from "lib";
-    import IndexError from "$lib/IndexError.svelte";
-    import { page } from "$app/state";
 
     const sortManager = getSortManager();
 

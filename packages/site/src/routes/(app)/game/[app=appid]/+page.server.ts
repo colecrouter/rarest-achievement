@@ -1,4 +1,4 @@
-import { EnhancedSteamRepository, Errable, type SteamAppAchievement } from "lib";
+import { EnhancedSteamRepository, Errable, type SteamAppAchievement } from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
     const { app } = await parent();

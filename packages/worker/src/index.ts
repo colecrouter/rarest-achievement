@@ -1,6 +1,6 @@
 import type { ExportedHandler } from "@cloudflare/workers-types";
 import { drizzle } from "drizzle-orm/d1";
-import { type ProjectDB, type schema, SteamAuthenticatedAPIClient } from "lib";
+import { type ProjectDB, SteamAuthenticatedAPIClient, type schema } from "@project/lib";
 import { refreshStaleApps } from "./cleanup";
 
 /**

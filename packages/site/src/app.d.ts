@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
-import type { ProjectDB, SteamAuthenticatedAPIClient, SteamStoreAPIClient, SteamUser } from "lib";
+import type { ProjectDB, SteamAuthenticatedAPIClient, SteamStoreAPIClient, SteamUser } from "@project/lib";
 
 // for information about these interfaces
 declare global {

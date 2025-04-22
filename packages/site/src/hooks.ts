@@ -1,5 +1,4 @@
 import { deLocalizeUrl } from "$lib/paraglide/runtime";
-import type { Reroute, Transport } from "@sveltejs/kit";
 import {
     Errable,
     SteamApp,
@@ -9,6 +8,7 @@ import {
     SteamUser,
     SteamUserAchievement,
 } from "@project/lib";
+import type { Reroute, Transport } from "@sveltejs/kit";
 
 export const reroute: Reroute = (request) => {
     return deLocalizeUrl(request.url).pathname;

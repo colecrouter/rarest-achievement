@@ -10,9 +10,9 @@
     import Share from "@lucide/svelte/icons/share";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
     import YouTube from "@lucide/svelte/icons/youtube";
+    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
     import { Tooltip } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
-    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
     import AchievementCard from "../../../../user/[id=userid]/AchievementCard.svelte";

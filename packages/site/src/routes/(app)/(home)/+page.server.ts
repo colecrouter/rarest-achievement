@@ -1,5 +1,3 @@
-import { fail, redirect } from "@sveltejs/kit";
-import { and, asc, countDistinct, eq, inArray, sql, sum } from "drizzle-orm";
 import {
     EnhancedSteamRepository,
     type SteamAchievementRawGlobalStats,
@@ -13,6 +11,8 @@ import {
     resolveSteamID,
     userScores,
 } from "@project/lib";
+import { fail, redirect } from "@sveltejs/kit";
+import { and, asc, countDistinct, eq, inArray, sql, sum } from "drizzle-orm";
 
 export const actions = {
     search: async ({ request }) => {

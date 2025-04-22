@@ -8,9 +8,9 @@
     import Search from "@lucide/svelte/icons/search";
     import Server from "@lucide/svelte/icons/server";
     import Trophy from "@lucide/svelte/icons/trophy";
+    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
-    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
     import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";

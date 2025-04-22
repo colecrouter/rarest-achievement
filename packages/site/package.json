@@ -8,7 +8,8 @@
         "preview": "vite preview",
         "db:migrate": "wrangler d1 migrations apply steam-data",
         "lint": "svelte-kit sync && svelte-check --ignore ../../node_modules --no-tsconfig",
-        "machine-translate": "inlang machine translate --project project.inlang"
+        "machine-translate": "inlang machine translate --project project.inlang",
+        "test": "vitest run"
     },
     "type": "module",
     "devDependencies": {

@@ -4,17 +4,16 @@
         "ignore": [
             "**/node_modules/**",
             "**/.svelte-kit/**",
-            "**/worker-configuration.d.ts"
-        ]
+            "**/worker-configuration.d.ts",
+            "**/src/lib/paraglide/**"
+        ],
+        "include": ["packages/**/src/**/*"]
     },
     "formatter": {
         "indentStyle": "space",
         "indentWidth": 4,
         "lineEnding": "lf",
-        "ignore": [
-            "**/*.svelte",
-            "**/*.css"
-        ],
+        "ignore": ["**/*.svelte", "**/*.css"],
         "lineWidth": 120
     },
     "linter": {

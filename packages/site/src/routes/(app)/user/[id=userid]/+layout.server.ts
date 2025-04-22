@@ -1,6 +1,6 @@
 import type { Breadcrumb } from "$lib/breadcrumbs.js";
-import { error } from "@sveltejs/kit";
 import { EnhancedSteamRepository } from "@project/lib";
+import { error } from "@sveltejs/kit";
 
 export const load = async ({ params, locals }) => {
     const { id } = params;

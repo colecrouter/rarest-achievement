@@ -14,13 +14,17 @@ jobs:
         uses: biomejs/setup-biome@v2
         with:
           version: latest
+      - name: Copy /packages/site/.env.example to /packages/site/.env
+        run: cp packages/site/.env.example packages/site/.env
       - name: Install dependencies
-        run: npm ci && npm run build
+        run: npm ci
+      - name: Build site
+        run: npm run build --workspace=@project/site
       - name: Run Biome
-        run: biome ci ./src
+        run: biome ci ./
       - uses: actions/setup-node@v3
         with:
           node-version: 22
-          cache: 'npm'
+          cache: "npm"
       - name: Run `svelte-check`
         run: npx svelte-check --output human

@@ -518,13 +518,12 @@
                                                         <div
                                                             class="flex items-center gap-2"
                                                         >
-                                                            <button
-                                                                class="text-sm text-gray-400 hover:text-gray-100"
-                                                                >View Profile</button
+                                                            <a
+                                                                href={`/user/${friend.id}`}
+                                                                class="btn preset-outlined-surface-500"
                                                             >
-                                                            <button
-                                                                class="h-8 w-8 border border-gray-700 bg-gray-800 hover:bg-gray-700"
-                                                            ></button>
+                                                                View Profile
+                                                            </a>
                                                         </div>
                                                     </div>
                                                 {/each}

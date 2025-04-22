@@ -24,7 +24,6 @@ export const load = async ({ parent, locals }) => {
 
         const f = friendMap.get(locals.steamUser.id);
         if (!f) return undefined;
-        const a = f[0];
 
         const { data: ownedMap, error: err2 } = await repo.getOwnedGames(f);
 

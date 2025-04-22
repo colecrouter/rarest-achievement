@@ -1,10 +1,8 @@
 <script lang="ts">
-    import { invalidateAll } from "$app/navigation";
-    import { page } from "$app/state";
-    import { getSortManager, type SortMethod } from "$lib/sortManager.svelte";
-    import { Tabs } from "@skeletonlabs/skeleton-svelte";
-    import type { SteamUserAchievement } from "lib";
+    import { type SortMethod, getSortManager } from "$lib/sortManager.svelte";
     import Search from "@lucide/svelte/icons/search";
+    import { Tabs } from "@skeletonlabs/skeleton-svelte";
+    import type { SteamUser, SteamUserAchievement } from "lib";
     import { fly } from "svelte/transition";
     import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";
@@ -12,15 +10,15 @@
 
     interface Props {
         achievements: Record<SortMethod, SteamUserAchievement[]>;
+        user: SteamUser;
     }
-    let { achievements: achievementsRecord }: Props = $props();
+    let { achievements: achievementsRecord, user }: Props = $props();
 
     const sortManager = getSortManager();
 
     let achievements = $derived(achievementsRecord[sortManager.method]);
 
     // Mock data for achievements
-    let sortOrder = $state<"asc" | "desc">("asc");
     let searchQuery = $state("");
     let activeTab = $state("grid");
 
@@ -46,7 +44,7 @@
 <!-- Hero Section with Podium -->
 <section class="mb-12">
     <h2 class="mb-6 text-center text-2xl font-bold">
-        Your Rarest Achievements
+        {user.displayName}'s Rarest Achievements
     </h2>
 
     <div

@@ -1,5 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { EnhancedSteamRepository, type SteamID, resolveSteamID } from "lib";
+import { countDistinct, sql, sum } from "drizzle-orm";
+import { EnhancedSteamRepository, type SteamID, achievementsStats, apps, resolveSteamID, userScores } from "lib";
 
 export const actions = {
     search: async ({ request }) => {
@@ -56,8 +57,8 @@ export const load = async ({ locals }) => {
         { game: 1085660, achievement: "ACH_23" },
     ];
 
+    // Fetch the achievements for the showcase cards
     const repo = new EnhancedSteamRepository(locals);
-
     const { data: showcase2Apps } = await repo.getApps(showcase2IDs.map((m) => m.game));
     const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()]);
     const showcase2 = showcase2IDs
@@ -65,7 +66,26 @@ export const load = async ({ locals }) => {
         .filter((m) => !!m);
     if (showcase2.length !== 3) throw new Error("Missing achievements");
 
+    // Fetch statistics
+    const [[userCounts], [gamesIndexed], [achievementsIndexed]] = await locals.steamCacheDB.batch([
+        locals.steamCacheDB.select({ userCount: countDistinct(userScores.user_id) }).from(userScores),
+        locals.steamCacheDB.select({ gameCount: countDistinct(apps.id) }).from(apps),
+        locals.steamCacheDB
+            .select({ achievementCount: sum(sql<number>`json_array_length(${achievementsStats.data})`) })
+            .from(achievementsStats),
+    ]);
+    const [userCount, gameCount, achievementCount] = [
+        userCounts?.userCount ?? 0,
+        gamesIndexed?.gameCount ?? 0,
+        Number.parseInt(achievementsIndexed?.achievementCount ?? "0"),
+    ];
+
     return {
         showcase2,
+        stats: {
+            userCount,
+            gameCount,
+            achievementCount,
+        },
     };
 };

@@ -120,6 +120,21 @@ export const estimatedPlayers = sqliteTable("estimated_players", {
         .$defaultFn(() => new Date()),
 });
 
+export const userScores = sqliteTable(
+    "user_scores",
+    {
+        user_id: text("user_id").notNull().primaryKey(),
+        rare_count: integer("rare_count").notNull(),
+        updated_at: integer("updated_at", { mode: "timestamp" })
+            .notNull()
+            .$defaultFn(() => new Date()),
+    },
+    (table) => [
+        foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
+        index("idx_rare_achievements_timestamp").on(table.updated_at),
+    ],
+);
+
 const schema = {
     users,
     apps,
@@ -129,6 +144,7 @@ const schema = {
     ownedGames,
     friends,
     estimatedPlayers,
+    userScores,
 };
 
 export default schema;

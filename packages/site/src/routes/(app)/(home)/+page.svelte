@@ -7,15 +7,37 @@
     import Trophy from "@lucide/svelte/icons/trophy";
     import Users from "@lucide/svelte/icons/users";
     import { fly } from "svelte/transition";
-    import AchievementCard from "./user/[id=userid]/AchievementCard.svelte";
+    import AchievementCard from "../user/[id=userid]/AchievementCard.svelte";
+    import { getLocale } from "$lib/paraglide/runtime";
+    import NumberFlow from "@number-flow/svelte";
 
     let { data } = $props();
 
+    const intl = new Intl.NumberFormat(getLocale(), {
+        style: "decimal",
+        notation: "compact",
+        // roundingIncrement: 100,
+        roundingMode: "halfExpand",
+        maximumSignificantDigits: 2,
+    });
+
     // Stats for the home page
     const stats = [
-        { label: "Tracked Achievements", value: "1.2M+", icon: Trophy },
-        { label: "Active Users", value: "250K+", icon: Users },
-        { label: "Games Supported", value: "12,000+", icon: TrendingUp },
+        {
+            label: "Tracked Achievements",
+            value: data.stats.achievementCount,
+            icon: Trophy,
+        },
+        {
+            label: "Indexed Users",
+            value: data.stats.userCount,
+            icon: Users,
+        },
+        {
+            label: "Indexed Games",
+            value: data.stats.gameCount,
+            icon: TrendingUp,
+        },
     ];
 
     const textCards = [
@@ -190,7 +212,19 @@
                         <div class="mb-4 rounded-full bg-amber-500/10 p-4">
                             <stat.icon class="h-8 w-8 text-amber-500" />
                         </div>
-                        <div class="mb-2 text-4xl font-bold">{stat.value}</div>
+                        <div class="mb-2 text-4xl font-bold">
+                            <NumberFlow
+                                value={animate ? stat.value : 0}
+                                format={{
+                                    style: "decimal",
+                                    notation: "compact",
+                                    roundingMode: "halfExpand",
+                                    maximumSignificantDigits: 2,
+                                }}
+                                trend={0}
+                                suffix="+"
+                            />
+                        </div>
                         <div class="text-gray-400">{stat.label}</div>
                     </div>
                 {/each}

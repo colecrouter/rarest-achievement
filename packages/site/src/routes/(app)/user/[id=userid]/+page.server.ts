@@ -1,4 +1,4 @@
-import { EnhancedSteamRepository } from "lib";
+import { EnhancedSteamRepository, userScores } from "lib";
 
 export const load = async ({ parent, locals }) => {
     const achievements = (async () => {
@@ -37,11 +37,30 @@ export const load = async ({ parent, locals }) => {
             .sort((a, b) => a.globalCount - b.globalCount)
             .slice(0, 36);
 
+        // Update user score
+        const score = allAchievementsForUser.filter(
+            (achieve) => achieve?.unlocked && achieve?.globalPercentage < 10,
+        ).length;
+        await locals.steamCacheDB
+            .insert(userScores)
+            .values({
+                user_id: u.id,
+                rare_count: score,
+            })
+            .onConflictDoUpdate({
+                target: [userScores.user_id],
+                set: {
+                    rare_count: score,
+                    updated_at: new Date(),
+                },
+            });
+
         return {
             achievements: {
                 globalPercentage: achievementsByPercent,
                 globalCount: achievementsByCount,
             },
+            rareCount: score,
             didErr: Boolean(err1 || err2 || err3),
         };
     })();

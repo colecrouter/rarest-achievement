@@ -30,7 +30,6 @@ export const apps = sqliteTable(
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
-        estimated_players: integer("estimated_players"),
     },
     (table) => [index("idx_apps_timestamp").on(table.updated_at)],
 );
@@ -113,6 +112,14 @@ export const friends = sqliteTable(
     ],
 );
 
+export const estimatedPlayers = sqliteTable("estimated_players", {
+    app_id: integer("app_id").notNull().primaryKey(),
+    estimated_players: integer("estimated_players"),
+    updated_at: integer("updated_at", { mode: "timestamp" })
+        .notNull()
+        .$defaultFn(() => new Date()),
+});
+
 const schema = {
     users,
     apps,
@@ -121,6 +128,7 @@ const schema = {
     userAchievements,
     ownedGames,
     friends,
+    estimatedPlayers,
 };
 
 export default schema;

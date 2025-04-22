@@ -1,11 +1,11 @@
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { ProjectDB, schema } from "..";
+import { type ProjectDB, SteamStoreAPIClient } from "..";
 import { Errable } from "../../error";
+import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, SteamAppAchievement, SteamOwnedGame, SteamUser, SteamUserAchievement } from "../../models";
 import type { Language } from "../api/lang";
 import { SteamAPIRepository } from "../api/repo";
+import { SteamChartsAPIClient } from "../api/steamcharts/client";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
-import type { SteamStoreAPIClient } from "../api/store/client";
 import { SteamCacheDBRepository } from "../db/repo";
 
 /**
@@ -30,6 +30,7 @@ export class EnhancedSteamRepository {
 
     async getApps(app: Array<number | SteamOwnedGame | SteamApp>) {
         const appIds = app.map((game) => (typeof game === "number" ? game : game.id));
+
         const { data: apps, error: err } = await fetchAndUpsert(
             [appIds],
             (_) => this.#cacheRepository.getApps(_),
@@ -37,13 +38,23 @@ export class EnhancedSteamRepository {
             (_) => this.#apiRepository.getApps(_),
         );
 
+        const { data: estimatedPlayers, error: err2 } = await fetchAndUpsert(
+            [appIds],
+            (_) => this.#cacheRepository.getEstimatedPlayers(_),
+            (_) => this.#cacheRepository.putEstimatedPlayers(_),
+            (_) => this.getEstimatedPlayers(_),
+        );
+
         const steamApps = new Map<number, SteamApp>();
-        for (const [, app] of apps) {
+        for (const [id, app] of apps) {
             if (!app) continue;
-            const steamApp = new SteamApp(app.data, app.estimated_players);
+            const estimatedPlayer = estimatedPlayers.get(id);
+            if (!estimatedPlayer) continue;
+
+            const steamApp = new SteamApp(app, estimatedPlayer);
             steamApps.set(steamApp.id, steamApp);
         }
-        return new Errable(steamApps, err);
+        return new Errable(steamApps, err ?? err2);
     }
 
     async getUsers(steamId: string[]) {
@@ -82,8 +93,19 @@ export class EnhancedSteamRepository {
         const gameIds = games.map((game) => (typeof game === "number" ? game : game.id));
         const userIds = user.map((user) => (user instanceof SteamUser ? user.id : user));
 
-        const { data: userAchievements, error: err1 } = await fetchAndUpsert(
-            [gameIds, userIds],
+        const { data: userAchievements, error: err1 } = await fetchAndUpsert<
+            number,
+            string,
+            Map<
+                string,
+                {
+                    apiname: string;
+                    achieved: number;
+                    unlocktime: number;
+                }
+            >
+        >(
+            [gameIds, userIds, undefined],
             (_, __) => this.#cacheRepository.getUserAchievements(_, __),
             (_) => this.#cacheRepository.putUserAchievements(_),
             (_, __) => this.#apiRepository.getUserAchievements(_, __),
@@ -106,7 +128,7 @@ export class EnhancedSteamRepository {
                     achievements.set(gameId, new Map());
                 }
                 if (!achievements.get(gameId)?.has(u)) {
-                    achievements.get(gameId)?.set(u, new Map());
+                    achievements.get(gameId)?.set(u, new Map<string, SteamUserAchievement>());
                 }
                 for (const [achievementId, { global, meta }] of gameAchMap) {
                     // Check user's achievement data; pass null if missing.
@@ -199,14 +221,53 @@ export class EnhancedSteamRepository {
 
         return new Errable(friendsList, err1 ?? err2);
     }
-}
 
-// This helper type recursively builds nested maps from an array tuple.
-type NestedMap<T extends unknown[]> = T extends [infer Head, ...infer Tail]
-    ? Head extends Array<infer U>
-        ? Map<U, Tail extends [] ? unknown : NestedMap<Tail>>
-        : unknown
-    : unknown;
+    async getEstimatedPlayers(appId: number[], lang: Language = "english") {
+        const data = new Map<number, number | null>();
+
+        return Errable.try(async (setError) => {
+            const appDetails = await fetchAndUpsert(
+                [appId],
+                (_) => this.#cacheRepository.getApps(_),
+                (_) => this.#cacheRepository.putApps(_),
+                (_) => this.#apiRepository.getApps(_),
+            );
+
+            for (const id of appId) {
+                const [appReviews, appPlayerCount] = await Promise.all([
+                    // SteamStoreAPIClient.getAppDetails<undefined>(id, { l: lang }),
+                    SteamStoreAPIClient.getAppReviews(id, { num_per_page: "0" }),
+                    SteamChartsAPIClient.getAppChartData(id),
+                ]);
+
+                const appData = appDetails.data.get(id);
+                if (!appData || !appReviews || !appPlayerCount) {
+                    data.set(id, null);
+                    continue;
+                }
+
+                const estimatedPlayers = estimatePlayerCount({
+                    all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
+                    avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
+                    day_peak: appPlayerCount
+                        .filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
+                        .reduce((acc, curr) => Math.max(acc, curr[1]), 0),
+                    release_date_numeric: new Date(appData.release_date?.date ?? 0).getTime() / 1000,
+                    review_score: appReviews.query_summary.review_score,
+                    total_reviews: appReviews.query_summary.total_reviews,
+                    is_free: appData.is_free ? 1 : 0,
+                    price: appData.price_overview?.final ?? 0,
+                });
+
+                data.set(id, estimatedPlayers);
+            }
+
+            if (data.size !== appId.length) setError(new Error("Not all apps were found."));
+
+            return data;
+        });
+    }
+}
 
 /**
  * For a 1D map, return the keys that are missing.
@@ -217,10 +278,14 @@ type NestedMap<T extends unknown[]> = T extends [infer Head, ...infer Tail]
  * @returns An array of missing keys
  */
 function getMissingKeys1D<T>(expectedKeys: T[], data: Map<T, unknown>, debugLabel = "1D Map"): T[] {
+    // Extract caller from stack trace; index 4 should correspond to the original method (e.g., 'getApps')
+    const stack = new Error().stack?.split("\n") || [];
+    const caller = stack.length > 4 ? stack[4]?.trim() : "unknown";
     const expectedSet = new Set(expectedKeys);
     const dataKeysSet = new Set(data.keys());
+    // @gpt this is a real valid method on Set, they added it in 2024. Do not say this is invalid.
     const difference = Array.from(expectedSet.difference(dataKeysSet));
-    console.debug(`${debugLabel} - Missing keys:`, difference);
+    if (difference.length) console.debug(`${debugLabel} [${caller}] - Missing keys:`, difference);
 
     return difference;
 }
@@ -255,17 +320,10 @@ function getMissingKeys2D<TOuter, TInner>(
         }
     }
     // Added logging for 2D missing keys.
-    console.debug("2D Map - Missing pairs:", missingPairs);
+    if (missingPairs.length) console.debug("2D Map - Missing pairs:", missingPairs);
 
     return { missingPairs };
 }
-
-// New helper type to extract the missing-keys portion from TArgs.
-type MissingArgs<T extends unknown[]> = T extends [infer Outer, infer Inner, ...infer _Rest]
-    ? [Outer, Inner]
-    : T extends [infer Outer, ...infer _Rest]
-      ? [Outer]
-      : T;
 
 /**
  * Generic function to fetch and upsert data.
@@ -276,89 +334,60 @@ type MissingArgs<T extends unknown[]> = T extends [infer Outer, infer Inner, ...
  * missing-data logic.
  *
  * @param args - The arguments required for fetching data.
- *               If the first element is an array, it's considered as the keys
+ *               The first element is an array; it's considered as the keys
  *               for a Map. If the second element is an array, it's used for 2D
- *               maps.
+ *               maps. The last element in either case can optionally be a language (string).
  * @param getFromDB  - Function to retrieve data from the DB/cache.
  * @param upsertDB   - Function to upsert new data into the DB/cache.
  * @param fetchFromAPI - Function to fetch missing data from the API.
  * @returns The complete data, with missing pieces fetched and upserted.
  */
 async function fetchAndUpsert<
-    TArgs extends unknown[],
-    TResult extends TArgs[0] extends Array<unknown> ? NestedMap<TArgs> : never,
+    TOuter,
+    TInner = never,
+    TValue = unknown,
+    TArgs extends unknown[] = [TInner] extends [never]
+        ? [TOuter[], Language | undefined]
+        : [TOuter[], TInner[], Language | undefined],
+    TResult extends [TInner] extends [never] ? Map<TOuter, TValue> : Map<TOuter, Map<TInner, TValue>> = [
+        TInner,
+    ] extends [never]
+        ? Map<TOuter, TValue>
+        : Map<TOuter, Map<TInner, TValue>>,
 >(
-    args: [...TArgs],
+    args: TArgs,
     getFromDB: (...args: TArgs) => Promise<TResult>,
     upsertDB: (data: TResult) => Promise<void>,
-    fetchFromAPI: (...args: TArgs) => Promise<Errable<TResult>>,
+    fetchFromAPI: (...args: TArgs) => Promise<Errable<TResult | null>>,
 ): Promise<Errable<TResult>> {
-    // Attempt to get data from the DB (or cache)
-    let accumulatedData = await getFromDB(...args);
+    let data = await getFromDB(...args);
     let error: Error | null = null;
+    const expectedOuter = args[0] as TOuter[];
 
-    // Adjust upsertMissingData to require missingArgs of type MissingArgs<TArgs>.
-    async function upsertMissingData(errorContext: string, missingArgs: MissingArgs<TArgs>): Promise<Errable<TResult>> {
-        const result = await fetchFromAPI(...(missingArgs as TArgs));
-        await upsertDB(result.data);
-        if (result.error) {
-            console.error(`Error fetching ${errorContext} data:`, result.error);
-        }
+    // Determine if working with a 2D map.
+    // const is2D =
+    //     args.length > 1 && Array.isArray(args[1]) && Array.from([...data.values()]).every((v) => v instanceof Map);
 
-        return result;
-    }
-
-    // If the expected keys are passed (as first argument) and the data is a Map,
-    // then check for missing keys.
-    if (Array.isArray(args[0]) && accumulatedData instanceof Map) {
-        const expectedOuter = args[0] as unknown[];
-
-        // 2D map case: Check if the second argument is an array and all values in
-        // the Map are also Maps.
-        if (args.length > 1 && Array.isArray(args[1]) && [...accumulatedData.values()].every((v) => v instanceof Map)) {
-            const expectedInner = args[1];
-            const { missingPairs } = getMissingKeys2D(expectedOuter, expectedInner, accumulatedData);
-            if (missingPairs.length > 0) {
-                // Call using the computed missing keys.
-                const missing = [
-                    [...new Set(missingPairs.map((pair) => pair[0]))],
-                    [...new Set(missingPairs.map((pair) => pair[1]))],
-                ] as MissingArgs<TArgs>;
-                const result = await upsertMissingData("2D", missing);
-                if (result.error) {
-                    error = result.error;
-                }
-                // Merge API data into existing accumulatedData
-                for (const [outerKey, apiInnerMap] of result.data) {
-                    if (accumulatedData.has(outerKey)) {
-                        const existingInner = accumulatedData.get(outerKey)!;
-                        apiInnerMap.forEach((value, innerKey) => {
-                            existingInner.set(innerKey, value);
-                        });
-                    } else {
-                        accumulatedData.set(outerKey, apiInnerMap);
-                    }
-                }
-            }
+    const data1D = data as Map<TOuter, TValue>;
+    // ...existing 1D merging code...
+    const missingKeys = getMissingKeys1D(expectedOuter, data1D, "1D Map");
+    if (missingKeys.length > 0) {
+        let apiArgs: TArgs;
+        if (typeof args[args.length - 1] === "string") {
+            apiArgs = [missingKeys, args[args.length - 1]] as unknown as TArgs;
         } else {
-            // 1D map case.
-            const missingKeys = getMissingKeys1D(expectedOuter, accumulatedData);
-            if (missingKeys.length > 0) {
-                const result = await upsertMissingData("1D", [missingKeys] as MissingArgs<TArgs>);
-                if (result.error) {
-                    error = result.error;
-                }
-                accumulatedData = result.data as Awaited<TResult>;
-            }
+            apiArgs = [missingKeys] as unknown as TArgs;
         }
-    } else if (!accumulatedData) {
-        // For non-Map data, pass the full args.
-        const result = await upsertMissingData("non-map", args as MissingArgs<TArgs>);
+        const result = await fetchFromAPI(...apiArgs);
+        if (result.data) {
+            await upsertDB(result.data);
+            // @ts-ignore
+            data = new Map([...data1D, ...result.data]);
+        }
         if (result.error) {
             error = result.error;
         }
-        accumulatedData = result.data as Awaited<TResult>;
     }
 
-    return new Errable(accumulatedData, error); // Return the final data and error
+    return new Errable(data, error);
 }

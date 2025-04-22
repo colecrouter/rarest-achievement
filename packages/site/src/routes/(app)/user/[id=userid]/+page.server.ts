@@ -31,12 +31,12 @@ export const load = async ({ url, parent, locals }) => {
         const achievementsByPercent = allAchievementsForUser
             .filter((achieve) => achieve?.unlocked)
             .sort((a, b) => a.globalPercentage - b.globalPercentage)
-            .slice(0, 24);
+            .slice(0, 36);
 
         const achievementsByCount = allAchievementsForUser
             .filter((achieve) => achieve?.unlocked)
             .sort((a, b) => a.globalCount - b.globalCount)
-            .slice(0, 24);
+            .slice(0, 36);
 
         return {
             achievements: {

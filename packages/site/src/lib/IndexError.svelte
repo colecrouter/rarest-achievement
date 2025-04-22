@@ -3,7 +3,7 @@
 </script>
 
 <div
-    class="preset-outlined-warning-500 text-warning-500 mb-4 grid grid-cols-1 items-center gap-4 rounded-xl p-4 lg:grid-cols-[auto_1fr_auto]"
+    class="preset-outlined-warning-500 text-warning-500 mb-4 flex items-center gap-4 rounded-xl p-4"
 >
     <TriangleAlert />
     <div>

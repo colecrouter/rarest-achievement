@@ -22,7 +22,16 @@ import type {
 import type { Language } from "../../repositories/api/lang";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import type schema from "./schema";
-import { achievementsMeta, achievementsStats, apps, friends, ownedGames, userAchievements, users } from "./schema";
+import {
+    achievementsMeta,
+    achievementsStats,
+    apps,
+    estimatedPlayers,
+    friends,
+    ownedGames,
+    userAchievements,
+    users,
+} from "./schema";
 
 // https://github.com/drizzle-team/drizzle-orm/issues/555
 function getTableAliasedColumns<T extends AnyTable<TableConfig>>(table: T) {
@@ -110,16 +119,9 @@ export class SteamCacheDBRepository {
             results.map((row) => {
                 const appId = row.id;
                 const appData = row.data;
-                const estimatedPlayers = row.estimated_players;
 
-                if (appData && estimatedPlayers) {
-                    return [
-                        appId,
-                        {
-                            data: appData,
-                            estimated_players: estimatedPlayers,
-                        },
-                    ];
+                if (appData) {
+                    return [appId, appData];
                 }
 
                 return [appId, null];
@@ -132,8 +134,7 @@ export class SteamCacheDBRepository {
     async putApps(data: Awaited<ReturnType<typeof this.getApps>>) {
         const items = [...data.entries()].map(([appId, app]) => ({
             id: appId,
-            data: app?.data,
-            estimated_players: app?.estimated_players,
+            data: app,
         }));
 
         for (const item of items) {
@@ -231,11 +232,11 @@ export class SteamCacheDBRepository {
                 .where(and(inArray(userAchievements.app_id, ids), gt(userAchievements.updated_at, ONE_DAY_AGO))),
         );
 
-        if (!batches2[0]) return new Map();
+        const gameMap = new Map<number, Map<string, Map<string, SteamUserAchievementRawStats>>>();
+
+        if (!batches2[0]) return gameMap;
         const statsRes = await this.#db.batch([batches2[0], ...batches2.slice(1)]);
         const flattenedStats = statsRes.flat();
-
-        const gameMap = new Map<number, Map<string, Map<string, SteamUserAchievementRawStats>>>();
 
         for (const row of flattenedStats) {
             // Only process if there is achievement data
@@ -462,5 +463,37 @@ export class SteamCacheDBRepository {
                 target: friends.user_id,
                 set: { updated_at: new Date(), data: sql`excluded.data` },
             });
+    }
+
+    async getEstimatedPlayers(appIds: number[]) {
+        // Chunk size is 100
+        const chunkSize = 100;
+        const idBatches: number[][] = [];
+        for (let i = 0; i < appIds.length; i += chunkSize) {
+            idBatches.push(appIds.slice(i, i + chunkSize));
+        }
+        const batches = idBatches.map((ids) =>
+            this.#db.select().from(estimatedPlayers).where(inArray(estimatedPlayers.app_id, ids)),
+        );
+        if (!batches[0]) return new Map<number, number | null>();
+        const results = await this.#db.batch([batches[0], ...batches.slice(1)]);
+        const res = results.flat(1);
+        return new Map(res.map((row) => [row.app_id, row.estimated_players]));
+    }
+
+    async putEstimatedPlayers(data: Awaited<ReturnType<typeof this.getEstimatedPlayers>>) {
+        const records = [...data.entries()].map(([app_id, estimated_players]) => ({
+            app_id,
+            estimated_players,
+        }));
+        for (const rec of records) {
+            await this.#db
+                .insert(estimatedPlayers)
+                .values(rec)
+                .onConflictDoUpdate({
+                    target: [estimatedPlayers.app_id],
+                    set: { updated_at: new Date(), estimated_players: sql`excluded.estimated_players` },
+                });
+        }
     }
 }

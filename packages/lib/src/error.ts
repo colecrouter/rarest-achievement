@@ -12,15 +12,22 @@ export class Errable<T> {
         this.error = error;
     }
 
-    static try<U>(fn: () => Promise<U>): Promise<Errable<U>>;
-    static try<U>(fn: () => U): Errable<U>;
-    static try(fn: () => unknown): unknown {
+    static try<U>(fn: (setError: (e: Error) => void) => Promise<U>): Promise<Errable<U | null>>;
+    static try<U>(fn: (setError: (e: Error) => void) => U): Errable<U | null>;
+    static try(fn: (setError: (e: Error) => void) => unknown): unknown {
+        let manualError: Error | null = null;
+        const setError = (e: Error) => {
+            manualError = e;
+        };
+
         try {
-            const result = fn();
+            const result = fn(setError);
             if (result instanceof Promise) {
-                return result.then((r) => new Errable(r, null));
+                return result
+                    .then((r) => new Errable(r, manualError))
+                    .catch((error) => new Errable(null as unknown, error as Error));
             }
-            return new Errable(result, null);
+            return new Errable(result, manualError);
         } catch (error) {
             return new Errable(null as unknown, error as Error);
         }

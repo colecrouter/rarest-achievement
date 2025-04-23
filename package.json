@@ -18,7 +18,7 @@
         "db:push": "npm run db:push --workspaces",
         "db:migrate": "npm run db:migrate --workspaces",
         "db:migration": "npm run db:migration --workspace=@project/lib",
-        "postinstall": "patch-package"
+        "postinstall": "patch-package || echo 'No patches to apply'"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",

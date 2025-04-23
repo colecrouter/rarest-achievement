@@ -31,7 +31,7 @@ export class SteamAPIRepository {
         let error: Error | null = null;
 
         try {
-            const chunkSize = 5;
+            const chunkSize = 20;
             for (let i = 0; i < app_id.length; i += chunkSize) {
                 const chunk = app_id.slice(i, i + chunkSize);
                 await Promise.all(

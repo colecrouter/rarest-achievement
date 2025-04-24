@@ -85,12 +85,12 @@
 </script>
 
 <script lang="ts">
-    import Medal from "@lucide/svelte/icons/medal";
-    import Crown from "@lucide/svelte/icons/crown";
     import Award from "@lucide/svelte/icons/award";
-    import { fade } from "svelte/transition";
-    import { cubicOut } from "svelte/easing";
+    import Crown from "@lucide/svelte/icons/crown";
+    import Medal from "@lucide/svelte/icons/medal";
     import type { SteamAppAchievement } from "@project/lib";
+    import { cubicOut } from "svelte/easing";
+    import { fade } from "svelte/transition";
 
     interface Props {
         place: 1 | 2 | 3;
@@ -106,6 +106,9 @@
     $effect(() => {
         animate = true;
     });
+
+    let gameURL = `/game/${achievement.app.id}`;
+    let achievementURL = `/game/${achievement.app.id}/achievement/${achievement.id}`;
 </script>
 
 <div
@@ -134,7 +137,7 @@
                 class="flex flex-col items-center"
                 transition:fade={{ duration: 300, delay: 100 * place + 400 }}
             >
-                <a href="/game/{achievement.app.id}">
+                <a href={achievementURL}>
                     <img
                         src={achievement.icon}
                         alt={achievement.name}
@@ -143,15 +146,12 @@
                         class={config.iconSize.imgClass}
                     />
                 </a>
-                <a href="/game/{achievement.app.id}}">
+                <a href={achievementURL}>
                     <h3 class="hover:underline {config.nameTextClass}">
                         {achievement.name}
                     </h3>
                 </a>
-                <a
-                    href="/game/{achievement.app.id}"
-                    class="hover:underline {config.appTextClass}"
-                >
+                <a href={gameURL} class="hover:underline {config.appTextClass}">
                     {achievement.app.name}
                 </a>
             </div>

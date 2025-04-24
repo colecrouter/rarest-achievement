@@ -1,4 +1,5 @@
 <script lang="ts">
+    import AchievementCards from "$lib/AchievementCards";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Crown from "@lucide/svelte/icons/crown";
@@ -8,7 +9,6 @@
     import Users from "@lucide/svelte/icons/users";
     import NumberFlow from "@number-flow/svelte";
     import { fly } from "svelte/transition";
-    import AchievementCard from "../user/[id=userid]/AchievementCard.svelte";
 
     let { data } = $props();
 
@@ -196,7 +196,7 @@
                                 i % rotations.length
                             ]}"
                         >
-                            <AchievementCard {achievement} />
+                            <AchievementCards.Card {achievement} />
                         </div>
                     {/if}
                 {/each}
@@ -264,7 +264,7 @@
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                 {#each data.featuredAchievements as achievement}
-                    <AchievementCard {achievement} />
+                    <AchievementCards.Card {achievement} />
                 {/each}
             </div>
         </div>

@@ -4,9 +4,9 @@
     import type { SteamUser, SteamUserAchievement } from "@project/lib";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import { fly } from "svelte/transition";
-    import AchievementCard from "./AchievementCard.svelte";
     import Podium from "./Podium.svelte";
     import SortMethodSwitch from "./SortMethodSwitch.svelte";
+    import AchievementCards from "$lib/AchievementCards";
 
     interface Props {
         achievements: Record<SortMethod, SteamUserAchievement[]>;
@@ -137,7 +137,7 @@
                             <div
                                 transition:fly|global={{ y: 20, duration: 200 }}
                             >
-                                <AchievementCard {achievement} />
+                                <AchievementCards.Card {achievement} />
                             </div>
                         {/if}
                     {/each}

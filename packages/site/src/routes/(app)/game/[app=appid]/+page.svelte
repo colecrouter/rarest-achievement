@@ -1,19 +1,20 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import AchievementCards from "$lib/AchievementCards";
+    import FriendCards from "$lib/FriendCards";
     import IndexError from "$lib/IndexError.svelte";
-    import { type Rarity, getRarity } from "$lib/rarity";
+    import type { Rarity } from "$lib/rarity";
     import { getSortManager } from "$lib/sortManager.svelte";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
     import Search from "@lucide/svelte/icons/search";
     import Server from "@lucide/svelte/icons/server";
     import Trophy from "@lucide/svelte/icons/trophy";
-    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
+    import { SteamUserAchievement } from "@project/lib";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
-    import AchievementCard from "../../user/[id=userid]/AchievementCard.svelte";
     import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
 
     const sortManager = getSortManager();
@@ -238,7 +239,7 @@
                 />
             </div>
         </div>
-        <div class="flex h-full h-full flex-col items-start">
+        <div class="flex h-full flex-col items-start">
             <h1 class="mb-2 text-4xl font-bold drop-shadow-md">
                 {app.name}
             </h1>
@@ -315,10 +316,10 @@
                     <div class="space-y-3">
                         {#if recentUnlocks}
                             {#each recentUnlocks as achievement}
-                                {@const rarity = getRarity(
-                                    achievement.globalPercentage,
-                                )}
-                                <AchievementCard {achievement} secondary />
+                                <AchievementCards.Card
+                                    {achievement}
+                                    secondary
+                                />
                             {/each}
                             {#if recentUnlocks.length === 0}
                                 <div
@@ -454,91 +455,8 @@
             </div>
         </div>
 
-        <div
-            class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        >
-            {#each filteredAchievements as achievement}
-                <AchievementCard {achievement} />
-                <!-- <div
-                        class="overflow-hidden border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600 {achievement.status ===
-                        'locked'
-                            ? 'opacity-70'
-                            : ''}"
-                    >
-                        <div class="p-0">
-                            <div class="flex items-start gap-3 p-4">
-                                <div class="relative flex-shrink-0">
-                                    <img
-                                        src={achievement.icon ||
-                                            "/placeholder.svg"}
-                                        alt={achievement.name}
-                                        width="48"
-                                        height="48"
-                                        class="rounded-md border {achievement.status ===
-                                        'unlocked'
-                                            ? 'border-gray-700 bg-gray-900'
-                                            : 'border-gray-700 bg-gray-900/50 grayscale'}"
-                                    />
-                                    <div
-                                        class="absolute -right-1 -bottom-1 rounded-full px-1.5 py-0.5 text-xs font-bold {achievement.status ===
-                                        'unlocked'
-                                            ? 'bg-amber-500 text-gray-900'
-                                            : 'bg-gray-700 text-gray-300'}"
-                                    >
-                                        {achievement.rarity}%
-                                    </div>
-                                </div>
-                                <div>
-                                    <div
-                                        class="flex items-center justify-between"
-                                    >
-                                        <h3 class="text-sm font-bold">
-                                            {achievement.name}
-                                        </h3>
-                                        {#if achievement.status === "unlocked"}
-                                            <span class="text-green-500">
-                                                <Check class="h-4 w-4" />
-                                            </span>
-                                        {:else}
-                                            <span class="text-gray-500">
-                                                <Lock class="h-4 w-4" />
-                                            </span>
-                                        {/if}
-                                    </div>
-                                    <p class="mb-1 text-xs text-gray-400">
-                                        {app.name}
-                                    </p>
-                                    <p
-                                        class="line-clamp-2 text-xs text-gray-300"
-                                    >
-                                        {achievement.description}
-                                    </p>
-                                </div>
-                            </div>
-                            <div
-                                class="flex items-center justify-between bg-gray-900 px-4 py-2 text-xs text-gray-400"
-                            >
-                                {#if achievement.status === "unlocked"}
-                                    <span
-                                        >Unlocked: {format(
-                                            parseISO(achievement.unlocked),
-                                            "MMM d, yyyy",
-                                        )}</span
-                                    >
-                                {:else}
-                                    <span>Locked</span>
-                                {/if}
-                                <a
-                                    href={`/achievement/${achievement.id}`}
-                                    class="text-amber-500 hover:text-amber-400"
-                                >
-                                    Details
-                                </a>
-                            </div>
-                        </div>
-                    </div> -->
-            {/each}
-        </div>
+        <AchievementCards achievements={filteredAchievements} />
+
         {#if filteredAchievements.length === 0}
             <div
                 class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
@@ -564,93 +482,7 @@
                     {#if error}
                         <IndexError />
                     {/if}
-                    <div
-                        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4"
-                    >
-                        {#each friends?.values() as f}
-                            {@const friend = f.user}
-                            {@const owned = f.owned}
-                            {@const completion =
-                                (f.achievements.filter((a) => a.unlocked)
-                                    .length /
-                                    totalCount) *
-                                100}
-                            {@const color = barColor(completion / 100)}
-                            <div class="card p-4">
-                                <div class="mb-4 flex items-center gap-3">
-                                    <div class="relative">
-                                        <img
-                                            src={friend.avatar ||
-                                                "/placeholder.svg"}
-                                            alt={friend.displayName}
-                                            width="48"
-                                            height="48"
-                                            class="rounded-full border border-gray-700"
-                                        />
-                                        <div
-                                            class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status !==
-                                            SteamUserStatus.Offline
-                                                ? 'bg-green-500'
-                                                : 'bg-gray-500'}"
-                                        ></div>
-                                    </div>
-                                    <div>
-                                        <div class="font-medium">
-                                            {friend.displayName}
-                                        </div>
-                                        <div class="text-xs text-gray-400">
-                                            {#if owned.playtime}
-                                                {(owned.playtime / 60).toFixed(
-                                                    1,
-                                                )} hours played
-                                            {/if}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <div
-                                        class="mb-1 flex items-center justify-between"
-                                    >
-                                        <div class="text-xs text-gray-400">
-                                            Achievement Progress
-                                        </div>
-                                        <div class="text-xs font-medium">
-                                            {completion.toFixed(0)}%
-                                        </div>
-                                    </div>
-                                    <!-- <div class="h-1.5 rounded bg-gray-700">
-                                <div
-                                    class="h-full rounded-full {completion ===
-                                    100
-                                        ? 'bg-green-500'
-                                        : completion > 75
-                                          ? 'bg-amber-500'
-                                          : 'bg-blue-500'}"
-                                    style="width: {completion}%"
-                                ></div>
-                            </div> -->
-                                    <Progress
-                                        value={completion}
-                                        max={100}
-                                        meterBg={`bg-${color}`}
-                                    ></Progress>
-                                </div>
-                                <div
-                                    class="flex items-center justify-between text-xs text-gray-400"
-                                >
-                                    <span>
-                                        <!-- {friend.achievements} / {app
-                                        .achievementStats.total} achievements -->
-                                    </span>
-                                    <!-- <button
-                                class="h-7 px-2 text-gray-400 hover:text-gray-100"
-                            >
-                                Compare
-                            </button> -->
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
+                    <FriendCards data={friends} />
                 {/if}
             {/await}
         {/if}

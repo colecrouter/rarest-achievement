@@ -40,7 +40,7 @@ export const load = async ({ parent, locals }) => {
                 const friendAchievementsList = [...achievements.values()].flat();
                 if (!friendAchievementsList) return null;
                 return {
-                    user: friend,
+                    friend,
                     owned: ownedGame,
                     achievements: friendAchievementsList,
                 };

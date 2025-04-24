@@ -1,8 +1,8 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "eb3214e9-edc0-4550-888e-20415b4f105b",
-    "prevId": "5e3d9251-8992-47b0-847e-d83a3e4665e0",
+    "id": "a3c5b4c3-18c6-41c3-8928-a324b3157cc9",
+    "prevId": "eb3214e9-edc0-4550-888e-20415b4f105b",
     "tables": {
         "achievements_meta": {
             "name": "achievements_meta",
@@ -337,6 +337,53 @@
                     "name": "user_achievements_stats_user_id_app_id_pk"
                 }
             },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "user_scores": {
+            "name": "user_scores",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "rare_count": {
+                    "name": "rare_count",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_rare_achievements_timestamp": {
+                    "name": "idx_rare_achievements_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "user_scores_user_id_users_user_id_fk": {
+                    "name": "user_scores_user_id_users_user_id_fk",
+                    "tableFrom": "user_scores",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["user_id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}
         },

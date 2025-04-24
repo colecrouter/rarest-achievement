@@ -1,5 +1,5 @@
 import { GOOGLE_API_KEY } from "$env/static/private";
-import { EnhancedSteamRepository, Errable, SteamCommunityRepo, YouTubeRepository } from "lib";
+import { EnhancedSteamRepository, Errable, SteamCommunityRepo, YouTubeRepository } from "@project/lib";
 
 export const load = async ({ parent, url, locals, platform }) => {
     const data = await parent();

@@ -1,27 +1,34 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1743971346956,
-      "tag": "0000_violet_firedrake",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1744748101486,
-      "tag": "0001_flashy_cannonball",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1745247842850,
-      "tag": "0002_flaky_valkyrie",
-      "breakpoints": true
-    }
-  ]
+    "version": "7",
+    "dialect": "sqlite",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "6",
+            "when": 1743971346956,
+            "tag": "0000_violet_firedrake",
+            "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1744748101486,
+            "tag": "0001_flashy_cannonball",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1745247842850,
+            "tag": "0002_flaky_valkyrie",
+            "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "6",
+            "when": 1745342466209,
+            "tag": "0003_little_tenebrous",
+            "breakpoints": true
+        }
+    ]
 }

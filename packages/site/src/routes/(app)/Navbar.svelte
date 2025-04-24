@@ -1,7 +1,7 @@
 <script lang="ts">
-    import type { SteamUser } from "lib";
     import LogOut from "@lucide/svelte/icons/log-out";
     import User from "@lucide/svelte/icons/user";
+    import type { SteamUser } from "@project/lib";
 
     interface Props {
         user: SteamUser | null;
@@ -15,14 +15,26 @@
         class="container mx-auto flex items-center justify-between gap-4 px-4 py-4"
     >
         <!-- Logo and title -->
-        <a href="/" class="flex items-center gap-2">
+        <a href="/" class="flex items-center gap-2 pr-4">
             <div class="logo bg-primary-500"></div>
-            <h1 class="hidden text-xl font-bold md:block">Steam Vault</h1>
+            <h1 class="relative hidden text-xl font-bold md:block">
+                Steam Vault
+                <span
+                    class="badge text-primary-500 badge-icon preset-outlined-primary-500 absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
+                >
+                    Beta
+                </span>
+            </h1>
         </a>
 
         <!-- Search form -->
         <form class="flex-grow" action="/?/search" method="post">
-            <input class="input" type="text" name="q" placeholder="Search" />
+            <input
+                class="input"
+                type="text"
+                name="q"
+                placeholder="Enter a username..."
+            />
         </form>
 
         {#if user}

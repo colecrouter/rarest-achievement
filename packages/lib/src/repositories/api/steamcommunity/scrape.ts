@@ -1,5 +1,5 @@
-import type { HTMLRewriter } from "htmlrewriter";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
+import type { HTMLRewriter } from "htmlrewriter";
 import type { Language } from "../lang";
 
 const resolveHTMLRewriter = async () =>

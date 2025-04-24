@@ -6,16 +6,29 @@
     import TrendingUp from "@lucide/svelte/icons/trending-up";
     import Trophy from "@lucide/svelte/icons/trophy";
     import Users from "@lucide/svelte/icons/users";
+    import NumberFlow from "@number-flow/svelte";
     import { fly } from "svelte/transition";
-    import AchievementCard from "./user/[id=userid]/AchievementCard.svelte";
+    import AchievementCard from "../user/[id=userid]/AchievementCard.svelte";
 
     let { data } = $props();
 
     // Stats for the home page
     const stats = [
-        { label: "Tracked Achievements", value: "1.2M+", icon: Trophy },
-        { label: "Active Users", value: "250K+", icon: Users },
-        { label: "Games Supported", value: "12,000+", icon: TrendingUp },
+        {
+            label: "Tracked Achievements",
+            value: data.stats.achievementCount,
+            icon: Trophy,
+        },
+        {
+            label: "Indexed Users",
+            value: data.stats.userCount,
+            icon: Users,
+        },
+        {
+            label: "Indexed Games",
+            value: data.stats.gameCount,
+            icon: TrendingUp,
+        },
     ];
 
     const textCards = [
@@ -43,6 +56,8 @@
         icon: typeof Trophy;
     }>;
 
+    const rotations = ["rotate-1", "-rotate-1", "rotate-1"];
+
     let animate = $state(false);
     $effect(() => {
         animate = true;
@@ -53,7 +68,7 @@
     <title>Steam Vault - Showcase Your Achievements</title>
     <meta
         name="description"
-        content="Track, display, and share your most impressive gaming accomplishments. See how you stack up against other players with Steam Vault."
+        content="Track and share your most impressive gaming accomplishments. See how you stack up against other players with Steam Vault."
     />
     <meta
         name="keywords"
@@ -85,7 +100,7 @@
                         Showcase Your Rarest Achievements on Steam
                     </h1>
                     <p class="max-w-lg text-lg text-gray-300">
-                        Track, display, and share your most impressive gaming
+                        Track and share your most impressive gaming
                         accomplishments. See how you stack up against other
                         players with Steam Vault.
                     </p>
@@ -98,7 +113,7 @@
                     <div
                         class="relative rounded-xl border border-gray-700 bg-gray-800 p-6 shadow-xl"
                     >
-                        <div class="absolute -top-6 -right-6">
+                        <div class="absolute -top-6 -right-2 md:-right-6">
                             <div class="relative">
                                 <div
                                     class="absolute inset-0 animate-pulse rounded-full bg-amber-500/20"
@@ -141,9 +156,9 @@
                                         </div>
                                     </div>
                                     <div class="ml-auto">
-                                        <button class="h-8 w-8 p-0">
+                                        <!-- <button class="h-8 w-8 p-0">
                                             <ChevronRight class="h-4 w-4" />
-                                        </button>
+                                        </button> -->
                                     </div>
                                 </div>
                             {/each}
@@ -156,13 +171,19 @@
 
     <!-- Example achievements -->
     <section class="py-16">
-        <div class="container mx-auto px-4">
-            <h2 class="mb-8 text-center text-3xl font-bold">
-                Explore Your Achievements
-            </h2>
-            <div
-                class="grid grid-cols-1 gap-6 pt-4 transition-all md:grid-cols-3"
-            >
+        <div
+            class="container mx-auto min-h-[430px] md:flex md:flex-row-reverse"
+        >
+            <div class="p-4 text-center md:flex md:flex-col md:justify-center">
+                <h2 class="mb-8 text-3xl font-bold">
+                    Explore Your Achievements
+                </h2>
+                <p>
+                    Find achievements for <i>every</i> game in your library. No challenge
+                    is too great!
+                </p>
+            </div>
+            <div class="grid grid-cols-1 gap-6 pt-4 transition-all">
                 {#each data.showcase2 as achievement, i}
                     {#if animate}
                         <div
@@ -171,7 +192,9 @@
                                 duration: 300,
                                 delay: i * 100,
                             }}
-                            class="rounded-xl shadow-amber-500/30 even:shadow-lg md:even:-translate-y-4"
+                            class="rounded-xl shadow-amber-500/30 even:shadow-lg {rotations[
+                                i % rotations.length
+                            ]}"
                         >
                             <AchievementCard {achievement} />
                         </div>
@@ -190,7 +213,19 @@
                         <div class="mb-4 rounded-full bg-amber-500/10 p-4">
                             <stat.icon class="h-8 w-8 text-amber-500" />
                         </div>
-                        <div class="mb-2 text-4xl font-bold">{stat.value}</div>
+                        <div class="mb-2 text-4xl font-bold">
+                            <NumberFlow
+                                value={animate ? stat.value : 0}
+                                format={{
+                                    style: "decimal",
+                                    notation: "compact",
+                                    roundingMode: "halfExpand",
+                                    maximumSignificantDigits: 2,
+                                }}
+                                trend={0}
+                                suffix="+"
+                            />
+                        </div>
                         <div class="text-gray-400">{stat.label}</div>
                     </div>
                 {/each}
@@ -213,74 +248,25 @@
                         our community members.
                     </p>
                 </div>
-                <a href="/dashboard">
-                    <button
-                        class="mt-4 flex items-center gap-2 rounded border border-gray-700 px-4 py-2 hover:bg-gray-800 md:mt-0"
+                <button
+                    class="btn preset-outlined-surface-500 relative mt-4 flex items-center gap-2 rounded"
+                    disabled
+                >
+                    View All
+                    <ChevronRight class="ml-2 h-4 w-4" />
+                    <span
+                        class="badge preset-filled-primary-500 absolute -top-4 -right-4"
                     >
-                        View All
-                        <ChevronRight class="ml-2 h-4 w-4" />
-                    </button>
-                </a>
+                        Coming Soon
+                    </span>
+                </button>
             </div>
 
-            <!-- <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-                {#each featuredAchievements as achievement}
-                    <div
-                        class="overflow-hidden rounded border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
-                    >
-                        <div
-                            class="flex items-start justify-between border-b border-gray-700 p-4"
-                        >
-                            <div class="flex items-center gap-3">
-                                <img
-                                    src={achievement.icon}
-                                    alt={achievement.name}
-                                    width="48"
-                                    height="48"
-                                    class="rounded-md border border-gray-700 bg-gray-900"
-                                />
-                                <div>
-                                    <div class="text-lg font-bold">
-                                        {achievement.name}
-                                    </div>
-                                    <div class="text-sm text-gray-400">
-                                        {achievement.game}
-                                    </div>
-                                </div>
-                            </div>
-                            <div
-                                class="rounded-full bg-amber-500 px-2 py-1 text-xs font-bold text-gray-900"
-                            >
-                                {achievement.rarity}%
-                            </div>
-                        </div>
-
-                        <div class="p-4">
-                            <p class="text-sm text-gray-300">
-                                {achievement.description}
-                            </p>
-                        </div>
-                        
-                        <div
-                            class="flex items-center justify-between border-t border-gray-700 bg-gray-900/50 p-4 text-sm text-gray-400"
-                        >
-                            <div class="flex items-center gap-2">
-                                <img
-                                    src={achievement.playerAvatar}
-                                    alt="Player avatar"
-                                    width="24"
-                                    height="24"
-                                    class="rounded-full"
-                                />
-                                <span>{achievement.player}</span>
-                            </div>
-                            <button class="h-8 w-8 p-0">
-                                <ExternalLink class="h-4 w-4" />
-                            </button>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                {#each data.featuredAchievements as achievement}
+                    <AchievementCard {achievement} />
                 {/each}
-            </div> -->
+            </div>
         </div>
     </section>
 

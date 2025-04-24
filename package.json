@@ -12,20 +12,21 @@
         "preview": "npm run preview --workspaces",
         "test": "npm run test --workspaces",
         "lint": "biome lint ./packages/* && npm run lint --workspaces",
-        "lint:fix": "biome lint ./packages/* --fix && npm run lint --workspaces",
+        "lint:fix": "biome lint ./packages/* --fix --unsafe && npm run lint --workspaces",
         "format": "prettier --log-level silent ./packages/*/src && biome check ./packages/*",
         "format:fix": "prettier --log-level silent --write ./packages/*/src && biome check ./packages/* --fix --unsafe",
         "db:push": "npm run db:push --workspaces",
         "db:migrate": "npm run db:migrate --workspaces",
         "db:migration": "npm run db:migration --workspace=@project/lib",
-        "postinstall": "patch-package"
+        "postinstall": "patch-package || echo 'No patches to apply'"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@cloudflare/workers-types": "^4.20250417.0",
-        "patch-package": "8.0.0"
+        "patch-package": "^8.0.0"
     },
     "overrides": {
+        "esm-env": "npm:esm-env-runtime@^0.1.1",
         "wrangler": "^4.7.2"
     },
     "type": "module"

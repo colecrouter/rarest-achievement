@@ -38,7 +38,7 @@
                 <IndexError />
             {/if}
 
-            <Achievements {achievements} />
+            <Achievements user={data.user} {achievements} />
         </Transition>
     {/await}
 </main>

@@ -71,7 +71,12 @@ export interface IActivitiesResponse_ContentDetail {
     };
     /** Bulletin message details (if type is 'bulletin') */
     bulletin: {
-        resourceId: { kind: string; videoId: string; channelId: string; playlistId: string };
+        resourceId: {
+            kind: string;
+            videoId: string;
+            channelId: string;
+            playlistId: string;
+        };
         playlistId: string;
         playlistItemId: string;
     };
@@ -79,7 +84,12 @@ export interface IActivitiesResponse_ContentDetail {
     social: {
         /** Type of social network */
         type: "facebook" | "googlePlus" | "twitter" | "unspecified";
-        resourceId: { kind: string; videoId: string; channelId: string; playlistId: string };
+        resourceId: {
+            kind: string;
+            videoId: string;
+            channelId: string;
+            playlistId: string;
+        };
         /** Author of the post */
         author: string;
         /** Image URL of the post */

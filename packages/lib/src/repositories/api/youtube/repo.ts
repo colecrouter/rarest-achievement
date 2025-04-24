@@ -1,8 +1,8 @@
-import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import { YouTubeClient } from "./client";
-import type { Language } from "../lang";
 import type { KVNamespace } from "@cloudflare/workers-types";
+import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import { Errable } from "../../../error";
+import type { Language } from "../lang";
+import { YouTubeClient } from "./client";
 
 export class YouTubeRepository {
     #client: YouTubeClient;
@@ -17,7 +17,10 @@ export class YouTubeRepository {
         const cacheKey = `youtube:${achievement.app.id}:${achievement.id}:${lang}`;
         const cached = await this.#cache.get(cacheKey);
         if (cached) {
-            const { data, error } = JSON.parse(cached) as { data: YouTubeGuide[]; error: string | null };
+            const { data, error } = JSON.parse(cached) as {
+                data: YouTubeGuide[];
+                error: string | null;
+            };
             return new Errable(data, error ? new Error(error) : null);
         }
 

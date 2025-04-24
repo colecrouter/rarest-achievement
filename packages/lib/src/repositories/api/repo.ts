@@ -1,5 +1,4 @@
 import { Errable } from "../../error";
-import { estimatePlayerCount } from "../../ml/playerEstimate";
 import type {
     SteamAchievementRawGlobalStats,
     SteamAchievementRawMeta,
@@ -12,7 +11,6 @@ import type { Language } from "../../repositories/api/lang";
 import type { SteamAuthenticatedAPIClient } from "../../repositories/api/steampowered/client";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import { SteamStoreAPIClient } from "../../repositories/api/store/client";
-import { SteamChartsAPIClient } from "./steamcharts/client";
 
 /**
  * Repository for fetching data from the Steam API.
@@ -33,12 +31,14 @@ export class SteamAPIRepository {
         let error: Error | null = null;
 
         try {
-            const chunkSize = 5;
+            const chunkSize = 20;
             for (let i = 0; i < app_id.length; i += chunkSize) {
                 const chunk = app_id.slice(i, i + chunkSize);
                 await Promise.all(
                     chunk.map(async (appId) => {
-                        const appDetails = await SteamStoreAPIClient.getAppDetails<undefined>(appId, { l: lang });
+                        const appDetails = await SteamStoreAPIClient.getAppDetails<undefined>(appId, {
+                            l: lang,
+                        });
                         const appData = appDetails?.[appId];
                         if (!appData?.data) return data.set(appId, null);
 
@@ -169,7 +169,9 @@ export class SteamAPIRepository {
             await Promise.all(
                 game_id.map(async (gameId) => {
                     const metaMap = validSchemas.get(gameId);
-                    const percentages = await this.#apiClient.getGlobalAchievementPercentagesForApp({ gameid: gameId });
+                    const percentages = await this.#apiClient.getGlobalAchievementPercentagesForApp({
+                        gameid: gameId,
+                    });
                     const globalMap = new Map<string, SteamAchievementRawGlobalStats>();
                     for (const achievement of percentages?.achievementpercentages.achievements ?? []) {
                         globalMap.set(achievement.name, achievement);

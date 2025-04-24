@@ -5,16 +5,16 @@
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
     import { getRarity } from "$lib/rarity";
-    import Chart from "chart.js/auto";
-    import { SteamUserAchievement, SteamUserStatus } from "lib";
+    import BookOpenText from "@lucide/svelte/icons/book-open-text";
+    import NotebookText from "@lucide/svelte/icons/notebook-text";
+    import Share from "@lucide/svelte/icons/share";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
+    import YouTube from "@lucide/svelte/icons/youtube";
+    import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
+    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
+    import Chart from "chart.js/auto";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
-    import YouTube from "@lucide/svelte/icons/youtube";
-    import NotebookText from "@lucide/svelte/icons/notebook-text";
-    import BookOpenText from "@lucide/svelte/icons/book-open-text";
-    import Share from "@lucide/svelte/icons/share";
-    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
     import AchievementCard from "../../../../user/[id=userid]/AchievementCard.svelte";
 
     let { data } = $props();
@@ -518,13 +518,12 @@
                                                         <div
                                                             class="flex items-center gap-2"
                                                         >
-                                                            <button
-                                                                class="text-sm text-gray-400 hover:text-gray-100"
-                                                                >View Profile</button
+                                                            <a
+                                                                href={`/user/${friend.id}`}
+                                                                class="btn preset-outlined-surface-500"
                                                             >
-                                                            <button
-                                                                class="h-8 w-8 border border-gray-700 bg-gray-800 hover:bg-gray-700"
-                                                            ></button>
+                                                                View Profile
+                                                            </a>
                                                         </div>
                                                     </div>
                                                 {/each}

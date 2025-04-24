@@ -9,4 +9,7 @@
         "editor.defaultFormatter": "biomejs.biome",
         "typescript.preferences.importModuleSpecifier": "relative",
     },
+    "[json]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    }
 }

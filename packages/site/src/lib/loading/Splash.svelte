@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Alert from "$lib/Alert.svelte";
+    import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
     import type { LoadingMessage } from "./messages";
 
     interface Props {
@@ -10,7 +12,18 @@
 
 <section class="flex min-h-[200px] w-full flex-col items-center justify-center">
     <div class="max-w-[800px]">
-        <h1 class="mt-8 text-center text-2xl font-bold text-gray-200">
+        <div class="mt-4 min-h-[200px]">
+            <div class="show show2">
+                <Alert
+                    icon={RefreshCcw}
+                    title="This might take a minute..."
+                    description="We're firing off thousands of requests to get your data. If you think this is taking too long, reloading the page."
+                    color="surface"
+                />
+            </div>
+        </div>
+
+        <h1 class="animate-pulse text-center text-2xl font-bold text-gray-200">
             Loading...
         </h1>
 
@@ -47,6 +60,11 @@
         animation: fadeIn 0.5s ease-in-out;
         animation-delay: 2s;
         animation-fill-mode: forwards;
+    }
+
+    .show2 {
+        transform: translateY(0) !important;
+        animation-delay: 10s;
     }
 
     @keyframes fadeIn {

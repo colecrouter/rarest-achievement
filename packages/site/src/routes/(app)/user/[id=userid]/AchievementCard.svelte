@@ -72,7 +72,11 @@
         class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-bold text-gray-900"
     >
         {#if sortManager.method === "globalPercentage"}
-            {achievement.globalPercentage}%
+            {#if achievement.globalPercentage < 0.1}
+                &lt;0.1%
+            {:else}
+                {achievement.globalPercentage}%
+            {/if}
         {:else if sortManager.method === "globalCount"}
             <!-- {achievement.globalCount} -->
             {intl.format(achievement.globalCount)}

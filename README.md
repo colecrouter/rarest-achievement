@@ -15,7 +15,7 @@ This project is built to deliver a responsive, full-stack application leveraging
 ### Prerequisites
 
 - Node.js (LTS recommended)
-- npm (or your favorite package manager like pnpm or yarn)
+- npm
 
 ### Installation
 
@@ -32,7 +32,7 @@ npm install
 To start the development server for the site package:
 
 ```bash
-npm run dev
+npm run dev --workspace=@project/site
 ```
 
 This will run the SvelteKit application. Additional commands are available in each package (i.e. the worker and lib packages) for testing and building.

@@ -271,9 +271,12 @@
                             </div>
                             <div>
                                 <h3 class="font-medium">Email Us</h3>
-                                <p class="text-sm text-gray-400">
-                                    support@todo.com
-                                </p>
+                                <a
+                                    class="text-sm text-gray-400 hover:underline"
+                                    href="mailto:support@steamvault.info"
+                                >
+                                    support@steamvault.info
+                                </a>
                             </div>
                         </div>
                         <!-- <div class="mb-6 flex items-center gap-4">
@@ -297,9 +300,14 @@
                             </div>
                             <div>
                                 <h3 class="font-medium">GitHub</h3>
-                                <p class="text-sm text-gray-400">
-                                    github.com/todo
-                                </p>
+                                <a
+                                    class="text-sm text-gray-400 hover:underline"
+                                    href="https://github.com/colecrouter/rarest-achievement"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    github.com/colecrouter/rarest-achievement
+                                </a>
                             </div>
                         </div>
                     </div>

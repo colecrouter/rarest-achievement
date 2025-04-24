@@ -209,7 +209,7 @@
                         </ul>
                         <p>
                             To exercise these rights, please contact us at
-                            privacy@todo.com.
+                            support@steamvault.info.
                         </p>
                     </section>
 
@@ -379,7 +379,7 @@
             Service, please contact us:
         </p>
         <ul class="space-y-2 text-gray-300">
-            <li><strong>Email:</strong> legal@todo.com</li>
+            <li><strong>Email:</strong>support@steamvault.info</li>
         </ul>
     </div>
 

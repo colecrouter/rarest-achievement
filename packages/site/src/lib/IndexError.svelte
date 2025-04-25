@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Alert from "./Alert.svelte";
     import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+    import Alert from "./Alert.svelte";
 </script>
 
 <Alert

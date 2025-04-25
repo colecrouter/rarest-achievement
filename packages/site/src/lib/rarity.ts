@@ -14,5 +14,5 @@ export const getRarity = (percent: number | null): Rarity => {
     if (percent < 50) return "uncommon";
     if (percent < 100) return "common";
 
-    throw new Error("Invalid percentage value");
+    throw new Error(`Invalid percentage value: ${percent}`);
 };

@@ -1,9 +1,12 @@
 <script lang="ts">
-    import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    import { getSortManager } from "$lib/SortManager/index.svelte";
     import Transition from "$lib/Transition.svelte";
+    import type { SteamAppAchievement, SteamUserAchievement } from "lib";
+    import { flip } from "svelte/animate";
+    import { quintOut } from "svelte/easing";
+    import { crossfade } from "svelte/transition";
     import Card from "./_card.svelte";
     import Placeholder from "./_placeholder.svelte";
-    import type { SteamAppAchievement, SteamUserAchievement } from "lib";
 
     interface Props {
         achievements: MaybePromise<
@@ -15,36 +18,61 @@
 
     const grid =
         "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+
+    const [send, receive] = crossfade({
+        duration: (d) => Math.sqrt(d * 200),
+
+        fallback(node) {
+            const style = getComputedStyle(node);
+            const transform = style.transform === "none" ? "" : style.transform;
+
+            return {
+                duration: 300,
+                easing: quintOut,
+                css: (t) => `
+				transform: ${transform} translateY(${(1 - t) * 100}px);
+				opacity: ${t}
+			`,
+            };
+        },
+    });
+
+    const sortManager = getSortManager();
 </script>
 
-<TransitionWrapper>
-    {#await achievements}
-        <div class={grid}>
-            {#each new Array(6) as _}
-                <Placeholder {secondary} />
+{#await achievements}
+    <div class={grid}>
+        {#each new Array(6) as _}
+            <Placeholder {secondary} />
+        {/each}
+    </div>
+{:then achievements}
+    {@const sortedAchievements = sortManager.sort(achievements)}
+    <div class={grid}>
+        {#if !sortedAchievements || sortedAchievements.length === 0}
+            <Transition>
+                <!-- No achievements available -->
+                <div
+                    class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
+                >
+                    <h3 class="mb-2 text-xl font-bold">
+                        No achievements found
+                    </h3>
+                    <p class="mx-auto max-w-md text-gray-400">
+                        No achievements available.
+                    </p>
+                </div>
+            </Transition>
+        {:else}
+            {#each sortedAchievements.slice(0, 32) as achievement (achievement.id + achievement.app.id)}
+                <div
+                    in:receive={{ key: achievement.id + achievement.app.id }}
+                    out:send={{ key: achievement.id + achievement.app.id }}
+                    animate:flip={{ duration: 200 }}
+                >
+                    <Card {achievement} {secondary} />
+                </div>
             {/each}
-        </div>
-    {:then achievements}
-        <Transition>
-            <div class={grid}>
-                {#if !achievements || achievements.length === 0}
-                    <!-- No achievements available -->
-                    <div
-                        class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
-                    >
-                        <h3 class="mb-2 text-xl font-bold">
-                            No achievements found
-                        </h3>
-                        <p class="mx-auto max-w-md text-gray-400">
-                            No achievements available.
-                        </p>
-                    </div>
-                {:else}
-                    {#each achievements as achievement}
-                        <Card {achievement} {secondary} />
-                    {/each}
-                {/if}
-            </div>
-        </Transition>
-    {/await}
-</TransitionWrapper>
+        {/if}
+    </div>
+{/await}

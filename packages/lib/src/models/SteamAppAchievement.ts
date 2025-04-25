@@ -66,7 +66,7 @@ export class SteamAppAchievement {
     }
 
     get globalCount() {
-        return this.#app.estimatedPlayers * (this.#globalStats.percent / 100);
+        return this.#app.estimatedPlayers ? this.#app.estimatedPlayers * (this.#globalStats.percent / 100) : null;
     }
 
     get app() {

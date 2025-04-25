@@ -1,7 +1,8 @@
 <script lang="ts">
+    import { getSortManager } from "$lib/SortManager/index.svelte";
     import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
-    import { getSortManager } from "$lib/sortManager.svelte";
+    import Lock from "@lucide/svelte/icons/lock";
     import type { SteamAppAchievement } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
     import { SteamUserAchievement } from "@project/lib";
@@ -61,14 +62,30 @@
                     <div
                         class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-bold text-gray-900"
                     >
-                        {#if sortManager.method === "globalPercentage"}
+                        {#if sortManager.method === "percentage"}
                             {#if achievement.globalPercentage < 0.1}
                                 &lt;0.1%
                             {:else}
                                 {achievement.globalPercentage}%
                             {/if}
-                        {:else if sortManager.method === "globalCount"}
-                            {intl.format(achievement.globalCount)}
+                        {:else if sortManager.method === "count"}
+                            {#if achievement.globalCount === null}
+                                ???
+                            {:else}
+                                {intl.format(achievement.globalCount)}
+                            {/if}
+                        {:else if sortManager.method === "unlocked" && achievement instanceof SteamUserAchievement}
+                            <!-- show days elapsed since -->
+                            {#if achievement.unlocked}
+                                {Math.floor(
+                                    (Date.now() -
+                                        achievement.unlocked.getTime()) /
+                                        (1000 * 60 * 60 * 24),
+                                )}d
+                            {:else}
+                                <Lock class="m-[0.2em] h-[1em] w-auto" />
+                                <span hidden> Locked </span>
+                            {/if}
                         {/if}
                     </div>
                 </div>
@@ -114,7 +131,7 @@
                 </span>
                 <a
                     href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
-                    class="text-amber-500 hover:text-amber-400"
+                    class="text-primary-500 hover:text-primary-400"
                 >
                     Details
                 </a>

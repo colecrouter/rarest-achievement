@@ -50,9 +50,9 @@ export class EnhancedSteamRepository {
         for (const [id, app] of apps) {
             if (!app) continue;
             const estimatedPlayer = estimatedPlayers.get(id);
-            if (!estimatedPlayer) continue;
+            // if (!estimatedPlayer) continue; // SteamCharts appears to be missing data for some apps
 
-            const steamApp = new SteamApp(app, estimatedPlayer);
+            const steamApp = new SteamApp(app, estimatedPlayer ?? null);
             steamApps.set(steamApp.id, steamApp);
         }
         return new Errable(steamApps, err ?? err2);
@@ -246,6 +246,7 @@ export class EnhancedSteamRepository {
                 ]);
 
                 const appData = appDetails.data.get(id);
+
                 if (!appData || !appReviews || !appPlayerCount) {
                     data.set(id, null);
                     continue;

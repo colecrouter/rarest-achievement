@@ -1,22 +1,16 @@
 <script lang="ts">
+    import { getSortManager } from "$lib/SortManager/index.svelte";
     import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
-    import { getSortManager } from "$lib/sortManager.svelte";
     // biome-ignore lint/style/useImportType: <explanation>
     import {
-        SteamUserAchievement,
         type SteamAppAchievement,
+        SteamUserAchievement,
     } from "@project/lib/models";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 
     const rarity = getRarity(achievement.globalPercentage);
-    const sortManager = getSortManager();
-    const intl = new Intl.NumberFormat(getLocale(), {
-        style: "decimal",
-        notation: "compact",
-        maximumFractionDigits: 0,
-    });
     const size = 36;
 </script>
 

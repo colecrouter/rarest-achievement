@@ -3,11 +3,10 @@
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";
     import IndexError from "$lib/IndexError.svelte";
+    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import type { Rarity } from "$lib/rarity";
-    import { getSortManager } from "$lib/sortManager.svelte";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
-    import Search from "@lucide/svelte/icons/search";
     import Server from "@lucide/svelte/icons/server";
     import Trophy from "@lucide/svelte/icons/trophy";
     import { SteamUserAchievement } from "@project/lib";
@@ -15,9 +14,6 @@
     import Chart from "chart.js/auto";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
-    import SortMethodSwitch from "../../user/[id=userid]/SortMethodSwitch.svelte";
-
-    const sortManager = getSortManager();
 
     let { data } = $props();
     let { app, achievements, friends, loggedIn: user } = $derived(data);
@@ -25,8 +21,7 @@
     let recentUnlocks = $derived(
         !user
             ? null
-            : [...(achievements?.values() ?? [])]
-                  .flat()
+            : achievements
                   .filter((a) => a instanceof SteamUserAchievement) // Type guard, user check should be enough
                   .filter((a) => a.unlocked)
                   .sort(
@@ -39,17 +34,13 @@
     let unlockedCount = $derived(
         !user
             ? 0
-            : [...(achievements?.values() ?? [])]
+            : achievements
                   .filter((a) => a instanceof SteamUserAchievement)
                   .filter((achievement) => achievement.unlocked).length,
     );
-    let totalCount = $derived(achievements?.size ?? 0);
+    let totalCount = $derived(achievements.length);
 
     let isSignedIn = true;
-    let achievementFilter: "all" | "unlocked" | "locked" = "all";
-    let searchQuery = "";
-    let sortOrder: "name" | "rarity" | "date" = "rarity";
-    let sortDirection: "asc" | "desc" = "asc";
     let donutchart: HTMLCanvasElement | null = null;
 
     const rarities = [
@@ -158,34 +149,6 @@
             },
         });
     });
-
-    let filteredAchievements = $derived(
-        [...(achievements?.values() ?? [])]
-            .filter((achievement) => {
-                // if (
-                //     achievementFilter === "unlocked" &&
-                //     achievement.status !== "unlocked"
-                // )
-                //     return false;
-                // if (
-                //     achievementFilter === "locked" &&
-                //     achievement.status !== "locked"
-                // )
-                //     return false;
-                if (
-                    searchQuery &&
-                    !achievement.name
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()) &&
-                    !achievement.description
-                        ?.toLowerCase()
-                        .includes(searchQuery.toLowerCase())
-                )
-                    return false;
-                return true;
-            })
-            .sort((a, b) => a[sortManager.method] - b[sortManager.method]),
-    );
 
     const barColor = (ratio: number): Rarity => {
         if (ratio >= 1) return "ultra-rare";
@@ -432,44 +395,13 @@
     </div>
 
     <!-- Achievements List -->
-    <div class="mb-8">
-        <div
-            class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center"
-        >
-            <h2 class="text-2xl font-bold">Achievements</h2>
-            <div class="flex gap-2">
-                <SortMethodSwitch />
-                <div class="flex w-full flex-wrap items-center gap-3 md:w-auto">
-                    <div class="relative flex-1 md:w-64">
-                        <Search
-                            class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
-                        />
-                        <input
-                            type="search"
-                            placeholder="Search achievements..."
-                            bind:value={searchQuery}
-                            class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
+    <section class="mb-8">
+        <h2 class="mb-4 text-2xl font-bold">Achievement Leaderboard</h2>
 
-        <AchievementCards achievements={filteredAchievements} />
+        <Toolbar {achievements} />
 
-        {#if filteredAchievements.length === 0}
-            <div
-                class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
-            >
-                <Trophy class="mx-auto mb-4 h-12 w-12 text-gray-600" />
-                <h3 class="mb-2 text-xl font-bold">No achievements found</h3>
-                <p class="mx-auto max-w-md text-gray-400">
-                    No achievements match your current filters. Try adjusting
-                    your search or filter settings.
-                </p>
-            </div>
-        {/if}
-    </div>
+        <AchievementCards {achievements} />
+    </section>
 
     <!-- Friends Who Play -->
     <div class="mb-8">

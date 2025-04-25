@@ -10,9 +10,9 @@ export type SteamAppRaw = NonNullable<
 
 export class SteamApp {
     #app: SteamAppRaw;
-    #estimatedPlayers: number;
+    #estimatedPlayers: number | null;
 
-    constructor(data: SteamAppRaw, estimatedPlayers: number) {
+    constructor(data: SteamAppRaw, estimatedPlayers: number | null) {
         this.#app = data;
         this.#estimatedPlayers = estimatedPlayers;
     }

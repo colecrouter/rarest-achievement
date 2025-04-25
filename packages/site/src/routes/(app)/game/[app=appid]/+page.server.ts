@@ -5,15 +5,15 @@ export const load = async ({ parent, locals }) => {
 
     const repo = new EnhancedSteamRepository(locals);
 
-    let achievements: Map<string, SteamAppAchievement> | undefined;
+    let achievements: SteamAppAchievement[] | undefined;
     let err: Error | null = null;
     if (locals.steamUser) {
         const { data: achievementsMap, error: achieveErr } = await repo.getUserAchievements([app], [locals.steamUser]);
-        achievements = achievementsMap.get(app.id)?.get(locals.steamUser.id);
+        achievements = [...(achievementsMap.get(app.id)?.get(locals.steamUser.id)?.values() ?? [])];
         err = achieveErr;
     } else {
         const { data: achievementsMap, error: achieveErr } = await repo.getGameAchievements([app]);
-        achievements = achievementsMap.get(app.id);
+        achievements = [...(achievementsMap.get(app.id)?.values() ?? [])];
         err = achieveErr;
     }
 

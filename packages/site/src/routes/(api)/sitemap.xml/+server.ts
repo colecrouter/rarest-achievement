@@ -1,6 +1,6 @@
 import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import type { RequestHandler } from "./$types";
-import { eq, sql, asc, desc } from "drizzle-orm";
 
 export const GET: RequestHandler = async ({ url, setHeaders, locals }) => {
     const baseUrl = url.origin;

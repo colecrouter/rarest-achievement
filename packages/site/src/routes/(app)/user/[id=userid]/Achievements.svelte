@@ -1,44 +1,23 @@
 <script lang="ts">
-    import { type SortMethod, getSortManager } from "$lib/sortManager.svelte";
-    import Search from "@lucide/svelte/icons/search";
+    import AchievementCards from "$lib/AchievementCards";
+    import { getSortManager } from "$lib/SortManager/index.svelte";
     import type { SteamUser, SteamUserAchievement } from "@project/lib";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
-    import { fly } from "svelte/transition";
+    import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";
     import Podium from "./Podium.svelte";
-    import SortMethodSwitch from "./SortMethodSwitch.svelte";
-    import AchievementCards from "$lib/AchievementCards";
 
     interface Props {
-        achievements: Record<SortMethod, SteamUserAchievement[]>;
+        achievements: SteamUserAchievement[];
         user: SteamUser;
     }
-    let { achievements: achievementsRecord, user }: Props = $props();
+    let { achievements, user }: Props = $props();
 
     const sortManager = getSortManager();
 
-    let achievements = $derived(achievementsRecord[sortManager.method]);
-
-    // Mock data for achievements
-    let searchQuery = $state("");
     let activeTab = $state("grid");
 
-    let topThree = $derived(achievements.slice(0, 3));
-    let filteredAchievements = $derived(
-        achievements
-            .filter(
-                (achievement) =>
-                    achievement.app.name
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()) ||
-                    achievement.name
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase()) ||
-                    achievement.description
-                        ?.toLowerCase()
-                        .includes(searchQuery.toLowerCase()),
-            )
-            .sort((a, b) => a[sortManager.method] - b[sortManager.method]),
-    );
+    let topThree = $derived(sortManager.sort(achievements).slice(0, 3));
+    let filteredAchievements = $derived(sortManager.sort(achievements));
 </script>
 
 <!-- Hero Section with Podium -->
@@ -51,7 +30,7 @@
         class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
     >
         {#if topThree.length === 3}
-            {#key achievements}
+            {#key filteredAchievements}
                 <Podium place={2} achievement={topThree[1]!} />
 
                 <Podium place={1} achievement={topThree[0]!} />
@@ -72,53 +51,9 @@
 
 <!-- Achievement Leaderboard -->
 <section>
-    <div
-        class="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row"
-    >
-        <h2 class="text-2xl font-bold">Achievement Leaderboard</h2>
-        <div class="flex w-full items-center gap-3 md:w-auto">
-            <div class="flex items-center gap-2">
-                <SortMethodSwitch />
+    <h2 class="mb-4 text-2xl font-bold">Achievement Leaderboard</h2>
 
-                <div class="relative flex-1 md:w-64">
-                    <Search
-                        class="absolute top-2.5 left-2.5 h-4 w-4 text-gray-500"
-                    />
-                    <input
-                        type="search"
-                        placeholder="Search achievements..."
-                        class="input w-full border-gray-700 bg-gray-800 pl-8 text-gray-100"
-                        bind:value={searchQuery}
-                    />
-                </div>
-                <!-- <Tooltip>
-                    {#snippet trigger()}
-                        <div>
-                            <button
-                                class="btn btn-icon preset-outlined-primary"
-                                onclick={() =>
-                                    (sortOrder =
-                                        sortOrder === "asc" ? "desc" : "asc")}
-                            >
-                                {#if sortOrder === "asc"}
-                                    <SortAsc class="h-4 w-4" />
-                                {:else}
-                                    <SortDesc class="h-4 w-4" />
-                                {/if}
-                            </button>
-                        </div>
-                    {/snippet}
-                    {#snippet content()}
-                        <div>
-                            Sort by {sortOrder === "asc"
-                                ? "ascending"
-                                : "descending"} rarity
-                        </div>
-                    {/snippet}
-                </Tooltip> -->
-            </div>
-        </div>
-    </div>
+    <Toolbar {achievements} />
 
     <!-- Tabs -->
     <Tabs value={activeTab} onValueChange={(e) => (activeTab = e.value)}>
@@ -129,19 +64,7 @@
 
         {#snippet content()}
             <Tabs.Panel value="grid">
-                <div
-                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                >
-                    {#each filteredAchievements as achievement (achievement)}
-                        {#if achievement.unlocked !== null}
-                            <div
-                                transition:fly|global={{ y: 20, duration: 200 }}
-                            >
-                                <AchievementCards.Card {achievement} />
-                            </div>
-                        {/if}
-                    {/each}
-                </div>
+                <AchievementCards {achievements} />
             </Tabs.Panel>
 
             <Tabs.Panel value="list">

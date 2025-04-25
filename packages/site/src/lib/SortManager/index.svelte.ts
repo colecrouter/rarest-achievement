@@ -113,15 +113,14 @@ class SortManager {
                     return a.globalCount - b.globalCount;
                 }
                 if (method === "unlocked") {
-                    const unlockedA = "unlocked" in a && typeof a.unlocked === "boolean" ? a.unlocked : null;
-                    const unlockedB = "unlocked" in b && typeof b.unlocked === "boolean" ? b.unlocked : null;
-                    if (unlockedA === null && unlockedB === null) return 0;
-                    if (unlockedA === null) return 1;
-                    if (unlockedB === null) return -1;
+                    if (!("unlocked" in a && "unlocked" in b)) return 0;
+                    if (a.unlocked === null && b.unlocked === null) return 0;
+                    if (a.unlocked === null) return 1;
+                    if (b.unlocked === null) return -1;
                     if (direction === "desc") {
-                        return (unlockedA ? 1 : 0) - (unlockedB ? 1 : 0);
+                        return a.unlocked.getTime() - b.unlocked.getTime();
                     }
-                    return (unlockedA ? 1 : 0) - (unlockedB ? 1 : 0);
+                    return b.unlocked.getTime() - a.unlocked.getTime();
                 }
                 return 0;
             })

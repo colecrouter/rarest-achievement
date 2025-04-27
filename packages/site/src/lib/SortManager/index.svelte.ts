@@ -117,20 +117,16 @@ class SortManager {
                     if (a.unlocked === null && b.unlocked === null) return 0;
                     if (a.unlocked === null) return 1;
                     if (b.unlocked === null) return -1;
-                    if (direction === "desc") {
-                        return a.unlocked.getTime() - b.unlocked.getTime();
-                    }
                     return b.unlocked.getTime() - a.unlocked.getTime();
                 }
                 return 0;
-            })
-            .slice(this.#start, this.#end) as T[];
+            });
 
         if (direction === "desc") {
-            return filtered.slice().reverse();
+            return filtered.slice().reverse().slice(this.#start, this.#end);
         }
 
-        return filtered;
+        return filtered.slice(this.#start, this.#end);
     }
 }
 

@@ -10,12 +10,16 @@ import {
 } from "@project/lib";
 import type { Reroute, Transport } from "@sveltejs/kit";
 import { SteamAppContext } from "./lib/transports/App";
+import { AchievementArrayContext } from "./lib/transports/Achievements";
 
 export const reroute: Reroute = (request) => {
     return deLocalizeUrl(request.url).pathname;
 };
 
 const appTransport = new SteamAppContext();
+
+const userAchievementArrayTransport = new AchievementArrayContext<SteamUserAchievement>();
+const appAchievementArrayTransport = new AchievementArrayContext<SteamAppAchievement>();
 
 export const transport: Transport = {
     SteamUser: {
@@ -31,17 +35,29 @@ export const transport: Transport = {
     },
     // SteamUserAchievement must come first, because it extends SteamAppAchievement
     // Otherwise, `data instanceof SteamappAchievement` will be true for SteamUserAchievement
+    SteamUserAchievementArr: {
+        encode: (data) =>
+            AchievementArrayContext.isUserAchievementArray(data) && userAchievementArrayTransport.encode(data),
+        decode: (data: ReturnType<(typeof userAchievementArrayTransport)["encode"]>) =>
+            userAchievementArrayTransport.decodeUserAchievements(data),
+    },
+    SteamAppAchievementArr: {
+        encode: (data) =>
+            AchievementArrayContext.isAppAchievementArray(data) && appAchievementArrayTransport.encode(data),
+        decode: (data: ReturnType<(typeof appAchievementArrayTransport)["encode"]>) =>
+            appAchievementArrayTransport.decodeAppAchievements(data),
+    },
     SteamUserAchievement: {
-        encode: (data) => data instanceof SteamUserAchievement && data.serialize(),
-        decode: (data: ReturnType<SteamUserAchievement["serialize"]>) => {
-            const { app, global, lang, stats, steamid, userStats } = data;
-            return new SteamUserAchievement(app, steamid, stats, global, userStats, lang);
+        encode: (data) => data instanceof SteamUserAchievement && data.serializeUser(),
+        decode: (data: ReturnType<SteamUserAchievement["serializeUser"]>) => {
+            const [app, stats, global, lang, steamid, userStats] = data;
+            return new SteamUserAchievement(app, stats, global, lang, steamid, userStats);
         },
     },
     SteamAppAchievement: {
         encode: (data) => data instanceof SteamAppAchievement && data.serialize(),
         decode: (data: ReturnType<SteamAppAchievement["serialize"]>) => {
-            const { app, global, lang, stats } = data;
+            const [app, stats, global, lang] = data;
             return new SteamAppAchievement(app, stats, global, lang);
         },
     },

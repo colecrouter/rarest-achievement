@@ -16,27 +16,20 @@ export class SteamUserAchievement extends SteamAppAchievement {
 
     constructor(
         game: SteamApp,
-        steamid: string,
         meta: SteamAchievementRawMeta,
         global: SteamAchievementRawGlobalStats,
-        userStats: SteamUserAchievementRawStats | null,
         lang: string,
+        steamid: string,
+        userStats: SteamUserAchievementRawStats | null,
     ) {
         super(game, meta, global, lang);
         this.#steamid = steamid;
         this.#userStats = userStats;
     }
 
-    serialize() {
-        const { app, stats, global, lang } = super.serialize();
-        return {
-            app,
-            stats,
-            global,
-            lang,
-            userStats: this.#userStats,
-            steamid: this.#steamid,
-        };
+    serializeUser() {
+        const base = super.serialize();
+        return [...base, this.#steamid, this.#userStats] as ConstructorParameters<typeof SteamUserAchievement>;
     }
 
     get unlocked() {

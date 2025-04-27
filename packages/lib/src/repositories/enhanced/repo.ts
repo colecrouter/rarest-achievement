@@ -134,7 +134,7 @@ export class EnhancedSteamRepository {
                 for (const [achievementId, { global, meta }] of gameAchMap) {
                     // Check user's achievement data; pass null if missing.
                     const userAchData = userAchievements.get(gameId)?.get(u)?.get(achievementId) || null;
-                    const userAchievement = new SteamUserAchievement(gameData, u, meta, global, userAchData, lang);
+                    const userAchievement = new SteamUserAchievement(gameData, meta, global, lang, u, userAchData);
                     achievements.get(gameId)?.get(u)?.set(achievementId, userAchievement);
                 }
             }

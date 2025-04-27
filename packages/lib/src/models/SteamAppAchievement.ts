@@ -25,12 +25,9 @@ export class SteamAppAchievement {
     }
 
     serialize() {
-        return {
-            app: this.#app,
-            stats: this.#meta,
-            global: this.#globalStats,
-            lang: this.#lang,
-        };
+        return [this.#app, this.#meta, this.#globalStats, this.#lang] satisfies ConstructorParameters<
+            typeof SteamAppAchievement
+        >;
     }
 
     get id() {

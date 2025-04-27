@@ -12,13 +12,13 @@ export class SteamApp {
     #app: SteamAppRaw;
     #estimatedPlayers: number | null;
 
-    constructor(data: SteamAppRaw, estimatedPlayers: number | null) {
+    constructor(id: number, data: SteamAppRaw, estimatedPlayers: number | null) {
         this.#app = data;
         this.#estimatedPlayers = estimatedPlayers;
     }
 
     serialize() {
-        return { app: this.#app, estimatedPlayers: this.#estimatedPlayers };
+        return [this.id, this.#app, this.#estimatedPlayers] satisfies ConstructorParameters<typeof SteamApp>;
     }
 
     get id() {

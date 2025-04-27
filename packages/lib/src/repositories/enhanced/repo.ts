@@ -52,7 +52,7 @@ export class EnhancedSteamRepository {
             const estimatedPlayer = estimatedPlayers.get(id);
             // if (!estimatedPlayer) continue; // SteamCharts appears to be missing data for some apps
 
-            const steamApp = new SteamApp(app, estimatedPlayer ?? null);
+            const steamApp = new SteamApp(app.steam_appid, app, estimatedPlayer ?? null);
             steamApps.set(steamApp.id, steamApp);
         }
         return new Errable(steamApps, err ?? err2);

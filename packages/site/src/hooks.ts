@@ -9,10 +9,13 @@ import {
     SteamUserAchievement,
 } from "@project/lib";
 import type { Reroute, Transport } from "@sveltejs/kit";
+import { SteamAppContext } from "./lib/transports/App";
 
 export const reroute: Reroute = (request) => {
     return deLocalizeUrl(request.url).pathname;
 };
+
+const appTransport = new SteamAppContext();
 
 export const transport: Transport = {
     SteamUser: {
@@ -23,11 +26,8 @@ export const transport: Transport = {
         },
     },
     SteamApp: {
-        encode: (data) => data instanceof SteamApp && data.serialize(),
-        decode: (data: ReturnType<SteamApp["serialize"]>) => {
-            const { app, estimatedPlayers } = data;
-            return new SteamApp(app, estimatedPlayers);
-        },
+        encode: (data) => data instanceof SteamApp && appTransport.encode(data),
+        decode: (data: ConstructorParameters<typeof SteamApp>) => appTransport.decode(data),
     },
     // SteamUserAchievement must come first, because it extends SteamAppAchievement
     // Otherwise, `data instanceof SteamappAchievement` will be true for SteamUserAchievement

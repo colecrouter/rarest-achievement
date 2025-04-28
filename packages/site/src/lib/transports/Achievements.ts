@@ -74,7 +74,6 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
         const apps = new Array<SteamUserAchievement>();
 
         for (const [appParams, achievements] of value) {
-            if (!appParams) continue;
             const [id, details, players] = appParams;
             const app = new SteamApp(id, details, players);
             for (const params of achievements) {

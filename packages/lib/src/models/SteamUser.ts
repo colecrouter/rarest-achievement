@@ -41,8 +41,9 @@ export class SteamUser {
         return this.#player.personastate as SteamUserStatus;
     }
 
+    /** Note that this isn't reliable; my API key will false negative users who I am friends with, even though I can't fetch all of their data. */
     get private() {
-        return !("timecreated" in this.#player);
+        return this.#player.communityvisibilitystate !== 3;
     }
 
     get realName() {

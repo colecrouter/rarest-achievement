@@ -52,10 +52,13 @@ export const load = async ({ parent, locals }) => {
 
         console.log("Achievements for user:", allAchievementsForUser.length);
 
+        const err = err1 || err2 || err3;
+        if (err) console.error("Error fetching data:", err);
+
         return {
             achievements: allAchievementsForUser,
             rareCount: score,
-            didErr: Boolean(err1 || err2 || err3),
+            didErr: Boolean(err),
         };
     })();
 

@@ -74,35 +74,23 @@
         </div>
     </div>
     <div class="mb-3">
-        <div class="mb-1 flex items-center justify-between">
-            <div class="text-xs text-gray-400">Achievement Progress</div>
-            <div class="text-xs font-medium">
-                {completion.toFixed(0)}%
+        {#if friend.private || !achievements.length}
+            <div class=" text-gray-500">This profile is private.</div>
+        {:else}
+            <div class="mb-1 flex items-center justify-between">
+                <div class="text-xs text-gray-400">Achievement Progress</div>
+                <div class="text-xs font-medium">
+                    {completion.toFixed(0)}%
+                </div>
             </div>
-        </div>
-        <!-- <div class="h-1.5 rounded bg-gray-700">
-                                <div
-                                    class="h-full rounded-full {completion ===
-                                    100
-                                        ? 'bg-green-500'
-                                        : completion > 75
-                                          ? 'bg-amber-500'
-                                          : 'bg-blue-500'}"
-                                    style="width: {completion}%"
-                                ></div>
-                            </div> -->
-        <Progress value={completion} max={100} meterBg={`bg-${color}`}
-        ></Progress>
+            <Progress value={completion} max={100} meterBg={`bg-${color}`}
+            ></Progress>
+        {/if}
     </div>
     <div class="flex items-center justify-between text-xs text-gray-400">
         <span>
             <!-- {friend.achievements} / {app
-                                        .achievementStats.total} achievements -->
+                                            .achievementStats.total} achievements -->
         </span>
-        <!-- <button
-                                class="h-7 px-2 text-gray-400 hover:text-gray-100"
-                            >
-                                Compare
-                            </button> -->
     </div>
 </div>

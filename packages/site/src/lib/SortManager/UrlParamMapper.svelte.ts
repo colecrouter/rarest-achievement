@@ -1,6 +1,6 @@
+import { goto } from "$app/navigation";
 import { getContext, setContext } from "svelte";
 import { type Direction, type Filter, type Method, SortManager } from "./Manager.svelte";
-import { goto } from "$app/navigation";
 
 class UrlParamMapper {
     #fn: () => URL;

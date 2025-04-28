@@ -1,4 +1,4 @@
-import { SteamUserAchievement, type SteamAppAchievement } from "@project/lib";
+import { type SteamAppAchievement, SteamUserAchievement } from "@project/lib";
 
 export type SortMethod = (a: SteamAppAchievement | SteamUserAchievement) => number | null;
 

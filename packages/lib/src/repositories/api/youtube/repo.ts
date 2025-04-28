@@ -2,8 +2,8 @@ import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import { Errable } from "../../../error";
 import type { Language } from "../lang";
-import { YouTubeClient } from "./client";
 import { unescapeHTML } from "../utils";
+import { YouTubeClient } from "./client";
 
 export class YouTubeRepository {
     #client: YouTubeClient;

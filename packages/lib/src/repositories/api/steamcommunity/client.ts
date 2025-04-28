@@ -11,6 +11,7 @@ export class SteamCommunityClient {
         if (maxLength < 0 || maxLength > 10) throw new Error("maxLength must be between 0 and 10");
 
         const data = await scrapeSteamCommunityArticles(achievement, lang);
+
         return data.slice(0, maxLength);
     }
 }

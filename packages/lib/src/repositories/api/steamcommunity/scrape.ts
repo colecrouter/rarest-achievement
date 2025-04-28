@@ -1,6 +1,7 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import type { HTMLRewriter } from "htmlrewriter";
 import type { Language } from "../lang";
+import { unescapeHTML } from "../utils";
 
 const resolveHTMLRewriter = async () =>
     "HTMLRewriter" in globalThis
@@ -185,9 +186,9 @@ export async function scrapeSteamCommunityArticles(
     const count = context.titles.length;
     for (let i = 0; i < count; i++) {
         articles.push({
-            title: context.titles[i] ?? "",
-            author: context.authors[i] || "",
-            description: context.descriptions[i] || "",
+            title: unescapeHTML(context.titles[i] ?? ""),
+            author: unescapeHTML(context.authors[i] || ""),
+            description: unescapeHTML(context.descriptions[i] || ""),
             stars: context.stars[i] || 0,
             thumbnail: context.thumbnails[i] || "", // include the thumbnail URL
             id: context.ids[i] || 0, // include the article ID

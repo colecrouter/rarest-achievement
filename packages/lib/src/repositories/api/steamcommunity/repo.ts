@@ -17,6 +17,7 @@ export class SteamCommunityRepo {
         const cached = await this.#cache.get(cacheKey);
         if (cached) {
             const data = JSON.parse(cached) as Article[];
+
             return new Errable(data, null);
         }
 

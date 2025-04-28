@@ -3,6 +3,7 @@ import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import { Errable } from "../../../error";
 import type { Language } from "../lang";
 import { YouTubeClient } from "./client";
+import { unescapeHTML } from "../utils";
 
 export class YouTubeRepository {
     #client: YouTubeClient;
@@ -27,9 +28,9 @@ export class YouTubeRepository {
         const guides = await Errable.try(async () => {
             const guides = await this.#client.fetchVideos(achievement, lang, 5);
             return guides.items.map((item) => ({
-                title: item.snippet.title,
-                channel: item.snippet.channelTitle,
-                description: item.snippet.description,
+                title: unescapeHTML(item.snippet.title),
+                channel: unescapeHTML(item.snippet.channelTitle),
+                description: unescapeHTML(item.snippet.description),
                 publishedAt: item.snippet.publishedAt,
                 videoId: item.id.kind === "youtube#video" ? item.id.videoId : "",
             })) satisfies YouTubeGuide[];

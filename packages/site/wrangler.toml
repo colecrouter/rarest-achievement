@@ -2,6 +2,7 @@
 name = "rarest-achievement"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 compatibility_date = "2025-03-27"
+compatibility_flags = ["nodejs_compat"]
 
 [[env.production.kv_namespaces]]
 id = "a53fbe0165da4c21936a55c519e5b6a5"

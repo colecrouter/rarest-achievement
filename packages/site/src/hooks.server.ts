@@ -7,9 +7,15 @@ import {
     SteamStoreAPIClient,
     setBypassCdnEnabled,
 } from "@project/lib";
+import * as Sentry from "@sentry/sveltekit";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
+
+Sentry.init({
+    dsn: "https://1090e526411b74ec7e519ecf548c54b5@o4508581503172608.ingest.us.sentry.io/4509233074667520",
+    tracesSampleRate: 1,
+});
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>
@@ -49,8 +55,9 @@ const hook: Handle = async ({ event, resolve }) => {
     return resolve(event);
 };
 
-export const handle = sequence(paraglideHandle, hook);
+export const handle = sequence(Sentry.sentryHandle(), sequence(paraglideHandle, hook));
 
 export const init = () => {
     dev && setBypassCdnEnabled(true);
 };
+export const handleError = Sentry.handleErrorWithSentry();

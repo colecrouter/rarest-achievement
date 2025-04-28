@@ -1,3 +1,4 @@
+import { sentrySvelteKit } from "@sentry/sveltekit";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
@@ -5,17 +6,18 @@ import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-    plugins: [
-        tailwindcss(),
-        sveltekit(),
-        // @ts-ignore
-        paraglideVitePlugin({
-            project: "./project.inlang",
-            outdir: "./src/lib/paraglide",
-            strategy: ["url", "cookie", "baseLocale"],
-            disableAsyncLocalStorage: true,
-        }),
-    ],
+    plugins: [sentrySvelteKit({
+        sourceMapsUploadOptions: {
+            org: "cole-crouter",
+            project: "steam-vault"
+        }
+    }), tailwindcss(), sveltekit(), // @ts-ignore
+    paraglideVitePlugin({
+        project: "./project.inlang",
+        outdir: "./src/lib/paraglide",
+        strategy: ["url", "cookie", "baseLocale"],
+        disableAsyncLocalStorage: true,
+    })],
     test: {
         workspace: [
             {

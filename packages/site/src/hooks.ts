@@ -9,8 +9,8 @@ import {
     SteamUserAchievement,
 } from "@project/lib";
 import type { Reroute, Transport } from "@sveltejs/kit";
-import { SteamAppContext } from "./lib/transports/App";
 import { AchievementArrayContext } from "./lib/transports/Achievements";
+import { SteamAppContext } from "./lib/transports/App";
 
 export const reroute: Reroute = (request) => {
     return deLocalizeUrl(request.url).pathname;

@@ -410,14 +410,14 @@
         {#if isSignedIn}
             {#await friends then f}
                 {#if f}
-                    {@const { data: friends, error } = f.friends}
+                    {@const { data: error } = f.friends}
                     {#if error}
                         <IndexError />
                     {/if}
-                    <FriendCards data={friends} />
                 {/if}
             {/await}
         {/if}
+        <FriendCards data={friends.then((r) => r?.friends?.data ?? null)} />
     </div>
 
     <!-- Similar Games -->

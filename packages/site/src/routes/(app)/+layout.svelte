@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { setSortManager } from "$lib/SortManager/index.svelte";
+    import { setSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import Footer from "./Footer.svelte";
     import Navbar from "./Navbar.svelte";
     const { children, data } = $props();

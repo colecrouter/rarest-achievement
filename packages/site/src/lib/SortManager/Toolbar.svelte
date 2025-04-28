@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/index.svelte";
     import KeyRound from "@lucide/svelte/icons/key-round";
     import Lock from "@lucide/svelte/icons/lock";
     import SquareDashed from "@lucide/svelte/icons/square-dashed";
@@ -9,6 +8,7 @@
     } from "@project/lib";
     import { Segment } from "@skeletonlabs/skeleton-svelte";
     import { crossfade } from "svelte/transition";
+    import { getSortManager } from "./UrlParamMapper.svelte";
 
     interface Props {
         achievements: Array<SteamUserAchievement | SteamAppAchievement>;

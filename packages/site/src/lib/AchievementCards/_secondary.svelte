@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/index.svelte";
     import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
     // biome-ignore lint/style/useImportType: <explanation>

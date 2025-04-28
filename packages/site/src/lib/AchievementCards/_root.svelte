@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/index.svelte";
+    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import Transition from "$lib/Transition.svelte";
     import type { SteamAppAchievement, SteamUserAchievement } from "lib";
     import { flip } from "svelte/animate";

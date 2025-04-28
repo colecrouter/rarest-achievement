@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/index.svelte";
+    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
     import Lock from "@lucide/svelte/icons/lock";

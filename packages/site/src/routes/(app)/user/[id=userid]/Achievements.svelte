@@ -1,6 +1,6 @@
 <script lang="ts">
     import AchievementCards from "$lib/AchievementCards";
-    import { getSortManager } from "$lib/SortManager/index.svelte";
+    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import type { SteamUser, SteamUserAchievement } from "@project/lib";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";

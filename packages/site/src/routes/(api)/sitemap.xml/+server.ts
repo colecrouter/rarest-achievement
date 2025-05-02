@@ -2,6 +2,21 @@ import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import type { RequestHandler } from "./$types";
 
+const escapeChars = [
+    ["&", "&amp;"],
+    ["<", "&lt;"],
+    [">", "&gt;"],
+    ["'", "&apos;"],
+    ['"', "&quot;"],
+];
+
+const escapeXml = (str: string) => {
+    return escapeChars.reduce((acc, [char, replacement]) => {
+        if (!char || !replacement) return acc;
+        return acc.replace(new RegExp(char, "g"), replacement);
+    }, str);
+};
+
 export const GET: RequestHandler = async ({ url, setHeaders, locals }) => {
     const baseUrl = url.origin;
 
@@ -23,7 +38,7 @@ export const GET: RequestHandler = async ({ url, setHeaders, locals }) => {
     const generateXml = (url: string, lastmod?: Date) => {
         return /* xml */ `
       <url>
-        <loc>${url}</loc>
+        <loc>${escapeXml(url)}</loc>
         ${lastmod ? /* xml */ `<lastmod>${lastmod.toISOString()}</lastmod>` : ""}
       </url>`;
     };

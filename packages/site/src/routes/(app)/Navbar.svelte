@@ -2,6 +2,7 @@
     import LogOut from "@lucide/svelte/icons/log-out";
     import User from "@lucide/svelte/icons/user";
     import type { SteamUser } from "@project/lib";
+    import SearchBar from "./SearchBar.svelte";
 
     interface Props {
         user: SteamUser | null;
@@ -27,15 +28,8 @@
             </h1>
         </a>
 
-        <!-- Search form -->
-        <form class="flex-grow" action="/?/search" method="post">
-            <input
-                class="input"
-                type="text"
-                name="q"
-                placeholder="Enter a username..."
-            />
-        </form>
+        <!-- Search form component -->
+        <SearchBar />
 
         {#if user}
             <a

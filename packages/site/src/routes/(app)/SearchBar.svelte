@@ -38,8 +38,9 @@
     <Popover
         open={query.length > 0}
         triggerBase="w-full"
-        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[640px]"
+        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[640px] translate-"
         autoFocus={false}
+        portalled={false}
     >
         {#snippet content()}
             <div class="w-64">
@@ -73,16 +74,16 @@
                             {/each}
                         </div>
                     {:else}
-                        <p class="text-surface-400 text-sm">
-                            No results found.
-                        </p>
+                        <div class="flex w-64 flex-col gap-2">
+                            <p class="text-surface-400 text-sm">
+                                No results found for "{query}"
+                            </p>
+                        </div>
                     {/if}
                 {:catch error}
-                    <div
-                        class="bg-surface-500 absolute z-10 max-h-96 w-full overflow-y-auto rounded-lg p-4"
-                    >
+                    <div class="flex w-64 flex-col gap-2">
                         <p class="text-surface-400 text-sm">
-                            An error occurred: {error.message}
+                            Error: {error.message}
                         </p>
                     </div>
                 {/await}

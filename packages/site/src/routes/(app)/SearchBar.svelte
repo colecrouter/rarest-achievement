@@ -35,24 +35,33 @@
 
 <!-- Search form markup -->
 <form class="flex-grow" action="/?/search" method="post">
+    <input
+        class="input"
+        type="text"
+        name="q"
+        placeholder="Enter a username, profile, or game"
+        bind:value={query}
+        oninput={() => search(query)}
+    />
+
     <Popover
         open={query.length > 0}
         triggerBase="w-full"
-        contentBase="card bg-surface-200-800 p-4 space-y-4 max-w-[640px] translate-"
+        contentBase="card w-full w-[360px] lg:w-[480px] bg-surface-200-800 p-4 space-y-4"
         autoFocus={false}
         portalled={false}
     >
         {#snippet content()}
-            <div class="w-64">
+            <div class="w-full">
                 {#await resultPromise}
-                    <div class="flex w-64 flex-col gap-2">
+                    <div class="flex w-full flex-col gap-2">
                         <p class="text-surface-400 text-sm">
                             Searching for "{query}"...
                         </p>
                     </div>
                 {:then results}
                     {#if results.length > 0}
-                        <div class="flex flex-col gap-2">
+                        <div class="flex w-full flex-col gap-2">
                             {#each results as result}
                                 <a
                                     href="/game/{result.appid}"
@@ -66,10 +75,10 @@
                                         alt={result.name}
                                         class="h-8 w-8 rounded-lg"
                                     />
-                                    <span class="flex-grow">
+                                    <span class="flex-grow truncate">
                                         {result.name}
                                     </span>
-                                    <Gamepad class="h-4 w-4" />
+                                    <Gamepad class="h-4 w-4 flex-shrink-0" />
                                 </a>
                             {/each}
                         </div>
@@ -90,13 +99,8 @@
             </div>
         {/snippet}
         {#snippet trigger()}
-            <input
-                class="input"
-                type="text"
-                name="q"
-                placeholder="Enter a username, profile, or game"
-                bind:value={query}
-                oninput={() => search(query)}
-            />{/snippet}
+            <!-- Required to align the popover with the search bar -->
+            <div class="w-full"></div>
+        {/snippet}
     </Popover>
 </form>

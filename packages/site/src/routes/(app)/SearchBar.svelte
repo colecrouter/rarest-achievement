@@ -101,7 +101,7 @@
     <Popover
         open={isFocused}
         triggerBase="w-full"
-        contentBase="card w-[360px] lg:w-[480px] bg-surface-200-800 p-4 space-y-4"
+        contentBase="card left-0 w-[calc(100vw-16px)] md:w-[360px] lg:w-[480px] bg-surface-200-800 p-4 space-y-4"
         triggerClasses="block h-0"
         zIndex={"10"}
         autoFocus={false}

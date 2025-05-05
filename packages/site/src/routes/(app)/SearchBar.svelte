@@ -9,28 +9,24 @@
 
     let query = $state("");
 
-    const debounce = <T,>(func: (...args: T[]) => void, delay: number) => {
-        let timeout: NodeJS.Timeout;
-        return (...args: T[]) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                func(...args);
-            }, delay);
-        };
+    let debounceTimeout: NodeJS.Timeout;
+
+    // Combined debounce and fetch function
+    const debouncedFetchSearch = (q: string) => {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+            resultPromise = fetch(`/search?q=${encodeURIComponent(q)}`).then(
+                (response) => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                },
+            );
+        }, 500);
     };
 
-    const debouncedFetchSearch = debounce((q: string) => {
-        resultPromise = fetch(`/search?q=${encodeURIComponent(q)}`).then(
-            (response) => {
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                return response.json();
-            },
-        );
-    }, 500);
-
-    // Updated searchGames to use the persistent debounced function
+    // Updated searchGames to use the combined function
     const searchGames = (query: string) => {
         debouncedFetchSearch(query);
     };
@@ -38,7 +34,9 @@
     let resultPromise = $state(Promise.resolve<_Response | null>(null));
 
     let returnedError = $state(false);
-    let failed = $derived(returnedError || page.status === 400);
+    let failed = $derived(
+        query !== "" && (returnedError || page.status === 400),
+    );
 </script>
 
 {#snippet loading()}
@@ -73,17 +71,18 @@
         placeholder="Enter a username, profile, or game"
         bind:value={query}
         oninput={() => searchGames(query)}
+        class:failed
     />
 
     <Popover
         open={query.length > 0}
         triggerBase="w-full"
         contentBase="card w-full w-[360px] lg:w-[480px] bg-surface-200-800 p-4 space-y-4"
+        triggerClasses="block h-0"
         autoFocus={false}
-        portalled={false}
     >
         {#snippet content()}
-            <div class="w-full">
+            <ul class="w-full">
                 {#await resultPromise}
                     {@render loading()}
                 {:then res}
@@ -92,7 +91,7 @@
                     {:else}
                         {@const { apps, users } = res}
                         {#if apps.apps.length > 0}
-                            <div class="flex w-full flex-col gap-2">
+                            <li class="flex w-full flex-col gap-2">
                                 {#each apps.apps as res}
                                     {@const app = new SteamSearchApp(res)}
                                     <a
@@ -121,7 +120,7 @@
                                         {apps.total - apps.apps.length} more results...
                                     </p>
                                 {/if}
-                            </div>
+                            </li>
                         {:else}
                             <div class="flex w-64 flex-col gap-2">
                                 <p class="text-surface-400 text-sm">
@@ -176,7 +175,7 @@
                         </p>
                     </div>
                 {/await}
-            </div>
+            </ul>
         {/snippet}
         {#snippet trigger()}
             <!-- Required to align the popover with the search bar -->
@@ -186,10 +185,13 @@
 </form>
 
 <style>
-    .shake {
+    .failed {
         animation: shake 0.5s ease-in-out;
-        animation-iteration-count: 3;
         animation-fill-mode: forwards;
+    }
+
+    .failed:focus-within {
+        --tw-ring-color: var(--color-red-500);
     }
 
     @keyframes shake {

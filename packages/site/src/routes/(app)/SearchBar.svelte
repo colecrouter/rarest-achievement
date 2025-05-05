@@ -6,6 +6,7 @@
     import { Popover } from "@skeletonlabs/skeleton-svelte";
     import type { _Response } from "../(api)/search/+server";
     import { SteamSearchApp, SteamSearchUser } from "lib";
+    import SearchIcon from "@lucide/svelte/icons/search";
 
     let query = $state("");
 
@@ -68,7 +69,7 @@
         class="input"
         type="text"
         name="q"
-        placeholder="Enter a username, profile, or game"
+        placeholder="Enter a username, profile link, or game..."
         bind:value={query}
         oninput={() => searchGames(query)}
         class:failed
@@ -210,5 +211,11 @@
         100% {
             transform: translateX(0);
         }
+    }
+
+    .input {
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='oklch(0.967 0.003 264.542)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' %3E%3Cpath d='m21 21-4.34-4.34' /%3E%3Ccircle cx='11' cy='11' r='8' /%3E%3C/svg%3E")
+            no-repeat 8px center;
+        padding-left: 2.5rem;
     }
 </style>

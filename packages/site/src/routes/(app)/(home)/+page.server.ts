@@ -5,14 +5,13 @@ import {
     SteamApp,
     SteamAppAchievement,
     type SteamID,
-    achievementsMeta,
     achievementsStats,
     apps,
     resolveSteamID,
     userScores,
 } from "@project/lib";
 import { fail, redirect } from "@sveltejs/kit";
-import { and, asc, countDistinct, eq, inArray, sql, sum } from "drizzle-orm";
+import { countDistinct, inArray, sql, sum } from "drizzle-orm";
 
 export const actions = {
     search: async ({ request }) => {

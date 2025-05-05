@@ -2,27 +2,14 @@ import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import type { HTMLRewriter } from "htmlrewriter";
 import type { Language } from "../lang";
 import { unescapeHTML } from "../utils";
-
-const resolveHTMLRewriter = async () =>
-    "HTMLRewriter" in globalThis
-        ? (globalThis as unknown as typeof import("htmlrewriter")).HTMLRewriter
-        : import("htmlrewriter").then((m) => m.HTMLRewriter);
+import { getHTMLRewriter } from "./htmlRewriterHelper";
+import type { Article } from "./types";
 
 type Element = Parameters<NonNullable<(typeof HTMLRewriter.prototype.elementHandlers)[number][1]["element"]>>[0];
 type TextChunk = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["text"]>>[0];
 type DocType = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["doctype"]>>[0];
 type Comment = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["comments"]>>[0];
 type EndTag = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["end"]>>[0];
-
-// Define an Article interface
-export interface Article {
-    title: string;
-    author: string;
-    description: string;
-    stars: number;
-    thumbnail: string;
-    id: number;
-}
 
 // Shared context for handlers
 interface ScrapeContext {
@@ -138,7 +125,7 @@ class ArticleIDHandler {
 export async function scrapeSteamCommunityArticles(
     achievement: SteamAppAchievement | SteamUserAchievement,
     lang: Language,
-): Promise<Article[]> {
+) {
     const url = new URL(`https://steamcommunity.com/app/${achievement.app.id}/guides/`);
     // ?searchText=gold+medal&browsefilter=trend&browsesort=creationorder&requiredtags%5B%5D=Achievements&requiredtags%5B%5D=English#scrollTop=0
     url.searchParams.set("searchText", achievement.name);
@@ -168,7 +155,7 @@ export async function scrapeSteamCommunityArticles(
         ids: [],
     };
 
-    const HTMLRewriter = await resolveHTMLRewriter();
+    const HTMLRewriter = await getHTMLRewriter();
 
     const rewriter = new HTMLRewriter()
         .on(".workshopItemTitle", new TitleHandler(context))

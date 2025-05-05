@@ -5,6 +5,7 @@
     import User from "@lucide/svelte/icons/user";
     import { Popover } from "@skeletonlabs/skeleton-svelte";
     import { SteamSearchApp, SteamSearchUser } from "lib";
+    import { fade } from "svelte/transition";
     import type { AppsResponse } from "../(api)/search/apps/+server";
     import type { UsersResponse } from "../(api)/search/users/+server";
 
@@ -41,6 +42,8 @@
     let failed = $derived(
         query !== "" && (returnedError || page.status === 400),
     );
+
+    let maxHeight = $state<number>(0);
 </script>
 
 {#snippet loading()}
@@ -86,104 +89,123 @@
         autoFocus={false}
     >
         {#snippet content()}
-            <ul class="w-full">
-                <!-- Apps Section -->
-                {#await appsPromise}
-                    {@render loading()}
-                {:then appsRes}
-                    {#if appsRes && appsRes.apps.length > 0}
-                        <li class="flex flex-col gap-2">
-                            {#each appsRes.apps as res}
+            <div
+                class="overflow-hidden"
+                style:transition="max-height 0.25s ease-in-out"
+                style:max-height={`${maxHeight}px`}
+            >
+                <ul class="w-full" bind:clientHeight={maxHeight}>
+                    <!-- Apps Section -->
+                    {#await appsPromise}
+                        {@render loading()}
+                    {:then appsRes}
+                        {#if appsRes && appsRes.apps.length > 0}
+                            {#each appsRes.apps as res, i (res.appid)}
                                 {@const app = new SteamSearchApp(res)}
-                                <a
-                                    href="/game/{app.id}"
-                                    class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
-                                    onclick={() => {
-                                        query = "";
-                                    }}
+                                <li
+                                    class="flex flex-col gap-2"
+                                    transition:fade|global={{ delay: i * 50 }}
                                 >
-                                    <img
-                                        src={app.icon}
-                                        alt={app.name}
-                                        class="h-8 w-8 rounded-lg"
-                                    />
-                                    <span class="flex-grow truncate"
-                                        >{app.name}</span
+                                    <a
+                                        href="/game/{app.id}"
+                                        class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
+                                        onclick={() => {
+                                            query = "";
+                                        }}
                                     >
-                                    <Gamepad class="h-4 w-4 flex-shrink-0" />
-                                </a>
+                                        <img
+                                            src={app.icon}
+                                            alt={app.name}
+                                            class="h-8 w-8 rounded-lg"
+                                        />
+                                        <span class="flex-grow truncate"
+                                            >{app.name}</span
+                                        >
+                                        <Gamepad
+                                            class="h-4 w-4 flex-shrink-0"
+                                        />
+                                    </a>
+                                </li>
                             {/each}
                             {#if appsRes.total - appsRes.apps.length > 0}
-                                <p class="text-surface-400 text-sm">
-                                    {appsRes.total - appsRes.apps.length} more results...
-                                </p>
+                                <li>
+                                    <p class="text-surface-400 text-sm">
+                                        {appsRes.total - appsRes.apps.length} more
+                                        results...
+                                    </p>
+                                </li>
                             {/if}
-                        </li>
-                    {:else}
-                        <div class="flex flex-col gap-2">
+                        {:else}
+                            <li>
+                                <p class="text-surface-400 text-sm">
+                                    No apps found for "{query}"
+                                </p>
+                            </li>
+                        {/if}
+                    {:catch error}
+                        <li>
                             <p class="text-surface-400 text-sm">
-                                No apps found for "{query}"
+                                Error: {error.message}
                             </p>
-                        </div>
-                    {/if}
-                {:catch error}
-                    <div class="flex flex-col gap-2">
-                        <p class="text-surface-400 text-sm">
-                            Error: {error.message}
-                        </p>
-                    </div>
-                {/await}
+                        </li>
+                    {/await}
 
-                <hr class="text-surface-500 my-2" />
+                    <hr class="text-surface-500 my-2" />
 
-                <!-- Users Section -->
-                {#await usersPromise}
-                    {@render loading()}
-                {:then usersRes}
-                    {#if usersRes && usersRes.users.length > 0}
-                        <li class="flex flex-col gap-2">
-                            {#each usersRes.users as res}
+                    <!-- Users Section -->
+                    {#await usersPromise}
+                        {@render loading()}
+                    {:then usersRes}
+                        {#if usersRes && usersRes.users.length > 0}
+                            {#each usersRes.users as res, i (res.userId)}
                                 {@const user = new SteamSearchUser(res)}
-                                <a
-                                    href="/user/{user.id}"
-                                    class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
-                                    onclick={() => {
-                                        query = "";
-                                    }}
+                                <li
+                                    class="flex flex-col gap-2"
+                                    transition:fade|global={{ delay: i * 50 }}
                                 >
-                                    <img
-                                        src={user.avatar}
-                                        alt={user.name}
-                                        class="h-8 w-8 rounded-lg"
-                                    />
-                                    <span class="flex-grow truncate"
-                                        >{user.name}</span
+                                    <a
+                                        href="/user/{user.id}"
+                                        class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
+                                        onclick={() => {
+                                            query = "";
+                                        }}
                                     >
-                                    <User class="h-4 w-4 flex-shrink-0" />
-                                </a>
+                                        <img
+                                            src={user.avatar}
+                                            alt={user.name}
+                                            class="h-8 w-8 rounded-lg"
+                                        />
+                                        <span class="flex-grow truncate"
+                                            >{user.name}</span
+                                        >
+                                        <User class="h-4 w-4 flex-shrink-0" />
+                                    </a>
+                                </li>
                             {/each}
                             {#if usersRes.total - usersRes.users.length > 0}
-                                <p class="text-surface-400 text-sm">
-                                    {usersRes.total - usersRes.users.length} more
-                                    results...
-                                </p>
+                                <li>
+                                    <p class="text-surface-400 text-sm">
+                                        {usersRes.total - usersRes.users.length}
+                                        more results...
+                                    </p>
+                                </li>
                             {/if}
-                        </li>
-                    {:else}
-                        <li class="flex flex-col gap-2">
+                        {:else}
+                            <li>
+                                <p class="text-surface-400 text-sm">
+                                    No users found for "{query}"
+                                </p>
+                            </li>
+                        {/if}
+                    {:catch error}
+                        <li>
                             <p class="text-surface-400 text-sm">
-                                No users found for "{query}"
+                                Error: {error.message}
                             </p>
                         </li>
-                    {/if}
-                {:catch error}
-                    <li class="flex flex-col gap-2">
-                        <p class="text-surface-400 text-sm">
-                            Error: {error.message}
-                        </p>
-                    </li>
-                {/await}
-            </ul>
+                    {/await}
+                </ul>
+            </div>
         {/snippet}
         {#snippet trigger()}
             <!-- Required to align the popover with the search bar -->

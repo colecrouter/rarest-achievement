@@ -76,6 +76,9 @@
         return async ({ result, update }) => {
             if (result.status === 200) {
                 await update();
+                // Reset the query and close the popover
+                query = "";
+                isFocused = false;
             } else {
                 returnedError = true;
             }
@@ -129,6 +132,8 @@
                                         class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
                                         onclick={() => {
                                             query = "";
+                                            // Close the popover
+                                            isFocused = false;
                                         }}
                                     >
                                         <img
@@ -186,6 +191,8 @@
                                         class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
                                         onclick={() => {
                                             query = "";
+                                            // Close the popover
+                                            isFocused = false;
                                         }}
                                     >
                                         <img

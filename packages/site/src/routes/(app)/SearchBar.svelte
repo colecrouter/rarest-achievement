@@ -88,7 +88,12 @@
         name="q"
         placeholder="Enter a username, profile link, or game..."
         bind:value={query}
-        oninput={() => searchGames(query)}
+        oninput={() => {
+            // Reset the error state when the input changes
+            returnedError = false;
+
+            searchGames(query);
+        }}
         onfocus={() => (isFocused = true)}
         class:failed
     />
@@ -117,7 +122,7 @@
                                 {@const app = new SteamSearchApp(res)}
                                 <li
                                     class="flex flex-col gap-2"
-                                    transition:fade|global={{ delay: i * 50 }}
+                                    in:fade|global={{ delay: i * 50 }}
                                 >
                                     <a
                                         href="/game/{app.id}"
@@ -174,7 +179,7 @@
                                 {@const user = new SteamSearchUser(res)}
                                 <li
                                     class="flex flex-col gap-2"
-                                    transition:fade|global={{ delay: i * 50 }}
+                                    in:fade|global={{ delay: i * 50 }}
                                 >
                                     <a
                                         href="/user/{user.id}"

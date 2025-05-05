@@ -93,4 +93,9 @@
         height: 2.5em;
         stroke: currentColor;
     }
+
+    header {
+        /* This is so that the header is above the rest of the page content */
+        z-index: 1;
+    }
 </style>

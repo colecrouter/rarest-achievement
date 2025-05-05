@@ -44,6 +44,17 @@
     );
 
     let maxHeight = $state<number>(0);
+    let isFocused = $state(false);
+
+    // Add a portal action to append node to document.body
+    export function portal(node: HTMLElement) {
+        document.body.appendChild(node);
+        return {
+            destroy() {
+                if (node.parentNode) node.parentNode.removeChild(node);
+            },
+        };
+    }
 </script>
 
 {#snippet loading()}
@@ -78,14 +89,16 @@
         placeholder="Enter a username, profile link, or game..."
         bind:value={query}
         oninput={() => searchGames(query)}
+        onfocus={() => (isFocused = true)}
         class:failed
     />
 
     <Popover
-        open={query.length > 0}
+        open={isFocused}
         triggerBase="w-full"
         contentBase="card w-[360px] lg:w-[480px] bg-surface-200-800 p-4 space-y-4"
         triggerClasses="block h-0"
+        zIndex={"10"}
         autoFocus={false}
     >
         {#snippet content()}
@@ -214,6 +227,16 @@
     </Popover>
 </form>
 
+{#if isFocused}
+    <!-- Use the portal action to move overlay to document.body -->
+    <!-- svelte-ignore a11y_consider_explicit_label -->
+    <button
+        class="popover-overlay"
+        use:portal
+        onclick={() => (isFocused = false)}
+    ></button>
+{/if}
+
 <style>
     .failed {
         animation: shake 0.5s ease-in-out;
@@ -246,5 +269,20 @@
         background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='oklch(0.967 0.003 264.542)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' %3E%3Cpath d='m21 21-4.34-4.34' /%3E%3Ccircle cx='11' cy='11' r='8' /%3E%3C/svg%3E")
             no-repeat 8px center;
         padding-left: 2.5rem;
+    }
+
+    .popover-overlay {
+        all: unset;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+    }
+
+    :global(html, body) {
+        height: 100%;
     }
 </style>

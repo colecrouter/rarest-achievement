@@ -3,7 +3,7 @@ import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import { Errable } from "../../..";
 import type { Language } from "../lang";
 import { SteamCommunityClient } from "./client";
-import type { Article } from "./scrape";
+import type { Article, User } from "./types";
 
 export class SteamCommunityRepo {
     #cache: KVNamespace;
@@ -29,10 +29,25 @@ export class SteamCommunityRepo {
             return articles;
         });
 
-        await this.#cache.put(cacheKey, JSON.stringify(articles.data), {
-            expirationTtl: 60 * 60 * 24,
-        }); // Cache for 24 hours
-
         return articles;
+    }
+
+    async searchUsers(text: string, page = 1) {
+        const cacheKey = `steamcommunity:users:${text}:${page}`;
+        const cached = await this.#cache.get(cacheKey);
+        if (cached) {
+            const data = JSON.parse(cached) as User[];
+            return new Errable(data, null);
+        }
+
+        const users = await Errable.try(async () => {
+            const users = await SteamCommunityClient.searchUsers(text, page);
+            await this.#cache.put(cacheKey, JSON.stringify(users), {
+                expirationTtl: 60 * 60 * 24,
+            });
+            return users;
+        });
+
+        return users;
     }
 }

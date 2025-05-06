@@ -1,6 +1,7 @@
 import { BaseSteamAPIClient } from "../../api/baseClient";
 import type { AppDetailsData, GetAppDetailsQuery, GetAppDetailsResponse } from "./appdetails";
 import type { GetAppReviewsQuery, GetAppReviewsResponse } from "./appreviews";
+import type { SearchAppsResponse } from "./searchapps";
 
 export class SteamStoreAPIClient extends BaseSteamAPIClient {
     /**
@@ -30,5 +31,13 @@ export class SteamStoreAPIClient extends BaseSteamAPIClient {
         }
         url.searchParams.set("json", "1");
         return SteamStoreAPIClient.fetchJSON<GetAppReviewsResponse, false>(url, false);
+    }
+
+    /**
+     * Always returns 200 - []
+     */
+    static async searchApps(query: string) {
+        const url = new URL(`https://steamcommunity.com/actions/SearchApps/${encodeURIComponent(query)}`);
+        return SteamStoreAPIClient.fetchJSON<SearchAppsResponse, false>(url, false);
     }
 }

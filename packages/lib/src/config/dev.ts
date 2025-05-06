@@ -6,6 +6,8 @@ const urlWhitelist = [
     "https://steamcdn-a.akamaihd.net/",
     "https://cdn.cloudflare.steamstatic.com/",
     "https://avatars.steamstatic.com/",
+    "https://cdn.fastly.steamstatic.com/",
+    "https://avatars.fastly.steamstatic.com/",
 ];
 
 export const replaceCdnUrl = (url: string) => {

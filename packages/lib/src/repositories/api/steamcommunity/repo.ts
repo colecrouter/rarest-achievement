@@ -29,10 +29,6 @@ export class SteamCommunityRepo {
             return articles;
         });
 
-        await this.#cache.put(cacheKey, JSON.stringify(articles.data), {
-            expirationTtl: 60 * 60 * 24,
-        }); // Cache for 24 hours
-
         return articles;
     }
 
@@ -50,10 +46,6 @@ export class SteamCommunityRepo {
                 expirationTtl: 60 * 60 * 24,
             });
             return users;
-        });
-
-        await this.#cache.put(cacheKey, JSON.stringify(users.data), {
-            expirationTtl: 60 * 60 * 24,
         });
 
         return users;

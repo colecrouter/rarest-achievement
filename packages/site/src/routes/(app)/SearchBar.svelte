@@ -93,8 +93,10 @@
 
 <!-- App/user list -->
 {#snippet list(res: AppsResponse | UsersResponse | null)}
-    {#if res}
-        {@const list = "apps" in res ? res.apps : res.users}
+    <!-- Here I put list before the #if because it seems to cause some weird race condition at runtime.
+    Unfortunately, that makes it a bit of a mess. -->
+    {@const list = res === null ? null : "apps" in res ? res.apps : res.users}
+    {#if list}
         {#each list as res, i ("appid" in res ? res.appid : res.userId)}
             {@const obj =
                 "appid" in res
@@ -133,21 +135,25 @@
         {/each}
 
         <!-- If the results are truncated, display text to let the user know -->
-        {#if res.total - list.length > 0}
+        {#if res && res.total - list.length > 0}
             <li>
                 <p class="text-surface-400 text-sm">
                     {res.total - list.length} more results...
                 </p>
             </li>
         {/if}
+
+        {#if res && list.length === 0}
+            <li>
+                <p class="text-surface-400 text-sm">
+                    No {"apps" in res ? "apps" : "users"} found for "{query}".
+                </p>
+            </li>
+        {/if}
     {:else}
         <li>
             <p class="text-surface-400 text-sm">
-                {#if res === null}
-                    No results found for "{query}".
-                {:else}
-                    No {"apps" in res ? "apps" : "users"} found for "{query}".
-                {/if}
+                No results found for "{query}".
             </p>
         </li>
     {/if}

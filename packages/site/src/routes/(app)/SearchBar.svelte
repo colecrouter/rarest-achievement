@@ -11,12 +11,36 @@
 
     let query = $state("");
 
-    let debounceTimeout: NodeJS.Timeout;
-
+    // Null as placeholder value
     let appsPromise = $state(Promise.resolve<AppsResponse | null>(null));
     let usersPromise = $state(Promise.resolve<UsersResponse | null>(null));
 
-    const debouncedFetchSearch = (q: string) => {
+    // Seperate error state, to manage red outline + shake animation
+    let returnedError = $state(false);
+    let failed = $derived(
+        query !== "" && (returnedError || page.status === 400),
+    );
+
+    // Bound property used to animate the height of the popover
+    let maxHeight = $state<number>(0);
+
+    // Used to manage the open/close state of the popover
+    let isFocused = $state(false);
+
+    // Portal action to append the overlay to the body
+    // I can't seem to get it to display the way I want it to in the current DOM
+    export function portal(node: HTMLElement) {
+        document.body.appendChild(node);
+        return {
+            destroy() {
+                if (node.parentNode) node.parentNode.removeChild(node);
+            },
+        };
+    }
+
+    // Fetch the search results when the input changes
+    let debounceTimeout: NodeJS.Timeout;
+    function debouncedSearchGames(q: string) {
         clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(() => {
             appsPromise = fetch(`/search/apps?q=${encodeURIComponent(q)}`).then(
@@ -31,38 +55,102 @@
                 if (!response.ok) throw new Error("Network error for users");
                 return response.json();
             });
+
+            // Set the timeout window here
         }, 500);
-    };
+    }
 
-    const searchGames = (query: string) => {
-        debouncedFetchSearch(query);
-    };
-
-    let returnedError = $state(false);
-    let failed = $derived(
-        query !== "" && (returnedError || page.status === 400),
-    );
-
-    let maxHeight = $state<number>(0);
-    let isFocused = $state(false);
-
-    // Add a portal action to append node to document.body
-    export function portal(node: HTMLElement) {
-        document.body.appendChild(node);
-        return {
-            destroy() {
-                if (node.parentNode) node.parentNode.removeChild(node);
-            },
-        };
+    // Unified function to reset the search state after a search is completed
+    function reset() {
+        query = "";
+        isFocused = false;
+        appsPromise = Promise.resolve(null);
+        usersPromise = Promise.resolve(null);
     }
 </script>
 
+<!-- Loading state -->
 {#snippet loading()}
     <li class="flex w-full flex-col gap-2">
         <p class="text-surface-400 text-sm">
             Searching for "{query}"...
         </p>
     </li>
+{/snippet}
+
+<!-- Error state -->
+{#snippet error(error: Error)}
+    <li class="flex w-full flex-col gap-2">
+        <p class="text-surface-400 text-sm">
+            {#if error instanceof Error}
+                Error: {error.message}
+            {:else}
+                An unknown error occurred
+            {/if}
+        </p>
+    </li>
+{/snippet}
+
+<!-- App/user list -->
+{#snippet list(res: AppsResponse | UsersResponse | null)}
+    {#if res}
+        {@const list = "apps" in res ? res.apps : res.users}
+        {#each list as res, i ("appid" in res ? res.appid : res.userId)}
+            {@const obj =
+                "appid" in res
+                    ? new SteamSearchApp(res)
+                    : new SteamSearchUser(res)}
+            <!-- Fade animation applied to `in` only, I haven't yet found an `out` animation that doesn't make it look too goofy -->
+            <li class="flex flex-col gap-2" in:fade|global={{ delay: i * 50 }}>
+                <a
+                    href={obj instanceof SteamSearchApp
+                        ? `/game/${obj.id}`
+                        : `/user/${obj.id}`}
+                    class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
+                    onclick={() => {
+                        // Reset the query and close the popover
+                        reset();
+                    }}
+                >
+                    <img
+                        src={obj instanceof SteamSearchApp
+                            ? obj.icon
+                            : obj.avatar}
+                        alt={obj.name}
+                        class="h-8 w-8 rounded-lg"
+                    />
+
+                    <!-- Grows to fill space, truncates text with ... -->
+                    <span class="flex-grow truncate">{obj.name}</span>
+
+                    {#if obj instanceof SteamSearchUser}
+                        <User class="h-4 w-4 flex-shrink-0" />
+                    {:else}
+                        <Gamepad class="h-4 w-4 flex-shrink-0" />
+                    {/if}
+                </a>
+            </li>
+        {/each}
+
+        <!-- If the results are truncated, display text to let the user know -->
+        {#if res.total - list.length > 0}
+            <li>
+                <p class="text-surface-400 text-sm">
+                    {res.total - list.length} more results...
+                </p>
+            </li>
+        {/if}
+    {:else}
+        <li>
+            <p class="text-surface-400 text-sm">
+                {#if res === null}
+                    No results found for "{query}".
+                {:else}
+                    No {"apps" in res ? "apps" : "users"} found for "{query}".
+                {/if}
+            </p>
+        </li>
+    {/if}
 {/snippet}
 
 <!-- Search form markup -->
@@ -76,9 +164,8 @@
         return async ({ result, update }) => {
             if (result.status === 200) {
                 await update();
-                // Reset the query and close the popover
-                query = "";
-                isFocused = false;
+
+                reset();
             } else {
                 returnedError = true;
             }
@@ -90,12 +177,13 @@
         type="text"
         name="q"
         placeholder="Enter a username, profile link, or game..."
+        autocomplete="off"
         bind:value={query}
         oninput={() => {
             // Reset the error state when the input changes
             returnedError = false;
 
-            searchGames(query);
+            debouncedSearchGames(query);
         }}
         onfocus={() => (isFocused = true)}
         class:failed
@@ -120,57 +208,9 @@
                     {#await appsPromise}
                         {@render loading()}
                     {:then appsRes}
-                        {#if appsRes && appsRes.apps.length > 0}
-                            {#each appsRes.apps as res, i (res.appid)}
-                                {@const app = new SteamSearchApp(res)}
-                                <li
-                                    class="flex flex-col gap-2"
-                                    in:fade|global={{ delay: i * 50 }}
-                                >
-                                    <a
-                                        href="/game/{app.id}"
-                                        class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
-                                        onclick={() => {
-                                            query = "";
-                                            // Close the popover
-                                            isFocused = false;
-                                        }}
-                                    >
-                                        <img
-                                            src={app.icon}
-                                            alt={app.name}
-                                            class="h-8 w-8 rounded-lg"
-                                        />
-                                        <span class="flex-grow truncate"
-                                            >{app.name}</span
-                                        >
-                                        <Gamepad
-                                            class="h-4 w-4 flex-shrink-0"
-                                        />
-                                    </a>
-                                </li>
-                            {/each}
-                            {#if appsRes.total - appsRes.apps.length > 0}
-                                <li>
-                                    <p class="text-surface-400 text-sm">
-                                        {appsRes.total - appsRes.apps.length} more
-                                        results...
-                                    </p>
-                                </li>
-                            {/if}
-                        {:else}
-                            <li>
-                                <p class="text-surface-400 text-sm">
-                                    No apps found for "{query}"
-                                </p>
-                            </li>
-                        {/if}
-                    {:catch error}
-                        <li>
-                            <p class="text-surface-400 text-sm">
-                                Error: {error.message}
-                            </p>
-                        </li>
+                        {@render list(appsRes)}
+                    {:catch err}
+                        {@render error(err)}
                     {/await}
 
                     <hr class="text-surface-500 my-2" />
@@ -179,55 +219,9 @@
                     {#await usersPromise}
                         {@render loading()}
                     {:then usersRes}
-                        {#if usersRes && usersRes.users.length > 0}
-                            {#each usersRes.users as res, i (res.userId)}
-                                {@const user = new SteamSearchUser(res)}
-                                <li
-                                    class="flex flex-col gap-2"
-                                    in:fade|global={{ delay: i * 50 }}
-                                >
-                                    <a
-                                        href="/user/{user.id}"
-                                        class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
-                                        onclick={() => {
-                                            query = "";
-                                            // Close the popover
-                                            isFocused = false;
-                                        }}
-                                    >
-                                        <img
-                                            src={user.avatar}
-                                            alt={user.name}
-                                            class="h-8 w-8 rounded-lg"
-                                        />
-                                        <span class="flex-grow truncate"
-                                            >{user.name}</span
-                                        >
-                                        <User class="h-4 w-4 flex-shrink-0" />
-                                    </a>
-                                </li>
-                            {/each}
-                            {#if usersRes.total - usersRes.users.length > 0}
-                                <li>
-                                    <p class="text-surface-400 text-sm">
-                                        {usersRes.total - usersRes.users.length}
-                                        more results...
-                                    </p>
-                                </li>
-                            {/if}
-                        {:else}
-                            <li>
-                                <p class="text-surface-400 text-sm">
-                                    No users found for "{query}"
-                                </p>
-                            </li>
-                        {/if}
-                    {:catch error}
-                        <li>
-                            <p class="text-surface-400 text-sm">
-                                Error: {error.message}
-                            </p>
-                        </li>
+                        {@render list(usersRes)}
+                    {:catch err}
+                        {@render error(err)}
                     {/await}
                 </ul>
             </div>
@@ -245,7 +239,10 @@
     <button
         class="popover-overlay"
         use:portal
-        onclick={() => (isFocused = false)}
+        onclick={() => {
+            // Close the popover, don't reset the query
+            isFocused = false;
+        }}
     ></button>
 {/if}
 

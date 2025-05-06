@@ -12,4 +12,4 @@ export const GET = async ({ url }) => {
 export type AppsResponse = {
     apps: Awaited<ReturnType<typeof SteamStoreAPIClient.searchApps>>;
     total: number;
-};
+} & {};

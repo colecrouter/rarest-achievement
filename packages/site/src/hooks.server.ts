@@ -55,7 +55,16 @@ const initSentryHandle = initCloudflareSentryHandle({
     tracesSampleRate: 1,
 });
 
-export const handle = sequence(initSentryHandle, sentryHandle(), paraglideHandle, authHandle);
+// Define a no-op handle
+const noopHandle: Handle = async ({ event, resolve }) => resolve(event);
+
+// Use Sentry handlers only in production
+export const handle = sequence(
+    dev ? noopHandle : initSentryHandle,
+    dev ? noopHandle : sentryHandle(),
+    paraglideHandle,
+    authHandle,
+);
 
 export const init = () => {
     dev && setBypassCdnEnabled(true);

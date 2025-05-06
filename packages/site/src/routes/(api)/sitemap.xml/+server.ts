@@ -51,7 +51,7 @@ export const GET: RequestHandler = async ({ url, setHeaders, locals }) => {
                 const appPage = generateXml(appUrl, lastmod);
 
                 const achievementPages = (page.achievements_stats?.data ?? []).map((achievement) => {
-                    const achievementUrl = `${baseUrl}/game/${page.apps.id}/achievements/${achievement.name}`;
+                    const achievementUrl = `${baseUrl}/game/${page.apps.id}/achievements/${encodeURIComponent(achievement.name)}`;
                     return generateXml(achievementUrl, lastmod);
                 });
 

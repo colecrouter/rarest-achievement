@@ -18,7 +18,7 @@
 >
     <!-- icon snippet -->
     <a
-        href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
+        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
         class="content"
     >
         {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
@@ -51,7 +51,7 @@
         {/if}
     </a>
     <a
-        href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
+        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
         class="min-w-0 flex-1"
     >
         <div class="flex items-center justify-between">

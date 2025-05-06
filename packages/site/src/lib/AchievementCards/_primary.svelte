@@ -25,7 +25,7 @@
             <div class="relative flex-shrink-0">
                 <!-- icon snippet -->
                 <a
-                    href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
+                    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
                     class="content"
                 >
                     {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
@@ -95,7 +95,7 @@
                 <h3 class="line-clamp-2 text-sm font-bold">
                     <a
                         class="hover:underline"
-                        href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
+                        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
                     >
                         {achievement.name}
                     </a>
@@ -130,7 +130,7 @@
                     {/if}
                 </span>
                 <a
-                    href={`/game/${achievement.app.id}/achievement/${achievement.id}`}
+                    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
                     class="text-primary-500 hover:text-primary-400"
                 >
                     Details

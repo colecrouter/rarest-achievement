@@ -3,7 +3,7 @@ import { EnhancedSteamRepository } from "@project/lib";
 import { error } from "@sveltejs/kit";
 
 export const load = async ({ params, parent, locals }) => {
-    const achievementId = params.achievement;
+    const achievementId = decodeURIComponent(params.achievement);
 
     const repo = new EnhancedSteamRepository(locals);
 

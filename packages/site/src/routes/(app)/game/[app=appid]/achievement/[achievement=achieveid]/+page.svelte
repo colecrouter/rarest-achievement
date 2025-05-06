@@ -1,7 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import AchievementCard from "$lib/AchievementCards";
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";
     import IndexError from "$lib/IndexError.svelte";
@@ -86,8 +85,9 @@
                     const index = first.index;
                     const selectedAchievement = rarityChartData[index]?.id;
                     if (!selectedAchievement) return;
-                    const selectedAchievementId =
-                        gameAchievements?.get(selectedAchievement)?.id;
+                    const selectedAchievementId = gameAchievements?.find(
+                        (a) => a.id === selectedAchievement,
+                    )?.id;
                     if (!selectedAchievementId) return;
                     goto(
                         `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
@@ -102,8 +102,9 @@
                     const index = first.index;
                     const selectedAchievement = rarityChartData[index]?.id;
                     if (!selectedAchievement) return;
-                    const selectedAchievementId =
-                        gameAchievements?.get(selectedAchievement)?.id;
+                    const selectedAchievementId = gameAchievements?.find(
+                        (a) => a.id === selectedAchievement,
+                    )?.id;
                     if (!selectedAchievementId) return;
 
                     chart.canvas.style.cursor = "pointer";

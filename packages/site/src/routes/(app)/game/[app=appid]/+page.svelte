@@ -172,10 +172,8 @@
     <meta property="twitter:card" content="summary" />
 </svelte:head>
 
-<!-- These two elements require `relative -z-10` because they are positioned differently, and create a new stacking context. As a result, they would cover up the search bar menu -->
-
 <!-- Game Banner -->
-<div class="relative -z-10 flex h-[200px] flex-col justify-end">
+<div class="relative flex h-[200px] flex-col justify-end">
     <div
         class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"
     ></div>
@@ -188,7 +186,7 @@
 
 <!-- Game Header -->
 <div
-    class="pointer-events-none relative -z-10 container mx-auto -mb-[160px] -translate-y-[160px] px-4 pt-8 pb-6 md:pt-0"
+    class="pointer-events-none relative container mx-auto -mb-[160px] -translate-y-[160px] px-4 pt-8 pb-6 md:pt-0"
 >
     <div
         class="pointer-events-auto flex translate-y-0 flex-wrap items-end gap-6 md:translate-y-10"

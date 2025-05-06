@@ -61,7 +61,11 @@
             <div
                 class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-medium text-gray-950"
             >
-                {achievement.globalPercentage}%
+                {#if achievement.globalPercentage < 0.1}
+                    &lt;0.1%
+                {:else}
+                    {achievement.globalPercentage}%
+                {/if}
             </div>
         </div>
         <div class="mt-0.5 text-xs text-gray-400">

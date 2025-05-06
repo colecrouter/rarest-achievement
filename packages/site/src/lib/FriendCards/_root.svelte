@@ -35,7 +35,9 @@
         {:then friends}
             <Transition>
                 {#if friends === null}
-                    <div
+                    <form
+                        action="/?/login"
+                        method="post"
                         class="flex flex-col items-center justify-center py-12"
                     >
                         <h3 class="mb-2 text-xl font-bold">
@@ -45,10 +47,10 @@
                             Sign in to see which of your friends have unlocked
                             this achievement.
                         </p>
-                        <button class="btn preset-filled-primary-500 px-4 py-2"
-                            >Sign In</button
-                        >
-                    </div>
+                        <button class="btn preset-filled-primary-500 px-4 py-2">
+                            Sign In
+                        </button>
+                    </form>
                 {:else if friends.length === 0}
                     <div
                         class="mb-4 flex h-[200px] flex-col items-center justify-center gap-2"

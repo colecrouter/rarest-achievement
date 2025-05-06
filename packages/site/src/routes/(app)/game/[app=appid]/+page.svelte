@@ -198,6 +198,7 @@
                     src={app.icon}
                     alt={app.name}
                     width="256"
+                    height="120"
                     class="rounded-lg"
                 />
             </div>

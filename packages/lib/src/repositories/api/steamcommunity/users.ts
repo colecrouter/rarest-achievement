@@ -1,5 +1,5 @@
-import { unescapeHTML } from "../utils";
 import type { HTMLRewriter } from "htmlrewriter";
+import { unescapeHTML } from "../utils";
 import { getHTMLRewriter } from "./htmlRewriterHelper";
 import type { User } from "./types";
 

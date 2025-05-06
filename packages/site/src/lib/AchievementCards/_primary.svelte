@@ -141,7 +141,6 @@
 </div>
 
 <style>
-    /* ...existing styles... */
     .icon-container {
         position: relative;
         overflow: hidden;
@@ -160,5 +159,27 @@
     }
     .icon-container:hover img.unlocked {
         opacity: 1;
+    }
+    .icon-container:hover::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            120deg,
+            transparent,
+            rgba(255, 255, 255, 0.6),
+            transparent
+        );
+        transform: skewX(-20deg);
+        animation: shine 0.8s forwards;
+        pointer-events: none;
+    }
+    @keyframes shine {
+        to {
+            left: 100%;
+        }
     }
 </style>

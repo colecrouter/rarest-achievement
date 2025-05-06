@@ -36,7 +36,7 @@ export class SteamStoreAPIClient extends BaseSteamAPIClient {
     /**
      * Always returns 200 - []
      */
-    static async searchApps(query: string) {
+    static async searchApps(query: string): Promise<SearchAppsResponse> {
         const url = new URL(`https://steamcommunity.com/actions/SearchApps/${encodeURIComponent(query)}`);
         return SteamStoreAPIClient.fetchJSON<SearchAppsResponse, false>(url, false);
     }

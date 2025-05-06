@@ -17,7 +17,7 @@ export class SteamCommunityClient {
         return data.slice(0, maxLength);
     }
 
-    static async searchUsers(text: string, page = 1) {
+    static async searchUsers(text: string, page = 1): Promise<{ users: User[]; total: number }> {
         return await searchSteamCommunityUsers(text, page);
     }
 }

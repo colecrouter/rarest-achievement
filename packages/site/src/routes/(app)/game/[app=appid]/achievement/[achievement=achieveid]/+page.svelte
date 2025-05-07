@@ -136,14 +136,19 @@
     <title>{achievement.name} - {app.name}</title>
     <meta
         name="description"
-        content={`View the ${achievement.name} achievement for ${app.name}.`}
+        content={`View stats & guides for ${achievement.name} achievement in ${app.name} on Steam Vault` +
+            (achievement.description ? `— ${achievement.description}` : ".")}
     />
     <link
         rel="canonical"
         href={`/game/${app.id}/achievement/${achievement.id}`}
     />
     <meta property="og:title" content={achievement.name} />
-    <meta property="og:description" content={achievement.description} />
+    <meta
+        property="og:description"
+        content={`View stats & guides for ${achievement.name} achievement in ${app.name} on Steam Vault` +
+            (achievement.description ? `— ${achievement.description}` : ".")}
+    />
     <meta property="og:image" content={achievement.icon} />
     <meta
         property="og:url"
@@ -151,6 +156,7 @@
     />
     <meta property="og:type" content="summary" />
     <meta property="twitter:card" content="summary" />
+    <meta property="keywords" content="Steam, {app.name}, {achievement.name}" />
 </svelte:head>
 
 <main class="container mx-auto px-4 py-8">

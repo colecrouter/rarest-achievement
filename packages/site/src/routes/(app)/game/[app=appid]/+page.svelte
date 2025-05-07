@@ -162,14 +162,20 @@
 
 <svelte:head>
     <title>{app.name} - Achievements</title>
-    <meta name="description" content={app.description} />
-    <link rel="icon" href={app.icon} />
-    <link rel="apple-touch-icon" href={app.icon} />
+    <meta
+        name="description"
+        content="View all achievements for {app.name} on Steam Vault — {app.description}"
+    />
+    <link rel="canonical" href={`/game/${app.id}`} />
     <meta property="og:title" content={app.name} />
-    <meta property="og:description" content={app.description} />
+    <meta
+        property="og:description"
+        content="View all achievements for {app.name} on Steam Vault — {app.description}"
+    />
     <meta property="og:image" content={app.banner} />
     <meta property="og:type" content="summary" />
     <meta property="twitter:card" content="summary" />
+    <meta property="keywords" content="Steam, {app.name}, achievements" />
 </svelte:head>
 
 <!-- Game Banner -->

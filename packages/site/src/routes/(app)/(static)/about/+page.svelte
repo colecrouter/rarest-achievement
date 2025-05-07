@@ -49,7 +49,7 @@
 </script>
 
 <svelte:head>
-    <title>About Steam Vault</title>
+    <title>Steam Vault — About</title>
     <meta
         name="description"
         content="Learn more about Steam Vault, our goal, and how we help gamers track their achievements."

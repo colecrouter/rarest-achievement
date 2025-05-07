@@ -11,8 +11,11 @@
 <svelte:head>
     <title>{data.user.displayName} - Achievements</title>
     <meta name="description" content="View your Steam achievements." />
-    <meta name="keywords" content="Steam, achievements, user" />
-    <meta name="author" content="Your Name" />
+    <meta
+        name="keywords"
+        content="Steam, achievements, user, {data.user.id}, {data.user
+            .displayName}"
+    />
     <meta
         property="og:title"
         content="{data.user.displayName} - Achievements"

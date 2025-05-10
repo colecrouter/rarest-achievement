@@ -2,9 +2,10 @@
     import AchievementCards from "$lib/AchievementCards";
     import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import type { SteamUser, SteamUserAchievement } from "@project/lib";
-    import { Tabs } from "@skeletonlabs/skeleton-svelte";
+    import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
     import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";
     import Podium from "./Podium.svelte";
+    import PublicProfile from "../../(static)/about/PublicProfile.svelte";
 
     interface Props {
         achievements: SteamUserAchievement[];
@@ -27,8 +28,35 @@
             {user.displayName}'s Achievements
         </h2>
 
-        <div class="flex h-[400px] items-center justify-center">
-            <p class="text-gray-400">Profile is private or not found.</p>
+        <div class="flex min-h-[400px] flex-col items-center justify-center">
+            <p class="mb-8 text-gray-400">Profile is private or not found.</p>
+
+            <div class="w-full max-w-[800px]">
+                <Accordion multiple>
+                    <Accordion.Item value="0">
+                        {#snippet control()}
+                            Why is my profile private?
+                        {/snippet}
+                        {#snippet panel()}
+                            <p class="p-4">
+                                Your Steam profile has privacy settings that
+                                prevent others from seeing it. In order for
+                                Steam Vault to see your achievements, you need
+                                to make your profile public. You can do this by
+                                following the instructions below.
+                            </p>
+                        {/snippet}
+                    </Accordion.Item>
+                    <Accordion.Item value="1">
+                        {#snippet control()}
+                            How do I make my profile public?
+                        {/snippet}
+                        {#snippet panel()}
+                            <PublicProfile />
+                        {/snippet}
+                    </Accordion.Item>
+                </Accordion>
+            </div>
         </div>
     </section>
 {:else}

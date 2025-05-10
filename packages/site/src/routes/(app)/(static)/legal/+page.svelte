@@ -15,7 +15,8 @@
         }
     });
 
-    const { breadcrumbs } = $props();
+    const { data } = $props();
+    const breadcrumbs = $derived(data.breadcrumbs);
 </script>
 
 <svelte:head>
@@ -37,15 +38,6 @@
 <main class="container mx-auto px-4 py-8">
     <!-- Breadcrumb Navigation -->
     <Breadcrumbs path={breadcrumbs} />
-
-    <div class="mb-6 flex items-center gap-2 text-sm text-gray-400">
-        <a href="/" class="flex items-center hover:text-gray-100">
-            <ArrowLeft class="mr-1 h-4 w-4" />
-            Back to Home
-        </a>
-        <span>/</span>
-        <span class="text-gray-100">Legal</span>
-    </div>
 
     <!-- Page Header -->
     <div class="mb-8 flex items-center gap-4">

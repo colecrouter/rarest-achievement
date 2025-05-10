@@ -94,8 +94,8 @@
     .logo {
         -webkit-mask: url(/logo.svg) no-repeat center;
         mask: url(/logo.svg) no-repeat center;
-        width: 2.5rem;
-        height: 2.5em;
+        width: 3rem;
+        height: 3em;
         stroke: currentColor;
     }
 

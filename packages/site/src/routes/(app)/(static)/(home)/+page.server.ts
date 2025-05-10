@@ -117,38 +117,44 @@ const getRareAchievements = async (locals: App.Locals) => {
     const rarestX = 100;
 
     const query = sql`
-    SELECT 
+        WITH RankedAchievements AS (
+        SELECT 
+            achievements_stats.app_id,
+            j.value,
+            json_extract(j.value, '$.percent') AS percent,
+            ROW_NUMBER() OVER (
+            PARTITION BY achievements_stats.app_id 
+            ORDER BY cast(json_extract(j.value, '$.percent') as float) ASC
+            ) AS rn
+        FROM achievements_stats,
+            json_each(achievements_stats.data) AS j
+        -- Optionally, exclude hidden achievements:
+        -- WHERE json_extract(j.value, '$.hidden') != 1
+        )
+        SELECT 
         rare.app_id,
-
         json_extract(rare.value, '$.name') AS name,
         json_extract(rare.value, '$.percent') AS percent,
-
         json_extract(meta.value, '$.defaultvalue') AS defaultvalue,
         json_extract(meta.value, '$.displayName') AS displayName,
         json_extract(meta.value, '$.hidden') AS hidden,
         json_extract(meta.value, '$.description') AS description,
         json_extract(meta.value, '$.icon') AS icon,
         json_extract(meta.value, '$.icongray') AS icongray
-    FROM (
-      -- Inner query: select the rarest X achievements globally (from all apps)
-      SELECT 
-        achievements_stats.app_id,
-        j.value
-      FROM achievements_stats,
-           json_each(achievements_stats.data) AS j
-      -- No hidden achievements:
-      ORDER BY json_extract(j.value, '$.percent') ASC
-      LIMIT ${rarestX}
-    ) AS rare
-    -- Join with achievements_meta to get the metadata for the same app and language:
-    JOIN achievements_meta
-      ON achievements_meta.app_id = rare.app_id
-    -- AND achievements_meta.lang = "english"
-    -- Unpack the metadata JSON array to join on the achievement name:
-    JOIN json_each(achievements_meta.data) AS meta
-      ON json_extract(meta.value, '$.name') = json_extract(rare.value, '$.name')
-    ORDER BY RANDOM()
-    LIMIT 3;
+        FROM (
+        -- Only take the top 1 (or top 2, etc.) rare achievement per game.
+        SELECT app_id, value
+        FROM RankedAchievements
+        WHERE rn = 1
+        ORDER BY percent
+        LIMIT ${rarestX}
+        ) AS rare
+        JOIN achievements_meta
+        ON achievements_meta.app_id = rare.app_id
+        JOIN json_each(achievements_meta.data) AS meta
+        ON json_extract(meta.value, '$.name') = json_extract(rare.value, '$.name')
+        ORDER BY RANDOM()
+        LIMIT 3;
   `;
 
     const res = await locals.steamCacheDB.run(query);

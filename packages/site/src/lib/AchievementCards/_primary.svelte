@@ -71,6 +71,10 @@
                         {:else if sortManager.method === "count"}
                             {#if achievement.globalCount === null}
                                 ???
+                            {:else if achievement.app.estimatedPlayers && achievement.globalPercentage < 0.1}
+                                &lt;{intl.format(
+                                    achievement.app.estimatedPlayers * 0.001,
+                                )}
                             {:else}
                                 {intl.format(achievement.globalCount)}
                             {/if}

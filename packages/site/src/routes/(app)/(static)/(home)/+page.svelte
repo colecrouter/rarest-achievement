@@ -87,7 +87,7 @@
 
 <main>
     <!-- Hero Section -->
-    <section class="relative -z-10 overflow-hidden py-20">
+    <section class="relative overflow-hidden py-20">
         <div
             class="pointer-events-none absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent"
         ></div>

@@ -68,7 +68,7 @@
     <main class="container mx-auto px-4 py-12">
         <!-- Hero Section -->
         <section class="mb-16 text-center">
-            <div class="relative -z-10 mb-6 inline-block">
+            <div class="relative mb-6 inline-block">
                 <div
                     class="absolute inset-0 rounded-full bg-amber-500/20 blur-xl"
                 ></div>

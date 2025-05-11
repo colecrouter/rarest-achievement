@@ -436,7 +436,14 @@ export class SteamCacheDBRepository {
     }
 
     async getFriends(userId: string[]) {
-        const res = await this.#db.select().from(friends).where(inArray(friends.user_id, userId));
+        // This will allow us to "refresh data" while I figure out what data I want to keep
+        const ONE_WEEK_AGO = new Date();
+        ONE_WEEK_AGO.setDate(ONE_WEEK_AGO.getDate() - 7);
+
+        const res = await this.#db
+            .select()
+            .from(friends)
+            .where(and(inArray(friends.user_id, userId), gt(friends.updated_at, ONE_WEEK_AGO)));
 
         const result = new Map<string, SteamFriendsListRaw>();
 
@@ -466,14 +473,19 @@ export class SteamCacheDBRepository {
     }
 
     async getEstimatedPlayers(appIds: number[]) {
-        // Chunk size is 100
-        const chunkSize = 100;
+        const ONE_MONTH_AGO = new Date();
+        ONE_MONTH_AGO.setMonth(ONE_MONTH_AGO.getMonth() - 1);
+
+        const chunkSize = 50;
         const idBatches: number[][] = [];
         for (let i = 0; i < appIds.length; i += chunkSize) {
             idBatches.push(appIds.slice(i, i + chunkSize));
         }
         const batches = idBatches.map((ids) =>
-            this.#db.select().from(estimatedPlayers).where(inArray(estimatedPlayers.app_id, ids)),
+            this.#db
+                .select()
+                .from(estimatedPlayers)
+                .where(and(inArray(estimatedPlayers.app_id, ids), gt(estimatedPlayers.updated_at, ONE_MONTH_AGO))),
         );
         if (!batches[0]) return new Map<number, number | null>();
         const results = await this.#db.batch([batches[0], ...batches.slice(1)]);

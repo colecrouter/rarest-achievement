@@ -78,11 +78,14 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
             const app = new SteamApp(id, details, players);
             for (const params of achievements) {
                 const [meta, global, lang, steamid, userStats] = params;
-                if (!userStats || !steamid) continue;
-                const achievement = new SteamUserAchievement(app, meta, global, lang, steamid, userStats);
+                // Don't check for truthiness of userStats! It can be null
+                // I made that mistake before...
+                if (!steamid || userStats === undefined) continue;
+                const achievement = new SteamUserAchievement(app, meta, global, lang, steamid, userStats ?? null);
                 apps.push(achievement);
             }
         }
+
         return apps;
     }
 }

@@ -1,0 +1,6 @@
+User-agent: Googlebot
+Disallow: /_app/immutable/chunks/
+Disallow: /_app/immutable/assets/main.*.css
+
+# Sitemap reference
+Sitemap: https://example.com/sitemap.xml

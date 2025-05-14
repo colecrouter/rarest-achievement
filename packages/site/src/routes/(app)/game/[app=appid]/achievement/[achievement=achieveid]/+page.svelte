@@ -30,8 +30,9 @@
 
     let isSignedIn = true;
 
-    const rarityChartData = $derived(
-        [...(gameAchievements?.values() ?? [])]
+    let statsChart = $state<HTMLCanvasElement>();
+    $effect(() => {
+        const rarityChartData = [...(gameAchievements?.values() ?? [])]
             .slice()
             .sort((a, b) => a.globalPercentage - b.globalPercentage)
             .map((current) => ({
@@ -42,11 +43,22 @@
                 rarity: current.globalPercentage,
                 id: current.id,
                 isCurrent: current.id === achievement.id,
-            })),
-    );
+            }));
 
-    let statsChart = $state<HTMLCanvasElement>();
-    $effect(() => {
+        const style = getComputedStyle(document.documentElement);
+        const rarityChartColors = rarityChartData.map((data) => {
+            const rarity = getRarity(data.rarity);
+            if (data.isCurrent) {
+                return style.getPropertyValue(`--color-${rarity}-light`);
+            }
+            return style.getPropertyValue(`--color-${rarity}-dark`);
+        });
+
+        const currentIndex = rarityChartData.findIndex(
+            (data) => data.isCurrent,
+        );
+        const selectedColor = rarityChartColors[currentIndex];
+
         const ctx = statsChart?.getContext("2d");
         if (!ctx) return;
 
@@ -58,11 +70,9 @@
                     {
                         label: "This Achievement",
                         data: rarityChartData.map((data) => data.rarity),
-                        backgroundColor: rarityChartData.map((data) =>
-                            data.isCurrent
-                                ? Colors.amber[500]
-                                : Colors.gray[400],
-                        ),
+                        backgroundColor: rarityChartColors,
+                        // @ts-expect-error custom field
+                        selectedColor, // custom field for legend use
                     },
                 ],
             },
@@ -79,6 +89,23 @@
                     },
                 },
                 color: Colors.gray[300],
+                plugins: {
+                    legend: {
+                        labels: {
+                            generateLabels: (chart) => {
+                                const dataset = chart.data.datasets[0];
+                                return [
+                                    {
+                                        text: dataset?.label ?? "",
+                                        fontColor: Colors.gray[300],
+                                        // @ts-expect-error custom field
+                                        fillStyle: dataset?.selectedColor ?? "",
+                                    },
+                                ];
+                            },
+                        },
+                    },
+                },
                 onClick(_, elements) {
                     const first = elements[0];
                     if (!first) return;
@@ -91,6 +118,7 @@
                     if (!selectedAchievementId) return;
                     goto(
                         `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
+                        { keepFocus: true },
                     );
                 },
                 onHover(event, elements, chart) {

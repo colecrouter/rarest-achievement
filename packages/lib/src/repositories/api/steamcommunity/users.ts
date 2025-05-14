@@ -3,7 +3,7 @@ import { unescapeHTML } from "../utils";
 import { getHTMLRewriter } from "./htmlRewriterHelper";
 import type { User } from "./types";
 
-const userIDRegex = /https:\/\/steamcommunity\.com\/profiles\/([a-zA-Z0-9_]{2,32})/;
+const userIDRegex = /https:\/\/steamcommunity\.com\/(?:profiles|id)\/([a-zA-Z0-9_]{2,32})/;
 const sessionIDRegex = /g_sessionID\s*=\s*"([^"]+)"/;
 // Showing 1 - 3 of 3
 const countRegex = /Showing\s+\d+\s+-\s+\d+\s+of\s+([0-9,]+)/;

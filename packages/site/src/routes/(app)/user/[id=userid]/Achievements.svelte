@@ -3,9 +3,9 @@
     import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import type { SteamUser, SteamUserAchievement } from "@project/lib";
     import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
+    import PublicProfile from "../../(static)/about/PublicProfile.svelte";
     import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";
     import Podium from "./Podium.svelte";
-    import PublicProfile from "../../(static)/about/PublicProfile.svelte";
 
     interface Props {
         achievements: SteamUserAchievement[];

@@ -11,7 +11,7 @@
     let { user }: Props = $props();
 </script>
 
-<header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
+<header class="border-surface-800 bg-surface-900/50 border-b backdrop-blur-sm">
     <div
         class="d:gap-4 container mx-auto grid grid-flow-col grid-cols-[auto,1fr,auto] items-center gap-2 px-4 py-4 md:flex md:justify-between"
     >
@@ -21,7 +21,7 @@
             <h1 class="relative hidden text-xl font-bold md:block">
                 Steam Vault
                 <span
-                    class="badge text-primary-500 badge-icon preset-outlined-primary-500 absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
+                    class="badge text-primary-500 badge-icon preset-outlined-primary-500 heading-line-height absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
                 >
                     Beta
                 </span>

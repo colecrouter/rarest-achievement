@@ -67,11 +67,11 @@ html {
 }
 
 .card {
-    @apply overflow-hidden border-[1px] border-gray-700 bg-gray-800;
+    @apply border-surface-700 bg-surface-800 overflow-hidden border-[1px];
 }
 
 .card.secondary {
-    @apply bg-gray-900;
+    @apply bg-surface-900 border-surface-800;
 }
 
 .prose h2 {
@@ -102,4 +102,21 @@ html {
     * {
         @apply text-gray-900;
     }
+}
+
+.cds--cc--chart-wrapper {
+    /* --cds-charts-font-family:
+        "Segoe UI", "Segoe UI", "Segoe UI", "Helvetica Neue", "Helvetica Neue",
+        "Helvetica Neue", "Arial", sans-serif;
+    --cds-charts-font-family-condensed:
+        "Segoe UI", "Segoe UI", "Segoe UI", "Helvetica Neue", "Helvetica Neue",
+        "Helvetica Neue", "Arial", sans-serif; */
+}
+
+.rounded-container {
+    @apply !rounded-container;
+}
+
+.rounded {
+    @apply !rounded;
 }

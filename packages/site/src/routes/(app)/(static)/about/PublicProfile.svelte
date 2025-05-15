@@ -63,7 +63,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-surface-950 rounded-lg p-4">
+                    <div class="bg-surface-950 rounded-container p-4">
                         <h4 class="text-surface-300 mb-2">
                             Rarest Achievement Showcase
                         </h4>
@@ -78,15 +78,15 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <p class="text-3xl font-bold">1,234</p>
-                                <p class="text-gray-400">Achievements</p>
+                                <p class="text-surface-300">Achievements</p>
                             </div>
                             <div>
                                 <p class="text-3xl font-bold">3</p>
-                                <p class="text-gray-400">Perfect Games</p>
+                                <p class="text-surface-300">Perfect Games</p>
                             </div>
                             <div>
                                 <p class="text-3xl font-bold">42%</p>
-                                <p class="text-gray-400">Avg. Completion</p>
+                                <p class="text-surface-300">Avg. Completion</p>
                             </div>
                         </div>
                     </div>
@@ -201,7 +201,7 @@
 
                         <div class="ml-12">
                             <div
-                                class="bg-surface-950 -mx-4 mb-2 rounded-xl p-4"
+                                class="bg-surface-950 rounded-container -mx-4 mb-2 p-4"
                             >
                                 <h3 class="text-surface-300 mb-2">
                                     Game details:
@@ -279,17 +279,17 @@
         </section>
     </div>
 
-    <!-- <div class="mt-12 rounded-lg bg-gray-900 p-6">
+    <!-- <div class="mt-12 rounded-container bg-surface-900 p-6">
         <h2 class="mb-4 text-2xl font-bold text-purple-400">
             Privacy Concerns?
         </h2>
-        <p class="mb-4 text-gray-300">
+        <p class="mb-4 text-surface-300">
             We only access your public achievement data to provide our service.
             Making your game details public only allows others to see your
             games, achievements, and playtime. You can change these settings
             back at any time.
         </p>
-        <p class="text-gray-300">
+        <p class="text-surface-300">
             For more information about Steam's privacy settings, visit the{" "}
             <a
                 href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"

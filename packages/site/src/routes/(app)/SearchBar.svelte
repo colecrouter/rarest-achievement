@@ -72,7 +72,7 @@
 <!-- Loading state -->
 {#snippet loading()}
     <li class="flex w-full flex-col gap-2">
-        <p class="text-surface-400 text-sm">
+        <p class="text-surface-300 text-sm">
             Searching for "{query}"...
         </p>
     </li>
@@ -81,7 +81,7 @@
 <!-- Error state -->
 {#snippet error(error: Error)}
     <li class="flex w-full flex-col gap-2">
-        <p class="text-surface-400 text-sm">
+        <p class="text-surface-300 text-sm">
             {#if error instanceof Error}
                 Error: {error.message}
             {:else}
@@ -108,7 +108,7 @@
                     href={obj instanceof SteamSearchApp
                         ? `/game/${obj.id}`
                         : `/user/${obj.id}`}
-                    class="hover:bg-surface-400 flex items-center gap-2 rounded-lg p-2"
+                    class="hover:bg-surface-300 flex items-center gap-2 rounded p-2"
                     onclick={() => {
                         // Reset the query and close the popover
                         reset();
@@ -119,7 +119,7 @@
                             ? obj.icon
                             : obj.avatar}
                         alt={obj.name}
-                        class="h-8 w-8 rounded-lg"
+                        class="h-8 w-8 rounded"
                     />
 
                     <!-- Grows to fill space, truncates text with ... -->
@@ -137,7 +137,7 @@
         <!-- If the results are truncated, display text to let the user know -->
         {#if res && res.total - list.length > 0}
             <li>
-                <p class="text-surface-400 text-sm">
+                <p class="text-surface-300 text-sm">
                     {res.total - list.length} more results...
                 </p>
             </li>
@@ -145,14 +145,14 @@
 
         {#if res && list.length === 0}
             <li>
-                <p class="text-surface-400 text-sm">
+                <p class="text-surface-300 text-sm">
                     No {"apps" in res ? "apps" : "users"} found for "{query}".
                 </p>
             </li>
         {/if}
     {:else}
         <li>
-            <p class="text-surface-400 text-sm">
+            <p class="text-surface-300 text-sm">
                 No results found for "{query}".
             </p>
         </li>
@@ -284,6 +284,7 @@
         background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='oklch(0.967 0.003 264.542)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' %3E%3Cpath d='m21 21-4.34-4.34' /%3E%3Ccircle cx='11' cy='11' r='8' /%3E%3C/svg%3E")
             no-repeat 8px center;
         padding-left: 2.5rem;
+        line-height: 1.8rem; /* fix my OCD lol */
     }
 
     .popover-overlay {

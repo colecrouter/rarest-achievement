@@ -20,7 +20,7 @@
                 class="absolute inset-0 rounded-full bg-red-500/20 blur-xl"
             ></div>
             <div
-                class="relative rounded-full border border-gray-700 bg-gray-800 p-6"
+                class="border-surface-700 bg-surface-800 relative rounded-full border p-6"
             >
                 <div class="animate-pulse text-red-500">
                     <svg
@@ -45,20 +45,20 @@
     <!-- Error Message -->
     <div class="mb-8 max-w-lg text-center">
         <h2 class="mb-4 text-2xl font-bold">Uh Oh...</h2>
-        <p class="mb-6 text-gray-400">
+        <p class="text-surface-300 mb-6">
             Something went wrong while loading this page. Our engineers have
             been notified and are working on a fix.
         </p>
         <!-- Error Details -->
         <div
-            class="mb-8 overflow-hidden rounded-md border border-gray-700 bg-gray-800 p-4 text-left font-mono text-sm"
+            class="border-surface-700 bg-surface-800 rounded-container mb-8 overflow-hidden border p-4 text-left font-mono text-sm"
         >
-            <div class="text-red-400">&gt; ERROR_UNEXPECTED_CRASH</div>
-            <div class="text-gray-400">&gt; Error ID: {error?.message}</div>
-            <div class="text-gray-400">
+            <div class="text-error-400">&gt; ERROR_UNEXPECTED_CRASH</div>
+            <div class="text-surface-300">&gt; Error ID: {error?.message}</div>
+            <div class="text-surface-300">
                 &gt; Try reloading the page or returning to home
             </div>
-            <div class="animate-pulse text-amber-500">&gt; _</div>
+            <div class="text-primary-500 animate-pulse">&gt; _</div>
         </div>
     </div>
 

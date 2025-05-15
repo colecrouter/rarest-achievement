@@ -42,7 +42,7 @@
     let text = $derived(textClass.get(color));
 </script>
 
-<div class="{border} {text} mb-4 flex items-center gap-4 rounded-xl p-4">
+<div class="{border} {text} rounded-container mb-4 flex items-center gap-4 p-4">
     <Icon />
     <div>
         <p class="font-bold">{title}</p>

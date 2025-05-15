@@ -31,6 +31,9 @@
             };
         },
     });
+
+    const segmentRounded = "rounded-container";
+    const segmentBorder = "preset-outlined-surface-300-700 p-2";
 </script>
 
 <div class="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
@@ -39,18 +42,20 @@
         type="search"
         placeholder="Search achievements..."
         bind:value={sortManager.search}
-        class="input grow border-gray-700 bg-gray-800 py-3 text-gray-100"
+        class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
     />
 
     <!-- Sort Method Selection -->
     <div class="flex flex-col items-center gap-2 md:flex-row">
-        <label class="text-sm text-gray-300">
+        <label class="text-surface-300 text-sm">
             <span hidden>Sort by</span>
             <Segment
                 value={sortManager.method}
                 onValueChange={(e) => {
                     sortManager.method = e.value as typeof sortManager.method;
                 }}
+                border={segmentBorder}
+                rounded={segmentRounded}
             >
                 <Segment.Item classes="text-sm" value="percentage">
                     Rarity
@@ -71,7 +76,7 @@
     <!-- Only show if there are a mix of unlocked and locked achievements -->
     {#if achievements.every((a) => "unlocked" in a) && achievements.some((a) => a.unlocked) && achievements.some((a) => !a.unlocked)}
         <div class="flex flex-col items-center gap-2 md:flex-row">
-            <label class="text-sm text-gray-300">
+            <label class="text-surface-300 text-sm">
                 <span hidden>Filter by</span>
                 <Segment
                     value={sortManager.filter}
@@ -79,6 +84,8 @@
                         sortManager.filter =
                             e.value as typeof sortManager.filter;
                     }}
+                    border={segmentBorder}
+                    rounded={segmentRounded}
                 >
                     <Segment.Item labelClasses="text-sm" value="all">
                         <span hidden> All </span>
@@ -104,7 +111,7 @@
         onclick={() =>
             (sortManager.direction =
                 sortManager.direction === "asc" ? "desc" : "asc")}
-        class="btn preset-outlined-surface-300-700 py-3 text-gray-300"
+        class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
     >
         <!-- These icons are just ArrowUpWideNarrow and ArrowDownNarrowWide from lucide -->
         <svg

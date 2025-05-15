@@ -41,24 +41,22 @@
 
     <!-- Page Header -->
     <div class="mb-8 flex items-center gap-4">
-        <div class="rounded-lg bg-amber-500/10 p-3">
-            <Shield class="h-8 w-8 text-amber-500" />
+        <div class="bg-primary-500/10 rounded p-3">
+            <Shield class="text-primary-500 h-8 w-8" />
         </div>
         <div>
             <h1 class="text-3xl font-bold">
                 Privacy Policy &amp; Terms of Service
             </h1>
-            <p class="text-gray-400">Last updated: April 9, 2025</p>
+            <p class="text-surface-300">Last updated: April 9, 2025</p>
         </div>
     </div>
 
     <!-- Disclaimer -->
-    <div
-        class="card preset-outlined-surface-950-50 mb-8 grid w-full grid-cols-1 items-center gap-4 p-4 lg:grid-cols-[1fr_auto]"
-    >
+    <div class="card mb-8 p-4">
         <div>
             <p class="font-bold">Disclaimer</p>
-            <p class="text-xs opacity-60">
+            <p class="text-surface-300 text-xs">
                 Steam Vault is in <b>no way</b> associated with Valve Corporation.
                 All registered trademarks or service marks are the property of their
                 respective owners. All registered assets are used under fair use.
@@ -364,33 +362,33 @@
     </Tabs>
 
     <!-- Contact Information -->
-    <div class="mb-8 rounded-lg border border-gray-700 bg-gray-800 p-6">
-        <h2 id="support" class="mb-4 text-xl font-bold">Contact Us</h2>
-        <p class="mb-4 text-gray-300">
+    <div class="card mb-8 p-6">
+        <h2 id="support" class="text-xl font-bold">Contact Us</h2>
+        <p class="text-surface-300">
             If you have any questions about our Privacy Policy or Terms of
             Service, please contact us:
         </p>
-        <ul class="space-y-2 text-gray-300">
-            <li><strong>Email:</strong>support@steamvault.info</li>
+        <ul class="text-surface-300 space-y-2">
+            <li>
+                <strong>Email:</strong>
+                <a href="mailto:support@steamvault.info" class="underline">
+                    support@steamvault.info
+                </a>
+            </li>
         </ul>
     </div>
 
     <!-- Print and Download Options -->
-    <div class="mb-8 flex flex-wrap gap-4">
-        <button
-            class="btn preset-outlined-surface-500"
-            onclick={() => window.print()}
-        >
-            Print This Page
-        </button>
-    </div>
+    <button
+        class="btn preset-outlined-surface-500 mb-8"
+        onclick={() => window.print()}
+    >
+        Print This Page
+    </button>
 
     <!-- Acknowledgment -->
-    <div class="mb-8 text-center">
-        <p class="text-sm text-gray-400">
-            By using Steam Vault, you acknowledge that you have read and
-            understood our Privacy Policy and Terms of Service, and agree to be
-            bound by them.
-        </p>
-    </div>
+    <p class="text-surface-300 mb-8 text-sm">
+        By using Steam Vault, you acknowledge that you have read and understood
+        our Privacy Policy and Terms of Service, and agree to be bound by them.
+    </p>
 </main>

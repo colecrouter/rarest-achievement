@@ -101,6 +101,7 @@
         const bgSecondary = bgVars.map((key) =>
             style.getPropertyValue(`${key}-dark`),
         );
+        const bgColor = style.getPropertyValue("--color-surface-800");
         new Chart(donutchart, {
             type: "doughnut",
             data: {
@@ -111,7 +112,7 @@
                         data: achievementCounts,
                         backgroundColor: bgPrimary,
                         borderWidth: 4,
-                        borderColor: colors.gray[800],
+                        borderColor: bgColor,
                         borderRadius: 4,
                     },
                     {
@@ -119,7 +120,7 @@
                         data: unlockedAchievementCounts,
                         backgroundColor: bgSecondary,
                         borderWidth: 4,
-                        borderColor: colors.gray[800],
+                        borderColor: bgColor,
                         borderRadius: 4,
                     },
                 ],
@@ -181,7 +182,7 @@
 <!-- Game Banner -->
 <div class="relative flex h-[200px] flex-col justify-end">
     <div
-        class="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"
+        class="from-surface-900 absolute inset-0 bg-gradient-to-t to-transparent"
     ></div>
     <img src={app.banner} alt={app.name} class="h-full w-full object-cover" />
     <div class="absolute top-0 right-0 left-0 container pt-8">
@@ -198,14 +199,16 @@
         class="pointer-events-auto flex translate-y-0 flex-wrap items-end gap-6 md:translate-y-10"
     >
         <div>
-            <div class="rounded-xl bg-gray-900/50 blur-sm"></div>
-            <div class="rounded-xl border border-gray-700 bg-gray-800 p-2">
+            <div class="bg-surface-900/50 rounded-container blur-sm"></div>
+            <div
+                class="border-surface-700 bg-surface-800 rounded-container border p-2"
+            >
                 <img
                     src={app.icon}
                     alt={app.name}
                     width="256"
                     height="120"
-                    class="rounded-lg"
+                    class="rounded"
                 />
             </div>
         </div>
@@ -213,7 +216,7 @@
             <h1 class="mb-2 text-4xl font-bold drop-shadow-md">
                 {app.name}
             </h1>
-            <div class="items-center gap-4 text-sm text-gray-300">
+            <div class="text-surface-300 items-center gap-4 text-sm">
                 <div class="flex items-center gap-1">
                     <GamepadIcon class="h-4 w-4" />
                     <span>
@@ -264,7 +267,7 @@
         <!-- Achievement Progress -->
         <div class="card p-4 lg:col-span-2">
             <h2 class="mb-1 text-xl font-bold">Achievement Progress</h2>
-            <p class="mb-4 text-gray-400">
+            <p class="text-surface-300 mb-4">
                 You've unlocked {unlockedCount} out of {totalCount} achievements.
             </p>
             <div class="mb-6">
@@ -272,6 +275,7 @@
                     value={unlockedCount}
                     max={totalCount}
                     meterBg="bg-{progressColor}"
+                    trackBg={"bg-surface-700"}
                 >
                     {((unlockedCount / totalCount) * 100).toFixed(1)}%
                 </Progress>
@@ -292,16 +296,16 @@
                                 />
                             {/each}
                             {#if recentUnlocks.length === 0}
-                                <div
-                                    class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
-                                >
+                                <div class="card secondary p-8 text-center">
                                     <Trophy
-                                        class="mx-auto mb-4 h-12 w-12 text-gray-600"
+                                        class="text-surface-500 mx-auto mb-4 h-12 w-12"
                                     />
                                     <h3 class="mb-2 text-xl font-bold">
                                         No Recent Unlocks
                                     </h3>
-                                    <p class="mx-auto max-w-md text-gray-400">
+                                    <p
+                                        class="text-surface-300 mx-auto max-w-md"
+                                    >
                                         You haven't unlocked any achievements
                                         recently.
                                     </p>
@@ -309,16 +313,14 @@
                             {/if}
                         {:else}
                             <!-- Call to action -> sign in -->
-                            <div
-                                class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
-                            >
+                            <div class="card secondary p-8 text-center">
                                 <Trophy
-                                    class="mx-auto mb-4 h-12 w-12 text-gray-600"
+                                    class="text-surface-600 mx-auto mb-4 h-12 w-12"
                                 />
                                 <h3 class="mb-2 text-xl font-bold">
                                     Unlock Achievements
                                 </h3>
-                                <p class="mx-auto max-w-md text-gray-400">
+                                <p class="text-surface-300 mx-auto max-w-md">
                                     Sign in to view your recent unlocks and
                                     progress.
                                 </p>
@@ -329,7 +331,7 @@
                                         value={page.url.pathname}
                                     />
                                     <button
-                                        class="btn preset-filled-primary-500 mt-4 inline-block rounded-lg"
+                                        class="btn preset-filled-primary-500 mt-4 inline-block"
                                     >
                                         Sign In
                                     </button>
@@ -346,7 +348,7 @@
             <h2 class="mb-3 text-xl font-bold">Game Information</h2>
             <div class="space-y-4 text-sm">
                 <div>
-                    <div class="mb-1 text-gray-400">Developer</div>
+                    <div class="text-surface-300 mb-1">Developer</div>
                     <div>
                         {#each app.developers as developer, index}
                             {index > 0 ? ", " : ""}
@@ -355,48 +357,47 @@
                     </div>
                 </div>
                 <div>
-                    <div class="mb-1 text-gray-400">Publisher</div>
+                    <div class="text-surface-300 mb-1">Publisher</div>
                     <div>
                         {#each app.publishers as publisher, index}
                             {index > 0 ? ", " : ""}
                             {publisher}
                         {/each}
                     </div>
+                </div>
+                <div>
+                    <div class="text-surface-300 mb-1">Release Date</div>
                     <div>
-                        <div class="mb-1 text-gray-400">Release Date</div>
-                        <div>
-                            {app.releaseDate?.toLocaleDateString() ??
-                                "Unreleased"}
-                        </div>
+                        {app.releaseDate?.toLocaleDateString() ?? "Unreleased"}
                     </div>
-                    {#if isSignedIn}
-                        <!-- <div>
-                            <div class="mb-1 text-gray-400">Your Playtime</div>
+                </div>
+                {#if isSignedIn}
+                    <!-- <div>
+                            <div class="mb-1 text-surface-300">Your Playtime</div>
                             <div>{app.playtime} hours</div>
                         </div>
                         <div>
-                            <div class="mb-1 text-gray-400">Last Played</div>
+                            <div class="mb-1 text-surface-300">Last Played</div>
                             <div>
                                 {format(parseISO(app.lastPlayed), "MMMM d, yyyy")}
                             </div>
                         </div> -->
-                    {/if}
-                    <div>
-                        <div class="mb-1 text-gray-400">Description</div>
-                        <p class="text-gray-300">{app.description}</p>
-                    </div>
+                {/if}
+                <div>
+                    <div class="text-surface-300 mb-1">Description</div>
+                    <p>{app.description}</p>
                 </div>
-                <div class="mt-4">
-                    <a
-                        href={`https://store.steampowered.com/app/${app.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <button class="btn preset-outlined-surface-500 w-full">
-                            View on Steam
-                        </button>
-                    </a>
-                </div>
+            </div>
+            <div class="mt-4">
+                <a
+                    href={`https://store.steampowered.com/app/${app.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <button class="btn preset-outlined-surface-500 w-full">
+                        View on Steam
+                    </button>
+                </a>
             </div>
         </div>
     </div>
@@ -433,7 +434,7 @@
         <div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
             {#each Array(6) as _, index}
                 <div
-                    class="border border-gray-700 bg-gray-800 transition-colors hover:border-gray-600"
+                    class="border border-surface-700 bg-surface-800 transition-colors hover:border-surface-600"
                 >
                     <div class="relative aspect-square">
                         <img
@@ -447,10 +448,10 @@
                             Similar Game {index + 1}
                         </h3>
                         <div class="flex items-center justify-between">
-                            <div class="text-xs text-gray-400">
+                            <div class="text-xs text-surface-300">
                                 {Math.floor(Math.random() * 50) + 10} achievements
                             </div>
-                            <div class="text-xs font-medium text-amber-500">
+                            <div class="text-xs font-medium text-primary-500">
                                 {Math.floor(Math.random() * 80) + 20}%
                             </div>
                         </div>

@@ -23,7 +23,9 @@
             </div>
         </div>
 
-        <h1 class="animate-pulse text-center text-2xl font-bold text-gray-200">
+        <h1
+            class="text-surface-200 animate-pulse text-center text-2xl font-bold"
+        >
             Loading...
         </h1>
 
@@ -31,12 +33,12 @@
             <h2 class="mb-4 text-center text-lg font-bold">
                 "{message.title}"
             </h2>
-            <p class="text-md/8 mb-4 text-gray-300">
+            <p class="text-md/8 text-surface-300 mb-4">
                 {@html message.description}
             </p>
 
             {#if message?.source}
-                <span class="text-gray-400">
+                <span class="text-surface-300">
                     Source:
 
                     <a

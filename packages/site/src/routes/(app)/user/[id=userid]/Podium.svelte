@@ -9,37 +9,37 @@
             labelTextClass: "text-sm font-bold text-amber-500",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
-                "w-full rounded-t-lg border border-amber-600/30 bg-gray-800 p-4 shadow-lg shadow-amber-900/20",
+                "w-full rounded-t-(--radius-container) border border-amber-600/30 bg-surface-800 p-4 shadow-lg shadow-amber-900/20",
             iconSize: {
                 width: 80,
                 height: 80,
                 imgClass:
-                    "z-10 rounded-md border-2 border-amber-500 bg-gray-900",
+                    "z-10 rounded border-2 border-amber-500 bg-surface-900",
             },
             nameTextClass: "mt-2 text-center font-bold text-amber-100",
             appTextClass: "mt-1 text-center text-xs text-amber-300/70",
             gradientBar:
-                "w-full h-[160px] border-x border-amber-700/30 bg-gradient-to-t from-amber-900/30 to-gray-800",
+                "w-full h-[160px] border-x border-amber-700/30 bg-gradient-to-t from-amber-900/30 to-surface-800",
         },
         2: {
             zIndex: "10",
             width: "w-[200px]",
             iconComponent: Medal,
-            iconWrapper: "h-8 w-8 text-gray-300",
+            iconWrapper: "h-8 w-8 text-surface-300",
             label: "2nd Place",
-            labelTextClass: "text-sm font-medium text-gray-300",
+            labelTextClass: "text-sm font-medium text-surface-300",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
-                "w-full rounded-t-lg border border-gray-700 bg-gray-800 p-4",
+                "w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
             iconSize: {
                 width: 64,
                 height: 64,
-                imgClass: "rounded-md border-2 border-gray-700 bg-gray-900",
+                imgClass: "rounded border-2 border-surface-700 bg-surface-900",
             },
             nameTextClass: "mt-2 text-center font-bold",
-            appTextClass: "mt-1 text-center text-xs text-gray-400",
+            appTextClass: "mt-1 text-center text-xs text-surface-300",
             gradientBar:
-                "w-full h-[120px] border-x border-gray-700 bg-gradient-to-t from-gray-700 to-gray-800",
+                "w-full h-[120px] border-x border-surface-700 bg-gradient-to-t from-surface-700 to-surface-800",
         },
         3: {
             zIndex: "10",
@@ -50,16 +50,16 @@
             labelTextClass: "text-sm font-medium text-amber-700",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
-                "w-full rounded-t-lg border border-gray-700 bg-gray-800 p-4",
+                "w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
             iconSize: {
                 width: 56,
                 height: 56,
-                imgClass: "rounded-md border-2 border-gray-700 bg-gray-900",
+                imgClass: "rounded border-2 border-surface-700 bg-surface-900",
             },
             nameTextClass: "mt-2 text-center font-bold",
-            appTextClass: "mt-1 text-center text-xs text-gray-400",
+            appTextClass: "mt-1 text-center text-xs text-surface-300",
             gradientBar:
-                "w-full h-[100px] border-x border-gray-700 bg-gradient-to-t from-gray-700 to-gray-800",
+                "w-full h-[100px] border-x border-surface-700 bg-gradient-to-t from-surface-700 to-surface-800",
         },
     };
 

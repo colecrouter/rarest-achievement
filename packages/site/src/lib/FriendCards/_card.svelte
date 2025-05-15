@@ -47,20 +47,20 @@
                 alt={friend.displayName}
                 width="48"
                 height="48"
-                class="rounded-full border border-gray-700"
+                class="card rounded-full !border-2"
             />
             <div
-                class="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-gray-800 {friend.status !==
+                class="card absolute right-0 bottom-0 h-3 w-3 rounded-full !border-2 {friend.status !==
                 SteamUserStatus.Offline
-                    ? 'bg-green-500'
-                    : 'bg-gray-500'}"
+                    ? '!bg-green-500'
+                    : '!bg-gray-500'}"
             ></div>
         </a>
         <div>
             <a class="font-medium hover:underline" href="/user/{friend.id}">
                 {friend.displayName}
             </a>
-            <div class="text-xs text-gray-400">
+            <div class="text-surface-300 text-xs">
                 {#if achievement}
                     {#if achievement.unlocked}
                         Unlocked {achievement?.unlocked?.toLocaleDateString()}
@@ -75,19 +75,23 @@
     </div>
     <div class="mb-3">
         {#if friend.private || !achievements.length}
-            <div class=" text-gray-500">This profile is private.</div>
+            <div class=" text-surface-800">This profile is private.</div>
         {:else}
             <div class="mb-1 flex items-center justify-between">
-                <div class="text-xs text-gray-400">Achievement Progress</div>
+                <div class="text-surface-300 text-xs">Achievement Progress</div>
                 <div class="text-xs font-medium">
                     {completion.toFixed(0)}%
                 </div>
             </div>
-            <Progress value={completion} max={100} meterBg={`bg-${color}`}
+            <Progress
+                value={completion}
+                max={100}
+                meterBg={`bg-${color}`}
+                trackBg={"bg-surface-700"}
             ></Progress>
         {/if}
     </div>
-    <div class="flex items-center justify-between text-xs text-gray-400">
+    <div class="text-surface-500 flex items-center justify-between text-xs">
         <span>
             <!-- {friend.achievements} / {app
                                             .achievementStats.total} achievements -->

@@ -1,99 +1,58 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
-    import { getLocale } from "$lib/paraglide/runtime";
-    import { getRarity } from "$lib/rarity";
-    import Lock from "@lucide/svelte/icons/lock";
     import type { SteamAppAchievement } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
     import { SteamUserAchievement } from "@project/lib";
+    import Badge from "./_badge.svelte";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 
-    const rarity = getRarity(achievement.globalPercentage);
-    const sortManager = getSortManager();
-    const intl = new Intl.NumberFormat(getLocale(), {
-        style: "decimal",
-        notation: "compact",
-        maximumFractionDigits: 0,
-    });
     const size = 64;
+
+    const imgClass = "border-surface-300 bg-surface-900 rounded border";
 </script>
 
 <div class="card">
-    <article class="flex h-full flex-col justify-between p-0">
+    <article class="flex h-full flex-col justify-between">
+        <!-- Main section -->
         <div class="flex items-start gap-4 p-4">
-            <div class="relative flex-shrink-0">
-                <!-- icon snippet -->
-                <a
-                    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
-                    class="content"
-                >
-                    {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
-                        <div class="icon-container">
-                            <img
-                                src={achievement.iconLocked}
-                                alt={achievement.name}
-                                width={size}
-                                height={size}
-                                class="rounded-md border border-gray-600 bg-gray-900"
-                            />
-                            <img
-                                src={achievement.iconUnlocked}
-                                alt={achievement.name}
-                                width={size}
-                                height={size}
-                                class="unlocked rounded-md border border-gray-600 bg-gray-900"
-                            />
-                        </div>
-                    {:else}
-                        <div class="icon-container">
-                            <img
-                                src={achievement.icon}
-                                alt={achievement.name}
-                                width={size}
-                                height={size}
-                                class="rounded-md border border-gray-700 bg-gray-900"
-                            />
-                        </div>
-                    {/if}
-                </a>
+            <!-- icon snippet -->
+            <a
+                href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+                class="relative"
+            >
+                {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
+                    <div class="icon-container">
+                        <img
+                            src={achievement.iconLocked}
+                            alt={achievement.name}
+                            width={size}
+                            height={size}
+                            class={imgClass}
+                        />
+                        <img
+                            src={achievement.iconUnlocked}
+                            alt={achievement.name}
+                            width={size}
+                            height={size}
+                            class={`unlocked ${imgClass}`}
+                        />
+                    </div>
+                {:else}
+                    <div class="icon-container">
+                        <img
+                            src={achievement.icon}
+                            alt={achievement.name}
+                            width={size}
+                            height={size}
+                            class={imgClass}
+                        />
+                    </div>
+                {/if}
                 <!-- badge snippet -->
                 <div class="absolute -right-2 -bottom-2">
-                    <div
-                        class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-bold text-gray-900"
-                    >
-                        {#if sortManager.method === "percentage"}
-                            {#if achievement.globalPercentage < 0.1}
-                                &lt;0.1%
-                            {:else}
-                                {achievement.globalPercentage}%
-                            {/if}
-                        {:else if sortManager.method === "count"}
-                            {#if achievement.globalCount === null}
-                                ???
-                            {:else if achievement.app.estimatedPlayers && achievement.globalPercentage < 0.1}
-                                &lt;{intl.format(
-                                    achievement.app.estimatedPlayers * 0.001,
-                                )}
-                            {:else}
-                                {intl.format(achievement.globalCount)}
-                            {/if}
-                        {:else if sortManager.method === "unlocked" && achievement instanceof SteamUserAchievement}
-                            <!-- show days elapsed since -->
-                            {#if achievement.unlocked}
-                                {Math.floor(
-                                    (Date.now() -
-                                        achievement.unlocked.getTime()) /
-                                        (1000 * 60 * 60 * 24),
-                                )}d
-                            {:else}
-                                <Lock class="m-[0.2em] h-[1em] w-auto" />
-                                <span hidden> Locked </span>
-                            {/if}
-                        {/if}
-                    </div>
+                    <Badge {achievement} />
                 </div>
-            </div>
+            </a>
             <div>
                 <!-- Achievement name -->
                 <h3 class="line-clamp-2 text-sm font-bold">
@@ -105,7 +64,7 @@
                     </a>
                 </h3>
                 <!-- Game name & description -->
-                <p class="mb-1 text-xs text-gray-400">
+                <p class="text-surface-300 mb-1 text-xs">
                     <a
                         class="hover:underline"
                         href={`/game/${achievement.app.id}`}
@@ -114,16 +73,20 @@
                     </a>
                 </p>
                 {#if achievement.hidden}
-                    <p class="text-xs font-bold text-gray-400 italic">Hidden</p>
+                    <p class="text-surface-300 text-xs font-bold italic">
+                        Hidden
+                    </p>
                 {:else}
-                    <p class="line-clamp-2 text-xs text-gray-300">
+                    <p class="text-surface-100 line-clamp-2 text-xs">
                         {achievement.description}
                     </p>
                 {/if}
             </div>
         </div>
+
+        <!-- Footer section -->
         <div
-            class="flex items-center justify-between bg-gray-900 px-4 py-2 text-xs text-gray-400"
+            class="text-surface-300 bg-surface-900 flex items-center justify-between px-4 py-2 text-xs"
         >
             {#if achievement instanceof SteamUserAchievement}
                 <span>
@@ -147,9 +110,9 @@
 <style>
     .icon-container {
         position: relative;
-        overflow: hidden;
         transition: transform 0.5s ease-in-out;
-        border-radius: 0.375rem;
+        width: 64px;
+        overflow: hidden;
     }
     .icon-container img.unlocked {
         position: absolute;

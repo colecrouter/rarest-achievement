@@ -52,13 +52,11 @@
         {#if !sortedAchievements || sortedAchievements.length === 0}
             <Transition>
                 <!-- No achievements available -->
-                <div
-                    class="rounded-lg border border-gray-700 bg-gray-800 p-8 text-center"
-                >
+                <div class="card p-8 text-center">
                     <h3 class="mb-2 text-xl font-bold">
                         No achievements found
                     </h3>
-                    <p class="mx-auto max-w-md text-gray-400">
+                    <p class="text-surface-300 mx-auto max-w-md">
                         No achievements available.
                     </p>
                 </div>

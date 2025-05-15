@@ -43,7 +43,7 @@
                         <h3 class="mb-2 text-xl font-bold">
                             Sign in to see friends
                         </h3>
-                        <p class="mb-6 max-w-md text-gray-400">
+                        <p class="text-surface-300 mb-6 max-w-md">
                             Sign in to see which of your friends have unlocked
                             this achievement.
                         </p>
@@ -55,8 +55,8 @@
                     <div
                         class="mb-4 flex h-[200px] flex-col items-center justify-center gap-2"
                     >
-                        <TrophyIcon class="h-32 w-32 text-gray-400" />
-                        <div class="text-sm text-gray-400">
+                        <TrophyIcon class="text-surface-300 h-32 w-32" />
+                        <div class="text-surface-300 text-sm">
                             No friends have unlocked this achievement yet.
                         </div>
                     </div>

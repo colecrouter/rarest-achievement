@@ -29,7 +29,9 @@
         </h2>
 
         <div class="flex min-h-[400px] flex-col items-center justify-center">
-            <p class="mb-8 text-gray-400">Profile is private or not found.</p>
+            <p class="text-surface-300 mb-8">
+                Profile is private or not found.
+            </p>
 
             <div class="w-full max-w-[800px]">
                 <Accordion multiple>
@@ -80,13 +82,15 @@
             {:else}
                 <!-- Base thing -->
                 <div class="flex h-full w-full items-center justify-center">
-                    <p class="text-gray-400">No achievements unlocked yet.</p>
+                    <p class="text-surface-300">
+                        No achievements unlocked yet.
+                    </p>
                 </div>
             {/if}
 
             <!-- Base -->
             <div
-                class="absolute bottom-0 h-8 w-full rounded-md bg-gray-700"
+                class="bg-surface-700 absolute bottom-0 h-8 w-full rounded"
             ></div>
         </div>
     </section>
@@ -111,40 +115,40 @@
 
                 <Tabs.Panel value="list">
                     <div
-                        class="overflow-hidden rounded-md border border-gray-700 bg-gray-800"
+                        class="border-surface-700 bg-surface-800 overflow-hidden rounded border"
                     >
                         <table class="w-full">
                             <thead>
                                 <tr
-                                    class="border-b border-gray-700 bg-gray-900/50"
+                                    class="border-surface-700 bg-surface-900/50 border-b"
                                 >
                                     <th
-                                        class="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-400 uppercase"
+                                        class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
                                         Achievement
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-400 uppercase"
+                                        class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
                                         Game
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-400 uppercase"
+                                        class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
                                         Rarity
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-400 uppercase"
+                                        class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
                                         Unlocked
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-700">
+                            <tbody class="divide-surface-700 divide-y">
                                 {#each filteredAchievements as achievement}
                                     {#if achievement.unlocked !== null}
                                         <tr
-                                            class="transition-colors hover:bg-gray-700/30"
+                                            class="hover:bg-surface-700/30 transition-colors"
                                         >
                                             <td
                                                 class="px-4 py-3 whitespace-nowrap"
@@ -157,16 +161,16 @@
                                                         alt={achievement.name}
                                                         width="32"
                                                         height="32"
-                                                        class="rounded-md border border-gray-700 bg-gray-900"
+                                                        class="border-surface-700 bg-surface-900 rounded border"
                                                     />
                                                     <div>
                                                         <div
-                                                            class="text-sm font-medium text-gray-100"
+                                                            class="text-surface-100 text-sm font-medium"
                                                         >
                                                             {achievement.name}
                                                         </div>
                                                         <div
-                                                            class="line-clamp-1 text-xs text-gray-400"
+                                                            class="text-surface-300 line-clamp-1 text-xs"
                                                         >
                                                             {achievement.description}
                                                         </div>
@@ -174,20 +178,20 @@
                                                 </div>
                                             </td>
                                             <td
-                                                class="px-4 py-3 text-sm whitespace-nowrap text-gray-400"
+                                                class="text-surface-300 px-4 py-3 text-sm whitespace-nowrap"
                                                 >{achievement.app.name}</td
                                             >
                                             <td
                                                 class="px-4 py-3 whitespace-nowrap"
                                             >
                                                 <span
-                                                    class="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500"
+                                                    class="bg-primary-500/10 text-primary-500 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                                                 >
                                                     {achievement.globalPercentage}%
                                                 </span>
                                             </td>
                                             <td
-                                                class="px-4 py-3 text-sm whitespace-nowrap text-gray-400"
+                                                class="text-surface-300 px-4 py-3 text-sm whitespace-nowrap"
                                             >
                                                 {achievement.unlocked.toLocaleDateString()}
                                             </td>

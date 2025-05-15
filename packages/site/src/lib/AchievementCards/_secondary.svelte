@@ -1,95 +1,79 @@
 <script lang="ts">
-    import { getLocale } from "$lib/paraglide/runtime";
-    import { getRarity } from "$lib/rarity";
     // biome-ignore lint/style/useImportType: <explanation>
     import {
         type SteamAppAchievement,
         SteamUserAchievement,
     } from "@project/lib/models";
+    import Badge from "./_badge.svelte";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 
-    const rarity = getRarity(achievement.globalPercentage);
     const size = 36;
+
+    const imgClass = "border-surface-300 bg-surface-900 rounded border";
 </script>
 
-<div
-    class="card flex items-center gap-3 !bg-gray-900/50 p-2 hover:bg-gray-700/30"
+<a
+    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+    class="card secondary flex items-center justify-between gap-3 p-2"
 >
-    <!-- icon snippet -->
-    <a
-        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
-        class="content"
-    >
+    <div class="icon-container">
         {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
-            <div class="icon-container">
-                <img
-                    src={achievement.iconLocked}
-                    alt={achievement.name}
-                    width={size}
-                    height={size}
-                    class="rounded-md border border-gray-600 bg-gray-900"
-                />
-                <img
-                    src={achievement.iconUnlocked}
-                    alt={achievement.name}
-                    width={size}
-                    height={size}
-                    class="unlocked rounded-md border border-gray-600 bg-gray-900"
-                />
-            </div>
+            <img
+                src={achievement.iconLocked}
+                alt={achievement.name}
+                width={size}
+                height={size}
+                class={imgClass}
+            />
+            <img
+                src={achievement.iconUnlocked}
+                alt={achievement.name}
+                width={size}
+                height={size}
+                class={`unlocked ${imgClass}`}
+            />
         {:else}
-            <div class="icon-container">
-                <img
-                    src={achievement.icon}
-                    alt={achievement.name}
-                    width={size}
-                    height={size}
-                    class="rounded-md border border-gray-700 bg-gray-900"
-                />
-            </div>
+            <img
+                src={achievement.icon}
+                alt={achievement.name}
+                width={size}
+                height={size}
+                class={imgClass}
+            />
         {/if}
-    </a>
-    <a
-        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
-        class="min-w-0 flex-1"
-    >
-        <div class="flex items-center justify-between">
-            <h4 class="truncate text-sm font-medium">
-                {achievement.name}
-            </h4>
-            <div
-                class="rounded-full bg-{rarity} px-1.5 py-0.5 text-xs font-medium text-gray-950"
-            >
-                {#if achievement.globalPercentage < 0.1}
-                    &lt;0.1%
-                {:else}
-                    {achievement.globalPercentage}%
-                {/if}
-            </div>
-        </div>
-        <div class="mt-0.5 text-xs text-gray-400">
-            {#if achievement instanceof SteamUserAchievement}
+    </div>
+    <div class="w-full truncate text-left text-sm">
+        <h4>
+            {achievement.name}
+        </h4>
+        {#if achievement instanceof SteamUserAchievement}
+            <div class="text-surface-300 mt-0.5 text-xs">
                 {#if achievement.unlocked}
                     Unlocked: {achievement.unlocked.toLocaleDateString(
                         undefined,
-                        { dateStyle: "short" },
+                        {
+                            dateStyle: "short",
+                        },
                     )}
                 {:else}
                     Locked
                 {/if}
-            {/if}
-        </div>
-    </a>
-</div>
+            </div>
+        {/if}
+    </div>
+    <Badge {achievement} />
+</a>
 
 <style>
     /* ...existing styles similar to primary... */
     .icon-container {
         position: relative;
-        overflow: hidden;
         transition: transform 0.5s ease-in-out;
-        border-radius: 0.375rem;
+    }
+    .icon-container img {
+        max-width: initial;
+        height: initial;
     }
     .icon-container img.unlocked {
         position: absolute;

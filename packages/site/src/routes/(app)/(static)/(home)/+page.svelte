@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { browser } from "$app/environment";
     import AchievementCards from "$lib/AchievementCards";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
@@ -9,6 +10,7 @@
     import Users from "@lucide/svelte/icons/users";
     import NumberFlow from "@number-flow/svelte";
     import { fly } from "svelte/transition";
+    import { reveal, Reveal } from "sveltersect";
 
     let { data } = $props();
 
@@ -58,10 +60,19 @@
 
     const rotations = ["rotate-1", "-rotate-1", "rotate-1"];
 
-    let animate = $state(false);
-    $effect(() => {
-        animate = true;
-    });
+    let tracked = $state<[number, number, number]>([0, 0, 0]);
+
+    const setTracked = () => {
+        tracked = [
+            data.stats.achievementCount,
+            data.stats.userCount,
+            data.stats.gameCount,
+        ];
+    };
+
+    let exploreTarget = $state<HTMLElement | null>(null);
+
+    $inspect(exploreTarget);
 </script>
 
 <svelte:head>
@@ -169,10 +180,8 @@
     </section>
 
     <!-- Example achievements -->
-    <section class="py-16">
-        <div
-            class="container mx-auto min-h-[430px] md:flex md:flex-row-reverse"
-        >
+    <section class="p-8">
+        <div class="container mx-auto md:flex md:flex-row-reverse">
             <div class="p-4 text-center md:flex md:flex-col md:justify-center">
                 <h2 class="mb-8 text-3xl font-bold">
                     Explore Your Achievements
@@ -182,22 +191,32 @@
                     is too great!
                 </p>
             </div>
-            <div class="grid grid-cols-1 gap-6 pt-4 transition-all">
+            <div
+                class="grid grid-cols-1 gap-6 pt-4 transition-all"
+                bind:this={exploreTarget}
+            >
                 {#each data.showcase2 as achievement, i}
-                    {#if animate}
-                        <div
-                            transition:fly={{
+                    <Reveal
+                        in={{
+                            animation: fly,
+                            params: {
                                 y: 20,
                                 duration: 300,
-                                delay: i * 100,
-                            }}
-                            class="shadow-primary-500/30 even:shadow-lg {rotations[
+                                delay: i * 200,
+                            },
+                            threshold: 0.5,
+                        }}
+                        once
+                        target={exploreTarget}
+                    >
+                        <div
+                            class="shadow-primary-500/30 float even:shadow-lg {rotations[
                                 i % rotations.length
                             ]}"
                         >
                             <AchievementCards.Card {achievement} />
                         </div>
-                    {/if}
+                    </Reveal>
                 {/each}
             </div>
         </div>
@@ -206,15 +225,28 @@
     <!-- Stats Section -->
     <section class="bg-surface-900/30 py-16">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-                {#each stats as stat}
+            <div
+                class="grid grid-cols-1 gap-8 md:grid-cols-3"
+                use:reveal={{
+                    callbacks: {
+                        enter: setTracked,
+                    },
+                    transition: {
+                        threshold: 0.5,
+                    },
+                    once: true,
+                    initial: true,
+                }}
+            >
+                {#each stats as stat, i}
+                    {@const value = tracked[i]}
                     <div class="flex flex-col items-center text-center">
                         <div class="bg-primary-500/10 mb-4 rounded-full p-4">
                             <stat.icon class="text-primary-500 h-8 w-8" />
                         </div>
                         <div class="mb-2 text-4xl font-bold">
                             <NumberFlow
-                                value={animate ? stat.value : 0}
+                                {value}
                                 format={{
                                     style: "decimal",
                                     notation: "compact",
@@ -341,4 +373,20 @@
 
 <style>
     @import "./hero.css";
+
+    @keyframes float {
+        0% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+        100% {
+            transform: translateY(0);
+        }
+    }
+
+    .float {
+        animation: float 3s ease-in-out infinite;
+    }
 </style>

@@ -1,11 +1,11 @@
 <script lang="ts">
     import ArrowRight from "@lucide/svelte/icons/arrow-right";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
+    import DollarSign from "@lucide/svelte/icons/dollar-sign";
     import Github from "@lucide/svelte/icons/github";
     import Mail from "@lucide/svelte/icons/mail";
-    import Trophy from "@lucide/svelte/icons/trophy";
-    import DollarSign from "@lucide/svelte/icons/dollar-sign";
     import SlidersHorizontal from "@lucide/svelte/icons/sliders-horizontal";
+    import Trophy from "@lucide/svelte/icons/trophy";
     import { Accordion } from "@skeletonlabs/skeleton-svelte";
 
     let team = [

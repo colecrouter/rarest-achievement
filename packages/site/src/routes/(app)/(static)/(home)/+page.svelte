@@ -10,7 +10,7 @@
     import Users from "@lucide/svelte/icons/users";
     import NumberFlow from "@number-flow/svelte";
     import { fly } from "svelte/transition";
-    import { reveal, Reveal } from "sveltersect";
+    import { Reveal, reveal } from "sveltersect";
 
     let { data } = $props();
 

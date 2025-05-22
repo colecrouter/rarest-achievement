@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page } from "$app/stores";
     import type { Breadcrumb } from "$lib/breadcrumbs";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import House from "@lucide/svelte/icons/house";
@@ -9,6 +10,24 @@
 
     let { path }: Props = $props();
 </script>
+
+<svelte:head>
+    <script type="application/ld+json">
+    {JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": path.map((b, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "name":
+          typeof b.label === "string"
+            ? b.label
+            : /* if label is a component, you might supply a `.text` field on your Breadcrumb type */ "",
+        "item": new URL(b.href ?? page.url.pathname, page.url.origin).href
+      }))
+    })}
+    </script>
+</svelte:head>
 
 <ol class="mb-8 flex items-center gap-4">
     <li>

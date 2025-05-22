@@ -164,8 +164,7 @@
     <title>{achievement.name} - {app.name}</title>
     <meta
         name="description"
-        content={`View stats & guides for ${achievement.name} achievement in ${app.name} on Steam Vault` +
-            (achievement.description ? `— ${achievement.description}` : ".")}
+        content={`Unlock "${achievement.name}" in ${app.name}—a feat only ${achievement.globalPercentage}% of players achieve. See rarity charts, compare with friends & read top guides on Steam Vault.`}
     />
     <link
         rel="canonical"
@@ -174,8 +173,7 @@
     <meta property="og:title" content={achievement.name} />
     <meta
         property="og:description"
-        content={`View stats & guides for ${achievement.name} achievement in ${app.name} on Steam Vault` +
-            (achievement.description ? `— ${achievement.description}` : ".")}
+        content={`Unlock "${achievement.name}" in ${app.name}—a feat only ${achievement.globalPercentage}% of players achieve. See rarity charts, compare with friends & read top guides on Steam Vault.`}
     />
     <meta property="og:image" content={achievement.icon} />
     <meta

@@ -165,13 +165,13 @@
     <title>{app.name} - Achievements</title>
     <meta
         name="description"
-        content="View all achievements for {app.name} on Steam Vault — {app.description}"
+        content={`Unlock all ${achievements.length} achievements in ${app.name}. Track your progress with interactive charts, compare rarity, and get expert tips on Steam Vault.`}
     />
     <link rel="canonical" href={`/game/${app.id}`} />
     <meta property="og:title" content={app.name} />
     <meta
         property="og:description"
-        content="View all achievements for {app.name} on Steam Vault — {app.description}"
+        content={`Unlock all ${achievements.length} achievements in ${app.name}. Track your progress with interactive charts, compare rarity, and get expert tips on Steam Vault.`}
     />
     <meta property="og:image" content={app.banner} />
     <meta property="og:type" content="summary" />

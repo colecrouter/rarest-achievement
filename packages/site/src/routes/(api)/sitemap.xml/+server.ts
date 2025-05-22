@@ -1,6 +1,5 @@
 import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
 import { asc, desc, eq, sql } from "drizzle-orm";
-import type { RequestHandler } from "./$types";
 
 const escapeChars = [
     ["&", "&amp;"],
@@ -17,7 +16,7 @@ const escapeXml = (str: string) => {
     }, str);
 };
 
-export const GET: RequestHandler = async ({ url, setHeaders, locals }) => {
+export const GET = async ({ url, setHeaders, locals }) => {
     const baseUrl = url.origin;
 
     // Fetch all cached data from database
@@ -82,7 +81,11 @@ export const GET: RequestHandler = async ({ url, setHeaders, locals }) => {
     // Set the proper headers and return the sitemap content
     setHeaders({
         "Content-Type": "application/xml",
+        "Cache-Control": "ublic, max-age=0, s-maxage=86400",
     });
 
     return new Response(sitemap);
 };
+
+// respond to HEAD the same as GET so Googlebot can “fetch”
+export const HEAD = GET;

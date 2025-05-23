@@ -1,3 +1,5 @@
+import { m } from "./paraglide/messages";
+
 export type Rarity = "common" | "uncommon" | "rare" | "ultra-rare" | "locked";
 
 /**
@@ -15,4 +17,21 @@ export const getRarity = (percent: number | null): Rarity => {
     if (percent < 100) return "common";
 
     throw new Error(`Invalid percentage value: ${percent}`);
+};
+
+export const localizedRarity = (rarity: Rarity): string => {
+    switch (rarity) {
+        case "common":
+            return m.rarityCommon();
+        case "uncommon":
+            return m.rarityUncommon();
+        case "rare":
+            return m.rarityRare();
+        case "ultra-rare":
+            return m.rarityUltraRare();
+        case "locked":
+            return m.statusLocked();
+        default:
+            throw new Error(`Unknown rarity: ${rarity}`);
+    }
 };

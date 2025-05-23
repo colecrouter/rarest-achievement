@@ -6,6 +6,7 @@
     import type { SteamAppAchievement } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
     import { SteamUserAchievement } from "@project/lib";
+    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         achievement: SteamUserAchievement | SteamAppAchievement;
@@ -47,7 +48,7 @@
             )}d
         {:else}
             <Lock class="m-[0.2em] h-[1em] w-auto" />
-            <span hidden> Locked </span>
+            <span hidden>{m.statusLocked()}</span>
         {/if}
     {/if}
 </div>

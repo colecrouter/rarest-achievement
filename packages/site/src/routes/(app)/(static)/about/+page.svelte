@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages.js";
     import ArrowRight from "@lucide/svelte/icons/arrow-right";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import DollarSign from "@lucide/svelte/icons/dollar-sign";
@@ -81,17 +82,11 @@
 </script>
 
 <svelte:head>
-    <title>Steam Vault — About</title>
-    <meta
-        name="description"
-        content="Learn more about Steam Vault, our goal, and how we help gamers track their achievements."
-    />
+    <title>{m.aboutPageMetaTitle()}</title>
+    <meta name="description" content={m.aboutPageMetaDescription()} />
     <link rel="canonical" href="/about" />
-    <meta property="og:title" content="About Steam Vault" />
-    <meta
-        property="og:description"
-        content="Learn more about Steam Vault, our goal, and how we help gamers track their achievements."
-    />
+    <meta property="og:title" content={m.aboutPageMetaTitle()} />
+    <meta property="og:description" content={m.aboutPageMetaDescription()} />
 </svelte:head>
 
 <div
@@ -108,10 +103,10 @@
                 <Trophy class="text-primary-500 relative h-20 w-20" />
             </div>
             <h1 class="mb-4 text-4xl font-bold md:text-5xl">
-                About Steam Vault
+                {m.aboutPageHeroTitle()}
             </h1>
             <p class="text-surface-300 mx-auto max-w-3xl text-xl">
-                Tracking, showcasing, and celebrating your gaming achievements.
+                {m.aboutPageHeroSubtitle()}
             </p>
         </section>
 
@@ -120,31 +115,26 @@
             <div class="grid max-w-2xl items-center gap-12">
                 <div>
                     <h2 class="mb-6 text-center text-3xl font-bold">
-                        Our Mission
+                        {m.aboutMissionTitle()}
                     </h2>
                     <p class="text-surface-300 mb-4">
-                        Steam Vault was created with a simple goal: let gamers
-                        find their rarest achievements across the platform.
+                        {m.aboutMissionParagraph1()}
                     </p>
                     <p class="text-surface-300 mb-4">
-                        Achievements aren't always just milestones; they can
-                        represent hours of dedication, learning, practicing, and
-                        grinding. For most people, no one else will ever notice
-                        this. Steam Vault aims to change that.
+                        {m.aboutMissionParagraph2()}
                     </p>
                     <p class="text-surface-300">
-                        Our platform is designed to celebrate your gaming
-                        journey, allowing you to view your achievements in a new
-                        light. We also aim to provide you with insights and
-                        other info to keep you going.
+                        {m.aboutMissionParagraph3()}
                     </p>
                 </div>
             </div>
         </section>
 
-        <!-- UPDATED: Key Features -->
+        <!-- Key Features -->
         <section class="mb-16">
-            <h2 class="mb-8 text-center text-3xl font-bold">Key Features</h2>
+            <h2 class="mb-8 text-center text-3xl font-bold">
+                {m.aboutKeyFeaturesTitle()}
+            </h2>
             <div class="grid gap-6 md:grid-cols-3">
                 {#each features as feature}
                     <div class="card p-4">
@@ -177,7 +167,9 @@
 
         <!-- Team -->
         <section class="mb-16">
-            <h2 class="mb-8 text-center text-3xl font-bold">Our Team</h2>
+            <h2 class="mb-8 text-center text-3xl font-bold">
+                {m.aboutTeamTitle()}
+            </h2>
             <div class="flex flex-wrap justify-center gap-8">
                 {#each team as member}
                     <div class="text-center">
@@ -201,7 +193,7 @@
         <!-- FAQ -->
         <section class="mx-auto mb-16 max-w-[800px]">
             <h2 class="mb-8 text-center text-3xl font-bold">
-                Frequently Asked Questions
+                {m.aboutFaqTitle()}
             </h2>
             <Accordion multiple>
                 {#each faqs as faq, index}
@@ -224,11 +216,10 @@
         <section class="mb-16">
             <div class="card mx-auto max-w-3xl p-8">
                 <h2 class="mb-6 text-center text-3xl font-bold">
-                    Get In Touch
+                    {m.aboutContactTitle()}
                 </h2>
                 <p class="text-surface-300 mb-8 text-center">
-                    Have questions, feedback, or just want to say hello? We'd
-                    love to hear from you!
+                    {m.aboutSocialText()}
                 </p>
                 <div class="grid gap-8 md:grid-cols-2">
                     <div>
@@ -301,18 +292,17 @@
         <section>
             <div class="text-center">
                 <h2 class="mb-4 text-3xl font-bold">
-                    Ready to Showcase Your Achievements?
+                    {m.ctaTitle()}
                 </h2>
                 <p class="text-surface-300 mx-auto mb-8 max-w-2xl">
-                    Join thousands of gamers who are tracking and sharing their
-                    gaming accomplishments with Steam Vault.
+                    {m.aboutCtaDescription()}
                 </p>
 
                 <div class="flex flex-wrap justify-center gap-4">
                     {#if !data.loggedIn}
                         <form action="?/login" method="POST">
                             <button class="btn preset-filled-primary-500 p-3">
-                                Sign In Now
+                                {m.homepageFeaturesSignIn()}
                                 <ChevronRight class="ml-2 h-4 w-4" />
                             </button>
                         </form>
@@ -321,7 +311,7 @@
                             href="/user/{data.loggedIn.id}"
                             class="btn preset-filled-primary-500 p-3"
                         >
-                            Go to Dashboard
+                            {m.homepageFeaturesDashboard()}
                             <ChevronRight class="ml-2 h-4 w-4" />
                         </a>
                     {/if}

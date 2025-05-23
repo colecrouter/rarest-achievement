@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { browser } from "$app/environment";
     import AchievementCards from "$lib/AchievementCards";
+    import { m } from "$lib/paraglide/messages.js";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Crown from "@lucide/svelte/icons/crown";
@@ -17,17 +17,17 @@
     // Stats for the home page
     const stats = [
         {
-            label: "Tracked Achievements",
+            label: m.homepageStatsTrackedAchievements(),
             value: data.stats.achievementCount,
             icon: Trophy,
         },
         {
-            label: "Indexed Users",
+            label: m.homepageStatsIndexedUsers(),
             value: data.stats.userCount,
             icon: Users,
         },
         {
-            label: "Indexed Games",
+            label: m.homepageStatsIndexedGames(),
             value: data.stats.gameCount,
             icon: TrendingUp,
         },
@@ -35,21 +35,18 @@
 
     const textCards = [
         {
-            title: "Track Your Achievements",
-            description:
-                "View achievements for all your games in one place. See how you compare to others.",
+            title: m.homepageTextCard1Title(),
+            description: m.homepageTextCard1Description(),
             icon: Award,
         },
         {
-            title: "Find Key Insights",
-            description:
-                "Discover more games & achievements. Find guides, stats, and more.",
+            title: m.homepageTextCard2Title(),
+            description: m.homepageTextCard2Description(),
             icon: Search,
         },
         {
-            title: "Connect With Others",
-            description:
-                "Find other achievement hunters, compare stats, and make new friends.",
+            title: m.homepageTextCard3Title(),
+            description: m.homepageTextCard3Description(),
             icon: Users,
         },
     ] satisfies Array<{
@@ -76,11 +73,8 @@
 </script>
 
 <svelte:head>
-    <title>Steam Vault - Showcase Your Achievements</title>
-    <meta
-        name="description"
-        content="Track and share your most impressive gaming accomplishments. See how you stack up against other players with Steam Vault."
-    />
+    <title>{m.homepageMetaTitle()}</title>
+    <meta name="description" content={m.homepageMetaDescription()} />
     <meta
         name="keywords"
         content="Steam, achievements, gaming, showcase, leaderboard"
@@ -108,12 +102,10 @@
                         <h1
                             class="text-4xl leading-tight font-bold md:text-5xl lg:text-6xl"
                         >
-                            Showcase Your Rarest Achievements on Steam
+                            {m.homepageHeroTitle()}
                         </h1>
                         <p class="max-w-lg text-lg">
-                            Track and share your most impressive gaming
-                            accomplishments. See how you stack up against other
-                            players with Steam Vault.
+                            {m.homepageHeroDescription()}
                         </p>
                         {@render buttons()}
                     </div>
@@ -132,7 +124,7 @@
                             <div class="mb-6 flex items-center gap-4">
                                 <Trophy class="text-primary-500 h-8 w-8" />
                                 <h3 class="text-xl font-bold">
-                                    Top Achievement Hunters
+                                    {m.homepageTopAchievementHunters()}
                                 </h3>
                             </div>
                             <div class="space-y-4">
@@ -154,14 +146,19 @@
                                         />
                                         <div>
                                             <div class="font-medium">
-                                                Player{rank}
+                                                {m.homepageAchievementPlayer({
+                                                    rank,
+                                                })}
                                             </div>
                                             <div
                                                 class="text-surface-300 text-xs"
                                             >
-                                                {Math.floor(
-                                                    Math.random() * 500,
-                                                ) + 500} rare achievements
+                                                {m.homepageRareAchievements({
+                                                    count:
+                                                        Math.floor(
+                                                            Math.random() * 500,
+                                                        ) + 500,
+                                                })}
                                             </div>
                                         </div>
                                         <div class="ml-auto">
@@ -184,11 +181,10 @@
         <div class="container mx-auto md:flex md:flex-row-reverse">
             <div class="p-4 text-center md:flex md:flex-col md:justify-center">
                 <h2 class="mb-8 text-3xl font-bold">
-                    Explore Your Achievements
+                    {m.homepageExploreTitle()}
                 </h2>
                 <p>
-                    Find achievements for <i>every</i> game in your library. No challenge
-                    is too great!
+                    {m.homepageExploreDescription()}
                 </p>
             </div>
             <div
@@ -272,23 +268,22 @@
             >
                 <div>
                     <h2 class="mb-2 text-3xl font-bold">
-                        Featured Rare Achievements
+                        {m.homepageFeaturedTitle()}
                     </h2>
                     <p class="text-surface-300 max-w-2xl">
-                        Check out some of the rarest achievements unlocked by
-                        our community members.
+                        {m.homepageFeaturedDescription()}
                     </p>
                 </div>
                 <button
                     class="btn preset-outlined-surface-500 relative mt-4 flex items-center gap-2 rounded"
                     disabled
                 >
-                    View All
+                    {m.homepageViewAll()}
                     <ChevronRight class="ml-2 h-4 w-4" />
                     <span
                         class="badge preset-filled-primary-500 absolute -top-4 -right-4"
                     >
-                        Coming Soon
+                        {m.homepageComingSoon()}
                     </span>
                 </button>
             </div>
@@ -305,7 +300,7 @@
     <section class="bg-surface-900/30 py-16">
         <div class="container mx-auto px-4">
             <h2 class="mb-12 text-center text-3xl font-bold">
-                Why Use Steam Vault?
+                {m.homepageFeaturesTitle()}
             </h2>
             <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {#each textCards as card}
@@ -330,11 +325,10 @@
                 class="border-surface-700 from-surface-800 to-surface-900 card bg-gradient-to-r p-8 text-center md:p-12"
             >
                 <h2 class="mb-4 text-3xl font-bold md:text-4xl">
-                    Ready to Showcase Your Achievements?
+                    {m.ctaTitle()}
                 </h2>
                 <p class="text-surface-300 mx-auto mb-8 max-w-2xl">
-                    It's free, just sign in with your Steam account and start
-                    tracking your achievements.
+                    {m.homepageCtaDescription()}
                 </p>
                 <div class="flex justify-center">
                     {@render buttons()}
@@ -351,7 +345,7 @@
                 <button
                     class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
                 >
-                    Sign In Now
+                    {m.homepageFeaturesSignIn()}
                     <ChevronRight class="ml-2 h-4 w-4" />
                 </button>
             </form>
@@ -360,13 +354,13 @@
                 href="/user/{data.loggedIn.id}"
                 class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
             >
-                Go to Dashboard
+                {m.homepageFeaturesDashboard()}
                 <ChevronRight class="ml-2 h-4 w-4" />
             </a>
         {/if}
 
         <a href="/about" class="btn preset-outlined-surface-500">
-            Learn More
+            {m.homepageFeaturesLearnMore()}
         </a>
     </div>
 {/snippet}

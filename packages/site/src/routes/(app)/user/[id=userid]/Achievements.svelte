@@ -6,17 +6,15 @@
     import PublicProfile from "../../(static)/about/PublicProfile.svelte";
     import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";
     import Podium from "./Podium.svelte";
+    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         achievements: SteamUserAchievement[];
         user: SteamUser;
     }
     let { achievements, user }: Props = $props();
-
     const sortManager = getSortManager();
-
     let activeTab = $state("grid");
-
     let topThree = $derived(sortManager.sort(achievements).slice(0, 3));
     let filteredAchievements = $derived(sortManager.sort(achievements));
 </script>
@@ -25,12 +23,12 @@
     <!-- Friend's achievements are private -->
     <section class="mb-12">
         <h2 class="mb-6 text-center text-2xl font-bold">
-            {user.displayName}'s Achievements
+            {m.userAchievementsTitle({ displayName: user.displayName })}
         </h2>
 
         <div class="flex min-h-[400px] flex-col items-center justify-center">
             <p class="text-surface-300 mb-8">
-                Profile is private or not found.
+                {m.profilePrivate()}
             </p>
 
             <div class="w-full max-w-[800px]">
@@ -65,7 +63,7 @@
     <!-- Hero Section with Podium -->
     <section class="mb-12">
         <h2 class="mb-6 text-center text-2xl font-bold">
-            {user.displayName}'s Rarest Achievements
+            {m.userRarestAchievementsTitle({ displayName: user.displayName })}
         </h2>
 
         <div
@@ -83,7 +81,7 @@
                 <!-- Base thing -->
                 <div class="flex h-full w-full items-center justify-center">
                     <p class="text-surface-300">
-                        No achievements unlocked yet.
+                        {m.userNoAchievementsMessage()}
                     </p>
                 </div>
             {/if}
@@ -97,15 +95,15 @@
 
     <!-- Achievement Leaderboard -->
     <section>
-        <h2 class="mb-4 text-2xl font-bold">Achievement Leaderboard</h2>
+        <h2 class="mb-4 text-2xl font-bold">{m.userLeaderboardTitle()}</h2>
 
         <Toolbar {achievements} />
 
         <!-- Tabs -->
         <Tabs value={activeTab} onValueChange={(e) => (activeTab = e.value)}>
             {#snippet list()}
-                <Tabs.Control value="grid">Grid View</Tabs.Control>
-                <Tabs.Control value="list">List View</Tabs.Control>
+                <Tabs.Control value="grid">{m.userViewGrid()}</Tabs.Control>
+                <Tabs.Control value="list">{m.userViewList()}</Tabs.Control>
             {/snippet}
 
             {#snippet content()}
@@ -125,22 +123,22 @@
                                     <th
                                         class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
-                                        Achievement
+                                        {m.userTableAchievement()}
                                     </th>
                                     <th
                                         class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
-                                        Game
+                                        {m.userTableGame()}
                                     </th>
                                     <th
                                         class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
-                                        Rarity
+                                        {m.userTableRarity()}
                                     </th>
                                     <th
                                         class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                                     >
-                                        Unlocked
+                                        {m.statusUnlocked()}
                                     </th>
                                 </tr>
                             </thead>

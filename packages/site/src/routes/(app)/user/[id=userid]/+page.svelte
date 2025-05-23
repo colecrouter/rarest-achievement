@@ -4,23 +4,26 @@
     import Splash from "$lib/loading/Splash.svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
     import Achievements from "./Achievements.svelte";
+    import { m } from "$lib/paraglide/messages.js";
 
     let { data } = $props();
 </script>
 
 <svelte:head>
-    <title>{data.user.displayName} - Achievements</title>
-    <meta name="description" content="View your Steam achievements." />
+    <title>{m.userPageMetaTitle({ displayName: data.user.displayName })}</title>
+    <meta name="description" content={m.userPageMetaDescription()} />
     <meta
         name="keywords"
-        content="Steam, achievements, user, {data.user.id}, {data.user
-            .displayName}"
+        content={m.userPageMetaKeywords({
+            userId: data.user.id,
+            displayName: data.user.displayName,
+        })}
     />
     <meta
         property="og:title"
-        content="{data.user.displayName} - Achievements"
+        content={m.userPageMetaTitle({ displayName: data.user.displayName })}
     />
-    <meta property="og:description" content="View your Steam achievements." />
+    <meta property="og:description" content={m.userPageMetaDescription()} />
     <meta property="og:image" content={data.user.avatar} />
     <meta property="og:url" content={data.user.profileUrl} />
     <meta property="og:type" content="summary" />

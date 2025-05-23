@@ -4,6 +4,7 @@
     import FriendCards from "$lib/FriendCards";
     import IndexError from "$lib/IndexError.svelte";
     import Toolbar from "$lib/SortManager/Toolbar.svelte";
+    import { m } from "$lib/paraglide/messages";
     import type { Rarity } from "$lib/rarity";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
@@ -108,7 +109,7 @@
                 labels: rarities.map(([, label]) => label),
                 datasets: [
                     {
-                        label: "Achievements",
+                        label: m.chartAchievementsLabel(),
                         data: achievementCounts,
                         backgroundColor: bgPrimary,
                         borderWidth: 4,
@@ -116,7 +117,7 @@
                         borderRadius: 4,
                     },
                     {
-                        label: "Unlocked Achievements",
+                        label: m.chartUnlockedAchievementsLabel(),
                         data: unlockedAchievementCounts,
                         backgroundColor: bgSecondary,
                         borderWidth: 4,
@@ -142,7 +143,7 @@
                     tooltip: {
                         callbacks: {
                             afterLabel(tooltipItem) {
-                                return `${(100 * (Number(tooltipItem.raw) / totalCount)).toFixed(1)}% of total`;
+                                return `${(100 * (Number(tooltipItem.raw) / totalCount)).toFixed(1)}${m.chartAfterLabelSuffix()}`;
                             },
                         },
                     },
@@ -162,21 +163,27 @@
 </script>
 
 <svelte:head>
-    <title>{app.name} - Achievements</title>
+    <title>{m.appPageMetaTitle({ appName: app.name })}</title>
     <meta
         name="description"
-        content={`Unlock all ${achievements.length} achievements in ${app.name}. Track your progress with interactive charts, compare rarity, and get expert tips on Steam Vault.`}
+        content={m.appPageMetaDescription({
+            achievementCount: achievements.length,
+            appName: app.name,
+        })}
     />
     <link rel="canonical" href={`/game/${app.id}`} />
     <meta property="og:title" content={app.name} />
     <meta
         property="og:description"
-        content={`Unlock all ${achievements.length} achievements in ${app.name}. Track your progress with interactive charts, compare rarity, and get expert tips on Steam Vault.`}
+        content={m.appPageMetaDescription({
+            achievementCount: achievements.length,
+            appName: app.name,
+        })}
     />
     <meta property="og:image" content={app.banner} />
     <meta property="og:type" content="summary" />
     <meta property="twitter:card" content="summary" />
-    <meta property="keywords" content="Steam, {app.name}, achievements" />
+    <meta property="keywords" content={`Steam, ${app.name}, achievements`} />
 </svelte:head>
 
 <!-- Game Banner -->
@@ -242,20 +249,20 @@
             </div>
         </div>
         <div class="flex grow flex-col justify-end gap-2 md:flex-row">
-            <a href="steam://run/{app.id}">
+            <a href={`steam://run/${app.id}`}>
                 <button
                     class="btn preset-filled-primary-500 group flex w-full md:w-auto"
                 >
                     <GamepadIcon class="transition-all group-hover:rotate-12" />
-                    Play on Steam
+                    {m.gamePagePlayOnSteam()}
                 </button>
             </a>
-            <a href="https://steamdb.info/app/{app.id}/" target="_blank">
+            <a href={`https://steamdb.info/app/${app.id}/`} target="_blank">
                 <button
                     class="btn preset-outlined-surface-500 group flex w-full md:w-auto"
                 >
                     <Server class="h-4 w-4" />
-                    <span>View on SteamDB</span>
+                    <span>{m.gamePageViewOnSteamDB()}</span>
                 </button>
             </a>
         </div>
@@ -266,9 +273,14 @@
     <div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <!-- Achievement Progress -->
         <div class="card p-4 lg:col-span-2">
-            <h2 class="mb-1 text-xl font-bold">Achievement Progress</h2>
+            <h2 class="mb-1 text-xl font-bold">
+                {m.gamePageAchievementProgressTitle()}
+            </h2>
             <p class="text-surface-300 mb-4">
-                You've unlocked {unlockedCount} out of {totalCount} achievements.
+                {m.gamePageAchievementProgressDescription({
+                    unlockedCount,
+                    totalCount,
+                })}
             </p>
             <div class="mb-6">
                 <Progress
@@ -285,8 +297,11 @@
                     <canvas bind:this={donutchart} class="h-full w-full"
                     ></canvas>
                 </div>
+                <!-- Recent Unlocks -->
                 <div class="w-full p-4">
-                    <h3 class="mb-3 text-lg font-medium">Recent Unlocks</h3>
+                    <h3 class="mb-3 text-lg font-medium">
+                        {m.gamePageRecentUnlocksTitle()}
+                    </h3>
                     <div class="space-y-3">
                         {#if recentUnlocks}
                             {#each recentUnlocks as achievement}
@@ -301,13 +316,12 @@
                                         class="text-surface-500 mx-auto mb-4 h-12 w-12"
                                     />
                                     <h3 class="mb-2 text-xl font-bold">
-                                        No Recent Unlocks
+                                        {m.gamePageNoRecentUnlocksTitle()}
                                     </h3>
                                     <p
                                         class="text-surface-300 mx-auto max-w-md"
                                     >
-                                        You haven't unlocked any achievements
-                                        recently.
+                                        {m.gamePageNoRecentUnlocksDescription()}
                                     </p>
                                 </div>
                             {/if}
@@ -318,11 +332,10 @@
                                     class="text-surface-600 mx-auto mb-4 h-12 w-12"
                                 />
                                 <h3 class="mb-2 text-xl font-bold">
-                                    Unlock Achievements
+                                    {m.gamePageSignInCallToActionTitle()}
                                 </h3>
                                 <p class="text-surface-300 mx-auto max-w-md">
-                                    Sign in to view your recent unlocks and
-                                    progress.
+                                    {m.gamePageSignInCallToActionDescription()}
                                 </p>
                                 <form action="/?/login" method="POST">
                                     <input
@@ -333,7 +346,7 @@
                                     <button
                                         class="btn preset-filled-primary-500 mt-4 inline-block"
                                     >
-                                        Sign In
+                                        {m.signIn()}
                                     </button>
                                 </form>
                             </div>
@@ -345,10 +358,14 @@
 
         <!-- Game Overview -->
         <div class="card p-4">
-            <h2 class="mb-3 text-xl font-bold">Game Information</h2>
+            <h2 class="mb-3 text-xl font-bold">
+                {m.gamePageGameInformationTitle()}
+            </h2>
             <div class="space-y-4 text-sm">
                 <div>
-                    <div class="text-surface-300 mb-1">Developer</div>
+                    <div class="text-surface-300 mb-1">
+                        {m.gamePageDeveloperLabel()}
+                    </div>
                     <div>
                         {#each app.developers as developer, index}
                             {index > 0 ? ", " : ""}
@@ -357,7 +374,9 @@
                     </div>
                 </div>
                 <div>
-                    <div class="text-surface-300 mb-1">Publisher</div>
+                    <div class="text-surface-300 mb-1">
+                        {m.gamePagePublisherLabel()}
+                    </div>
                     <div>
                         {#each app.publishers as publisher, index}
                             {index > 0 ? ", " : ""}
@@ -366,25 +385,17 @@
                     </div>
                 </div>
                 <div>
-                    <div class="text-surface-300 mb-1">Release Date</div>
+                    <div class="text-surface-300 mb-1">
+                        {m.gamePageReleaseDateLabel()}
+                    </div>
                     <div>
                         {app.releaseDate?.toLocaleDateString() ?? "Unreleased"}
                     </div>
                 </div>
-                {#if isSignedIn}
-                    <!-- <div>
-                            <div class="mb-1 text-surface-300">Your Playtime</div>
-                            <div>{app.playtime} hours</div>
-                        </div>
-                        <div>
-                            <div class="mb-1 text-surface-300">Last Played</div>
-                            <div>
-                                {format(parseISO(app.lastPlayed), "MMMM d, yyyy")}
-                            </div>
-                        </div> -->
-                {/if}
                 <div>
-                    <div class="text-surface-300 mb-1">Description</div>
+                    <div class="text-surface-300 mb-1">
+                        {m.gamePageDescriptionLabel()}
+                    </div>
                     <p>{app.description}</p>
                 </div>
             </div>
@@ -395,7 +406,7 @@
                     rel="noopener noreferrer"
                 >
                     <button class="btn preset-outlined-surface-500 w-full">
-                        View on Steam
+                        {m.viewOnSteam()}
                     </button>
                 </a>
             </div>
@@ -404,7 +415,9 @@
 
     <!-- Achievements List -->
     <section class="mb-8">
-        <h2 class="mb-4 text-2xl font-bold">Achievement Leaderboard</h2>
+        <h2 class="mb-4 text-2xl font-bold">
+            {m.gamePageAchievementLeaderboardTitle()}
+        </h2>
 
         <Toolbar {achievements} />
 
@@ -413,7 +426,9 @@
 
     <!-- Friends Who Play -->
     <div class="mb-8">
-        <h2 class="mb-6 text-2xl font-bold">Friends Who Play</h2>
+        <h2 class="mb-6 text-2xl font-bold">
+            {m.gamePageFriendsWhoPlayTitle()}
+        </h2>
         <!-- TODO island -->
         {#if isSignedIn}
             {#await friends then f}

@@ -4,6 +4,7 @@
         type SteamAppAchievement,
         SteamUserAchievement,
     } from "@project/lib/models";
+    import { m } from "$lib/paraglide/messages.js";
     import Badge from "./_badge.svelte";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
@@ -50,14 +51,14 @@
         {#if achievement instanceof SteamUserAchievement}
             <div class="text-surface-300 mt-0.5 text-xs">
                 {#if achievement.unlocked}
-                    Unlocked: {achievement.unlocked.toLocaleDateString(
+                    {m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString(
                         undefined,
                         {
                             dateStyle: "short",
                         },
                     )}
                 {:else}
-                    Locked
+                    {m.statusLocked()}
                 {/if}
             </div>
         {/if}

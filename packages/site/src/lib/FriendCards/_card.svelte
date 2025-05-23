@@ -16,6 +16,7 @@
         type SteamUser,
     } from "@project/lib";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
+    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         friend: SteamUser;
@@ -63,22 +64,28 @@
             <div class="text-surface-300 text-xs">
                 {#if achievement}
                     {#if achievement.unlocked}
-                        Unlocked {achievement?.unlocked?.toLocaleDateString()}
+                        {m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString()}
                     {:else}
-                        Locked
+                        {m.statusLocked()}
                     {/if}
                 {:else}
-                    {((owned.playtime ?? 0) / 60).toFixed(1)} hours played
+                    {m.friendHoursPlayed({
+                        hours: ((owned.playtime ?? 0) / 60).toFixed(1),
+                    })}
                 {/if}
             </div>
         </div>
     </div>
     <div class="mb-3">
         {#if friend.private || !achievements.length}
-            <div class=" text-surface-800">This profile is private.</div>
+            <div class="text-surface-800">
+                {m.profilePrivate()}
+            </div>
         {:else}
             <div class="mb-1 flex items-center justify-between">
-                <div class="text-surface-300 text-xs">Achievement Progress</div>
+                <div class="text-surface-300 text-xs">
+                    {m.friendAchievementProgress()}
+                </div>
                 <div class="text-xs font-medium">
                     {completion.toFixed(0)}%
                 </div>

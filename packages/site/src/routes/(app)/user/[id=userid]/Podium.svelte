@@ -85,6 +85,8 @@
 </script>
 
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages";
+
     import Award from "@lucide/svelte/icons/award";
     import Crown from "@lucide/svelte/icons/crown";
     import Medal from "@lucide/svelte/icons/medal";
@@ -129,7 +131,9 @@
                 {config.label}
             </span>
             <span class={config.placeStatClass}>
-                {achievement.globalPercentage}% of players
+                {m.podiumPercentOfPlayers({
+                    percentage: achievement.globalPercentage,
+                })}
             </span>
         </div>
         <div class={config.cardWrapper}>

@@ -3,6 +3,7 @@
     // biome-ignore lint/style/useImportType: <explanation>
     import { SteamUserAchievement } from "@project/lib";
     import Badge from "./_badge.svelte";
+    import { m } from "$lib/paraglide/messages.js";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 
@@ -91,16 +92,16 @@
             {#if achievement instanceof SteamUserAchievement}
                 <span>
                     {#if achievement.unlocked}
-                        Unlocked: {achievement.unlocked.toLocaleDateString()}
+                        {m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString()}
                     {:else}
-                        Locked
+                        {m.statusLocked()}
                     {/if}
                 </span>
                 <a
                     href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
                     class="text-primary-500 hover:text-primary-400"
                 >
-                    Details
+                    {m.achievementDetails()}
                 </a>
             {/if}
         </div>

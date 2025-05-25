@@ -3,6 +3,7 @@
     import type { Breadcrumb } from "$lib/breadcrumbs";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import House from "@lucide/svelte/icons/house";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         path: Breadcrumb[];
@@ -31,7 +32,7 @@
 
 <ol class="mb-8 flex items-center gap-4">
     <li>
-        <a class="opacity-60 hover:opacity-100" href="/">
+        <a class="opacity-60 hover:opacity-100" href={localizeHref("/")}>
             <House size={24} />
         </a>
     </li>
@@ -49,7 +50,10 @@
             {/snippet}
 
             {#if breadcrumb.href && i !== path.length - 1}
-                <a class="opacity-60 hover:opacity-100" href={breadcrumb.href}>
+                <a
+                    class="opacity-60 hover:opacity-100"
+                    href={localizeHref(breadcrumb.href)}
+                >
                     {@render content(breadcrumb)}
                 </a>
             {:else}

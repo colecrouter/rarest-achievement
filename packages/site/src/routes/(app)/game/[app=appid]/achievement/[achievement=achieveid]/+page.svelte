@@ -16,6 +16,7 @@
     import Chart from "chart.js/auto";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     let { data } = $props();
 
@@ -118,7 +119,9 @@
                     )?.id;
                     if (!selectedAchievementId) return;
                     goto(
-                        `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
+                        localizeHref(
+                            `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
+                        ),
                         { keepFocus: true },
                     );
                 },
@@ -293,9 +296,13 @@
                             {/snippet}
                             {#snippet trigger()}
                                 <a
-                                    href="https://steamcommunity.com/app/{achievement
-                                        .app.id}/stats/{achievement.app
-                                        .id}/achievements"
+                                    href={localizeHref(
+                                        `https://steamcommunity.com/app/${
+                                            achievement.app.id
+                                        }/stats/${
+                                            achievement.app.id
+                                        }/achievements`,
+                                    )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="btn preset-outlined-surface-500 p-2"
@@ -509,7 +516,9 @@
                                                 {#each articleResult.articles as article}
                                                     <div class="card p-4">
                                                         <a
-                                                            href="https://steamcommunity.com/sharedfiles/filedetails/?id={article.id}"
+                                                            href={localizeHref(
+                                                                `https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`,
+                                                            )}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
@@ -567,7 +576,9 @@
                                                 {#each articleResult.videos as video}
                                                     <div class="card p-4">
                                                         <a
-                                                            href="https://www.youtube.com/watch?v={video.videoId}"
+                                                            href={localizeHref(
+                                                                `https://www.youtube.com/watch?v=${video.videoId}`,
+                                                            )}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >

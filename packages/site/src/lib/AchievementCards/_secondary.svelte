@@ -6,6 +6,7 @@
     } from "@project/lib/models";
     import { m } from "$lib/paraglide/messages.js";
     import Badge from "./_badge.svelte";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 
@@ -15,7 +16,9 @@
 </script>
 
 <a
-    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+    href={localizeHref(
+        `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+    )}
     class="card secondary flex items-center justify-between gap-3 p-2"
 >
     <div class="icon-container">

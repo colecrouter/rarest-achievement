@@ -4,6 +4,7 @@
     import User from "@lucide/svelte/icons/user";
     import type { SteamUser } from "@project/lib";
     import SearchBar from "./SearchBar.svelte";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         user: SteamUser | null;
@@ -17,7 +18,7 @@
         class="d:gap-4 container mx-auto grid grid-flow-col grid-cols-[auto,1fr,auto] items-center gap-2 px-4 py-4 md:flex md:justify-between"
     >
         <!-- Logo and title -->
-        <a href="/" class="flex items-center gap-2 md:pr-4">
+        <a href={localizeHref("/")} class="flex items-center gap-2 md:pr-4">
             <div class="logo bg-primary-500"></div>
             <h1 class="relative hidden text-xl font-bold md:block">
                 {m.navbarCompanyName()}
@@ -38,7 +39,7 @@
         <div class="flex items-center justify-end gap-4">
             {#if user}
                 <a
-                    href="/user/{user.id}"
+                    href={localizeHref(`/user/${user.id}`)}
                     class="btn btn-sm preset-outlined-primary-500"
                 >
                     <User class="mr-2 h-6 w-6" />

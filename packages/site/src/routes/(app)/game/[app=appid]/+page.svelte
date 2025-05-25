@@ -183,7 +183,14 @@
     <meta property="og:image" content={app.banner} />
     <meta property="og:type" content="summary" />
     <meta property="twitter:card" content="summary" />
-    <meta property="keywords" content={`Steam, ${app.name}, achievements`} />
+    <meta
+        property="keywords"
+        content={m.appPageMetaKeywords({
+            achievementCount: achievements.length,
+            appId: app.id,
+            appName: app.name,
+        })}
+    />
 </svelte:head>
 
 <!-- Game Banner -->

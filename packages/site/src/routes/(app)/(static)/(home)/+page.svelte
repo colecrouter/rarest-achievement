@@ -1,6 +1,7 @@
 <script lang="ts">
     import AchievementCards from "$lib/AchievementCards";
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Crown from "@lucide/svelte/icons/crown";
@@ -351,7 +352,7 @@
             </form>
         {:else}
             <a
-                href="/user/{data.loggedIn.id}"
+                href={localizeHref(`/user/${data.loggedIn.id}`)}
                 class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
             >
                 {m.homepageFeaturesDashboard()}
@@ -359,7 +360,10 @@
             </a>
         {/if}
 
-        <a href="/about" class="btn preset-outlined-surface-500">
+        <a
+            href={localizeHref("/about")}
+            class="btn preset-outlined-surface-500"
+        >
             {m.homepageFeaturesLearnMore()}
         </a>
     </div>

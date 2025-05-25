@@ -5,6 +5,7 @@
     import Shield from "@lucide/svelte/icons/shield";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     let activeTab = $derived.by(() => {
         switch (page.url.searchParams.get("tab")) {
@@ -58,10 +59,10 @@
         onValueChange={(v) => {
             switch (v.value) {
                 case "terms":
-                    goto("/legal?tab=terms");
+                    goto(localizeHref("/legal?tab=terms"));
                     break;
                 default:
-                    goto("/legal");
+                    goto(localizeHref("/legal"));
             }
         }}
     >
@@ -72,7 +73,7 @@
 
         {#snippet content()}
             <Tabs.Panel value="privacy">
-                <div class="prose max-w-none pt-4">
+                <div class="prose !max-w-none pt-4">
                     <blockquote>{m.legalPrivacyBlockquote()}</blockquote>
 
                     <!-- Section: Information We Collect -->
@@ -120,7 +121,7 @@
             </Tabs.Panel>
 
             <Tabs.Panel value="terms">
-                <div class="prose max-w-none pt-4">
+                <div class="prose !max-w-none pt-4">
                     <blockquote>{m.legalTermsBlockquote()}</blockquote>
 
                     <!-- Section: User Accounts -->
@@ -174,8 +175,8 @@
         <ul class="text-surface-300 space-y-2">
             <li>
                 <strong>Email:</strong>
-                <a href="mailto:{m.legalContactEmail()}" class="underline">
-                    {m.legalContactEmail()}
+                <a href="mailto:support@steamvault.info" class="underline">
+                    support@steamvault.info
                 </a>
             </li>
         </ul>

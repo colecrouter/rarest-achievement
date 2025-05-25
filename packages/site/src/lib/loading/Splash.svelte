@@ -1,6 +1,7 @@
 <script lang="ts">
     import Alert from "$lib/Alert.svelte";
     import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import type { LoadingMessage } from "./messages";
 
     interface Props {
@@ -43,13 +44,13 @@
 
                     <a
                         class="underline"
-                        href={message.source.url.toString()}
+                        href={localizeHref(message.source.url.toString())}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         {message.source.text}
-                    </a></span
-                >
+                    </a>
+                </span>
             {/if}
         </div>
     </div>

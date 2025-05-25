@@ -2,6 +2,7 @@
     import { m } from "$lib/paraglide/messages.js";
     import Alert from "$lib/Alert.svelte";
     import GlobeLock from "@lucide/svelte/icons/globe-lock";
+    import { localizeHref } from "$lib/paraglide/runtime";
 </script>
 
 <article>
@@ -261,7 +262,9 @@
                 </p>
                 <p>
                     {m.profilePrivacyConcernsMore()}
-                    <a href="/legal" class="text-primary-500 hover:underline"
+                    <a
+                        href={localizeHref("/legal")}
+                        class="text-primary-500 hover:underline"
                         >{m.profilePrivacyLinkText()}</a
                     >.
                 </p>

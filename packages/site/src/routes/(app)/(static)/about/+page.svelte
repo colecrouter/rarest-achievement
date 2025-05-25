@@ -1,5 +1,6 @@
 <script lang="ts">
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import ArrowRight from "@lucide/svelte/icons/arrow-right";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import DollarSign from "@lucide/svelte/icons/dollar-sign";
@@ -308,7 +309,7 @@
                         </form>
                     {:else}
                         <a
-                            href="/user/{data.loggedIn.id}"
+                            href={localizeHref(`/user/${data.loggedIn.id}`)}
                             class="btn preset-filled-primary-500 p-3"
                         >
                             {m.homepageFeaturesDashboard()}

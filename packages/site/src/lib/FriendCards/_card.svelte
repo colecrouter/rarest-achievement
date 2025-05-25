@@ -17,6 +17,7 @@
     } from "@project/lib";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         friend: SteamUser;
@@ -42,7 +43,7 @@
 
 <div class="card {secondary && 'secondary'} p-4">
     <div class="mb-4 flex items-center gap-3">
-        <a class="relative" href="/user/{friend.id}">
+        <a class="relative" href={localizeHref(`/user/${friend.id}`)}>
             <img
                 src={friend.avatar || "/placeholder.svg"}
                 alt={friend.displayName}
@@ -58,7 +59,10 @@
             ></div>
         </a>
         <div>
-            <a class="font-medium hover:underline" href="/user/{friend.id}">
+            <a
+                class="font-medium hover:underline"
+                href={localizeHref(`/user/${friend.id}`)}
+            >
                 {friend.displayName}
             </a>
             <div class="text-surface-300 text-xs">

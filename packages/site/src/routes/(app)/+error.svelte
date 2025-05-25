@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     import ArrowLeft from "@lucide/svelte/icons/arrow-left";
     import Home from "@lucide/svelte/icons/home";
@@ -71,7 +72,7 @@
             <RefreshCcw class="mr-2 h-4 w-4" />
             Try Again
         </button>
-        <a href="/" class="inline-block">
+        <a href={localizeHref("/")} class="inline-block">
             <button
                 class="btn preset-outlined-surface-500 flex items-center gap-2"
             >

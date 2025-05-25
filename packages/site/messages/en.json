@@ -202,5 +202,7 @@
     "loadingScreenTitle6": "Well, Excuuuuse Me, Princess!",
     "loadingScreenDescription6": "The name \"Zelda\" (from <i>The Legend of Zelda</i> franchise) was inspired by Zelda Fitzgerald—the wife of author F. Scott Fitzgerald—giving the series an exotic and memorable title.",
     "loadingScreenTitle7": "Not-so-final Fantasy",
-    "loadingScreenDescription7": "The original <i>Final Fantasy</i> (1987), was conceived as developer Square's (later Square Enix) last-ditch effort during a financial crisis. Ironically, its unexpected success not only saved the company but also laid the groundwork for one of the most iconic and enduring RPG franchises."
+    "loadingScreenDescription7": "The original <i>Final Fantasy</i> (1987), was conceived as developer Square's (later Square Enix) last-ditch effort during a financial crisis. Ironically, its unexpected success not only saved the company but also laid the groundwork for one of the most iconic and enduring RPG franchises.",
+    "layoutMetaKeywords": "Steam, achievements, gaming, profile, user",
+    "appPageMetaKeywords": "Steam, achievements, {appName}, {appId}, {achievementCount}"
 }

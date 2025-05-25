@@ -9,6 +9,7 @@
     import type { AppsResponse } from "../(api)/search/apps/+server";
     import type { UsersResponse } from "../(api)/search/users/+server";
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     let query = $state("");
 
@@ -98,8 +99,8 @@
             <li class="flex flex-col gap-2" in:fade|global={{ delay: i * 50 }}>
                 <a
                     href={obj instanceof SteamSearchApp
-                        ? `/game/${obj.id}`
-                        : `/user/${obj.id}`}
+                        ? localizeHref(`/game/${obj.id}`)
+                        : localizeHref(`/user/${obj.id}`)}
                     class="hover:bg-surface-300 flex items-center gap-2 rounded p-2"
                     onclick={() => {
                         reset();

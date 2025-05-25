@@ -4,6 +4,7 @@
     import { SteamUserAchievement } from "@project/lib";
     import Badge from "./_badge.svelte";
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 
@@ -18,7 +19,9 @@
         <div class="flex items-start gap-4 p-4">
             <!-- icon snippet -->
             <a
-                href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+                href={localizeHref(
+                    `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+                )}
                 class="relative"
             >
                 {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
@@ -59,7 +62,9 @@
                 <h3 class="line-clamp-2 text-sm font-bold">
                     <a
                         class="hover:underline"
-                        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+                        href={localizeHref(
+                            `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+                        )}
                     >
                         {achievement.name}
                     </a>
@@ -68,7 +73,7 @@
                 <p class="text-surface-300 mb-1 text-xs">
                     <a
                         class="hover:underline"
-                        href={`/game/${achievement.app.id}`}
+                        href={localizeHref(`/game/${achievement.app.id}`)}
                     >
                         {achievement.app.name}
                     </a>
@@ -98,7 +103,9 @@
                     {/if}
                 </span>
                 <a
-                    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+                    href={localizeHref(
+                        `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+                    )}
                     class="text-primary-500 hover:text-primary-400"
                 >
                     {m.achievementDetails()}

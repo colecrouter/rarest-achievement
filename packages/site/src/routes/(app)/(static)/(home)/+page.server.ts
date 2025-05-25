@@ -1,4 +1,6 @@
+import { getLocale } from "$lib/paraglide/runtime.js";
 import {
+    type APILanguageCode,
     EnhancedSteamRepository,
     type SteamAchievementRawGlobalStats,
     type SteamAchievementRawMeta,
@@ -7,6 +9,7 @@ import {
     type SteamID,
     achievementsStats,
     apps,
+    getLanguageByCode,
     resolveSteamID,
     userScores,
 } from "@project/lib";
@@ -72,14 +75,19 @@ export const load = async ({ locals }) => {
 const getShowcaseAchievements = async (locals: App.Locals) => {
     const showcase2IDs = [
         { game: 252950, achievement: "Spectacular" },
-        { game: 105600, achievement: "PURIFY_ENTIRE_WORLD" },
+        { game: 367520, achievement: "STEELSOUL_COMPLETION" },
         { game: 1085660, achievement: "ACH_23" },
     ];
 
     // Fetch the achievements for the showcase cards
     const repo = new EnhancedSteamRepository(locals);
-    const { data: showcase2Apps } = await repo.getApps(showcase2IDs.map((m) => m.game));
-    const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()]);
+    const locale = getLocale();
+    const { data: showcase2Apps } = await repo.getApps(
+        showcase2IDs.map((m) => m.game),
+        locale,
+    );
+    const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()], locale);
+
     const showcase2 = showcase2IDs
         .map(({ game, achievement }) => showcase2Achievements.get(game)?.get(achievement))
         .filter((m) => !!m);
@@ -113,11 +121,14 @@ const getStats = async (locals: App.Locals) => {
 };
 
 const getRareAchievements = async (locals: App.Locals) => {
+    const locale = getLocale();
+    const lang = "french";
+
     // Pick 20 of the rarest achievements, then pick 3 random ones
     const rarestX = 100;
 
     const query = sql`
-        WITH RankedAchievements AS (
+    WITH RankedAchievements AS (
         SELECT 
             achievements_stats.app_id,
             j.value,
@@ -141,20 +152,22 @@ const getRareAchievements = async (locals: App.Locals) => {
         json_extract(meta.value, '$.description') AS description,
         json_extract(meta.value, '$.icon') AS icon,
         json_extract(meta.value, '$.icongray') AS icongray
-        FROM (
+    FROM (
         -- Only take the top 1 (or top 2, etc.) rare achievement per game.
         SELECT app_id, value
         FROM RankedAchievements
         WHERE rn = 1
         ORDER BY percent
         LIMIT ${rarestX}
-        ) AS rare
-        JOIN achievements_meta
+    ) AS rare
+    JOIN achievements_meta
         ON achievements_meta.app_id = rare.app_id
-        JOIN json_each(achievements_meta.data) AS meta
+    JOIN json_each(achievements_meta.data) AS meta
         ON json_extract(meta.value, '$.name') = json_extract(rare.value, '$.name')
-        ORDER BY RANDOM()
-        LIMIT 3;
+    -- Using lang field from achievements_meta
+    WHERE achievements_meta.lang = ${lang}
+    ORDER BY RANDOM()
+    LIMIT 3;
   `;
 
     const res = await locals.steamCacheDB.run(query);

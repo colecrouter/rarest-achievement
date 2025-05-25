@@ -19,7 +19,7 @@ import type {
     SteamUserAchievementRawStats,
     SteamUserRaw,
 } from "../../models";
-import type { Language } from "../../repositories/api/lang";
+import type { APILanguageCode } from "../../repositories/api/lang";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import type schema from "./schema";
 import {
@@ -202,7 +202,7 @@ export class SteamCacheDBRepository {
         await this.#db.batch([batches[0], ...batches.slice(1)]);
     }
 
-    async getUserAchievements(appId: number[], userId: string[]) {
+    async getUserAchievements(appId: number[], userId: string[], lang: APILanguageCode) {
         // Determine chunk size based on count of parameters
         // Each SQL statement can have a maximum of 100 parameters
         // For simplicity, we'll only fetch 1 appId at a time
@@ -290,7 +290,7 @@ export class SteamCacheDBRepository {
         }
     }
 
-    async getGameAchievements(appId: number[], lang: Language = "english") {
+    async getGameAchievements(appId: number[], lang: APILanguageCode) {
         const chunkSize = 20;
 
         // Group the cross product pairs into chunks
@@ -306,7 +306,7 @@ export class SteamCacheDBRepository {
                     achievements_meta: getTableAliasedColumns(achievementsMeta),
                 })
                 .from(achievementsStats)
-                .leftJoin(
+                .innerJoin(
                     achievementsMeta,
                     and(eq(achievementsStats.app_id, achievementsMeta.app_id), eq(achievementsMeta.lang, lang)),
                 )
@@ -364,7 +364,7 @@ export class SteamCacheDBRepository {
         return gameOutput;
     }
 
-    async putGameAchievements(data: Awaited<ReturnType<typeof this.getGameAchievements>>, lang: Language = "english") {
+    async putGameAchievements(data: Awaited<ReturnType<typeof this.getGameAchievements>>, lang: APILanguageCode) {
         // Aggregate meta and global stats per app; and user achievements per (app, user) pair
         const metaByApp = new Map<number, SteamAchievementRawMeta[]>(); // any[] for meta values
         const globalByApp = new Map<number, SteamAchievementRawGlobalStats[]>(); // any[] for global stat values

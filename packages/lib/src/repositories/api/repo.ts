@@ -7,10 +7,10 @@ import type {
     SteamUserAchievementRawStats,
     SteamUserRaw,
 } from "../../models";
-import type { Language } from "../../repositories/api/lang";
 import type { SteamAuthenticatedAPIClient } from "../../repositories/api/steampowered/client";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import { SteamStoreAPIClient } from "../../repositories/api/store/client";
+import type { APILanguageCode } from "./lang";
 
 /**
  * Repository for fetching data from the Steam API.
@@ -26,7 +26,7 @@ export class SteamAPIRepository {
         this.#apiClient = steamClient;
     }
 
-    async getApps(app_id: number[], lang: Language = "english") {
+    async getApps(app_id: number[], lang: APILanguageCode) {
         const data = new Map<number, SteamAppRaw | null>();
         let error: Error | null = null;
 
@@ -135,7 +135,7 @@ export class SteamAPIRepository {
         return new Errable(data, error);
     }
 
-    async getGameAchievements(game_id: number[], lang: Language = "english") {
+    async getGameAchievements(game_id: number[], lang: APILanguageCode) {
         const data = new Map<
             number,
             Map<

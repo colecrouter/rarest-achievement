@@ -1,3 +1,17 @@
+<script lang="ts" module>
+    const numberFormat = new Intl.NumberFormat(getLocale(), {
+        style: "decimal",
+        notation: "compact",
+        maximumFractionDigits: 0,
+    });
+
+    // @ts-ignore https://github.com/microsoft/TypeScript/issues/60608
+    // Format Dates like "1d"
+    const dateFormat = new Intl.DurationFormat(getLocale(), {
+        style: "narrow",
+    });
+</script>
+
 <script lang="ts">
     import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import { m } from "$lib/paraglide/messages.js";
@@ -15,18 +29,6 @@
 
     const sortManager = getSortManager();
     const rarity = $derived(getRarity(achievement.globalPercentage));
-
-    const numberFormat = new Intl.NumberFormat(getLocale(), {
-        style: "decimal",
-        notation: "compact",
-        maximumFractionDigits: 0,
-    });
-
-    // @ts-ignore https://github.com/microsoft/TypeScript/issues/60608
-    // Format Dates like "1d"
-    const dateFormat = new Intl.DurationFormat(getLocale(), {
-        style: "narrow",
-    });
 </script>
 
 <div

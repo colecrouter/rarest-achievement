@@ -203,5 +203,12 @@
     "loadingScreenTitle7": "Pas si Final Fantasy",
     "loadingScreenDescription7": "L'original <i>Final Fantasy</i> (1987) fut conçu comme l'effort ultime de Square (plus tard Square Enix) lors d'une crise financière. Son succès inattendu a non seulement sauvé l'entreprise, mais a également posé les bases d'une franchise RPG emblématique et durable.",
     "layoutMetaKeywords": "Steam, succès, jeux, profil, utilisateur",
-    "appPageMetaKeywords": "Steam, succès, {appName}, {appId}, {achievementCount}"
+    "appPageMetaKeywords": "Steam, succès, {appName}, {appId}, {achievementCount}",
+    "errorPageTitle": "Oh oh...",
+    "errorPageMessage": "Une erreur est survenue lors du chargement de cette page. Nos ingénieurs ont été prévenus et travaillent sur une solution.",
+    "errorPageErrorCause": "Cause : {errorMessage}",
+    "errorPageErrorSuggestion": "Essayez de recharger la page ou de retourner à l'accueil.",
+    "errorPageButtonReload": "Réessayer",
+    "errorPageButtonHome": "Retour à l'accueil",
+    "errorPageButtonBack": "Retour"
 }

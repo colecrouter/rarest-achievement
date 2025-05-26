@@ -204,5 +204,13 @@
     "loadingScreenTitle7": "Not-so-final Fantasy",
     "loadingScreenDescription7": "The original <i>Final Fantasy</i> (1987), was conceived as developer Square's (later Square Enix) last-ditch effort during a financial crisis. Ironically, its unexpected success not only saved the company but also laid the groundwork for one of the most iconic and enduring RPG franchises.",
     "layoutMetaKeywords": "Steam, achievements, gaming, profile, user",
-    "appPageMetaKeywords": "Steam, achievements, {appName}, {appId}, {achievementCount}"
+    "appPageMetaKeywords": "Steam, achievements, {appName}, {appId}, {achievementCount}",
+    "errorPageTitle": "Uh Oh...",
+    "errorPageMessage": "Something went wrong while loading this page. Our engineers have been notified and are working on a fix.",
+    "errorPageErrorCause": "Cause: {errorMessage}",
+    "errorPageErrorSuggestion": "Try reloading the page or returning to home",
+    "errorPageButtonReload": "Try Again",
+    "errorPageButtonHome": "Go Home",
+    "errorPageButtonBack": "Go Back"
+
 }

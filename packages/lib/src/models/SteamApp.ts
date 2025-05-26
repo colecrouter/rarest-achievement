@@ -1,5 +1,7 @@
 import { isBypassCdnEnabled } from "../config";
 import { replaceCdnUrl } from "../config/dev";
+import { parseLocalizedDate } from "../date";
+import { getLanguageByAPICode, type APILanguageCode, type LanguageCode } from "../repositories";
 import type { AppDetailsData, GetAppDetailsResponse } from "../repositories/api/store/appdetails";
 
 export type SteamAppRaw = NonNullable<
@@ -11,14 +13,18 @@ export type SteamAppRaw = NonNullable<
 export class SteamApp {
     #app: SteamAppRaw;
     #estimatedPlayers: number | null;
+    #lang: APILanguageCode;
 
-    constructor(id: number, data: SteamAppRaw, estimatedPlayers: number | null) {
+    constructor(id: number, data: SteamAppRaw, estimatedPlayers: number | null, lang: APILanguageCode) {
         this.#app = data;
         this.#estimatedPlayers = estimatedPlayers;
+        this.#lang = lang;
     }
 
     serialize() {
-        return [this.id, this.#app, this.#estimatedPlayers] satisfies ConstructorParameters<typeof SteamApp>;
+        return [this.id, this.#app, this.#estimatedPlayers, this.#lang] satisfies ConstructorParameters<
+            typeof SteamApp
+        >;
     }
 
     get id() {
@@ -46,7 +52,12 @@ export class SteamApp {
     }
 
     get releaseDate() {
-        return this.#app.release_date.coming_soon === true ? null : new Date(this.#app.release_date.date);
+        const lang = getLanguageByAPICode(this.#lang)?.storeCode;
+        if (!lang) throw new Error(`Unknown language code: ${this.#lang}`);
+
+        return this.#app.release_date.coming_soon === true
+            ? null
+            : parseLocalizedDate(this.#app.release_date.date, lang as LanguageCode);
     }
 
     get description() {

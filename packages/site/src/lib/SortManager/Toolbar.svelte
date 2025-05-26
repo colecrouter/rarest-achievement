@@ -9,6 +9,7 @@
     import { Segment } from "@skeletonlabs/skeleton-svelte";
     import { crossfade } from "svelte/transition";
     import { getSortManager } from "./UrlParamMapper.svelte";
+    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         achievements: Array<SteamUserAchievement | SteamAppAchievement>;
@@ -40,7 +41,7 @@
     <!-- Search Input -->
     <input
         type="search"
-        placeholder="Search achievements..."
+        placeholder={m.toolbarSearchPlaceholder()}
         bind:value={sortManager.search}
         class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
     />
@@ -48,7 +49,7 @@
     <!-- Sort Method Selection -->
     <div class="flex flex-col items-center gap-2 md:flex-row">
         <label class="text-surface-300 text-sm">
-            <span hidden>Sort by</span>
+            <span hidden>{m.toolbarSortBy()}</span>
             <Segment
                 value={sortManager.method}
                 onValueChange={(e) => {
@@ -77,7 +78,7 @@
     {#if achievements.every((a) => "unlocked" in a) && achievements.some((a) => a.unlocked) && achievements.some((a) => !a.unlocked)}
         <div class="flex flex-col items-center gap-2 md:flex-row">
             <label class="text-surface-300 text-sm">
-                <span hidden>Filter by</span>
+                <span hidden>{m.toolbarFilterBy()}</span>
                 <Segment
                     value={sortManager.filter}
                     onValueChange={(e) => {
@@ -88,16 +89,16 @@
                     rounded={segmentRounded}
                 >
                     <Segment.Item labelClasses="text-sm" value="all">
-                        <span hidden> All </span>
+                        <span hidden>{m.toolbarFilterAll()}</span>
                         <SquareDashed />
                     </Segment.Item>
                     {#if achievements.find((a) => "unlocked" in a)}
                         <Segment.Item labelClasses="text-sm" value="unlocked">
-                            <span hidden> Unlocked </span>
+                            <span hidden>{m.toolbarFilterUnlocked()}</span>
                             <KeyRound />
                         </Segment.Item>
                         <Segment.Item labelClasses="text-sm" value="locked">
-                            <span hidden> Locked </span>
+                            <span hidden>{m.toolbarFilterLocked()}</span>
                             <Lock />
                         </Segment.Item>
                     {/if}

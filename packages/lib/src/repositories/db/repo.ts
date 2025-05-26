@@ -103,7 +103,7 @@ export class SteamCacheDBRepository {
         await this.#db.batch([batches[0], ...batches.slice(1)]);
     }
 
-    async getApps(appId: number[]) {
+    async getApps(appId: number[], lang: APILanguageCode) {
         const chunkSize = 90; // max parameters per SQL statement
         const results = [];
         for (let i = 0; i < appId.length; i += chunkSize) {
@@ -111,7 +111,7 @@ export class SteamCacheDBRepository {
             const res = await this.#db
                 .select()
                 .from(apps)
-                .where(and(inArray(apps.id, chunk)));
+                .where(and(inArray(apps.id, chunk), eq(apps.lang, lang)));
             results.push(...res);
         }
 
@@ -131,7 +131,7 @@ export class SteamCacheDBRepository {
         return map;
     }
 
-    async putApps(data: Awaited<ReturnType<typeof this.getApps>>) {
+    async putApps(data: Awaited<ReturnType<typeof this.getApps>>, lang: APILanguageCode) {
         const items = [...data.entries()].map(([appId, app]) => ({
             id: appId,
             data: app,
@@ -140,10 +140,10 @@ export class SteamCacheDBRepository {
         for (const item of items) {
             await this.#db
                 .insert(apps)
-                .values(item)
+                .values({ ...item, lang })
                 .onConflictDoUpdate({
                     target: [apps.id],
-                    set: { updated_at: new Date(), data: sql`excluded.data` },
+                    set: { updated_at: new Date(), data: sql`excluded.data`, lang: sql`excluded.lang` },
                 });
         }
     }
@@ -202,7 +202,7 @@ export class SteamCacheDBRepository {
         await this.#db.batch([batches[0], ...batches.slice(1)]);
     }
 
-    async getUserAchievements(appId: number[], userId: string[], lang: APILanguageCode) {
+    async getUserAchievements(appId: number[], userId: string[]) {
         // Determine chunk size based on count of parameters
         // Each SQL statement can have a maximum of 100 parameters
         // For simplicity, we'll only fetch 1 appId at a time

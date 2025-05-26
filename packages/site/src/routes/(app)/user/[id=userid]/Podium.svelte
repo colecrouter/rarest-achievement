@@ -5,7 +5,6 @@
             width: "w-[220px]",
             iconComponent: Crown,
             iconWrapper: "h-10 w-10 text-amber-500",
-            label: "1st Place",
             labelTextClass: "text-sm font-bold text-amber-500",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
@@ -26,7 +25,6 @@
             width: "w-[200px]",
             iconComponent: Medal,
             iconWrapper: "h-8 w-8 text-surface-300",
-            label: "2nd Place",
             labelTextClass: "text-sm font-medium text-surface-300",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
@@ -46,7 +44,6 @@
             width: "w-[180px]",
             iconComponent: Award,
             iconWrapper: "h-7 w-7 text-amber-700",
-            label: "3rd Place",
             labelTextClass: "text-sm font-medium text-amber-700",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
@@ -112,6 +109,14 @@
 
     let gameURL = `/game/${achievement.app.id}`;
     let achievementURL = `/game/${achievement.app.id}/achievement/${achievement.id}`;
+
+    // Compute podium label from i18n messages
+    let podiumLabel =
+        place === 1
+            ? m.podiumLabelFirst()
+            : place === 2
+              ? m.podiumLabelSecond()
+              : m.podiumLabelThird();
 </script>
 
 <div
@@ -129,7 +134,7 @@
         >
             <IconComponent class={config.iconWrapper} />
             <span class={config.labelTextClass}>
-                {config.label}
+                {podiumLabel}
             </span>
             <span class={config.placeStatClass}>
                 {m.podiumPercentOfPlayers({

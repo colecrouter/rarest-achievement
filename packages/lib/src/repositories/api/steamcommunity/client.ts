@@ -1,5 +1,5 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import type { Language } from "../lang";
+import type { APILanguageCode } from "../lang";
 import { scrapeSteamCommunityArticles } from "./articles";
 import type { User } from "./types";
 import { searchSteamCommunityUsers } from "./users";
@@ -7,7 +7,7 @@ import { searchSteamCommunityUsers } from "./users";
 export class SteamCommunityClient {
     static async fetchArticles(
         achievement: SteamAppAchievement | SteamUserAchievement,
-        lang: Language,
+        lang: APILanguageCode,
         maxLength: number,
     ) {
         if (maxLength < 0 || maxLength > 10) throw new Error("maxLength must be between 0 and 10");

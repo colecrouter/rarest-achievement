@@ -1,7 +1,7 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import { Errable } from "../../../error";
-import type { Language } from "../lang";
+import { type APILanguageCode, type LanguageCode, getLanguageByCode } from "../lang";
 import { unescapeHTML } from "../utils";
 import { YouTubeClient } from "./client";
 
@@ -14,7 +14,9 @@ export class YouTubeRepository {
         this.#cache = cache;
     }
 
-    async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, lang: Language) {
+    async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
+        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
+
         const cacheKey = `youtube:${achievement.app.id}:${achievement.id}:${lang}`;
         const cached = await this.#cache.get(cacheKey);
         if (cached) {

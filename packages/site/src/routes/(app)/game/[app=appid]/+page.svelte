@@ -15,6 +15,8 @@
     import Chart from "chart.js/auto";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
+    import { getLocale } from "$lib/paraglide/runtime";
+    import { browser } from "$app/environment";
 
     let { data } = $props();
     let { app, achievements, friends, loggedIn: user } = $derived(data);
@@ -45,11 +47,11 @@
     let donutchart: HTMLCanvasElement | null = null;
 
     const rarities = [
-        [5, "Ultra-Rare (<5%)"],
-        [10, "Rare (<10%)"],
-        [50, "Uncommon (<50%)"],
-        [100, "Common"],
-        [-1, "Locked"],
+        [5, m.ChartRarityUltraRare()],
+        [10, m.ChartRarityRare()],
+        [50, m.ChartRarityUncommon()],
+        [100, m.ChartRarityCommon()],
+        [-1, m.statusLocked()],
     ] as const;
     let unlockedAchievementsGroupedByRarity = $derived([
         ...Map.groupBy(achievements?.values() ?? [], (achievement) =>
@@ -58,7 +60,7 @@
                       ([percentage]) =>
                           achievement.globalPercentage <= percentage,
                   )?.[1]
-                : "Locked",
+                : m.statusLocked(),
         ),
     ]);
 
@@ -242,10 +244,11 @@
                 </div>
                 <div class="flex items-center gap-1">
                     <Calendar class="h-4 w-4" />
-                    <span
-                        >{app.releaseDate?.toLocaleDateString() ??
-                            "Unreleased"}</span
-                    >
+                    <span>
+                        {app.releaseDate?.toLocaleDateString(
+                            browser ? undefined : getLocale(),
+                        ) ?? "Unreleased"}
+                    </span>
                 </div>
                 {#if isSignedIn}
                     <!-- <div class="flex items-center gap-1">
@@ -396,7 +399,9 @@
                         {m.gamePageReleaseDateLabel()}
                     </div>
                     <div>
-                        {app.releaseDate?.toLocaleDateString() ?? "Unreleased"}
+                        {app.releaseDate?.toLocaleDateString(
+                            browser ? undefined : getLocale(),
+                        ) ?? "Unreleased"}
                     </div>
                 </div>
                 <div>

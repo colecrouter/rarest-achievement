@@ -80,7 +80,7 @@
                 </p>
                 {#if achievement.hidden}
                     <p class="text-surface-300 text-xs font-bold italic">
-                        Hidden
+                        {m.statusHidden()}
                     </p>
                 {:else}
                     <p class="text-surface-100 line-clamp-2 text-xs">

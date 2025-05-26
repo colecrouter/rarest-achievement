@@ -27,6 +27,7 @@ export const apps = sqliteTable(
     {
         id: integer("app_id").notNull().primaryKey(),
         data: text("data", { mode: "json" }).$type<SteamAppRaw>(),
+        lang: text("lang").notNull().$type<string>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),

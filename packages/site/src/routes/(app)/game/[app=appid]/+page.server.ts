@@ -1,18 +1,31 @@
-import { EnhancedSteamRepository, Errable, type SteamAppAchievement } from "@project/lib";
+import { getLocale } from "$lib/paraglide/runtime.js";
+import {
+    type APILanguageCode,
+    EnhancedSteamRepository,
+    Errable,
+    type SteamAppAchievement,
+    getLanguageByCode,
+} from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
     const { app } = await parent();
+
+    const locale = getLocale();
 
     const repo = new EnhancedSteamRepository(locals);
 
     let achievements: SteamAppAchievement[] | undefined;
     let err: Error | null = null;
     if (locals.steamUser) {
-        const { data: achievementsMap, error: achieveErr } = await repo.getUserAchievements([app], [locals.steamUser]);
+        const { data: achievementsMap, error: achieveErr } = await repo.getUserAchievements(
+            [app],
+            [locals.steamUser],
+            locale,
+        );
         achievements = [...(achievementsMap.get(app.id)?.get(locals.steamUser.id)?.values() ?? [])];
         err = achieveErr;
     } else {
-        const { data: achievementsMap, error: achieveErr } = await repo.getGameAchievements([app]);
+        const { data: achievementsMap, error: achieveErr } = await repo.getGameAchievements([app], locale);
         achievements = [...(achievementsMap.get(app.id)?.values() ?? [])];
         err = achieveErr;
     }
@@ -28,7 +41,7 @@ export const load = async ({ parent, locals }) => {
         const { data: ownedMap, error: err2 } = await repo.getOwnedGames(f);
 
         // ONLY FETCH THE CURRENT APP
-        const { data: friendAchievements, error: err3 } = await repo.getUserAchievements([app], f, "english");
+        const { data: friendAchievements, error: err3 } = await repo.getUserAchievements([app], f, locale);
 
         const friends = f
             .map((friend) => {

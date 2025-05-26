@@ -1,7 +1,10 @@
 import { GOOGLE_API_KEY } from "$env/static/private";
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { EnhancedSteamRepository, Errable, SteamCommunityRepo, YouTubeRepository } from "@project/lib";
 
 export const load = async ({ parent, url, locals, platform }) => {
+    const locale = getLocale();
+
     const data = await parent();
     const { app, loggedIn, achievement } = data;
     if (!platform) throw new Error("No platform found");
@@ -10,7 +13,7 @@ export const load = async ({ parent, url, locals, platform }) => {
     const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE);
     const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE);
 
-    const game = await steamRepo.getGameAchievements([app]);
+    const game = await steamRepo.getGameAchievements([app], locale);
     const gameAchievements = [...(game.data.get(app.id)?.values() ?? [])];
 
     const friendsWithAchievement = (async () => {
@@ -55,6 +58,7 @@ export const load = async ({ parent, url, locals, platform }) => {
             const { data: achievements, error: err3 } = await steamRepo.getUserAchievements(
                 [app],
                 filteredFriendsWithGame,
+                getLocale(),
             );
             if (err3) setError(err3);
 
@@ -79,8 +83,8 @@ export const load = async ({ parent, url, locals, platform }) => {
     const articles = (async () => {
         if (url.searchParams.get("tab") !== "articles") return null;
 
-        const { data: articles, error: err1 } = await steamComRepo.searchGuides(achievement, "english");
-        const { data: videos, error: err2 } = await youtubeRepo.searchGuides(achievement, "english");
+        const { data: articles, error: err1 } = await steamComRepo.searchGuides(achievement, locale);
+        const { data: videos, error: err2 } = await youtubeRepo.searchGuides(achievement, locale);
 
         return new Errable(
             {

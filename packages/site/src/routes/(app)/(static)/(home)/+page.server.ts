@@ -122,7 +122,7 @@ const getStats = async (locals: App.Locals) => {
 
 const getRareAchievements = async (locals: App.Locals) => {
     const locale = getLocale();
-    const lang = "french";
+    const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
 
     // Pick 20 of the rarest achievements, then pick 3 random ones
     const rarestX = 100;
@@ -186,7 +186,7 @@ const getRareAchievements = async (locals: App.Locals) => {
     const achievements = results.map((m) => {
         const app = appsRes.find((a) => a.app?.steam_appid === m.app_id);
         if (!app?.app) throw new Error("Missing app");
-        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0), m, m, "english");
+        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang);
     });
 
     return achievements;

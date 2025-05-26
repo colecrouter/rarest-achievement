@@ -1,6 +1,6 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import type { HTMLRewriter } from "htmlrewriter";
-import type { Language } from "../lang";
+import type { APILanguageCode } from "../lang";
 import { unescapeHTML } from "../utils";
 import { getHTMLRewriter } from "./htmlRewriterHelper";
 import type { Article } from "./types";
@@ -124,7 +124,7 @@ class ArticleIDHandler {
  */
 export async function scrapeSteamCommunityArticles(
     achievement: SteamAppAchievement | SteamUserAchievement,
-    lang: Language,
+    lang: APILanguageCode,
 ) {
     const url = new URL(`https://steamcommunity.com/app/${achievement.app.id}/guides/`);
     // ?searchText=gold+medal&browsefilter=trend&browsesort=creationorder&requiredtags%5B%5D=Achievements&requiredtags%5B%5D=English#scrollTop=0

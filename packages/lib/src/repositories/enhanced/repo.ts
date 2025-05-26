@@ -39,8 +39,8 @@ export class EnhancedSteamRepository {
 
         const { data: apps, error: err } = await fetchAndUpsert(
             [appIds],
-            (_) => this.#cacheRepository.getApps(_),
-            (_) => this.#cacheRepository.putApps(_),
+            (_) => this.#cacheRepository.getApps(_, lang),
+            (_) => this.#cacheRepository.putApps(_, lang),
             (_) => this.#apiRepository.getApps(_, lang),
         );
 
@@ -57,7 +57,7 @@ export class EnhancedSteamRepository {
             const estimatedPlayer = estimatedPlayers.get(id);
             // if (!estimatedPlayer) continue; // SteamCharts appears to be missing data for some apps
 
-            const steamApp = new SteamApp(app.steam_appid, app, estimatedPlayer ?? null);
+            const steamApp = new SteamApp(app.steam_appid, app, estimatedPlayer ?? null, lang);
             steamApps.set(steamApp.id, steamApp);
         }
         return new Errable(steamApps, err ?? err2);
@@ -84,7 +84,7 @@ export class EnhancedSteamRepository {
         user: Array<string | SteamUser>,
         locale: LanguageCode,
     ) {
-        const lang = (getLanguageByCode(locale)?.apiCode ?? "english") as APILanguageCode;
+        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
 
         // Because we can pass in ids instead of just SteamApp objects, we need to fetch the games again if we don't have them
         let newGames: SteamApp[];
@@ -114,7 +114,7 @@ export class EnhancedSteamRepository {
             >
         >(
             [gameIds, userIds, undefined],
-            (_, __) => this.#cacheRepository.getUserAchievements(_, __, lang),
+            (_, __) => this.#cacheRepository.getUserAchievements(_, __),
             (_) => this.#cacheRepository.putUserAchievements(_),
             (_, __) => this.#apiRepository.getUserAchievements(_, __),
         );
@@ -242,8 +242,8 @@ export class EnhancedSteamRepository {
         return Errable.try(async (setError) => {
             const appDetails = await fetchAndUpsert(
                 [appId],
-                (_) => this.#cacheRepository.getApps(_),
-                (_) => this.#cacheRepository.putApps(_),
+                (_) => this.#cacheRepository.getApps(_, lang),
+                (_) => this.#cacheRepository.putApps(_, lang),
                 (_) => this.#apiRepository.getApps(_, lang),
             );
 

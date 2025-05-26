@@ -9,6 +9,7 @@ import type {
     SteamUserRaw,
 } from "../../models";
 import type { OwnedGame } from "../api/steampowered/owned";
+import type { APILanguageCode } from "../api/lang";
 
 export const users = sqliteTable(
     "users",
@@ -27,7 +28,7 @@ export const apps = sqliteTable(
     {
         id: integer("app_id").notNull().primaryKey(),
         data: text("data", { mode: "json" }).$type<SteamAppRaw>(),
-        lang: text("lang").notNull().$type<string>(),
+        lang: text("lang").notNull().$type<APILanguageCode>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
@@ -54,7 +55,7 @@ export const achievementsMeta = sqliteTable(
     "achievements_meta",
     {
         app_id: integer("app_id").notNull(),
-        lang: text("lang").notNull(),
+        lang: text("lang").notNull().$type<APILanguageCode>(),
         data: text("data", { mode: "json" }).$type<SteamAchievementRawMeta[]>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()

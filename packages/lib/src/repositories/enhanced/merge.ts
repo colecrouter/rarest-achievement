@@ -1,5 +1,5 @@
 import { Errable } from "../../error";
-import type { Language } from "../api/lang";
+import type { APILanguageCode } from "../api/lang";
 
 /**
  * For a 1D map, return the keys that are missing.
@@ -79,8 +79,8 @@ export async function fetchAndUpsert<
     TInner = never,
     TValue = unknown,
     TArgs extends unknown[] = [TInner] extends [never]
-        ? [TOuter[], Language | undefined]
-        : [TOuter[], TInner[], Language | undefined],
+        ? [TOuter[], APILanguageCode | undefined]
+        : [TOuter[], TInner[], APILanguageCode | undefined],
     TResult extends [TInner] extends [never] ? Map<TOuter, TValue> : Map<TOuter, Map<TInner, TValue>> = [
         TInner,
     ] extends [never]

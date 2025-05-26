@@ -236,7 +236,7 @@ export class EnhancedSteamRepository {
     }
 
     async getEstimatedPlayers(appId: number[], locale: LanguageCode) {
-        const lang = (getLanguageByCode(locale)?.apiCode ?? "english") as APILanguageCode;
+        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
         const data = new Map<number, number | null>();
 
         return Errable.try(async (setError) => {

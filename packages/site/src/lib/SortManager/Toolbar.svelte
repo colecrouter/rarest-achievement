@@ -59,14 +59,14 @@
                 rounded={segmentRounded}
             >
                 <Segment.Item classes="text-sm" value="percentage">
-                    Rarity
+                    {m.toolbarSortMethodRarity()}
                 </Segment.Item>
                 <Segment.Item classes="text-sm" value="count">
-                    Player Count
+                    {m.toolbarSortMethodPlayerCount()}
                 </Segment.Item>
                 {#if achievements.find((a) => "unlocked" in a)}
                     <Segment.Item classes="text-sm" value="unlocked">
-                        Unlocked
+                        {m.toolbarSortMethodUnlocked()}
                     </Segment.Item>
                 {/if}
             </Segment>
@@ -112,6 +112,7 @@
         onclick={() =>
             (sortManager.direction =
                 sortManager.direction === "asc" ? "desc" : "asc")}
+        aria-label={m.toolbarSortDirectionToggle()}
         class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
     >
         <!-- These icons are just ArrowUpWideNarrow and ArrowDownNarrowWide from lucide -->

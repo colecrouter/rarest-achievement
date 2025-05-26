@@ -23,7 +23,7 @@
     <!-- Friend's achievements are private -->
     <section class="mb-12">
         <h2 class="mb-6 text-center text-2xl font-bold">
-            {m.userAchievementsTitle({ displayName: user.displayName })}
+            {m.userPageTitle({ displayName: user.displayName })}
         </h2>
 
         <div class="flex min-h-[400px] flex-col items-center justify-center">

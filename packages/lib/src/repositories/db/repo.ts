@@ -318,7 +318,7 @@ export class SteamCacheDBRepository {
             Map<
                 string,
                 {
-                    meta: SteamAchievementRawMeta;
+                    meta: SteamAchievementRawMeta | null;
                     global: SteamAchievementRawGlobalStats;
                 }
             >
@@ -331,18 +331,18 @@ export class SteamCacheDBRepository {
             achievements_stats: {
                 ...row.achievements_stats,
                 // @ts-ignore
-                data: JSON.parse(row.achievements_stats.data) as SteamAchievementRawGlobalStats[],
+                data: JSON.parse(row.achievements_stats.data) as SteamAchievementRawGlobalStats[] | null,
             },
             achievements_meta: {
                 ...row.achievements_meta,
                 // @ts-ignore
-                data: JSON.parse(row.achievements_meta.data) as SteamAchievementRawMeta[],
+                data: JSON.parse(row.achievements_meta.data) as SteamAchievementRawMeta[] | null,
             },
         }));
 
         for (const row of flattenedStats) {
             const appId = row.achievements_stats.app_id;
-            const appMeta = row.achievements_meta?.data ?? [];
+            const appMeta = row.achievements_meta?.data ?? null; // Could be null if no localization exists
             const globalStats = row.achievements_stats.data ?? [];
             const gameId = appId;
             if (!gameOutput.has(gameId)) {
@@ -351,8 +351,8 @@ export class SteamCacheDBRepository {
             const gameMap = gameOutput.get(gameId);
             for (const achievement of globalStats) {
                 const achievementId = achievement.name;
-                const meta = appMeta.find((m) => m.name === achievementId);
-                if (!meta) continue;
+                const meta = appMeta?.find((m) => m.name === achievementId) ?? null;
+                // if (!meta) continue;
 
                 gameMap?.set(achievementId, {
                     meta,
@@ -365,35 +365,15 @@ export class SteamCacheDBRepository {
     }
 
     async putGameAchievements(data: Awaited<ReturnType<typeof this.getGameAchievements>>, lang: APILanguageCode) {
-        // Aggregate meta and global stats per app; and user achievements per (app, user) pair
-        const metaByApp = new Map<number, SteamAchievementRawMeta[]>(); // any[] for meta values
-        const globalByApp = new Map<number, SteamAchievementRawGlobalStats[]>(); // any[] for global stat values
-
-        for (const [appId, gameMap] of data.entries()) {
-            for (const [, achievements] of gameMap.entries()) {
-                const meta = achievements.meta;
-                const global = achievements.global;
-
-                // Aggregate meta records by app id.
-                if (!metaByApp.has(appId)) {
-                    metaByApp.set(appId, []);
-                }
-                metaByApp.get(appId)?.push(meta);
-                // Aggregate global records by app id.
-                if (!globalByApp.has(appId)) {
-                    globalByApp.set(appId, []);
-                }
-                globalByApp.get(appId)?.push(global);
-            }
-        }
-
         const metaRecords = [
             ...data.entries().map(([app_id, gameMap]) => {
-                const dataArr = [...gameMap.values()].map((achievements) => achievements.meta);
+                const dataArr = [...gameMap.values()]
+                    .map((achievements) => achievements.meta)
+                    .filter((meta) => meta !== null) as SteamAchievementRawMeta[];
                 return {
                     app_id,
                     lang,
-                    data: dataArr,
+                    data: dataArr.length > 0 ? dataArr : null, // Explode null value back to array level, e.g. [null, null, ...] -> null
                 };
             }),
         ];

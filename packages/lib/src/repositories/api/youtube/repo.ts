@@ -1,7 +1,7 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import { Errable } from "../../../error";
-import { type APILanguageCode, type LanguageCode, getLanguageByCode } from "../lang";
+import type { LanguageCode } from "../lang";
 import { unescapeHTML } from "../utils";
 import { YouTubeClient } from "./client";
 
@@ -15,9 +15,7 @@ export class YouTubeRepository {
     }
 
     async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
-        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
-
-        const cacheKey = `youtube:${achievement.app.id}:${achievement.id}:${lang}`;
+        const cacheKey = `youtube:${achievement.app.id}:${achievement.id}:${locale}`;
         const cached = await this.#cache.get(cacheKey);
         if (cached) {
             const { data, error } = JSON.parse(cached) as {
@@ -28,7 +26,7 @@ export class YouTubeRepository {
         }
 
         const guides = await Errable.try(async () => {
-            const guides = await this.#client.fetchVideos(achievement, lang, 5);
+            const guides = await this.#client.fetchVideos(achievement, locale, 5);
             return guides.items.map((item) => ({
                 title: unescapeHTML(item.snippet.title),
                 channel: unescapeHTML(item.snippet.channelTitle),

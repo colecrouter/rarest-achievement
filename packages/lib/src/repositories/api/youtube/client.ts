@@ -1,6 +1,6 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
+import type { LanguageCode } from "../lang";
 import type { ISearchResponse } from "./types/ISearchResponse";
-import type { APILanguageCode } from "../lang";
 
 export class YouTubeClient {
     #apiKey: string;
@@ -9,11 +9,7 @@ export class YouTubeClient {
         this.#apiKey = apiKey;
     }
 
-    async fetchVideos(
-        achievement: SteamAppAchievement | SteamUserAchievement,
-        lang: APILanguageCode,
-        maxResults: number,
-    ) {
+    async fetchVideos(achievement: SteamAppAchievement | SteamUserAchievement, lang: LanguageCode, maxResults: number) {
         if (maxResults < 0 || maxResults > 50) throw new Error("maxResults must be between 0 and 50");
 
         const query = `${achievement.app.name} ${achievement.name}`;
@@ -26,7 +22,7 @@ export class YouTubeClient {
         url.searchParams.set("type", "video");
         url.searchParams.set("order", "relevance");
         url.searchParams.set("safeSearch", "moderate");
-        // url.searchParams.set("relevanceLanguage", "en"); // TODO
+        url.searchParams.set("relevanceLanguage", lang);
         const response = await fetch(url.toString());
 
         if (!response.ok) {

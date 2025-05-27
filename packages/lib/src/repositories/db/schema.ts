@@ -56,7 +56,7 @@ export const achievementsMeta = sqliteTable(
     {
         app_id: integer("app_id").notNull(),
         lang: text("lang").notNull().$type<APILanguageCode>(),
-        data: text("data", { mode: "json" }).$type<SteamAchievementRawMeta[]>(),
+        data: text("data", { mode: "json" }).$type<SteamAchievementRawMeta[] | null>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),

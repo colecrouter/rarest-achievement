@@ -17,6 +17,7 @@
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
     import { localizeHref } from "$lib/paraglide/runtime";
+    import TranslationToggle from "$lib/TranslationToggle.svelte";
 
     let { data } = $props();
 
@@ -162,6 +163,7 @@
 
     let viewHover = $state(false);
     let shareHover = $state(false);
+    let translate = $state(true);
 </script>
 
 <svelte:head>
@@ -260,14 +262,21 @@
                         <h1 class="mb-1 text-3xl font-bold">
                             {achievement.name}
                         </h1>
-                        <p class="text-surface-200">
-                            {achievement.description}
+                        <p
+                            class="text-surface-200 flex w-full grow items-start"
+                        >
+                            {#if achievement.translation}
+                                <TranslationToggle bind:translate />
+                            {/if}
+                            {@html translate && achievement.translation
+                                ? achievement.translation
+                                : achievement.description}
                         </p>
                     </div>
                 </div>
                 <!-- Tinted card with "ultra-rare 1.1% of players" -->
                 <div
-                    class="flex w-full flex-col items-center md:ml-auto md:items-end"
+                    class="flex min-w-[120px] flex-col items-center md:ml-auto md:items-end"
                 >
                     <div
                         class="w-full text-center md:w-auto md:text-left border-{rarity}/30 bg-{rarity}/10 mb-2 rounded border px-4 py-2"

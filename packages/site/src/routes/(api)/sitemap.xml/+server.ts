@@ -1,3 +1,4 @@
+import { locales, localizeUrl } from "$lib/paraglide/runtime";
 import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
 import { asc, desc, eq, sql } from "drizzle-orm";
 
@@ -38,7 +39,13 @@ export const GET = async ({ url, setHeaders, locals }) => {
         return /* xml */ `
       <url>
         <loc>${escapeXml(url)}</loc>
-        ${lastmod ? /* xml */ `<lastmod>${lastmod.toISOString()}</lastmod>` : ""}
+        ${lastmod ? `<lastmod>${lastmod.toISOString()}</lastmod>` : ""}
+        ${locales
+            .map(
+                (locale) =>
+                    `<xhtml:link rel="alternate" hreflang="${locale}" href="${localizeUrl(escapeXml(url), { locale })}" />`,
+            )
+            .join("\n")}
       </url>`;
     };
 
@@ -74,9 +81,9 @@ export const GET = async ({ url, setHeaders, locals }) => {
 
     // Complete XML sitemap
     const sitemap = /* xml */ `<?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      ${limitedEntries.join("\n")}
-    </urlset>`;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  ${limitedEntries.join("\n")}
+</urlset>`;
 
     // Set the proper headers and return the sitemap content
     setHeaders({

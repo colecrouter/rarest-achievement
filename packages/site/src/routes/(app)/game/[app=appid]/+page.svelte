@@ -1,10 +1,12 @@
 <script lang="ts">
+    import { browser } from "$app/environment";
     import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";
     import IndexError from "$lib/IndexError.svelte";
     import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import { m } from "$lib/paraglide/messages";
+    import { getLocale } from "$lib/paraglide/runtime";
     import type { Rarity } from "$lib/rarity";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
@@ -15,8 +17,6 @@
     import Chart from "chart.js/auto";
     import colors from "tailwindcss/colors";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
-    import { getLocale } from "$lib/paraglide/runtime";
-    import { browser } from "$app/environment";
 
     let { data } = $props();
     let { app, achievements, friends, loggedIn: user } = $derived(data);

@@ -1,10 +1,10 @@
 <script lang="ts">
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import LogOut from "@lucide/svelte/icons/log-out";
     import User from "@lucide/svelte/icons/user";
     import type { SteamUser } from "@project/lib";
     import SearchBar from "./SearchBar.svelte";
-    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         user: SteamUser | null;

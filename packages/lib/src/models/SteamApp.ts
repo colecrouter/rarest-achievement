@@ -1,7 +1,7 @@
 import { isBypassCdnEnabled } from "../config";
 import { replaceCdnUrl } from "../config/dev";
 import { parseLocalizedDate } from "../date";
-import { getLanguageByAPICode, type APILanguageCode, type LanguageCode } from "../repositories";
+import { type APILanguageCode, type LanguageCode, getLanguageByAPICode } from "../repositories";
 import type { AppDetailsData, GetAppDetailsResponse } from "../repositories/api/store/appdetails";
 
 export type SteamAppRaw = NonNullable<

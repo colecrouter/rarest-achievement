@@ -1,12 +1,14 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { m } from "$lib/paraglide/messages.js";
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";
     import IndexError from "$lib/IndexError.svelte";
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    import TranslationToggle from "$lib/TranslationToggle.svelte";
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import { getRarity, localizedRarity } from "$lib/rarity";
     import BookOpenText from "@lucide/svelte/icons/book-open-text";
     import NotebookText from "@lucide/svelte/icons/notebook-text";
@@ -16,8 +18,6 @@
     import Chart from "chart.js/auto";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
-    import { localizeHref } from "$lib/paraglide/runtime";
-    import TranslationToggle from "$lib/TranslationToggle.svelte";
 
     let { data } = $props();
 

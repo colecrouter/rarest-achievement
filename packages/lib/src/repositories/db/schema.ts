@@ -8,8 +8,8 @@ import type {
     SteamUserAchievementRawStats,
     SteamUserRaw,
 } from "../../models";
-import type { OwnedGame } from "../api/steampowered/owned";
 import type { APILanguageCode } from "../api/lang";
+import type { OwnedGame } from "../api/steampowered/owned";
 
 export const users = sqliteTable(
     "users",

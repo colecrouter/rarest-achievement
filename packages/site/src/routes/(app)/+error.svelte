@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import { localizeHref } from "$lib/paraglide/runtime";
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import ArrowLeft from "@lucide/svelte/icons/arrow-left";
     import Home from "@lucide/svelte/icons/home";
     import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";

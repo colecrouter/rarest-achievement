@@ -1,7 +1,7 @@
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages";
     import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
     import Alert from "./Alert.svelte";
-    import { m } from "$lib/paraglide/messages";
 </script>
 
 <Alert

@@ -1,6 +1,8 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import { page } from "$app/state";
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import Gamepad from "@lucide/svelte/icons/gamepad";
     import User from "@lucide/svelte/icons/user";
     import { Popover } from "@skeletonlabs/skeleton-svelte";
@@ -8,8 +10,6 @@
     import { fade } from "svelte/transition";
     import type { AppsResponse } from "../(api)/search/apps/+server";
     import type { UsersResponse } from "../(api)/search/users/+server";
-    import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
 
     let query = $state("");
 

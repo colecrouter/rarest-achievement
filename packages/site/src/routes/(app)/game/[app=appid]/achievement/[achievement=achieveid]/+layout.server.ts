@@ -1,7 +1,7 @@
 import type { Breadcrumb } from "$lib/breadcrumbs";
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { EnhancedSteamRepository } from "@project/lib";
 import { error } from "@sveltejs/kit";
-import { getLocale } from "$lib/paraglide/runtime.js";
 
 export const load = async ({ params, parent, locals }) => {
     const achievementId = decodeURIComponent(params.achievement);

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages.js";
     import KeyRound from "@lucide/svelte/icons/key-round";
     import Lock from "@lucide/svelte/icons/lock";
     import SquareDashed from "@lucide/svelte/icons/square-dashed";
@@ -9,7 +10,6 @@
     import { Segment } from "@skeletonlabs/skeleton-svelte";
     import { crossfade } from "svelte/transition";
     import { getSortManager } from "./UrlParamMapper.svelte";
-    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         achievements: Array<SteamUserAchievement | SteamAppAchievement>;

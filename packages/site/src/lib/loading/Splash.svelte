@@ -1,9 +1,9 @@
 <script lang="ts">
     import Alert from "$lib/Alert.svelte";
-    import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
-    import { localizeHref } from "$lib/paraglide/runtime";
-    import type { LoadingMessage } from "./messages";
     import { m } from "$lib/paraglide/messages.js"; // new import
+    import { localizeHref } from "$lib/paraglide/runtime";
+    import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
+    import type { LoadingMessage } from "./messages";
 
     interface Props {
         message: LoadingMessage;

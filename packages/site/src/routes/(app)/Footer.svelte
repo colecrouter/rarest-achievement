@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Trophy from "@lucide/svelte/icons/trophy";
     import { m } from "$lib/paraglide/messages.js";
     import { localizeHref } from "$lib/paraglide/runtime";
+    import Trophy from "@lucide/svelte/icons/trophy";
 </script>
 
 <footer class="border-surface-800 bg-surface-900 border-t py-8">

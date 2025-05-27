@@ -1,5 +1,5 @@
-import { EnhancedSteamRepository, userScores } from "@project/lib";
 import { getLocale } from "$lib/paraglide/runtime.js";
+import { EnhancedSteamRepository, userScores } from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
     // Need to load the locale synchronously

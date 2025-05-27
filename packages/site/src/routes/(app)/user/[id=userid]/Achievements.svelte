@@ -1,12 +1,12 @@
 <script lang="ts">
     import AchievementCards from "$lib/AchievementCards";
     import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
+    import { m } from "$lib/paraglide/messages.js";
     import type { SteamUser, SteamUserAchievement } from "@project/lib";
     import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
     import PublicProfile from "../../(static)/about/PublicProfile.svelte";
     import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";
     import Podium from "./Podium.svelte";
-    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         achievements: SteamUserAchievement[];

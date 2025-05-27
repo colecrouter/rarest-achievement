@@ -1,12 +1,12 @@
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     // biome-ignore lint/style/useImportType: <explanation>
     import {
         type SteamAppAchievement,
         SteamUserAchievement,
     } from "@project/lib/models";
-    import { m } from "$lib/paraglide/messages.js";
     import Badge from "./_badge.svelte";
-    import { localizeHref } from "$lib/paraglide/runtime";
 
     export let achievement: SteamUserAchievement | SteamAppAchievement;
 

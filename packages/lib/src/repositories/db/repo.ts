@@ -143,7 +143,11 @@ export class SteamCacheDBRepository {
                 .values({ ...item, lang })
                 .onConflictDoUpdate({
                     target: [apps.id],
-                    set: { updated_at: new Date(), data: sql`excluded.data`, lang: sql`excluded.lang` },
+                    set: {
+                        updated_at: new Date(),
+                        data: sql`excluded.data`,
+                        lang: sql`excluded.lang`,
+                    },
                 });
         }
     }

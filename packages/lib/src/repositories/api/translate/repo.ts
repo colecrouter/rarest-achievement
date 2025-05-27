@@ -1,7 +1,6 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import { Errable } from "../../../error";
-import { type APILanguageCode, type LanguageCode, getLanguageByCode } from "../lang";
+import type { LanguageCode } from "../lang";
 import type { TranslateClient } from "./client";
 
 export class TranslateRepository {

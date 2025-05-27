@@ -1,6 +1,6 @@
 import { isBypassCdnEnabled } from "../config/cdnConfig";
 import { replaceCdnUrl } from "../config/dev";
-import { getLanguageByAPICode, type APILanguageCode } from "../repositories";
+import { type APILanguageCode, getLanguageByAPICode } from "../repositories";
 import type { GetGlobalAchievementPercentagesForAppResponse } from "../repositories/api/steampowered/globalAchevement";
 import type { GetSchemaForGameResponse } from "../repositories/api/steampowered/schemaForGame";
 import type { SteamApp } from "./SteamApp";

@@ -1,9 +1,9 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import type { Breadcrumb } from "$lib/breadcrumbs";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import House from "@lucide/svelte/icons/house";
-    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         path: Breadcrumb[];

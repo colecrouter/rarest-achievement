@@ -2,10 +2,10 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import Shield from "@lucide/svelte/icons/shield";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
-    import { localizeHref } from "$lib/paraglide/runtime";
 
     let activeTab = $derived.by(() => {
         switch (page.url.searchParams.get("tab")) {

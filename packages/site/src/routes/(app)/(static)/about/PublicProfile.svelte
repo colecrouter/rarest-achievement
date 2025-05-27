@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { m } from "$lib/paraglide/messages.js";
     import Alert from "$lib/Alert.svelte";
-    import GlobeLock from "@lucide/svelte/icons/globe-lock";
+    import { m } from "$lib/paraglide/messages.js";
     import { localizeHref } from "$lib/paraglide/runtime";
+    import GlobeLock from "@lucide/svelte/icons/globe-lock";
 </script>
 
 <article>

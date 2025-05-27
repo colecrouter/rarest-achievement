@@ -1,11 +1,11 @@
 <script lang="ts">
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    import { m } from "$lib/paraglide/messages.js";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
     import type { SteamOwnedGame, SteamUser, SteamUserAchievement } from "lib";
     import FriendCard from "./_card.svelte";
     import Placeholder from "./_placeholder.svelte";
-    import { m } from "$lib/paraglide/messages.js";
 
     interface Props {
         data: MaybePromise<

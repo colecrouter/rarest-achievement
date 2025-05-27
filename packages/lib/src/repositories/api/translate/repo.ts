@@ -13,7 +13,7 @@ export class TranslateRepository {
     }
 
     async translateAchievements(achievements: Array<SteamAppAchievement | SteamUserAchievement>, locale: LanguageCode) {
-        const keys = achievements.map((ach) => `translate:${ach.app.id}:${locale}:${ach.name}`);
+        const keys = achievements.map((ach) => `translate:${ach.app.id}:${locale}:${ach.id}`);
         const cachedResults = await Promise.all(keys.map((key) => this.#cache.get(key)));
         const needsTranslation = achievements
             // Translate the description
@@ -40,7 +40,7 @@ export class TranslateRepository {
                     const ach = achievements[achIndex];
                     if (!ach) throw new Error("Achievement not found for translation index");
 
-                    const key = `translate:${ach.app.id}:${locale}:${ach.name}`;
+                    const key = `translate:${ach.app.id}:${locale}:${ach.id}`;
                     return this.#cache.put(key, translation.translatedText, {
                         expirationTtl: 60 * 60 * 24, // Cache for 24 hours
                     });

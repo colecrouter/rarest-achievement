@@ -46,7 +46,7 @@
                     <span>{user.displayName}</span>
                 </a>
                 <form
-                    action="/?/logout"
+                    action={localizeHref("/?/logout")}
                     method="post"
                     class="flex items-center gap-4"
                 >

@@ -1,4 +1,4 @@
-import { getLocale } from "$lib/paraglide/runtime.js";
+import { getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
 import {
     type APILanguageCode,
     EnhancedSteamRepository,
@@ -36,7 +36,7 @@ export const actions = {
     login: async ({ url }) => {
         const baseUrl = new URL("https://steamcommunity.com/openid/login");
 
-        const redirectUrl = new URL("/auth/steam/callback", url.origin);
+        const redirectUrl = localizeUrl(new URL("/auth/steam/callback", url.origin));
 
         // These parameters follow the OpenID 2.0 spec for Steam.
         const params = new URLSearchParams({
@@ -60,7 +60,7 @@ export const actions = {
         // Clear the Steam ID cookie to log out the user.
         cookies.delete("steamid", { path: "/" });
         // Optionally, redirect the user to a different page after logging out.
-        return redirect(302, "/");
+        return redirect(302, localizeHref("/"));
     },
 };
 
@@ -186,7 +186,7 @@ const getRareAchievements = async (locals: App.Locals) => {
     const achievements = results.map((m) => {
         const app = appsRes.find((a) => a.app?.steam_appid === m.app_id);
         if (!app?.app) throw new Error("Missing app");
-        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang);
+        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang, null); // Ignore translation for now, language should match due to the query
     });
 
     return achievements;

@@ -1,5 +1,5 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
-import type { SteamAppAchievement, SteamUserAchievement } from "@models";
+import type { SteamAppAchievement } from "@models";
 import type { LanguageCode } from "../lang";
 import type { TranslateClient } from "./client";
 
@@ -12,56 +12,75 @@ export class TranslateRepository {
         this.#cache = cache;
     }
 
-    async translateAchievements(achievements: Array<SteamAppAchievement | SteamUserAchievement>, locale: LanguageCode) {
-        const keys = achievements.map((ach) => `translate:${ach.app.id}:${locale}:${ach.id}`);
-        const cachedResults = await Promise.all(keys.map((key) => this.#cache.get(key)));
-        const needsTranslation = achievements
-            // Translate the description
-            .map((ach, index) => (cachedResults[index] ? null : [ach.description, index]))
-            .filter(Boolean) as [string, number][];
+    async translateAchievements(achievements: Array<SteamAppAchievement>, locale: LanguageCode) {
+        // Deduplicate achievements by app.id and id
+        const uniqueKey = (ach: SteamAppAchievement) => `${ach.app.id}:${ach.id}`;
+        const achievementGroups = Map.groupBy(achievements, uniqueKey);
+        const uniqueAchievements = new Map<string, SteamAppAchievement>(
+            achievementGroups
+                .entries()
+                // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                .map(([key, group]) => [key, group[0]!] as const),
+        );
 
-        // This will create a new array with the same length as `achievements`
-        const results = [...cachedResults];
+        // Build a map of KV keys for caching (only for unique achievements)
+        const keys = new Map<SteamAppAchievement, string>(
+            uniqueAchievements.values().map((ach) => [ach, `translate:${ach.app.id}:${locale}:${ach.id}`] as const),
+        );
 
-        // Translate only if there are descriptions that need translation
-        if (needsTranslation.length > 0) {
-            const res = await this.#client.translateText({
-                q: needsTranslation.map(([description]) => description),
-                target: locale,
-            });
+        // Load cached translations (only for unique achievements)
+        const cachedEntries = await Promise.all(
+            Array.from(uniqueAchievements.values()).map(
+                async (a) => [a, await this.#cache.get(keys.get(a) ?? "")] as const,
+            ),
+        );
 
-            if (!res.data.translations) throw new Error("No translations found in response");
+        const resultsBuffer = new Map<SteamAppAchievement, string | null>(cachedEntries);
 
-            // Cache the translations
-            await Promise.all(
-                res.data.translations.map((translation, index) => {
-                    const achIndex = needsTranslation[index]?.[1];
-                    if (achIndex === undefined) throw new Error("Translation index not found");
-                    const ach = achievements[achIndex];
-                    if (!ach) throw new Error("Achievement not found for translation index");
+        // Find which achievements need translation
+        const needsTranslation = resultsBuffer
+            .entries()
+            .filter(([a, cached]) => !cached && a.description)
+            .map(([a]) => a);
 
-                    const key = `translate:${ach.app.id}:${locale}:${ach.id}`;
-                    return this.#cache.put(key, translation.translatedText, {
-                        expirationTtl: 60 * 60 * 24, // Cache for 24 hours
-                    });
-                }),
-            );
+        // Skip if no achievements need translation
+        if (needsTranslation.some(Boolean)) {
+            // Build a list of strings to translate (deduplicated)
+            const stringsToTranslate = needsTranslation.map((a) => a.description ?? "").toArray();
 
-            // Merge translations back into the original array using the indices
-            const results = [...cachedResults];
-            for (const [index, translation] of res.data.translations.map((t) => t.translatedText).entries()) {
-                const achIndex = needsTranslation[index]?.[1];
-                if (achIndex === undefined) throw new Error("Achievement index not found for translation");
-                results[achIndex] = translation;
+            // Translate, cache, and update achievements
+            try {
+                const res = await this.#client.translateText({
+                    q: stringsToTranslate,
+                    target: locale,
+                });
+                if (!res.data.translations) throw new Error("No translations found in response");
+
+                await Promise.all(
+                    needsTranslation.map((ach, index) => {
+                        const translation = res.data.translations[index]?.translatedText ?? null;
+                        const key = keys.get(ach);
+                        if (!key || !translation) throw new Error("Missing key or translation");
+
+                        // Update the cached results
+                        resultsBuffer.set(ach, translation);
+
+                        // Cache the translations
+                        if (translation) return this.#cache.put(key, translation);
+                        return Promise.resolve();
+                    }),
+                );
+            } catch (error) {
+                console.error("Error translating achievements:", error);
             }
         }
 
-        // Update the original achievements array with translated description & updated locale
-        for (let i = 0; i < achievements.length; i++) {
-            const ach = achievements[i];
-            if (!ach) continue;
-
-            ach.translation = results[i] ?? null;
+        // Assign translations directly onto each original achievement
+        for (const ach of achievements) {
+            const uniqueAch = uniqueAchievements.get(uniqueKey(ach));
+            if (!uniqueAch) continue;
+            const translation = resultsBuffer.get(uniqueAch) ?? null;
+            ach.translation = translation;
         }
     }
 }

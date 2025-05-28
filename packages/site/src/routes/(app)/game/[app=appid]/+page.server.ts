@@ -4,6 +4,7 @@ import {
     EnhancedSteamRepository,
     Errable,
     type SteamAppAchievement,
+    friends,
     getLanguageByCode,
 } from "@project/lib";
 

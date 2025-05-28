@@ -140,20 +140,20 @@ export class EnhancedSteamRepository {
         );
 
         // For any values where meta is null, get the English version of the achievements
-        const missingIds = new Array<number>();
+        const missingIds = new Set<number>();
         for (const [gameId, achievementsMap] of gameAchievements) {
             for (const [, { meta }] of achievementsMap) {
                 if (!meta) {
-                    missingIds.push(gameId);
+                    missingIds.add(gameId);
                     break; // No need to check further achievements for this game
                 }
             }
         }
 
         // If there are any missing IDs, fetch the English achievements
-        if (missingIds.length > 0) {
+        if (missingIds.size > 0) {
             const { data: englishGameAchievements } = await fetchAndUpsert(
-                [missingIds],
+                [[...missingIds]],
                 (_) => this.#cacheRepository.getGameAchievements(_, "english"),
                 (_) => this.#cacheRepository.putGameAchievements(_, "english"),
                 (_) => this.#apiRepository.getGameAchievements(_, "english"),
@@ -172,7 +172,6 @@ export class EnhancedSteamRepository {
         }
 
         const achievements = new Map<number, Map<string, Map<string, SteamUserAchievement>>>();
-        // New loop: use gameAchievements as base and iterate over each provided user.
         for (const [gameId, gameAchMap] of gameAchievements) {
             const gameData = newGames.find((game) => game.id === gameId);
             if (!gameData) continue;
@@ -187,7 +186,7 @@ export class EnhancedSteamRepository {
                     if (!meta) throw new Error("Meta somehow null at this point");
 
                     // If we got the English achievements, we need to set the language to English.
-                    const newLang = missingIds.includes(gameId) ? "english" : lang;
+                    const newLang = missingIds.has(gameId) ? "english" : lang;
 
                     // Check user's achievement data; pass null if missing.
                     const userAchData = userAchievements.get(gameId)?.get(u)?.get(achievementId) || null;
@@ -211,7 +210,7 @@ export class EnhancedSteamRepository {
                 .values()
                 .map((achievements) => [...achievements.values().map((u) => [...u.values()])])
                 .flatMap((achievements) => achievements.flat())
-                .filter((achievement) => achievement.language !== lang)
+                .filter((achievement) => achievement.language !== locale)
                 .toArray();
 
             await this.#translateRepository.translateAchievements(needingTranslation, locale);
@@ -288,7 +287,7 @@ export class EnhancedSteamRepository {
             }
         }
 
-        const mappedGameAchievements = new Map<number, Map<string, SteamAppAchievement>>();
+        const achievements = new Map<number, Map<string, SteamAppAchievement>>();
         for (const [gameId, achievementsMap] of gameAchievements) {
             const gameAchievementsMap = new Map<string, SteamAppAchievement>();
 
@@ -304,15 +303,15 @@ export class EnhancedSteamRepository {
                 const gameAchievement = new SteamAppAchievement(gameData, meta, global, newLang, null);
                 gameAchievementsMap.set(achievementId, gameAchievement);
             }
-            if (gameData) mappedGameAchievements.set(gameId, gameAchievementsMap);
+            if (gameData) achievements.set(gameId, gameAchievementsMap);
         }
 
         try {
             // Manually translate the achievements if the language is not English
-            const needingTranslation = mappedGameAchievements
+            const needingTranslation = achievements
                 .values()
                 .flatMap((achievements) => [...achievements.values()])
-                .filter((achievement) => achievement.language !== lang)
+                .filter((achievement) => achievement.language !== locale)
                 .toArray();
 
             await this.#translateRepository.translateAchievements(needingTranslation, locale);
@@ -320,7 +319,7 @@ export class EnhancedSteamRepository {
             console.error("Error translating achievements:", err);
         }
 
-        return new Errable(mappedGameAchievements, err);
+        return new Errable(achievements, err);
     }
 
     async getFriends(user: SteamUser[]) {

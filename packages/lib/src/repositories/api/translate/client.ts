@@ -19,7 +19,7 @@ export class TranslateClient {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(req),
         });
-        if (!res.ok) throw new Error(`translateText failed ${res.statusText}`);
+        if (!res.ok) throw new Error(`translateText failed ${res.statusText}: ${JSON.stringify(req)}`);
         return res.json();
     }
 

@@ -1,13 +1,4 @@
-export interface LanguageEntry {
-    // The language's display name.
-    name: string;
-    // Store code (store.steampowered.com)
-    storeCode: string;
-    // API code (api.steampowered.com)
-    apiCode: string;
-}
-
-export const Languages = [
+const Languages = [
     { name: "Arabic", storeCode: "ar", apiCode: "arabic" },
     { name: "Bulgarian", storeCode: "bg", apiCode: "bulgarian" },
     { name: "Chinese (Simplified)", storeCode: "zh-CN", apiCode: "schinese" },
@@ -37,10 +28,14 @@ export const Languages = [
     { name: "Turkish", storeCode: "tr", apiCode: "turkish" },
     { name: "Ukrainian", storeCode: "uk", apiCode: "ukrainian" },
     { name: "Vietnamese", storeCode: "vn", apiCode: "vietnamese" },
-] as const satisfies ReadonlyArray<LanguageEntry>;
+] as const;
+
+// Inferred LanguageEntry now preserves each literal type.
+export type LanguageEntry = (typeof Languages)[number];
 
 export type APILanguageCode = (typeof Languages)[number]["apiCode"];
 export type LanguageCode = (typeof Languages)[number]["storeCode"];
+
 export const getLanguageByAPICode = (code: APILanguageCode): LanguageEntry | undefined => {
     return Languages.find((lang) => lang.apiCode === code);
 };

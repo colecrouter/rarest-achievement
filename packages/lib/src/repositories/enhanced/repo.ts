@@ -210,8 +210,7 @@ export class EnhancedSteamRepository {
                 .values()
                 .map((achievements) => [...achievements.values().map((u) => [...u.values()])])
                 .flatMap((achievements) => achievements.flat())
-                .filter((achievement) => achievement.language !== locale)
-                .toArray();
+                .filter((achievement) => achievement.language !== locale);
 
             await this.#translateRepository.translateAchievements(needingTranslation, locale);
         } catch (err) {
@@ -310,9 +309,9 @@ export class EnhancedSteamRepository {
             // Manually translate the achievements if the language is not English
             const needingTranslation = achievements
                 .values()
-                .flatMap((achievements) => [...achievements.values()])
-                .filter((achievement) => achievement.language !== locale)
-                .toArray();
+                .map((achievements) => [...achievements.values()])
+                .flatMap((achievements) => achievements.flat())
+                .filter((achievement) => achievement.language !== locale);
 
             await this.#translateRepository.translateAchievements(needingTranslation, locale);
         } catch (err) {

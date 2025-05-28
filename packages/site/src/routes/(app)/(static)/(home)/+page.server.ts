@@ -1,4 +1,4 @@
-import { getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
+import { getLocale, localizeHref, localizeUrl, type Locale } from "$lib/paraglide/runtime.js";
 import {
     type APILanguageCode,
     EnhancedSteamRepository,
@@ -65,14 +65,17 @@ export const actions = {
 };
 
 export const load = async ({ locals }) => {
+    // Need to get locale before streaming, or else errors ensue
+    const locale = getLocale();
+
     return {
-        showcase2: await getShowcaseAchievements(locals),
+        showcase2: await getShowcaseAchievements(locals, locale),
         stats: await getStats(locals),
-        featuredAchievements: await getRareAchievements(locals),
+        featuredAchievements: await getRareAchievements(locals, locale),
     };
 };
 
-const getShowcaseAchievements = async (locals: App.Locals) => {
+const getShowcaseAchievements = async (locals: App.Locals, locale: Locale) => {
     const showcase2IDs = [
         { game: 252950, achievement: "Spectacular" },
         { game: 367520, achievement: "STEELSOUL_COMPLETION" },
@@ -81,7 +84,6 @@ const getShowcaseAchievements = async (locals: App.Locals) => {
 
     // Fetch the achievements for the showcase cards
     const repo = new EnhancedSteamRepository(locals);
-    const locale = getLocale();
     const { data: showcase2Apps } = await repo.getApps(
         showcase2IDs.map((m) => m.game),
         locale,
@@ -120,8 +122,7 @@ const getStats = async (locals: App.Locals) => {
     };
 };
 
-const getRareAchievements = async (locals: App.Locals) => {
-    const locale = getLocale();
+const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
     const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
 
     // Pick 20 of the rarest achievements, then pick 3 random ones

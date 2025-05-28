@@ -12,7 +12,9 @@ export class TranslateRepository {
         this.#cache = cache;
     }
 
-    async translateAchievements(achievements: Array<SteamAppAchievement>, locale: LanguageCode) {
+    async translateAchievements(ach: Iterable<SteamAppAchievement>, locale: LanguageCode) {
+        const achievements = Array.from(ach);
+
         // Deduplicate achievements by app.id and id
         const uniqueKey = (ach: SteamAppAchievement) => `${ach.app.id}:${ach.id}`;
         const achievementGroups = Map.groupBy(achievements, uniqueKey);
@@ -22,11 +24,13 @@ export class TranslateRepository {
                 // biome-ignore lint/style/noNonNullAssertion: <explanation>
                 .map(([key, group]) => [key, group[0]!] as const),
         );
+        // console.log("unique achievements", uniqueAchievements.entries().toArray());
 
         // Build a map of KV keys for caching (only for unique achievements)
         const keys = new Map<SteamAppAchievement, string>(
             uniqueAchievements.values().map((ach) => [ach, `translate:${ach.app.id}:${locale}:${ach.id}`] as const),
         );
+        // console.log("keys", keys.entries().toArray());
 
         // Load cached translations (only for unique achievements)
         const cachedEntries = await Promise.all(
@@ -34,6 +38,7 @@ export class TranslateRepository {
                 async (a) => [a, await this.#cache.get(keys.get(a) ?? "")] as const,
             ),
         );
+        // console.log("cached entries", cachedEntries);
 
         const resultsBuffer = new Map<SteamAppAchievement, string | null>(cachedEntries);
 
@@ -41,12 +46,15 @@ export class TranslateRepository {
         const needsTranslation = resultsBuffer
             .entries()
             .filter(([a, cached]) => !cached && a.description)
-            .map(([a]) => a);
+            .map(([a]) => a)
+            .toArray();
 
         // Skip if no achievements need translation
+        // console.log("needs translation", needsTranslation);
         if (needsTranslation.some(Boolean)) {
             // Build a list of strings to translate (deduplicated)
-            const stringsToTranslate = needsTranslation.map((a) => a.description ?? "").toArray();
+            const stringsToTranslate = needsTranslation.map((a) => a.description ?? "");
+            // console.log("to translate", stringsToTranslate);
 
             // Translate, cache, and update achievements
             try {

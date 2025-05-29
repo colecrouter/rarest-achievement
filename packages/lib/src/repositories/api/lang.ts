@@ -12,6 +12,7 @@ const Languages = [
     { name: "German", storeCode: "de", apiCode: "german" },
     // { name: "Greek", storeCode: "el", apiCode: "greek" },
     // { name: "Hungarian", storeCode: "hu", apiCode: "hungarian" },
+    { name: "Indonesian", storeCode: "id", apiCode: "indonesian" },
     // { name: "Italian", storeCode: "it", apiCode: "italian" },
     { name: "Japanese", storeCode: "ja", apiCode: "japanese" },
     { name: "Korean", storeCode: "ko", apiCode: "koreana" },

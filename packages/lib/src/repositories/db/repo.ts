@@ -345,23 +345,27 @@ export class SteamCacheDBRepository {
         }));
 
         for (const row of flattenedStats) {
-            const appId = row.achievements_stats.app_id;
-            const appMeta = row.achievements_meta?.data ?? null; // Could be null if no localization exists
+            const gameId = row.achievements_stats.app_id;
+            const appMeta = row.achievements_meta?.data ?? null; // Could be null if no localization
             const globalStats = row.achievements_stats.data ?? [];
-            const gameId = appId;
+
+            // If we have a localization array but one or more achievements lack a meta entry, skip entire game
+            if (appMeta !== null) {
+                const missing = globalStats.some((stat) => !appMeta.find((m) => m.name === stat.name));
+                if (missing) {
+                    continue;
+                }
+            }
+
             if (!gameOutput.has(gameId)) {
                 gameOutput.set(gameId, new Map());
             }
             const gameMap = gameOutput.get(gameId);
+
             for (const achievement of globalStats) {
                 const achievementId = achievement.name;
-                const meta = appMeta?.find((m) => m.name === achievementId) ?? null;
-                // if (!meta) continue;
-
-                gameMap?.set(achievementId, {
-                    meta,
-                    global: achievement,
-                });
+                const meta = appMeta?.find((m) => m.name === achievementId) ?? null; // Null if lacking localization entry
+                gameMap?.set(achievementId, { meta, global: achievement });
             }
         }
 

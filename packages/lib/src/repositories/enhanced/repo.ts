@@ -166,6 +166,8 @@ export class EnhancedSteamRepository {
                 if (!existingMap) continue;
 
                 for (const [achievementId, achievement] of achievementsMap) {
+                    if (!achievement.meta)
+                        console.warn(`Achievement ${achievementId} for game ${gameId} has no meta data.`);
                     existingMap.set(achievementId, achievement);
                 }
             }

@@ -247,6 +247,9 @@
                     <span>
                         {app.releaseDate?.toLocaleDateString(
                             browser ? undefined : getLocale(),
+                            {
+                                dateStyle: "long",
+                            },
                         ) ?? "Unreleased"}
                     </span>
                 </div>
@@ -401,6 +404,9 @@
                     <div>
                         {app.releaseDate?.toLocaleDateString(
                             browser ? undefined : getLocale(),
+                            {
+                                dateStyle: "long",
+                            },
                         ) ?? "Unreleased"}
                     </div>
                 </div>

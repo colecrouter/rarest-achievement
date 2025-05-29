@@ -1,54 +1,67 @@
+import { type Locale, isValid, parse } from "date-fns";
+import { de, enUS, es, fr, id, ja, ko, pl, ptBR, ru, th, tr, uk, zhCN, zhTW } from "date-fns/locale";
 import type { LanguageCode } from "./repositories";
 
-// cache monthMaps per‐locale
-const MONTH_MAPS = new Map();
-
-function getMonthMap(locale: LanguageCode) {
-    if (MONTH_MAPS.has(locale)) return MONTH_MAPS.get(locale);
-
-    // build "short" month-name → month index map
-    const fmt = new Intl.DateTimeFormat(locale, { month: "short" });
-    const monthMap = Array.from({ length: 12 }, (_, i) => {
-        const name = fmt.format(new Date(2000, i, 1));
-        return [name.toLowerCase(), i];
-    }).reduce((m, [name, i]) => {
-        m.set(name, i);
-        return m;
-    }, new Map());
-
-    MONTH_MAPS.set(locale, monthMap);
-    return monthMap;
-}
-
+// Optionally keep normalizeDigits if needed
 function normalizeDigits(str: string) {
     // simple Arabic-Indic → Latin
     return str.replace(/[\u0660-\u0669]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0x0660 + 0x30));
 }
 
-export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
-    const normalizedDateStr = normalizeDigits(dateStr.replace(/\u00A0/g, " "));
-    const trimmed = normalizedDateStr.trim();
+// mapping LanguageCode to date-fns locales
+const localeMap: Record<string, Locale> = {
+    de,
+    en: enUS,
+    es,
+    fr,
+    id,
+    ja,
+    ko,
+    pl,
+    "pt-BR": ptBR,
+    ru,
+    th,
+    tr,
+    uk,
+    "zh-CN": zhCN,
+    "zh-TW": zhTW,
+};
 
-    // support Japanese "YYYY年M月D日"
-    if (locale === "ja") {
-        const match = trimmed.match(/^(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日$/u);
-        if (match) {
-            const [, yearStr, monthStr, dayStr] = match as [string, string, string, string];
-            return new Date(+yearStr, +monthStr - 1, +dayStr);
-        }
+// formats per locale; add or adjust formats as needed
+const formatMap: Record<string, string[]> = {
+    en: ["d MMM yyyy", "d MMM, yyyy"],
+    ja: ["yyyy年M月d日"],
+    de: ["d. MMM yyyy"],
+    ru: ["d MMM yyyy", "d MMM yyyy 'г.'"],
+    uk: ["d MMM yyyy"],
+    es: ["d MMM yyyy"],
+    fr: ["d MMM yyyy"],
+    id: ["d MMM yyyy"],
+    ko: ["d MMM yyyy", "yyyy년 M월 d일"],
+    pl: ["d MMMM yyyy", "d MMM yyyy"],
+    "pt-BR": ["d MMM yyyy", "d/MMM/yyyy", "d/MMM'.'yyyy"],
+    th: ["d MMM yyyy"],
+    tr: ["d MMM yyyy"],
+    "zh-CN": ["yyyy年M月d日", "yyyy 年 M 月 d 日"], // updated for zh-CN
+    "zh-TW": ["yyyy年M月d日", "yyyy 年 M 月 d 日"], // updated for zh-TW
+};
+
+export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
+    let normalizedDateStr = normalizeDigits(dateStr.replace(/\u00A0/g, " "));
+    let trimmed = normalizedDateStr.trim();
+
+    // Pre‑normalize "pt-BR" date strings to remove the dot after month abbreviations.
+    if (locale === "pt-BR") {
+        trimmed = trimmed.replace(/\/([a-z]{3})\./i, "/$1");
     }
 
-    // 2) match "D MonName YYYY"
-    const match = trimmed.match(/^(\d{1,2})\s+(.+?)\s+(\d{4})$/u);
-    if (!match) throw new Error(`Unrecognized date "${dateStr}" for ${locale}`);
+    const formats = formatMap[locale] || ["d MMM yyyy"];
+    const dfnsLocale = localeMap[locale] || enUS;
 
-    const [, dayStr, monthName, yearStr] = match as [string, string, string, string];
-    if (!monthName) throw new Error(`Unrecognized month name in date "${dateStr}" for ${locale}`);
-    // Clean trailing comma from monthName
-    const cleanedMonthName = monthName.replace(/,$/, "").toLowerCase();
-    const monthMap = getMonthMap(locale);
-    const monthIndex = monthMap.get(cleanedMonthName);
-    if (monthIndex == null) throw new Error(`Unknown month "${monthName}"`);
+    for (const fmt of formats) {
+        const parsed = parse(trimmed, fmt, new Date(), { locale: dfnsLocale });
+        if (isValid(parsed)) return parsed;
+    }
 
-    return new Date(+yearStr, monthIndex, +dayStr);
+    throw new Error(`Unrecognized date "${dateStr}" for ${locale}`);
 }

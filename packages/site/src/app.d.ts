@@ -1,16 +1,24 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
-import type { ProjectDB, SteamAuthenticatedAPIClient, SteamStoreAPIClient, SteamUser } from "@project/lib";
+import type {
+    ProjectDB,
+    SteamAuthenticatedAPIClient,
+    SteamStoreAPIClient,
+    SteamUser,
+    TranslateClient,
+} from "@project/lib";
 
 // for information about these interfaces
 declare global {
     namespace App {
         // interface Error {}
         interface Locals {
+            translateClient: TranslateClient;
             steamClient: SteamAuthenticatedAPIClient;
             steamStoreClient: SteamStoreAPIClient;
             steamUser: SteamUser | null;
             steamCacheDB: ProjectDB;
+            miscCache: KVNamespace;
         }
         // interface PageData {}
         // interface PageState {}
@@ -19,6 +27,7 @@ declare global {
                 /** Used to cache Steam API responses */
                 STEAM_CACHE: KVNamespace;
                 DB: D1Database;
+                GOOGLE_PROJECT_ID: string;
             };
         }
     }

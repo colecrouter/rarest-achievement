@@ -1,10 +1,11 @@
 import { dev } from "$app/environment";
-import { STEAM_API_KEY } from "$env/static/private";
+import { GOOGLE_API_KEY, STEAM_API_KEY } from "$env/static/private";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 import {
     EnhancedSteamRepository,
     SteamAuthenticatedAPIClient,
     SteamStoreAPIClient,
+    TranslateClient,
     setBypassCdnEnabled,
 } from "@project/lib";
 import { handleErrorWithSentry, initCloudflareSentryHandle, sentryHandle } from "@sentry/sveltekit";
@@ -46,6 +47,10 @@ const authHandle: Handle = async ({ event, resolve }) => {
             event.locals.steamUser = user;
         }
     }
+
+    // Initialize the TranslateClient
+    event.locals.translateClient = new TranslateClient(GOOGLE_API_KEY);
+    event.locals.miscCache = event.platform.env.STEAM_CACHE;
 
     return resolve(event);
 };

@@ -1,4 +1,6 @@
+import { type Locale, getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
 import {
+    type APILanguageCode,
     EnhancedSteamRepository,
     type SteamAchievementRawGlobalStats,
     type SteamAchievementRawMeta,
@@ -7,6 +9,7 @@ import {
     type SteamID,
     achievementsStats,
     apps,
+    getLanguageByCode,
     resolveSteamID,
     userScores,
 } from "@project/lib";
@@ -33,7 +36,7 @@ export const actions = {
     login: async ({ url }) => {
         const baseUrl = new URL("https://steamcommunity.com/openid/login");
 
-        const redirectUrl = new URL("/auth/steam/callback", url.origin);
+        const redirectUrl = localizeUrl(new URL("/auth/steam/callback", url.origin));
 
         // These parameters follow the OpenID 2.0 spec for Steam.
         const params = new URLSearchParams({
@@ -57,29 +60,36 @@ export const actions = {
         // Clear the Steam ID cookie to log out the user.
         cookies.delete("steamid", { path: "/" });
         // Optionally, redirect the user to a different page after logging out.
-        return redirect(302, "/");
+        return redirect(302, localizeHref("/"));
     },
 };
 
 export const load = async ({ locals }) => {
+    // Need to get locale before streaming, or else errors ensue
+    const locale = getLocale();
+
     return {
-        showcase2: await getShowcaseAchievements(locals),
+        showcase2: await getShowcaseAchievements(locals, locale),
         stats: await getStats(locals),
-        featuredAchievements: await getRareAchievements(locals),
+        featuredAchievements: await getRareAchievements(locals, locale),
     };
 };
 
-const getShowcaseAchievements = async (locals: App.Locals) => {
+const getShowcaseAchievements = async (locals: App.Locals, locale: Locale) => {
     const showcase2IDs = [
         { game: 252950, achievement: "Spectacular" },
-        { game: 105600, achievement: "PURIFY_ENTIRE_WORLD" },
+        { game: 367520, achievement: "STEELSOUL_COMPLETION" },
         { game: 1085660, achievement: "ACH_23" },
     ];
 
     // Fetch the achievements for the showcase cards
     const repo = new EnhancedSteamRepository(locals);
-    const { data: showcase2Apps } = await repo.getApps(showcase2IDs.map((m) => m.game));
-    const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()]);
+    const { data: showcase2Apps } = await repo.getApps(
+        showcase2IDs.map((m) => m.game),
+        locale,
+    );
+    const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()], locale);
+
     const showcase2 = showcase2IDs
         .map(({ game, achievement }) => showcase2Achievements.get(game)?.get(achievement))
         .filter((m) => !!m);
@@ -112,12 +122,14 @@ const getStats = async (locals: App.Locals) => {
     };
 };
 
-const getRareAchievements = async (locals: App.Locals) => {
+const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
+    const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
+
     // Pick 20 of the rarest achievements, then pick 3 random ones
     const rarestX = 100;
 
     const query = sql`
-        WITH RankedAchievements AS (
+    WITH RankedAchievements AS (
         SELECT 
             achievements_stats.app_id,
             j.value,
@@ -141,20 +153,22 @@ const getRareAchievements = async (locals: App.Locals) => {
         json_extract(meta.value, '$.description') AS description,
         json_extract(meta.value, '$.icon') AS icon,
         json_extract(meta.value, '$.icongray') AS icongray
-        FROM (
+    FROM (
         -- Only take the top 1 (or top 2, etc.) rare achievement per game.
         SELECT app_id, value
         FROM RankedAchievements
         WHERE rn = 1
         ORDER BY percent
         LIMIT ${rarestX}
-        ) AS rare
-        JOIN achievements_meta
+    ) AS rare
+    JOIN achievements_meta
         ON achievements_meta.app_id = rare.app_id
-        JOIN json_each(achievements_meta.data) AS meta
+    JOIN json_each(achievements_meta.data) AS meta
         ON json_extract(meta.value, '$.name') = json_extract(rare.value, '$.name')
-        ORDER BY RANDOM()
-        LIMIT 3;
+    -- Using lang field from achievements_meta
+    WHERE achievements_meta.lang = ${lang}
+    ORDER BY RANDOM()
+    LIMIT 3;
   `;
 
     const res = await locals.steamCacheDB.run(query);
@@ -173,7 +187,7 @@ const getRareAchievements = async (locals: App.Locals) => {
     const achievements = results.map((m) => {
         const app = appsRes.find((a) => a.app?.steam_appid === m.app_id);
         if (!app?.app) throw new Error("Missing app");
-        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0), m, m, "english");
+        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang, null); // Ignore translation for now, language should match due to the query
     });
 
     return achievements;

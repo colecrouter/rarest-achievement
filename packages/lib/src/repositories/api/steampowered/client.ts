@@ -1,6 +1,6 @@
 import type { GetFriendsListQuery, GetFriendsListResponse } from "../../api/steampowered/friends";
 import { BaseSteamAPIClient } from "../baseClient";
-import type { Language } from "../lang";
+import type { APILanguageCode } from "../lang";
 import type {
     GetGlobalAchievementPercentagesForAppQuery,
     GetGlobalAchievementPercentagesForAppResponse,
@@ -45,7 +45,7 @@ export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
      * Private: 403 - {playerstats: {success: false, error: "Profile is not public"}}
      * Missing: 403 - {playerstats: {success: false, error:"Invalid SteamID"}}}
      */
-    async getPlayerAchievements<T extends Language | undefined>(options: GetPlayerAchievementsQuery<T>) {
+    async getPlayerAchievements<T extends APILanguageCode | undefined>(options: GetPlayerAchievementsQuery<T>) {
         const url = new URL("https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1");
         url.searchParams.set("key", this.#key);
         SteamAuthenticatedAPIClient.applyOptions(url, options);

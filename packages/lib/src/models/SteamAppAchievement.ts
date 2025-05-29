@@ -1,5 +1,6 @@
 import { isBypassCdnEnabled } from "../config/cdnConfig";
 import { replaceCdnUrl } from "../config/dev";
+import { type APILanguageCode, getLanguageByAPICode } from "../repositories";
 import type { GetGlobalAchievementPercentagesForAppResponse } from "../repositories/api/steampowered/globalAchevement";
 import type { GetSchemaForGameResponse } from "../repositories/api/steampowered/schemaForGame";
 import type { SteamApp } from "./SteamApp";
@@ -15,17 +16,25 @@ export class SteamAppAchievement {
     #app: SteamApp;
     #meta: SteamAchievementRawMeta;
     #globalStats: SteamAchievementRawGlobalStats;
-    #lang: string;
+    #lang: APILanguageCode;
+    translation: string | null;
 
-    constructor(app: SteamApp, stats: SteamAchievementRawMeta, global: SteamAchievementRawGlobalStats, lang: string) {
+    constructor(
+        app: SteamApp,
+        stats: SteamAchievementRawMeta,
+        global: SteamAchievementRawGlobalStats,
+        lang: APILanguageCode,
+        translation: string | null,
+    ) {
         this.#app = app;
         this.#meta = stats;
         this.#globalStats = global;
         this.#lang = lang;
+        this.translation = translation;
     }
 
     serialize() {
-        return [this.#app, this.#meta, this.#globalStats, this.#lang] satisfies ConstructorParameters<
+        return [this.#app, this.#meta, this.#globalStats, this.#lang, this.translation] satisfies ConstructorParameters<
             typeof SteamAppAchievement
         >;
     }
@@ -72,5 +81,9 @@ export class SteamAppAchievement {
 
     get hidden() {
         return !!this.#meta.hidden;
+    }
+
+    get language() {
+        return getLanguageByAPICode(this.#lang)?.storeCode;
     }
 }

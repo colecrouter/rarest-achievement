@@ -1,3 +1,4 @@
+import { localizeHref } from "$lib/paraglide/runtime.js";
 import { error, redirect } from "@sveltejs/kit";
 
 export const GET = async ({ url, cookies }) => {
@@ -39,5 +40,5 @@ export const GET = async ({ url, cookies }) => {
         // Add additional cookie configurations (e.g., secure, httpOnly) as needed.
     });
 
-    redirect(302, `/user/${steamId}`); // Redirect to the user page with the Steam ID.
+    redirect(302, localizeHref(`/user/${steamId}`)); // Redirect to the user page with the Steam ID.
 };

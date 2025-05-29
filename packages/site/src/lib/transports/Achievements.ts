@@ -58,11 +58,11 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 
         for (const [appParams, achievements] of value) {
             if (!appParams) continue;
-            const [id, details, players] = appParams;
-            const app = new SteamApp(id, details, players);
+            const [id, details, players, lang] = appParams;
+            const app = new SteamApp(id, details, players, lang);
             for (const params of achievements) {
-                const [meta, global, lang] = params;
-                const achievement = new SteamAppAchievement(app, meta, global, lang);
+                const [meta, global, lang, translation] = params;
+                const achievement = new SteamAppAchievement(app, meta, global, lang, translation);
                 apps.push(achievement);
             }
         }
@@ -74,14 +74,22 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
         const apps = new Array<SteamUserAchievement>();
 
         for (const [appParams, achievements] of value) {
-            const [id, details, players] = appParams;
-            const app = new SteamApp(id, details, players);
+            const [id, details, players, lang] = appParams;
+            const app = new SteamApp(id, details, players, lang);
             for (const params of achievements) {
-                const [meta, global, lang, steamid, userStats] = params;
+                const [meta, global, lang, translation, steamid, userStats] = params;
                 // Don't check for truthiness of userStats! It can be null
                 // I made that mistake before...
                 if (!steamid || userStats === undefined) continue;
-                const achievement = new SteamUserAchievement(app, meta, global, lang, steamid, userStats ?? null);
+                const achievement = new SteamUserAchievement(
+                    app,
+                    meta,
+                    global,
+                    lang,
+                    translation,
+                    steamid,
+                    userStats ?? null,
+                );
                 apps.push(achievement);
             }
         }

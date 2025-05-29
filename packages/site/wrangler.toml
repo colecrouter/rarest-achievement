@@ -13,10 +13,10 @@ id = "a53fbe0165da4c21936a55c519e5b6a5"
 binding = "STEAM_CACHE"
 
 [vars]
-NODE_VERSION = "22"
+NODE_VERSION = "23"
 
 [env.production.vars]
-NODE_VERSION = "22"
+NODE_VERSION = "23"
 
 [[d1_databases]]
 binding = "DB"

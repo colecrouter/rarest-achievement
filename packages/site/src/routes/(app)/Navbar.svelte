@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import LogOut from "@lucide/svelte/icons/log-out";
     import User from "@lucide/svelte/icons/user";
     import type { SteamUser } from "@project/lib";
@@ -16,10 +18,10 @@
         class="d:gap-4 container mx-auto grid grid-flow-col grid-cols-[auto,1fr,auto] items-center gap-2 px-4 py-4 md:flex md:justify-between"
     >
         <!-- Logo and title -->
-        <a href="/" class="flex items-center gap-2 md:pr-4">
+        <a href={localizeHref("/")} class="flex items-center gap-2 md:pr-4">
             <div class="logo bg-primary-500"></div>
             <h1 class="relative hidden text-xl font-bold md:block">
-                Steam Vault
+                {m.navbarCompanyName()}
                 <span
                     class="badge text-primary-500 badge-icon preset-outlined-primary-500 heading-line-height absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
                 >
@@ -37,14 +39,14 @@
         <div class="flex items-center justify-end gap-4">
             {#if user}
                 <a
-                    href="/user/{user.id}"
+                    href={localizeHref(`/user/${user.id}`)}
                     class="btn btn-sm preset-outlined-primary-500"
                 >
                     <User class="mr-2 h-6 w-6" />
                     <span>{user.displayName}</span>
                 </a>
                 <form
-                    action="/?/logout"
+                    action={localizeHref("/?/logout")}
                     method="post"
                     class="flex items-center gap-4"
                 >
@@ -53,7 +55,7 @@
                         type="submit"
                     >
                         <LogOut class="my-1 h-4 w-4" />
-                        <span hidden> Logout </span>
+                        <span hidden>{m.navbarLogout()}</span>
                     </button>
                 </form>
             {:else}
@@ -67,8 +69,10 @@
                         type="submit"
                     >
                         <div>
-                            Login
-                            <span class="hidden md:inline"> with Steam </span>
+                            {m.navbarLogin()}
+                            <span class="hidden md:inline">
+                                {m.navbarLoginWithSteamHidden()}
+                            </span>
                         </div>
                         <svg
                             role="img"

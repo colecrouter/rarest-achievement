@@ -7,10 +7,10 @@ import type {
     SteamUserAchievementRawStats,
     SteamUserRaw,
 } from "../../models";
-import type { Language } from "../../repositories/api/lang";
 import type { SteamAuthenticatedAPIClient } from "../../repositories/api/steampowered/client";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import { SteamStoreAPIClient } from "../../repositories/api/store/client";
+import type { APILanguageCode } from "./lang";
 
 /**
  * Repository for fetching data from the Steam API.
@@ -26,7 +26,7 @@ export class SteamAPIRepository {
         this.#apiClient = steamClient;
     }
 
-    async getApps(app_id: number[], lang: Language = "english") {
+    async getApps(app_id: number[], lang: APILanguageCode) {
         const data = new Map<number, SteamAppRaw | null>();
         let error: Error | null = null;
 
@@ -135,13 +135,13 @@ export class SteamAPIRepository {
         return new Errable(data, error);
     }
 
-    async getGameAchievements(game_id: number[], lang: Language = "english") {
+    async getGameAchievements(game_id: number[], lang: APILanguageCode) {
         const data = new Map<
             number,
             Map<
                 string,
                 {
-                    meta: SteamAchievementRawMeta;
+                    meta: SteamAchievementRawMeta | null;
                     global: SteamAchievementRawGlobalStats;
                 }
             >
@@ -149,22 +149,52 @@ export class SteamAPIRepository {
         let error: Error | null = null;
 
         try {
-            const validSchemas = new Map<number, Map<string, SteamAchievementRawMeta>>();
-            await Promise.all(
-                game_id.map(async (id) => {
-                    const schema = await this.#apiClient.getSchemaForGame({
-                        appid: id,
-                        l: lang,
-                    });
-                    if (!schema) return;
-                    const achievements = schema.game.availableGameStats?.achievements;
-                    if (!achievements) return;
-                    validSchemas.set(id, new Map<string, SteamAchievementRawMeta>());
-                    for (const achievement of achievements) {
-                        validSchemas.get(id)?.set(achievement.name, achievement);
+            const validSchemas = new Map<number, Map<string, SteamAchievementRawMeta | null>>();
+            // It's going to get funky here
+            // Steam unhelpfully returns the English schema if the requested language is not available
+            // So we need to fetch both the English schema and the native language schema, to compare them
+            const [englishRes, nativeRes] = await Promise.all([
+                lang !== "english"
+                    ? Promise.all(
+                          game_id.map((id) =>
+                              this.#apiClient.getSchemaForGame({
+                                  appid: id,
+                                  l: "english",
+                              }),
+                          ),
+                      )
+                    : [],
+                Promise.all(
+                    game_id.map((id) =>
+                        this.#apiClient.getSchemaForGame({
+                            appid: id,
+                            l: lang,
+                        }),
+                    ),
+                ),
+            ]);
+
+            // If the English schema is the same as the native language schema, that's gonna mess everything up
+            // Just return null
+            for (let i = 0; i < game_id.length; i++) {
+                const id = game_id[i] ?? -1;
+                const englishSchema = englishRes[i]?.game?.availableGameStats?.achievements;
+                const nativeSchema = nativeRes[i]?.game?.availableGameStats?.achievements;
+
+                if (!nativeSchema) continue;
+
+                const metaMap = new Map<string, SteamAchievementRawMeta | null>();
+                if (JSON.stringify(englishSchema) === JSON.stringify(nativeSchema)) {
+                    for (const achievement of nativeSchema) {
+                        metaMap.set(achievement.name, null);
                     }
-                }),
-            );
+                } else {
+                    for (const achievement of nativeSchema) {
+                        metaMap.set(achievement.name, achievement);
+                    }
+                }
+                validSchemas.set(id, metaMap);
+            }
 
             await Promise.all(
                 game_id.map(async (gameId) => {
@@ -179,7 +209,7 @@ export class SteamAPIRepository {
                     const achievementsMap = new Map<
                         string,
                         {
-                            meta: SteamAchievementRawMeta;
+                            meta: SteamAchievementRawMeta | null;
                             global: SteamAchievementRawGlobalStats;
                         }
                     >();
@@ -189,6 +219,7 @@ export class SteamAPIRepository {
                             achievementsMap.set(name, { meta, global });
                         }
                     }
+
                     data.set(gameId, achievementsMap);
                 }),
             );

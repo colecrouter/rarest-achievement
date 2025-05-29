@@ -19,7 +19,7 @@ import type {
     SteamUserAchievementRawStats,
     SteamUserRaw,
 } from "../../models";
-import type { Language } from "../../repositories/api/lang";
+import type { APILanguageCode } from "../../repositories/api/lang";
 import type { OwnedGame } from "../../repositories/api/steampowered/owned";
 import type schema from "./schema";
 import {
@@ -103,7 +103,7 @@ export class SteamCacheDBRepository {
         await this.#db.batch([batches[0], ...batches.slice(1)]);
     }
 
-    async getApps(appId: number[]) {
+    async getApps(appId: number[], lang: APILanguageCode) {
         const chunkSize = 90; // max parameters per SQL statement
         const results = [];
         for (let i = 0; i < appId.length; i += chunkSize) {
@@ -111,7 +111,7 @@ export class SteamCacheDBRepository {
             const res = await this.#db
                 .select()
                 .from(apps)
-                .where(and(inArray(apps.id, chunk)));
+                .where(and(inArray(apps.id, chunk), eq(apps.lang, lang)));
             results.push(...res);
         }
 
@@ -131,7 +131,7 @@ export class SteamCacheDBRepository {
         return map;
     }
 
-    async putApps(data: Awaited<ReturnType<typeof this.getApps>>) {
+    async putApps(data: Awaited<ReturnType<typeof this.getApps>>, lang: APILanguageCode) {
         const items = [...data.entries()].map(([appId, app]) => ({
             id: appId,
             data: app,
@@ -140,10 +140,14 @@ export class SteamCacheDBRepository {
         for (const item of items) {
             await this.#db
                 .insert(apps)
-                .values(item)
+                .values({ ...item, lang })
                 .onConflictDoUpdate({
                     target: [apps.id],
-                    set: { updated_at: new Date(), data: sql`excluded.data` },
+                    set: {
+                        updated_at: new Date(),
+                        data: sql`excluded.data`,
+                        lang: sql`excluded.lang`,
+                    },
                 });
         }
     }
@@ -290,7 +294,7 @@ export class SteamCacheDBRepository {
         }
     }
 
-    async getGameAchievements(appId: number[], lang: Language = "english") {
+    async getGameAchievements(appId: number[], lang: APILanguageCode) {
         const chunkSize = 20;
 
         // Group the cross product pairs into chunks
@@ -306,7 +310,7 @@ export class SteamCacheDBRepository {
                     achievements_meta: getTableAliasedColumns(achievementsMeta),
                 })
                 .from(achievementsStats)
-                .leftJoin(
+                .innerJoin(
                     achievementsMeta,
                     and(eq(achievementsStats.app_id, achievementsMeta.app_id), eq(achievementsMeta.lang, lang)),
                 )
@@ -318,7 +322,7 @@ export class SteamCacheDBRepository {
             Map<
                 string,
                 {
-                    meta: SteamAchievementRawMeta;
+                    meta: SteamAchievementRawMeta | null;
                     global: SteamAchievementRawGlobalStats;
                 }
             >
@@ -331,18 +335,18 @@ export class SteamCacheDBRepository {
             achievements_stats: {
                 ...row.achievements_stats,
                 // @ts-ignore
-                data: JSON.parse(row.achievements_stats.data) as SteamAchievementRawGlobalStats[],
+                data: JSON.parse(row.achievements_stats.data) as SteamAchievementRawGlobalStats[] | null,
             },
             achievements_meta: {
                 ...row.achievements_meta,
                 // @ts-ignore
-                data: JSON.parse(row.achievements_meta.data) as SteamAchievementRawMeta[],
+                data: JSON.parse(row.achievements_meta.data) as SteamAchievementRawMeta[] | null,
             },
         }));
 
         for (const row of flattenedStats) {
             const appId = row.achievements_stats.app_id;
-            const appMeta = row.achievements_meta?.data ?? [];
+            const appMeta = row.achievements_meta?.data ?? null; // Could be null if no localization exists
             const globalStats = row.achievements_stats.data ?? [];
             const gameId = appId;
             if (!gameOutput.has(gameId)) {
@@ -351,8 +355,8 @@ export class SteamCacheDBRepository {
             const gameMap = gameOutput.get(gameId);
             for (const achievement of globalStats) {
                 const achievementId = achievement.name;
-                const meta = appMeta.find((m) => m.name === achievementId);
-                if (!meta) continue;
+                const meta = appMeta?.find((m) => m.name === achievementId) ?? null;
+                // if (!meta) continue;
 
                 gameMap?.set(achievementId, {
                     meta,
@@ -364,36 +368,16 @@ export class SteamCacheDBRepository {
         return gameOutput;
     }
 
-    async putGameAchievements(data: Awaited<ReturnType<typeof this.getGameAchievements>>, lang: Language = "english") {
-        // Aggregate meta and global stats per app; and user achievements per (app, user) pair
-        const metaByApp = new Map<number, SteamAchievementRawMeta[]>(); // any[] for meta values
-        const globalByApp = new Map<number, SteamAchievementRawGlobalStats[]>(); // any[] for global stat values
-
-        for (const [appId, gameMap] of data.entries()) {
-            for (const [, achievements] of gameMap.entries()) {
-                const meta = achievements.meta;
-                const global = achievements.global;
-
-                // Aggregate meta records by app id.
-                if (!metaByApp.has(appId)) {
-                    metaByApp.set(appId, []);
-                }
-                metaByApp.get(appId)?.push(meta);
-                // Aggregate global records by app id.
-                if (!globalByApp.has(appId)) {
-                    globalByApp.set(appId, []);
-                }
-                globalByApp.get(appId)?.push(global);
-            }
-        }
-
+    async putGameAchievements(data: Awaited<ReturnType<typeof this.getGameAchievements>>, lang: APILanguageCode) {
         const metaRecords = [
             ...data.entries().map(([app_id, gameMap]) => {
-                const dataArr = [...gameMap.values()].map((achievements) => achievements.meta);
+                const dataArr = [...gameMap.values()]
+                    .map((achievements) => achievements.meta)
+                    .filter((meta) => meta !== null) as SteamAchievementRawMeta[];
                 return {
                     app_id,
                     lang,
-                    data: dataArr,
+                    data: dataArr.length > 0 ? dataArr : null, // Explode null value back to array level, e.g. [null, null, ...] -> null
                 };
             }),
         ];

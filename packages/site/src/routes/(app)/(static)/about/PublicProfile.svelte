@@ -1,5 +1,7 @@
 <script lang="ts">
     import Alert from "$lib/Alert.svelte";
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import GlobeLock from "@lucide/svelte/icons/globe-lock";
 </script>
 
@@ -7,11 +9,10 @@
     <div class="space-y-12">
         <!-- Step 1 -->
         <section>
-            <h2 class="text-2xl">Step 1: Go to Your Steam Profile</h2>
+            <h2 class="text-2xl">{m.profileStep1Title()}</h2>
             <div class="p-6">
                 <p class="mb-6">
-                    Log into Steam and navigate to your profile page. You can do
-                    this by clicking on your username in the top navigation bar.
+                    {m.profileStep1Description()}
                 </p>
 
                 <!-- Steam Profile UI Recreation -->
@@ -92,19 +93,21 @@
                     </div>
                 </div>
 
-                Click the
-                <strong class="text-white">Edit Profile</strong>
-                button.
+                <p>
+                    {m.profileStep1Action()}
+                    <strong class="text-white"
+                        >{m.profileEditProfileButton()}</strong
+                    >.
+                </p>
             </div>
         </section>
 
         <!-- Step 2 -->
         <section>
-            <h2 class="text-2xl">Step 2: Navigate to Privacy Settings</h2>
+            <h2 class="text-2xl">{m.profileStep2Title()}</h2>
             <div class="p-6">
                 <p class="mb-6">
-                    In the Edit Profile page, find and click on the "Privacy
-                    Settings" option in the left sidebar.
+                    {m.profileStep2Description()}
                 </p>
 
                 <!-- Steam Edit Profile UI Recreation -->
@@ -155,26 +158,19 @@
                     </div>
                 </div>
 
-                Select
-                <strong>Privacy Settings</strong>
-                from the left side menu.
+                <p>
+                    {m.profileStep2Action()}
+                    <strong>{m.profilePrivacySettings()}</strong>.
+                </p>
             </div>
         </section>
 
         <!-- Step 3 -->
         <section>
-            <h2 class="text-2xl">Step 3: Update Your Game Details Privacy</h2>
+            <h2 class="text-2xl">{m.profileStep3Title()}</h2>
             <div class="p-6">
                 <p class="mb-6">
-                    In the Privacy Settings page, look for the
-                    <strong>"Game details"</strong>
-                    section and set it to
-                    <strong>Public.</strong>
-                    You may also want to set your
-                    <strong>"Friends List"</strong>
-                    to
-                    <strong>Public</strong>
-                    for a better experience.
+                    {m.profileStep3Description()}
                 </p>
 
                 <!-- Steam Privacy Settings UI Recreation -->
@@ -242,8 +238,8 @@
                     <Alert
                         color="warning"
                         icon={GlobeLock}
-                        title="Stay Secure!"
-                        description="Carefully review these settings before changing them."
+                        title={m.profileStep3AlertTitle()}
+                        description={m.profileStep3AlertDescription()}
                     />
                 </div>
             </div>
@@ -251,57 +247,30 @@
 
         <!-- Step 4 -->
         <section>
-            <h2 class="text-2xl">Step 4: Wait for Changes</h2>
+            <h2 class="text-2xl">{m.profileStep4Title()}</h2>
             <div class="p-6">
-                After updating your settings, it may take up to 24 hours for the
-                changes to take effect.
+                {m.profileStep4Description()}
             </div>
         </section>
 
         <section>
-            <h2 class="text-2xl">Privacy Concerns?</h2>
+            <h2 class="text-2xl">{m.profilePrivacyConcernsTitle()}</h2>
 
             <div class="p-6">
                 <p class="mb-2">
-                    We only access your public achievement data to provide our
-                    service. Making your game details public only allows others
-                    to see your games, achievements, and playtime. You can
-                    change these settings back at any time.
+                    {m.profilePrivacyConcernsDescription()}
                 </p>
                 <p>
-                    For more information about Steam's privacy settings, visit
-                    our
-                    <a href="/legal" class="text-primary-500 hover:underline">
-                        privacy page.
-                    </a>
+                    {m.profilePrivacyConcernsMore()}
+                    <a
+                        href={localizeHref("/legal")}
+                        class="text-primary-500 hover:underline"
+                        >{m.profilePrivacyLinkText()}</a
+                    >.
                 </p>
             </div>
         </section>
     </div>
-
-    <!-- <div class="mt-12 rounded-container bg-surface-900 p-6">
-        <h2 class="mb-4 text-2xl font-bold text-purple-400">
-            Privacy Concerns?
-        </h2>
-        <p class="mb-4 text-surface-300">
-            We only access your public achievement data to provide our service.
-            Making your game details public only allows others to see your
-            games, achievements, and playtime. You can change these settings
-            back at any time.
-        </p>
-        <p class="text-surface-300">
-            For more information about Steam's privacy settings, visit the{" "}
-            <a
-                href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-purple-400 hover:underline"
-            >
-                Steam Support page
-            </a>
-            .
-        </p>
-    </div> -->
 </article>
 
 <style>

@@ -5,6 +5,8 @@ export * from "./api/steamcommunity/repo";
 export * from "./api/steampowered/client";
 export * from "./api/store/client";
 export * from "./api/youtube/repo";
+export * from "./api/translate/client";
+export * from "./api/translate/repo";
 export * from "./db/repo";
 export * from "./db/schema";
 export * as schema from "./db/schema";

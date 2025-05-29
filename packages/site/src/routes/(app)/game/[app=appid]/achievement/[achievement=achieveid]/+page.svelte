@@ -6,7 +6,10 @@
     import IndexError from "$lib/IndexError.svelte";
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
-    import { getRarity } from "$lib/rarity";
+    import TranslationToggle from "$lib/TranslationToggle.svelte";
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
+    import { getRarity, localizedRarity } from "$lib/rarity";
     import BookOpenText from "@lucide/svelte/icons/book-open-text";
     import NotebookText from "@lucide/svelte/icons/notebook-text";
     import Share from "@lucide/svelte/icons/share";
@@ -65,11 +68,11 @@
         const chart = new Chart(ctx, {
             type: "bar",
             data: {
-                labels: rarityChartData.map((data) => data.name),
+                labels: rarityChartData.map((d) => d.name),
                 datasets: [
                     {
-                        label: "This Achievement",
-                        data: rarityChartData.map((data) => data.rarity),
+                        label: m.achievementThisAchievementLabel(),
+                        data: rarityChartData.map((d) => d.rarity),
                         backgroundColor: rarityChartColors,
                         // @ts-expect-error custom field
                         selectedColor, // custom field for legend use
@@ -117,7 +120,9 @@
                     )?.id;
                     if (!selectedAchievementId) return;
                     goto(
-                        `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
+                        localizeHref(
+                            `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
+                        ),
                         { keepFocus: true },
                     );
                 },
@@ -158,22 +163,42 @@
 
     let viewHover = $state(false);
     let shareHover = $state(false);
+    let translate = $state(true);
 </script>
 
 <svelte:head>
-    <title>{achievement.name} - {app.name}</title>
+    <title>
+        {m.achievementPageMetaTitle({
+            achievementName: achievement.name,
+            appName: app.name,
+        })}
+    </title>
     <meta
         name="description"
-        content={`Unlock "${achievement.name}" in ${app.name}—a feat only ${achievement.globalPercentage}% of players achieve. See rarity charts, compare with friends & read top guides on Steam Vault.`}
+        content={m.achievementPageMetaDescription({
+            achievementName: achievement.name,
+            appName: app.name,
+            percentage: achievement.globalPercentage,
+        })}
     />
     <link
         rel="canonical"
         href={`/game/${app.id}/achievement/${achievement.id}`}
     />
-    <meta property="og:title" content={achievement.name} />
+    <meta
+        property="og:title"
+        content={m.achievementPageMetaTitle({
+            achievementName: achievement.name,
+            appName: app.name,
+        })}
+    />
     <meta
         property="og:description"
-        content={`Unlock "${achievement.name}" in ${app.name}—a feat only ${achievement.globalPercentage}% of players achieve. See rarity charts, compare with friends & read top guides on Steam Vault.`}
+        content={m.achievementPageMetaDescription({
+            achievementName: achievement.name,
+            appName: app.name,
+            percentage: achievement.globalPercentage,
+        })}
     />
     <meta property="og:image" content={achievement.icon} />
     <meta
@@ -182,7 +207,10 @@
     />
     <meta property="og:type" content="summary" />
     <meta property="twitter:card" content="summary" />
-    <meta property="keywords" content="Steam, {app.name}, {achievement.name}" />
+    <meta
+        property="keywords"
+        content={`Steam, ${app.name}, ${achievement.name}`}
+    />
 </svelte:head>
 
 <main class="container mx-auto px-4 py-8">
@@ -225,7 +253,11 @@
                     </div>
                     <div>
                         <div class="mb-1 flex items-center gap-3">
-                            <a href={"/game/" + achievement.app.id}>
+                            <a
+                                href={localizeHref(
+                                    "/game/" + achievement.app.id,
+                                )}
+                            >
                                 <span class="text-surface-300"
                                     >{achievement.app.name}</span
                                 >
@@ -234,25 +266,34 @@
                         <h1 class="mb-1 text-3xl font-bold">
                             {achievement.name}
                         </h1>
-                        <p class="text-surface-200">
-                            {achievement.description}
+                        <p
+                            class="text-surface-200 flex w-full grow items-start"
+                        >
+                            {#if achievement.translation}
+                                <TranslationToggle bind:translate />
+                            {/if}
+                            {@html translate && achievement.translation
+                                ? achievement.translation
+                                : achievement.description}
                         </p>
                     </div>
                 </div>
                 <!-- Tinted card with "ultra-rare 1.1% of players" -->
                 <div
-                    class="flex w-full flex-col items-center md:ml-auto md:items-end"
+                    class="flex min-w-[120px] flex-col items-center md:ml-auto md:items-end"
                 >
                     <div
                         class="w-full text-center md:w-auto md:text-left border-{rarity}/30 bg-{rarity}/10 mb-2 rounded border px-4 py-2"
                     >
                         <div class="text-sm font-medium text-{rarity}">
-                            {rarity}
+                            {localizedRarity(rarity)}
                         </div>
                         <div class="text-2xl font-bold text-{rarity}-dark">
                             {achievement.globalPercentage}%
                         </div>
-                        <div class="text-surface-300 text-xs">of players</div>
+                        <div class="text-surface-300 text-xs">
+                            {m.achievementOfPlayers()}
+                        </div>
                     </div>
                     <div class="flex gap-2">
                         <Tooltip
@@ -264,18 +305,22 @@
                             arrow
                         >
                             {#snippet content()}
-                                View on Steam
+                                {m.viewOnSteam()}
                             {/snippet}
                             {#snippet trigger()}
                                 <a
-                                    href="https://steamcommunity.com/app/{achievement
-                                        .app.id}/stats/{achievement.app
-                                        .id}/achievements"
+                                    href={localizeHref(
+                                        `https://steamcommunity.com/app/${
+                                            achievement.app.id
+                                        }/stats/${
+                                            achievement.app.id
+                                        }/achievements`,
+                                    )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     class="btn preset-outlined-surface-500 p-2"
                                 >
-                                    <span hidden> View on Steam </span>
+                                    <span hidden>{m.viewOnSteam()}</span>
                                     <BookOpenText
                                         class="text-surface-500 h-4 w-4"
                                         aria-hidden="true"
@@ -288,11 +333,11 @@
                             onclick={() =>
                                 navigator.share({
                                     title: `${achievement.name} - ${app.name}`,
-                                    text: `Check out this achievement!`,
+                                    text: `${m.achievementShareText()}`,
                                     url: page.url.toString(),
                                 })}
                         >
-                            <span hidden>Share</span>
+                            <span hidden>{m.achievementShareText()}</span>
                             <Share
                                 class="text-surface-500 h-4 w-4"
                                 aria-hidden="true"
@@ -326,17 +371,20 @@
             <button
                 onclick={() => goto("?tab=stats")}
                 class="py-2"
-                class:font-bold={activeTab === "stats"}>Statistics</button
+                class:font-bold={activeTab === "stats"}
+                >{m.achievementTabStats()}</button
             >
             <button
                 onclick={() => goto("?tab=friends")}
                 class="py-2"
-                class:font-bold={activeTab === "friends"}>Friends</button
+                class:font-bold={activeTab === "friends"}
+                >{m.achievementTabFriends()}</button
             >
             <button
                 onclick={() => goto("?tab=articles")}
                 class="py-2"
-                class:font-bold={activeTab === "articles"}>Tips & Guides</button
+                class:font-bold={activeTab === "articles"}
+                >{m.achievementTabArticles()}</button
             >
         </div>
 
@@ -346,12 +394,13 @@
                     <section class="mt-6 space-y-8">
                         <div class="card p-4">
                             <h2 class="font-bold">
-                                Achievement Rarity Comparison
+                                {m.achievementRarityComparisonTitle()}
                             </h2>
                             <p class="text-surface-300 text-sm">
-                                How <i>{achievement.name}</i> compares to other
-                                achievements in
-                                <i>{achievement.app.name}</i>
+                                {m.achievementRarityComparisonDescription({
+                                    achievementName: achievement.name,
+                                    appName: achievement.app.name,
+                                })}
                             </p>
                             <div class="max-h-[480px]">
                                 <!-- Need to key, chartjs not updated when soft-navigating to a different achievement page -->
@@ -412,10 +461,12 @@
 
                         <div class="card p-4">
                             <h2 class="font-bold">
-                                Other Achievements in {achievement.app.name}
+                                {m.achievementOtherAchievementsTitle({
+                                    appName: achievement.app.name,
+                                })}
                             </h2>
                             <p class="text-surface-300 text-sm">
-                                Your progress on all achievements in this game
+                                {m.achievementOtherAchievementsDescription()}
                             </p>
                             <div class="mt-4">
                                 {#if gameAchievements}
@@ -450,14 +501,16 @@
                         {#await articles}
                             <!-- Loading state -->
                             <div class="text-surface-300 p-4 text-center">
-                                Loading tips & guides...
+                                {m.achievementArticlesLoading()}
                             </div>
                         {:then res}
                             {#if res}
                                 {@const { data: articleResult, error } = res}
                                 {#if error}
                                     <div class="p-4 text-red-400">
-                                        Error loading guides: {error.message}
+                                        {m.achievementArticlesError({
+                                            errorMessage: error.message,
+                                        })}
                                     </div>
                                 {:else}
                                     <section class="mt-6 space-y-8">
@@ -467,18 +520,18 @@
                                                 <NotebookText
                                                     class="text-primary-500 inline"
                                                 />
-                                                Steam Community Guides
+                                                {m.achievementArticlesSteamCommunityTitle()}
                                             </h2>
                                             <p class="text-surface-300 text-sm">
-                                                Official guides from the Steam
-                                                Community for unlocking this
-                                                achievement.
+                                                {m.achievementArticlesSteamCommunityDescription()}
                                             </p>
                                             <div class="mt-4 space-y-4">
                                                 {#each articleResult.articles as article}
                                                     <div class="card p-4">
                                                         <a
-                                                            href="https://steamcommunity.com/sharedfiles/filedetails/?id={article.id}"
+                                                            href={localizeHref(
+                                                                `https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`,
+                                                            )}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
@@ -527,17 +580,18 @@
                                                 <YouTube
                                                     class="inline text-red-500"
                                                 />
-                                                YouTube Video Guides
+                                                {m.achievementArticlesYouTubeTitle()}
                                             </h2>
                                             <p class="text-surface-300 text-sm">
-                                                Helpful video tutorials for
-                                                unlocking this achievement.
+                                                {m.achievementArticlesYouTubeDescription()}
                                             </p>
                                             <div class="mt-4 space-y-4">
                                                 {#each articleResult.videos as video}
                                                     <div class="card p-4">
                                                         <a
-                                                            href="https://www.youtube.com/watch?v={video.videoId}"
+                                                            href={localizeHref(
+                                                                `https://www.youtube.com/watch?v=${video.videoId}`,
+                                                            )}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
@@ -594,7 +648,9 @@
                             {/if}
                         {:catch error}
                             <div class="p-4 text-red-400">
-                                Error: {error.message}
+                                {m.achievementArticlesError({
+                                    errorMessage: error.message,
+                                })}
                             </div>
                         {/await}
                     </section>

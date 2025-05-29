@@ -5,7 +5,6 @@
             width: "w-[220px]",
             iconComponent: Crown,
             iconWrapper: "h-10 w-10 text-amber-500",
-            label: "1st Place",
             labelTextClass: "text-sm font-bold text-amber-500",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
@@ -26,7 +25,6 @@
             width: "w-[200px]",
             iconComponent: Medal,
             iconWrapper: "h-8 w-8 text-surface-300",
-            label: "2nd Place",
             labelTextClass: "text-sm font-medium text-surface-300",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
@@ -46,7 +44,6 @@
             width: "w-[180px]",
             iconComponent: Award,
             iconWrapper: "h-7 w-7 text-amber-700",
-            label: "3rd Place",
             labelTextClass: "text-sm font-medium text-amber-700",
             placeStatClass: "text-xs text-amber-500",
             cardWrapper:
@@ -85,12 +82,15 @@
 </script>
 
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages";
+
     import Award from "@lucide/svelte/icons/award";
     import Crown from "@lucide/svelte/icons/crown";
     import Medal from "@lucide/svelte/icons/medal";
     import type { SteamAppAchievement } from "@project/lib";
     import { cubicOut } from "svelte/easing";
     import { fade } from "svelte/transition";
+    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         place: 1 | 2 | 3;
@@ -109,6 +109,14 @@
 
     let gameURL = `/game/${achievement.app.id}`;
     let achievementURL = `/game/${achievement.app.id}/achievement/${achievement.id}`;
+
+    // Compute podium label from i18n messages
+    let podiumLabel =
+        place === 1
+            ? m.podiumLabelFirst()
+            : place === 2
+              ? m.podiumLabelSecond()
+              : m.podiumLabelThird();
 </script>
 
 <div
@@ -126,10 +134,12 @@
         >
             <IconComponent class={config.iconWrapper} />
             <span class={config.labelTextClass}>
-                {config.label}
+                {podiumLabel}
             </span>
             <span class={config.placeStatClass}>
-                {achievement.globalPercentage}% of players
+                {m.podiumPercentOfPlayers({
+                    percentage: achievement.globalPercentage,
+                })}
             </span>
         </div>
         <div class={config.cardWrapper}>
@@ -137,7 +147,7 @@
                 class="flex flex-col items-center"
                 transition:fade={{ duration: 300, delay: 100 * place + 400 }}
             >
-                <a href={achievementURL}>
+                <a href={localizeHref(achievementURL)}>
                     <img
                         src={achievement.icon}
                         alt={achievement.name}
@@ -146,12 +156,15 @@
                         class={config.iconSize.imgClass}
                     />
                 </a>
-                <a href={achievementURL}>
+                <a href={localizeHref(achievementURL)}>
                     <h3 class="hover:underline {config.nameTextClass}">
                         {achievement.name}
                     </h3>
                 </a>
-                <a href={gameURL} class="hover:underline {config.appTextClass}">
+                <a
+                    href={localizeHref(gameURL)}
+                    class="hover:underline {config.appTextClass}"
+                >
                     {achievement.app.name}
                 </a>
             </div>

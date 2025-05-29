@@ -1,7 +1,7 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import { Errable } from "../../..";
-import type { Language } from "../lang";
+import { Errable, getLanguageByCode } from "../../..";
+import type { APILanguageCode, LanguageCode } from "../lang";
 import { SteamCommunityClient } from "./client";
 import type { Article, User } from "./types";
 
@@ -12,7 +12,9 @@ export class SteamCommunityRepo {
         this.#cache = cache;
     }
 
-    async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, lang: Language) {
+    async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
+        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
+
         const cacheKey = `steamcommunity:${achievement.app.id}:${achievement.id}:${lang}`;
         const cached = await this.#cache.get(cacheKey);
         if (cached) {

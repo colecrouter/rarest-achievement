@@ -1,5 +1,7 @@
 <script lang="ts">
     import Alert from "$lib/Alert.svelte";
+    import { m } from "$lib/paraglide/messages.js"; // new import
+    import { localizeHref } from "$lib/paraglide/runtime";
     import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
     import type { LoadingMessage } from "./messages";
 
@@ -16,8 +18,8 @@
             <div class="show show2">
                 <Alert
                     icon={RefreshCcw}
-                    title="This might take a minute..."
-                    description="We're firing off thousands of requests to get your data. If you think this is taking too long, reloading the page."
+                    title={m.splashAlertTitle()}
+                    description={m.splashAlertDescription()}
                     color="surface"
                 />
             </div>
@@ -26,7 +28,7 @@
         <h1
             class="text-surface-200 animate-pulse text-center text-2xl font-bold"
         >
-            Loading...
+            {m.splashLoadingHeader()}
         </h1>
 
         <div class="show flex min-h-[400px] flex-col justify-center">
@@ -39,17 +41,16 @@
 
             {#if message?.source}
                 <span class="text-surface-300">
-                    Source:
-
+                    {m.splashSourceLabel()}
                     <a
                         class="underline"
-                        href={message.source.url.toString()}
+                        href={localizeHref(message.source.url.toString())}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         {message.source.text}
-                    </a></span
-                >
+                    </a>
+                </span>
             {/if}
         </div>
     </div>

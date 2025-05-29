@@ -1,8 +1,16 @@
-import { type ProjectDB, SteamStoreAPIClient } from "..";
+import type { KVNamespace } from "@cloudflare/workers-types";
+import {
+    type APILanguageCode,
+    type LanguageCode,
+    type ProjectDB,
+    SteamStoreAPIClient,
+    type TranslateClient,
+    TranslateRepository,
+    getLanguageByCode,
+} from "..";
 import { Errable } from "../../error";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, SteamAppAchievement, SteamOwnedGame, SteamUser, SteamUserAchievement } from "../../models";
-import type { Language } from "../api/lang";
 import { SteamAPIRepository } from "../api/repo";
 import { SteamChartsAPIClient } from "../api/steamcharts/client";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
@@ -20,30 +28,40 @@ import { fetchAndUpsert } from "./merge";
 export class EnhancedSteamRepository {
     #apiRepository: SteamAPIRepository;
     #cacheRepository: SteamCacheDBRepository;
+    #translateRepository: TranslateRepository;
 
     constructor(locals: {
+        translateClient: TranslateClient;
         steamClient: SteamAuthenticatedAPIClient;
         steamCacheDB: ProjectDB;
+        miscCache: KVNamespace;
     }) {
         this.#apiRepository = new SteamAPIRepository(locals.steamClient);
         this.#cacheRepository = new SteamCacheDBRepository(locals.steamCacheDB);
+        this.#translateRepository = new TranslateRepository(locals.translateClient, locals.miscCache);
     }
-
-    async getApps(app: Array<number | SteamOwnedGame | SteamApp>) {
+    /**
+     * Fetches Steam applications and their estimated player counts.
+     * @param app - An array of app IDs or SteamOwnedGame objects.
+     * @param lang - The language code for the API response (default is "english").
+     * @returns A map of app IDs to SteamApp objects, or an error if the fetch fails.
+     */
+    async getApps(app: Array<number | SteamOwnedGame | SteamApp>, locale: LanguageCode) {
         const appIds = app.map((game) => (typeof game === "number" ? game : game.id));
+        const lang = (getLanguageByCode(locale)?.apiCode ?? "english") as APILanguageCode;
 
         const { data: apps, error: err } = await fetchAndUpsert(
             [appIds],
-            (_) => this.#cacheRepository.getApps(_),
-            (_) => this.#cacheRepository.putApps(_),
-            (_) => this.#apiRepository.getApps(_),
+            (_) => this.#cacheRepository.getApps(_, lang),
+            (_) => this.#cacheRepository.putApps(_, lang),
+            (_) => this.#apiRepository.getApps(_, lang),
         );
 
         const { data: estimatedPlayers, error: err2 } = await fetchAndUpsert(
             [appIds],
             (_) => this.#cacheRepository.getEstimatedPlayers(_),
             (_) => this.#cacheRepository.putEstimatedPlayers(_),
-            (_) => this.getEstimatedPlayers(_),
+            (_) => this.getEstimatedPlayers(_, locale),
         );
 
         const steamApps = new Map<number, SteamApp>();
@@ -52,7 +70,7 @@ export class EnhancedSteamRepository {
             const estimatedPlayer = estimatedPlayers.get(id);
             // if (!estimatedPlayer) continue; // SteamCharts appears to be missing data for some apps
 
-            const steamApp = new SteamApp(app.steam_appid, app, estimatedPlayer ?? null);
+            const steamApp = new SteamApp(app.steam_appid, app, estimatedPlayer ?? null, lang);
             steamApps.set(steamApp.id, steamApp);
         }
         return new Errable(steamApps, err ?? err2);
@@ -77,8 +95,10 @@ export class EnhancedSteamRepository {
     async getUserAchievements(
         games: Array<number | SteamApp | SteamOwnedGame>,
         user: Array<string | SteamUser>,
-        lang: Language = "english",
+        locale: LanguageCode,
     ) {
+        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
+
         // Because we can pass in ids instead of just SteamApp objects, we need to fetch the games again if we don't have them
         let newGames: SteamApp[];
         let err3: Error | null = null;
@@ -86,7 +106,7 @@ export class EnhancedSteamRepository {
             newGames = games as SteamApp[];
         } else {
             const gameIds = games.map((game) => (typeof game === "number" ? game : game.id));
-            const { data: gameApps, error: err } = await this.getApps(gameIds);
+            const { data: gameApps, error: err } = await this.getApps(gameIds, locale);
             newGames = [...gameApps.values()];
             err3 = err;
         }
@@ -114,13 +134,44 @@ export class EnhancedSteamRepository {
 
         const { data: gameAchievements, error: err2 } = await fetchAndUpsert(
             [gameIds],
-            (_) => this.#cacheRepository.getGameAchievements(_),
-            (_) => this.#cacheRepository.putGameAchievements(_),
-            (_) => this.#apiRepository.getGameAchievements(_),
+            (_) => this.#cacheRepository.getGameAchievements(_, lang),
+            (_) => this.#cacheRepository.putGameAchievements(_, lang),
+            (_) => this.#apiRepository.getGameAchievements(_, lang),
         );
 
+        // For any values where meta is null, get the English version of the achievements
+        const missingIds = new Set<number>();
+        for (const [gameId, achievementsMap] of gameAchievements) {
+            for (const [, { meta }] of achievementsMap) {
+                if (!meta) {
+                    missingIds.add(gameId);
+                    break; // No need to check further achievements for this game
+                }
+            }
+        }
+
+        // If there are any missing IDs, fetch the English achievements
+        if (missingIds.size > 0) {
+            const { data: englishGameAchievements } = await fetchAndUpsert(
+                [[...missingIds]],
+                (_) => this.#cacheRepository.getGameAchievements(_, "english"),
+                (_) => this.#cacheRepository.putGameAchievements(_, "english"),
+                (_) => this.#apiRepository.getGameAchievements(_, "english"),
+            );
+
+            // Merge the English achievements into the original gameAchievements
+            for (const [gameId, achievementsMap] of englishGameAchievements) {
+                if (!gameAchievements.has(gameId)) continue;
+                const existingMap = gameAchievements.get(gameId);
+                if (!existingMap) continue;
+
+                for (const [achievementId, achievement] of achievementsMap) {
+                    existingMap.set(achievementId, achievement);
+                }
+            }
+        }
+
         const achievements = new Map<number, Map<string, Map<string, SteamUserAchievement>>>();
-        // New loop: use gameAchievements as base and iterate over each provided user.
         for (const [gameId, gameAchMap] of gameAchievements) {
             const gameData = newGames.find((game) => game.id === gameId);
             if (!gameData) continue;
@@ -132,12 +183,38 @@ export class EnhancedSteamRepository {
                     achievements.get(gameId)?.set(u, new Map());
                 }
                 for (const [achievementId, { global, meta }] of gameAchMap) {
+                    if (!meta) throw new Error("Meta somehow null at this point");
+
+                    // If we got the English achievements, we need to set the language to English.
+                    const newLang = missingIds.has(gameId) ? "english" : lang;
+
                     // Check user's achievement data; pass null if missing.
                     const userAchData = userAchievements.get(gameId)?.get(u)?.get(achievementId) || null;
-                    const userAchievement = new SteamUserAchievement(gameData, meta, global, lang, u, userAchData);
+                    const userAchievement = new SteamUserAchievement(
+                        gameData,
+                        meta,
+                        global,
+                        newLang,
+                        null,
+                        u,
+                        userAchData,
+                    );
                     achievements.get(gameId)?.get(u)?.set(achievementId, userAchievement);
                 }
             }
+        }
+
+        try {
+            // Manually translate the achievements if the language is not English
+            const needingTranslation = achievements
+                .values()
+                .map((achievements) => [...achievements.values().map((u) => [...u.values()])])
+                .flatMap((achievements) => achievements.flat())
+                .filter((achievement) => achievement.language !== locale);
+
+            await this.#translateRepository.translateAchievements(needingTranslation, locale);
+        } catch (err) {
+            console.error("Error translating achievements:", err);
         }
 
         if (err1 ?? err2 ?? err3) {
@@ -167,30 +244,81 @@ export class EnhancedSteamRepository {
         return new Errable(ownedGames, err);
     }
 
-    async getGameAchievements(game: SteamApp[], lang: Language = "english") {
+    async getGameAchievements(game: SteamApp[], locale: LanguageCode) {
+        const lang = (getLanguageByCode(locale)?.apiCode ?? "english") as APILanguageCode;
         const gameIds = game.map((game) => (game instanceof SteamOwnedGame ? game.id : game.id));
-        const { data: gameAchievementsRaw, error: err } = await fetchAndUpsert(
+        const { data: gameAchievements, error: err } = await fetchAndUpsert(
             [gameIds],
-            (_) => this.#cacheRepository.getGameAchievements(_),
-            (_) => this.#cacheRepository.putGameAchievements(_),
-            (_) => this.#apiRepository.getGameAchievements(_),
+            (_) => this.#cacheRepository.getGameAchievements(_, lang),
+            (_) => this.#cacheRepository.putGameAchievements(_, lang),
+            (_) => this.#apiRepository.getGameAchievements(_, lang),
         );
 
-        const mappedGameAchievements = new Map<number, Map<string, SteamAppAchievement>>();
-        for (const [gameId, achievementsMap] of gameAchievementsRaw) {
+        // For any values where meta is null, get the English version of the achievements
+        const missingIds = new Array<number>();
+        for (const [gameId, achievementsMap] of gameAchievements) {
+            for (const [, { meta }] of achievementsMap) {
+                if (!meta) {
+                    missingIds.push(gameId);
+                    break; // No need to check further achievements for this game
+                }
+            }
+        }
+
+        // If there are any missing localizations, fetch the English achievements
+        if (missingIds.length > 0) {
+            const { data: englishGameAchievements } = await fetchAndUpsert(
+                [missingIds],
+                (_) => this.#cacheRepository.getGameAchievements(_, "english"),
+                (_) => this.#cacheRepository.putGameAchievements(_, "english"),
+                (_) => this.#apiRepository.getGameAchievements(_, "english"),
+            );
+
+            // Merge the English achievements into the original gameAchievements
+            for (const [gameId, achievementsMap] of englishGameAchievements) {
+                if (!gameAchievements.has(gameId)) continue;
+                const existingMap = gameAchievements.get(gameId);
+                if (!existingMap) continue;
+
+                for (const [achievementId, achievement] of achievementsMap) {
+                    existingMap.set(achievementId, achievement);
+                }
+            }
+        }
+
+        const achievements = new Map<number, Map<string, SteamAppAchievement>>();
+        for (const [gameId, achievementsMap] of gameAchievements) {
             const gameAchievementsMap = new Map<string, SteamAppAchievement>();
 
             const gameData = game.find((game) => game.id === gameId);
             if (!gameData) continue;
 
             for (const [achievementId, { global, meta }] of achievementsMap) {
-                const gameAchievement = new SteamAppAchievement(gameData, meta, global, lang);
+                if (!meta) throw new Error("Meta somehow null at this point");
+
+                // If we got the English achievements, we need to set the language to English.
+                const newLang = missingIds.includes(gameId) ? "english" : lang;
+
+                const gameAchievement = new SteamAppAchievement(gameData, meta, global, newLang, null);
                 gameAchievementsMap.set(achievementId, gameAchievement);
             }
-            if (gameData) mappedGameAchievements.set(gameId, gameAchievementsMap);
+            if (gameData) achievements.set(gameId, gameAchievementsMap);
         }
 
-        return new Errable(mappedGameAchievements, err);
+        try {
+            // Manually translate the achievements if the language is not English
+            const needingTranslation = achievements
+                .values()
+                .map((achievements) => [...achievements.values()])
+                .flatMap((achievements) => achievements.flat())
+                .filter((achievement) => achievement.language !== locale);
+
+            await this.#translateRepository.translateAchievements(needingTranslation, locale);
+        } catch (err) {
+            console.error("Error translating achievements:", err);
+        }
+
+        return new Errable(achievements, err);
     }
 
     async getFriends(user: SteamUser[]) {
@@ -227,15 +355,16 @@ export class EnhancedSteamRepository {
         return new Errable(friendsList, err1 ?? err2);
     }
 
-    async getEstimatedPlayers(appId: number[], lang: Language = "english") {
+    async getEstimatedPlayers(appId: number[], locale: LanguageCode) {
+        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
         const data = new Map<number, number | null>();
 
         return Errable.try(async (setError) => {
             const appDetails = await fetchAndUpsert(
                 [appId],
-                (_) => this.#cacheRepository.getApps(_),
-                (_) => this.#cacheRepository.putApps(_),
-                (_) => this.#apiRepository.getApps(_),
+                (_) => this.#cacheRepository.getApps(_, lang),
+                (_) => this.#cacheRepository.putApps(_, lang),
+                (_) => this.#apiRepository.getApps(_, lang),
             );
 
             for (const id of appId) {

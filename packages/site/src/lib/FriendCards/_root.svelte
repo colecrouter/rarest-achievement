@@ -1,6 +1,7 @@
 <script lang="ts">
     import Transition from "$lib/Transition.svelte";
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    import { m } from "$lib/paraglide/messages.js";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
     import type { SteamOwnedGame, SteamUser, SteamUserAchievement } from "lib";
     import FriendCard from "./_card.svelte";
@@ -41,14 +42,13 @@
                         class="flex flex-col items-center justify-center py-12"
                     >
                         <h3 class="mb-2 text-xl font-bold">
-                            Sign in to see friends
+                            {m.friendSignInTitle()}
                         </h3>
                         <p class="text-surface-300 mb-6 max-w-md">
-                            Sign in to see which of your friends have unlocked
-                            this achievement.
+                            {m.friendSignInDescription()}
                         </p>
                         <button class="btn preset-filled-primary-500 px-4 py-2">
-                            Sign In
+                            {m.signIn()}
                         </button>
                     </form>
                 {:else if friends.length === 0}
@@ -57,7 +57,7 @@
                     >
                         <TrophyIcon class="text-surface-300 h-32 w-32" />
                         <div class="text-surface-300 text-sm">
-                            No friends have unlocked this achievement yet.
+                            {m.friendNoAchievementText()}
                         </div>
                     </div>
                 {:else}

@@ -1,3 +1,4 @@
+import type { APILanguageCode } from "../repositories/api/lang";
 import type { GetPlayerAchievementsResponse } from "../repositories/api/steampowered/playerAchievement";
 import type { SteamApp } from "./SteamApp";
 import {
@@ -18,11 +19,12 @@ export class SteamUserAchievement extends SteamAppAchievement {
         game: SteamApp,
         meta: SteamAchievementRawMeta,
         global: SteamAchievementRawGlobalStats,
-        lang: string,
+        lang: APILanguageCode,
+        translation: string | null,
         steamid: string,
         userStats: SteamUserAchievementRawStats | null,
     ) {
-        super(game, meta, global, lang);
+        super(game, meta, global, lang, translation);
         this.#steamid = steamid;
         this.#userStats = userStats;
     }

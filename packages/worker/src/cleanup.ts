@@ -13,28 +13,26 @@ export const refreshStaleApps = async (db: ProjectDB, api: SteamAuthenticatedAPI
 
     // Get the oldest apps that are older than 1 day
     const appIds = await db
-        .select({ id: apps.id })
+        .select({ id: apps.id, lang: apps.lang })
         .from(apps)
         .where(lt(apps.updated_at, ONE_DAY_AGO))
         .orderBy(asc(apps.updated_at))
-        .limit(count)
-        .then((rows) => rows.map((row) => row.id));
+        .limit(count);
 
     // Build new API repository, so we can fetch fresh data
     const apiRepository = new SteamAPIRepository(api);
-
-    const appsResponse = await apiRepository.getApps(appIds);
-    const achievementResponse = await apiRepository.getGameAchievements(appIds);
-
-    // May contain an error if rate limited, etc.
-    // In that case, just ignore, and work with what we got
-    const updatedApps = appsResponse.data;
-    const updatedAchievements = achievementResponse.data;
-
-    // Declare new DB repository, so we can save the data
     const dbRepository = new SteamCacheDBRepository(db);
 
-    // Save the data to the database
-    await dbRepository.putApps(updatedApps);
-    await dbRepository.putGameAchievements(updatedAchievements);
+    for (const app of appIds) {
+        // If the app is not in the database, skip it
+        if (!app.id) continue;
+
+        // Fetch the app details from the API
+        const appsResponse = await apiRepository.getApps([app.id], app.lang);
+        const achievementResponse = await apiRepository.getGameAchievements([app.id], app.lang);
+
+        // Update the app in the database
+        await dbRepository.putApps(appsResponse.data, app.lang);
+        await dbRepository.putGameAchievements(achievementResponse.data, app.lang);
+    }
 };

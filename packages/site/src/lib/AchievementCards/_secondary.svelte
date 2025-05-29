@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     // biome-ignore lint/style/useImportType: <explanation>
     import {
         type SteamAppAchievement,
@@ -14,7 +16,9 @@
 </script>
 
 <a
-    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+    href={localizeHref(
+        `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+    )}
     class="card secondary flex items-center justify-between gap-3 p-2"
 >
     <div class="icon-container">
@@ -50,14 +54,14 @@
         {#if achievement instanceof SteamUserAchievement}
             <div class="text-surface-300 mt-0.5 text-xs">
                 {#if achievement.unlocked}
-                    Unlocked: {achievement.unlocked.toLocaleDateString(
+                    {m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString(
                         undefined,
                         {
                             dateStyle: "short",
                         },
                     )}
                 {:else}
-                    Locked
+                    {m.statusLocked()}
                 {/if}
             </div>
         {/if}

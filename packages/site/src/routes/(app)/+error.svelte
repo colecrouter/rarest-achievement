@@ -1,6 +1,7 @@
 <script lang="ts">
     import { page } from "$app/state";
-
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import ArrowLeft from "@lucide/svelte/icons/arrow-left";
     import Home from "@lucide/svelte/icons/home";
     import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
@@ -17,12 +18,12 @@
     <div class="relative mb-20">
         <div class="relative mx-auto h-32 w-32">
             <div
-                class="absolute inset-0 rounded-full bg-red-500/20 blur-xl"
+                class="bg-error-500/20 absolute inset-0 rounded-full blur-xl"
             ></div>
             <div
                 class="border-surface-700 bg-surface-800 relative rounded-full border p-6"
             >
-                <div class="animate-pulse text-red-500">
+                <div class="text-error-500 animate-pulse">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -44,19 +45,24 @@
 
     <!-- Error Message -->
     <div class="mb-8 max-w-lg text-center">
-        <h2 class="mb-4 text-2xl font-bold">Uh Oh...</h2>
+        <h2 class="mb-4 text-2xl font-bold">{m.errorPageTitle()}</h2>
         <p class="text-surface-300 mb-6">
-            Something went wrong while loading this page. Our engineers have
-            been notified and are working on a fix.
+            {m.errorPageMessage()}
         </p>
         <!-- Error Details -->
         <div
             class="border-surface-700 bg-surface-800 rounded-container mb-8 overflow-hidden border p-4 text-left font-mono text-sm"
         >
-            <div class="text-error-400">&gt; ERROR_UNEXPECTED_CRASH</div>
-            <div class="text-surface-300">&gt; Error ID: {error?.message}</div>
+            <div class="text-error-500">&gt; ERROR_UNEXPECTED_CRASH</div>
             <div class="text-surface-300">
-                &gt; Try reloading the page or returning to home
+                &gt;
+                {m.errorPageErrorCause({
+                    errorMessage: error?.message ?? "Unknown Error",
+                })}
+            </div>
+            <div class="text-surface-300">
+                &gt;
+                {m.errorPageErrorSuggestion()}
             </div>
             <div class="text-primary-500 animate-pulse">&gt; _</div>
         </div>
@@ -69,14 +75,14 @@
             class="btn flex items-center gap-2"
         >
             <RefreshCcw class="mr-2 h-4 w-4" />
-            Try Again
+            {m.errorPageButtonReload()}
         </button>
-        <a href="/" class="inline-block">
+        <a href={localizeHref("/")} class="inline-block">
             <button
                 class="btn preset-outlined-surface-500 flex items-center gap-2"
             >
                 <Home class="mr-2 h-4 w-4" />
-                Return to Home
+                {m.errorPageButtonHome()}
             </button>
         </a>
         <button
@@ -84,7 +90,7 @@
             class="btn flex items-center gap-2"
         >
             <ArrowLeft class="mr-2 h-4 w-4" />
-            Go Back
+            {m.errorPageButtonBack()}
         </button>
     </div>
 </main>

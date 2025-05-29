@@ -1,4 +1,5 @@
 import type { Breadcrumb } from "$lib/breadcrumbs";
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { EnhancedSteamRepository } from "@project/lib";
 import { error } from "@sveltejs/kit";
 
@@ -6,7 +7,7 @@ export const load = async ({ params, locals }) => {
     const repo = new EnhancedSteamRepository(locals);
 
     const appId = Number.parseInt(params.app);
-    const results = await repo.getApps([appId]);
+    const results = await repo.getApps([appId], getLocale());
 
     const app = results.data.get(appId);
     if (!app) error(404, "Game not found");

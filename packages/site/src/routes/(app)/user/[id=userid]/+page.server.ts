@@ -1,6 +1,10 @@
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { EnhancedSteamRepository, userScores } from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
+    // Need to load the locale synchronously
+    const locale = getLocale();
+
     const achievements = (async () => {
         const repo = new EnhancedSteamRepository(locals);
         const { user: u } = await parent();
@@ -15,13 +19,13 @@ export const load = async ({ parent, locals }) => {
         const gameIds = [...new Set(ownedGames.map((game) => game.id))];
 
         console.time("Fetching game apps");
-        const { data: gameMap, error: err2 } = await repo.getApps(gameIds);
+        const { data: gameMap, error: err2 } = await repo.getApps(gameIds, locale);
         const gameApps = [...gameMap.values()];
         console.timeEnd("Fetching game apps");
 
         // Batch fetch achievements for all valid games and the user in one call
         console.time("Fetching achievements");
-        const { data: allAchievements, error: err3 } = await repo.getUserAchievements(gameApps, [u], "english");
+        const { data: allAchievements, error: err3 } = await repo.getUserAchievements(gameApps, [u], locale);
         console.timeEnd("Fetching achievements");
 
         // Flatten the achievements map to get a list of all achievements

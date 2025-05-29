@@ -1,10 +1,21 @@
+<script lang="ts" module>
+    let translate = $state(true);
+</script>
+
 <script lang="ts">
     import type { SteamAppAchievement } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import { SteamUserAchievement } from "@project/lib";
     import Badge from "./_badge.svelte";
+    import TranslationToggle from "$lib/TranslationToggle.svelte";
 
-    export let achievement: SteamUserAchievement | SteamAppAchievement;
+    interface Props {
+        achievement: SteamUserAchievement | SteamAppAchievement;
+    }
+
+    let { achievement }: Props = $props();
 
     const size = 64;
 
@@ -12,12 +23,15 @@
 </script>
 
 <div class="card">
+    <!-- {achievement.translation} -->
     <article class="flex h-full flex-col justify-between">
         <!-- Main section -->
         <div class="flex items-start gap-4 p-4">
             <!-- icon snippet -->
             <a
-                href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+                href={localizeHref(
+                    `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+                )}
                 class="relative"
             >
                 {#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
@@ -53,34 +67,48 @@
                     <Badge {achievement} />
                 </div>
             </a>
-            <div>
-                <!-- Achievement name -->
-                <h3 class="line-clamp-2 text-sm font-bold">
-                    <a
-                        class="hover:underline"
-                        href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
-                    >
-                        {achievement.name}
-                    </a>
-                </h3>
-                <!-- Game name & description -->
-                <p class="text-surface-300 mb-1 text-xs">
-                    <a
-                        class="hover:underline"
-                        href={`/game/${achievement.app.id}`}
-                    >
-                        {achievement.app.name}
-                    </a>
-                </p>
-                {#if achievement.hidden}
-                    <p class="text-surface-300 text-xs font-bold italic">
-                        Hidden
+            <div class="flex w-full justify-between">
+                <div class="">
+                    <!-- Achievement name -->
+                    <h3 class="line-clamp-2 text-sm font-bold">
+                        <a
+                            class="hover:underline"
+                            href={localizeHref(
+                                `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+                            )}
+                        >
+                            {achievement.name}
+                        </a>
+                    </h3>
+                    <!-- Game name & description -->
+                    <p class="text-surface-300 mb-1 text-xs">
+                        <a
+                            class="hover:underline"
+                            href={localizeHref(`/game/${achievement.app.id}`)}
+                        >
+                            {achievement.app.name}
+                        </a>
                     </p>
-                {:else}
-                    <p class="text-surface-100 line-clamp-2 text-xs">
-                        {achievement.description}
-                    </p>
-                {/if}
+                    {#if achievement.hidden}
+                        <p class="text-surface-300 text-xs font-bold italic">
+                            {m.statusHidden()}
+                        </p>
+                    {:else}
+                        <p class="text-surface-100 line-clamp-3 text-xs">
+                            {@html translate && achievement.translation
+                                ? achievement.translation
+                                : achievement.description}
+                        </p>
+                    {/if}
+                </div>
+                <div>
+                    {#if achievement.translation}
+                        <TranslationToggle
+                            class="preset-outlined-surface-500 text-surface-600-400 h-7 w-7"
+                            bind:translate
+                        />
+                    {/if}
+                </div>
             </div>
         </div>
 
@@ -91,16 +119,18 @@
             {#if achievement instanceof SteamUserAchievement}
                 <span>
                     {#if achievement.unlocked}
-                        Unlocked: {achievement.unlocked.toLocaleDateString()}
+                        {m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString()}
                     {:else}
-                        Locked
+                        {m.statusLocked()}
                     {/if}
                 </span>
                 <a
-                    href={`/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`}
+                    href={localizeHref(
+                        `/game/${achievement.app.id}/achievement/${encodeURIComponent(achievement.id)}`,
+                    )}
                     class="text-primary-500 hover:text-primary-400"
                 >
-                    Details
+                    {m.achievementDetails()}
                 </a>
             {/if}
         </div>

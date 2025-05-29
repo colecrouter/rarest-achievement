@@ -27,10 +27,10 @@ crons = ["0 0 * * *"]
 # services = [ { binding = "MY_SERVICE", service = "my-service" } ]
 
 [vars]
-NODE_VERSION = "22"
+NODE_VERSION = "23"
 
 [env.production.vars]
-NODE_VERSION = "22"
+NODE_VERSION = "23"
 
 [[d1_databases]]
 binding = "DB"

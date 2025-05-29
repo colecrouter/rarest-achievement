@@ -29,6 +29,15 @@ export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
     const normalizedDateStr = normalizeDigits(dateStr.replace(/\u00A0/g, " "));
     const trimmed = normalizedDateStr.trim();
 
+    // support Japanese "YYYY年M月D日"
+    if (locale === "ja") {
+        const match = trimmed.match(/^(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日$/u);
+        if (match) {
+            const [, yearStr, monthStr, dayStr] = match as [string, string, string, string];
+            return new Date(+yearStr, +monthStr - 1, +dayStr);
+        }
+    }
+
     // 2) match "D MonName YYYY"
     const match = trimmed.match(/^(\d{1,2})\s+(.+?)\s+(\d{4})$/u);
     if (!match) throw new Error(`Unrecognized date "${dateStr}" for ${locale}`);

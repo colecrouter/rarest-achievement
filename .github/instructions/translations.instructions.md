@@ -1,5 +1,5 @@
 ---
-applyTo: "packages/site/messages/*.json"
+applyTo: "**/messages/*.json"
 ---
 
 When translating localization files, note the following:
@@ -16,4 +16,4 @@ When translating localization files, note the following:
 - Terms like "Player Count", "Rarity", "Unlocked" are meant to be "sorting methods", aka "number of players who have this achievement", "percentage of players who have this achievement", and "when did I unlock this achievement".
 - For the "loading screen" messages:
   - Be culturally accurate. For example, "The Name's Bond... James Bond" is a reference to the James Bond movies, so it should be translated such that it is recognizable to the target audience.
-  - If a title/property/person has a recognizable translated/localized name, use that name.
+  - If any title/property/person/proper noun (e.g., "Gordon Freeman", "Super Mario Bros", "The Legend of Zelda") has a recognizable translated/localized name, use that name.

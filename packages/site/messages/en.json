@@ -235,27 +235,37 @@
     "userViewList": "List View",
     "userViewTable": "Grid View",
     "viewOnSteam": "View on Steam",
-    "aboutFaq.question1": "What is Steam Vault?",
-    "aboutFaq.answer1": "Steam Vault is a platform that lets you view all of your achievements across Steam. We help you find your rarest achievements.",
-    "aboutFaq.question2": "Why is Steam Vault special?",
-    "aboutFaq.answer2": "Due to Steam's strict API guidelines, it is difficult to track achievement progress for many users, across thousands of games. Steam Vault aims to bridge that gap, while gathering as much data & insight as possible, and providing it to you (for free).",
-    "aboutFaq.question3": "How do I connect my Steam account?",
-    "aboutFaq.answer3": "Simply press the sign in button on the top right corner of the page. Connect your Steam account to start tracking your achievements.",
-    "aboutFaq.question4": "Is Steam Vault free to use?",
-    "aboutFaq.answer4": "Steam Vault is completely free to use. There are no paid features. We are funded entirely by advertising and donations.",
-    "aboutFaq.question5": "How often is achievement data updated?",
-    "aboutFaq.answer5": "Our data is updated systematically to maintain within Steam's API guidelines. If you feel like your data is not refreshing regularly, please reach out to us.",
-    "aboutFaq.question6": "Can I share my achievement profile with others?",
-    "aboutFaq.answer6": "Each user has a public profile page that can be shared via a unique URL. You can also generate shareable cards for individual achievements to post on social media.",
-    "aboutFaq.question7": "How is achievement rarity calculated?",
-    "aboutFaq.answer7": "Achievement rarity is calculated based on a few factors. The \"percentage\" stat is from Steam directly, and it is unknown how that number is calculated. Our \"score\" represents how many people have unlocked the achievement. It is calculated using a rough estimate of how many people have played the game. We are always looking for new ways to analyze and visualize your achievements.",
-    "aboutFeatures.feature1.title": "Achievement Tracking",
-    "aboutFeatures.feature1.shortDescription": "Automatically sync and update achievements across Steam.",
-    "aboutFeatures.feature1.description": "Our platform periodically refreshes your achievement data, ensuring you always have the latest information.",
-    "aboutFeatures.feature2.title": "Rarity Analysis",
-    "aboutFeatures.feature2.shortDescription": "Discover your rarest and most impressive gaming achievements.",
-    "aboutFeatures.feature2.description": "We are always looking for new ways to analyze and visualize your achievements. Our rarity analysis feature helps you identify which achievements are the most difficult to unlock.",
-    "aboutFeatures.feature3.title": "Social Features",
-    "aboutFeatures.feature3.shortDescription": "Connect with friends and compare your achievement progress.",
-    "aboutFeatures.feature3.description": "Automatically find achievements from your friends and compare your progress. Share your achievements on social media and show off your gaming prowess."
+    "aboutFaq": {
+        "question1": "What is Steam Vault?",
+        "answer1": "Steam Vault is a platform that lets you view all of your achievements across Steam. We help you find your rarest achievements.",
+        "question2": "Why is Steam Vault special?",
+        "answer2": "Due to Steam's strict API guidelines, it is difficult to track achievement progress for many users, across thousands of games. Steam Vault aims to bridge that gap, while gathering as much data & insight as possible, and providing it to you (for free).",
+        "question3": "How do I connect my Steam account?",
+        "answer3": "Simply press the sign in button on the top right corner of the page. Connect your Steam account to start tracking your achievements.",
+        "question4": "Is Steam Vault free to use?",
+        "answer4": "Steam Vault is completely free to use. There are no paid features. We are funded entirely by advertising and donations.",
+        "question5": "How often is achievement data updated?",
+        "answer5": "Our data is updated systematically to maintain within Steam's API guidelines. If you feel like your data is not refreshing regularly, please reach out to us.",
+        "question6": "Can I share my achievement profile with others?",
+        "answer6": "Each user has a public profile page that can be shared via a unique URL. You can also generate shareable cards for individual achievements to post on social media.",
+        "question7": "How is achievement rarity calculated?",
+        "answer7": "Achievement rarity is calculated based on a few factors. The \"percentage\" stat is from Steam directly, and it is unknown how that number is calculated. Our \"score\" represents how many people have unlocked the achievement. It is calculated using a rough estimate of how many people have played the game. We are always looking for new ways to analyze and visualize your achievements."
+    },
+    "aboutFeatures": {
+        "feature1": {
+            "title": "Achievement Tracking",
+            "shortDescription": "Automatically sync and update achievements across Steam.",
+            "description": "Our platform periodically refreshes your achievement data, ensuring you always have the latest information."
+        },
+        "feature2": {
+            "title": "Rarity Analysis",
+            "shortDescription": "Discover your rarest and most impressive gaming achievements.",
+            "description": "We are always looking for new ways to analyze and visualize your achievements. Our rarity analysis feature helps you identify which achievements are the most difficult to unlock."
+        },
+        "feature3": {
+            "title": "Social Features",
+            "shortDescription": "Connect with friends and compare your achievement progress.",
+            "description": "Automatically find achievements from your friends and compare your progress. Share your achievements on social media and show off your gaming prowess."
+        }
+    }
 }

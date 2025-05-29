@@ -1,5 +1,5 @@
-import { error, redirect } from "@sveltejs/kit";
 import { localizeHref } from "$lib/paraglide/runtime.js";
+import { error, redirect } from "@sveltejs/kit";
 
 export const GET = async ({ url, cookies }) => {
     // Capture the query parameters that Steam sends back.

@@ -1,4 +1,4 @@
-import { getLocale, localizeHref, localizeUrl, type Locale } from "$lib/paraglide/runtime.js";
+import { type Locale, getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
 import {
     type APILanguageCode,
     EnhancedSteamRepository,

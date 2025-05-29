@@ -8,7 +8,7 @@
     // @ts-ignore https://github.com/microsoft/TypeScript/issues/60608
     // Format Dates like "1d"
     const dateFormat = new Intl.DurationFormat(getLocale(), {
-        style: "narrow",
+        style: getLocale() === "ja" ? "short" : "narrow", // "narrow" for ja falls back to "Xd" format, so use "short" instead
     });
 </script>
 

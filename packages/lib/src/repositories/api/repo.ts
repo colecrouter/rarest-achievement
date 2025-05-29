@@ -102,7 +102,8 @@ export class SteamAPIRepository {
             for (let i = 0; i < user_id.length; i++) {
                 const usr = user_id[i];
                 if (usr) cappedUserIds.push(usr);
-                if (cappedUserIds.length * game_id.length + game_id.length > 100) break;
+                // 100 was good before, but now we have Google Translate API calls to worry about
+                if (cappedUserIds.length * game_id.length + game_id.length > 80) break;
             }
 
             await Promise.all(

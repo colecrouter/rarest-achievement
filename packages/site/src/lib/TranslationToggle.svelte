@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { quartOut } from "svelte/easing";
     import { crossfade } from "svelte/transition";
 
     interface Props {
@@ -10,11 +11,12 @@
         $props();
 
     const [send, receive] = crossfade({
-        duration: 200,
+        duration: 300,
+        easing: quartOut,
         // when you remove an element
         fallback() {
             return {
-                duration: 200,
+                duration: 300,
                 css: (t) => `opacity: ${t}`,
             };
         },

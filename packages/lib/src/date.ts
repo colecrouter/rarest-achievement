@@ -29,7 +29,7 @@ const localeMap: Record<string, Locale> = {
 
 // formats per locale; add or adjust formats as needed
 const formatMap: Record<string, string[]> = {
-    en: ["d MMM yyyy", "d MMM, yyyy"],
+    en: ["d MMM yyyy", "d MMM, yyyy", "MMM d, yyyy"],
     ja: ["yyyy年M月d日"],
     de: ["d. MMM yyyy"],
     ru: ["d MMM yyyy", "d MMM yyyy 'г.'"],
@@ -42,8 +42,8 @@ const formatMap: Record<string, string[]> = {
     "pt-BR": ["d MMM yyyy", "d/MMM/yyyy", "d/MMM'.'yyyy"],
     th: ["d MMM yyyy"],
     tr: ["d MMM yyyy"],
-    "zh-CN": ["yyyy年M月d日", "yyyy 年 M 月 d 日"], // updated for zh-CN
-    "zh-TW": ["yyyy年M月d日", "yyyy 年 M 月 d 日"], // updated for zh-TW
+    "zh-CN": ["yyyy年M月d日", "yyyy 年 M 月 d 日"],
+    "zh-TW": ["yyyy年M月d日", "yyyy 年 M 月 d 日"],
 };
 
 export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {

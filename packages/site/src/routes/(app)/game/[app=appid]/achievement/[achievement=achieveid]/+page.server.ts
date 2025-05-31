@@ -58,7 +58,7 @@ export const load = async ({ parent, url, locals, platform }) => {
             const { data: achievements, error: err3 } = await steamRepo.getUserAchievements(
                 [app],
                 filteredFriendsWithGame,
-                getLocale(),
+                locale,
             );
             if (err3) setError(err3);
 

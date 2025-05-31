@@ -34,7 +34,7 @@
   "achievementTabFriends": "Друзі",
   "achievementTabStats": "Статистика",
   "achievementThisAchievementLabel": "Це досягнення",
-  "appPageMetaDescription": "Отримайте всі {achievementCount} досягнень у {appName}. Відстежуйте свій прогрес за допомогою інтерактивних графіків, порівнюйте рідкість та отримуйте експертні поради на Steam Vault.",
+  "appPageMetaDescription": "Перегляньте всі {achievementCount} досягнень у {appName}. Відстежуйте свій прогрес за допомогою інтерактивних діаграм та переглядайте посібники на Steam Vault.",
   "appPageMetaKeywords": "Steam, досягнення, {appName}, {appId}, {achievementCount}",
   "appPageMetaTitle": "{appName} - Досягнення",
   "chartAchievementsLabel": "Досягнення",

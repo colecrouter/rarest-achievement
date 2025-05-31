@@ -34,7 +34,7 @@
 	"achievementTabFriends": "เพื่อน",
 	"achievementTabStats": "สถิติ",
 	"achievementThisAchievementLabel": "ความสำเร็จนี้",
-	"appPageMetaDescription": "ปลดล็อกความสำเร็จทั้งหมด {achievementCount} ใน {appName}. ติดตามความคืบหน้าของคุณด้วยกราฟแบบโต้ตอบ, เปรียบเทียบความหายาก, และรับเคล็ดลับจากผู้เชี่ยวชาญบน Steam Vault.",
+	"appPageMetaDescription": "ดูความสำเร็จทั้งหมด {achievementCount} รายการใน {appName} ติดตามความคืบหน้าของคุณด้วยแผนภูมิเชิงโต้ตอบ และดูคู่มือบน Steam Vault",
 	"appPageMetaKeywords": "Steam, ความสำเร็จ, {appName}, {appId}, {achievementCount}",
 	"appPageMetaTitle": "{appName} - ความสำเร็จ",
 	"chartAchievementsLabel": "ความสำเร็จ",

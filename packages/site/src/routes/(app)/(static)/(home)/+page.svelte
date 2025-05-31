@@ -77,10 +77,8 @@
 <svelte:head>
     <title>{m.homepageMetaTitle()}</title>
     <meta name="description" content={m.homepageMetaDescription()} />
-    <meta
-        name="keywords"
-        content="Steam, achievements, gaming, showcase, leaderboard"
-    />
+    <meta name="keywords" content={m.layoutMetaKeywords()} />
+
     <meta property="og:title" content={m.homepageMetaTitle()} />
     <meta property="og:description" content={m.homepageMetaDescription()} />
     <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />

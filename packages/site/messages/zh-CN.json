@@ -34,7 +34,7 @@
 	"achievementTabFriends": "好友",
 	"achievementTabStats": "统计",
 	"achievementThisAchievementLabel": "本成就",
-	"appPageMetaDescription": "解锁 {appName} 中所有 {achievementCount} 个成就。使用互动图表追踪进度、比较稀有度，并获得专家攻略——尽在 Steam Vault。",
+	"appPageMetaDescription": "查看 {appName} 中的全部 {achievementCount} 个成就。通过互动图表追踪您的进度，并在 Steam Vault 上查看指南。",
 	"appPageMetaKeywords": "Steam, 成就, {appName}, {appId}, {achievementCount}",
 	"appPageMetaTitle": "{appName} - 成就",
 	"chartAchievementsLabel": "成就",

@@ -2,7 +2,7 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
+    import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
     import Shield from "@lucide/svelte/icons/shield";
     import { Tabs } from "@skeletonlabs/skeleton-svelte";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
@@ -23,7 +23,7 @@
 <svelte:head>
     <title>{m.legalPageMetaTitle()}</title>
     <meta name="description" content={m.legalPageMetaDescription()} />
-    <link rel="canonical" href="/legal" />
+    <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
     <meta property="og:title" content={m.legalPageMetaTitle()} />
     <meta property="og:description" content={m.legalPageMetaDescription()} />
     <meta property="og:type" content="website" />

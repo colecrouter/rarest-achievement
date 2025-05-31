@@ -1,7 +1,8 @@
 <script lang="ts">
+    import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
     import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
+    import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Crown from "@lucide/svelte/icons/crown";
@@ -82,7 +83,7 @@
     />
     <meta property="og:title" content={m.homepageMetaTitle()} />
     <meta property="og:description" content={m.homepageMetaDescription()} />
-    <link rel="canonical" href="/" />
+    <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
 </svelte:head>
 
 <main>

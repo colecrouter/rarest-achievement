@@ -8,7 +8,7 @@
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
     import TranslationToggle from "$lib/TranslationToggle.svelte";
     import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
+    import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
     import { getRarity, localizedRarity } from "$lib/rarity";
     import BookOpenText from "@lucide/svelte/icons/book-open-text";
     import NotebookText from "@lucide/svelte/icons/notebook-text";
@@ -18,6 +18,7 @@
     import Chart from "chart.js/auto";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
+    import { base } from "$app/paths";
 
     let { data } = $props();
 
@@ -181,10 +182,7 @@
             percentage: achievement.globalPercentage,
         })}
     />
-    <link
-        rel="canonical"
-        href={`/game/${app.id}/achievement/${achievement.id}`}
-    />
+    <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
     <meta
         property="og:title"
         content={m.achievementPageMetaTitle({

@@ -6,7 +6,7 @@
     import IndexError from "$lib/IndexError.svelte";
     import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import { m } from "$lib/paraglide/messages";
-    import { getLocale } from "$lib/paraglide/runtime";
+    import { deLocalizeUrl, getLocale } from "$lib/paraglide/runtime";
     import type { Rarity } from "$lib/rarity";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
@@ -173,7 +173,7 @@
             appName: app.name,
         })}
     />
-    <link rel="canonical" href={`/game/${app.id}`} />
+    <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
     <meta property="og:title" content={app.name} />
     <meta
         property="og:description"

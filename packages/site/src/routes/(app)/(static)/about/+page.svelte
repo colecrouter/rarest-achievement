@@ -1,6 +1,7 @@
 <script lang="ts">
+    import { page } from "$app/state";
     import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
+    import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
     import ArrowRight from "@lucide/svelte/icons/arrow-right";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import DollarSign from "@lucide/svelte/icons/dollar-sign";
@@ -79,7 +80,7 @@
 <svelte:head>
     <title>{m.aboutPageMetaTitle()}</title>
     <meta name="description" content={m.aboutPageMetaDescription()} />
-    <link rel="canonical" href="/about" />
+    <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
     <meta property="og:title" content={m.aboutPageMetaTitle()} />
     <meta property="og:description" content={m.aboutPageMetaDescription()} />
 </svelte:head>

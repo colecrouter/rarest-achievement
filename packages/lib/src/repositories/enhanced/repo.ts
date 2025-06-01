@@ -214,7 +214,7 @@ export class EnhancedSteamRepository {
                 .flatMap((achievements) => achievements.flat())
                 .filter((achievement) => achievement.language !== locale);
 
-            await this.#translateRepository.translateAchievements(needingTranslation, locale);
+            // await this.#translateRepository.translateAchievements(needingTranslation, locale);
         } catch (err) {
             console.error("Error translating achievements:", err);
         }
@@ -315,7 +315,7 @@ export class EnhancedSteamRepository {
                 .flatMap((achievements) => achievements.flat())
                 .filter((achievement) => achievement.language !== locale);
 
-            await this.#translateRepository.translateAchievements(needingTranslation, locale);
+            // await this.#translateRepository.translateAchievements(needingTranslation, locale);
         } catch (err) {
             console.error("Error translating achievements:", err);
         }

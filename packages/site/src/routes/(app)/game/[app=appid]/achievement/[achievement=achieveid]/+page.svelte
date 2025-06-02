@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { base } from "$app/paths";
     import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";

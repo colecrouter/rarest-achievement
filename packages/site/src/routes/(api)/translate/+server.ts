@@ -3,7 +3,7 @@
  * It returns a JSON array with the translated achievement descriptions (e.g., {"appid:achievementName": "translated description"}).
  */
 
-import { EnhancedSteamRepository, getLanguageByCode, TranslateRepository } from "@project/lib";
+import { EnhancedSteamRepository, TranslateRepository, getLanguageByCode } from "@project/lib";
 import { error, json } from "@sveltejs/kit";
 
 export const POST = async ({ locals, platform, request }) => {

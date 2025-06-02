@@ -203,7 +203,7 @@
     "signIn": "サインイン",
     "splashAlertDescription": "大量のリクエストを発行してデータを取得中です。お時間がかかる場合はページを再読み込みしてください。",
     "splashAlertTitle": "少々お待ちください…",
-    "splashLoadingHeader": "読み込み中…",
+    "loading": "読み込み中…",
     "splashSourceLabel": "ソース:",
     "statusHidden": "非表示",
     "statusLocked": "ロック済み",
@@ -267,5 +267,9 @@
             "shortDescription": "フレンドと繋がり、達成進捗を比較。",
             "description": "フレンドの実績解除を自動検出し、進捗比較やSNSでのシェアが可能です。"
         }
+    },
+    "translation": {
+        "show": "自動翻訳を表示",
+        "hide": "原文を表示"
     }
 }

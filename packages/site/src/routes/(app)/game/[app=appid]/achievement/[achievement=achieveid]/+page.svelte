@@ -8,7 +8,11 @@
     import TransitionWrapper from "$lib/TransitionWrapper.svelte";
     import TranslationToggle from "$lib/TranslationToggle.svelte";
     import { m } from "$lib/paraglide/messages.js";
-    import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
+    import {
+        deLocalizeUrl,
+        getLocale,
+        localizeHref,
+    } from "$lib/paraglide/runtime";
     import { getRarity, localizedRarity } from "$lib/rarity";
     import BookOpenText from "@lucide/svelte/icons/book-open-text";
     import NotebookText from "@lucide/svelte/icons/notebook-text";
@@ -18,7 +22,6 @@
     import Chart from "chart.js/auto";
     import Colors from "tailwindcss/colors";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
-    import { base } from "$app/paths";
 
     let { data } = $props();
 
@@ -28,6 +31,7 @@
         app,
         friendsWithAchievement,
         articles,
+        translation,
     } = $derived(data);
 
     let rarity = $derived(getRarity(achievement.globalPercentage));
@@ -233,7 +237,7 @@
                 class="relative flex flex-col items-center px-6 py-4 md:flex-row"
             >
                 <div class="mb-2 flex items-center gap-6">
-                    <div class="relative min-w-[96px]">
+                    <div class="relative">
                         <div
                             class="bg-{rarity}/20 rounded-container absolute -inset-1 blur-sm"
                         ></div>
@@ -245,7 +249,7 @@
                                 alt={achievement.name}
                                 width="96"
                                 height="96"
-                                class="rounded"
+                                class="max-w-[initial] rounded"
                             />
                         </div>
                     </div>
@@ -267,11 +271,11 @@
                         <p
                             class="text-surface-200 flex w-full grow items-start"
                         >
-                            {#if achievement.translation}
+                            {#if translation}
                                 <TranslationToggle bind:translate />
                             {/if}
-                            {@html translate && achievement.translation
-                                ? achievement.translation
+                            {@html translate && translation
+                                ? translation
                                 : achievement.description}
                         </p>
                     </div>

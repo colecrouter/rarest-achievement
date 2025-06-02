@@ -28,7 +28,7 @@
         <h1
             class="text-surface-200 animate-pulse text-center text-2xl font-bold"
         >
-            {m.splashLoadingHeader()}
+            {m.loading()}
         </h1>
 
         <div class="show flex min-h-[400px] flex-col justify-center">

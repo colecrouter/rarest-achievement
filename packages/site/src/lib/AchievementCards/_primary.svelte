@@ -1,15 +1,71 @@
 <script lang="ts" module>
-    let translate = $state(true);
+    import { SvelteMap, SvelteSet } from "svelte/reactivity";
+
+    let translate = $state(false); // default to false, because oof my wallet
+
+    // I wanted to use a WeakMap here, but it's not reactive.
+    let translations = new SvelteMap<SteamAppAchievement, Promise<string>>();
+    let achievements = new SvelteSet<SteamAppAchievement>();
+
+    function translateAchievements(lang: LanguageCode) {
+        console.debug(
+            `Translating achievements for language: ${lang}, total: ${achievements.size}`,
+        );
+
+        const missingTranslations = achievements
+            .values()
+            .filter(
+                (achievement) =>
+                    !translations.has(achievement) &&
+                    achievement.language !== lang,
+            )
+            .toArray();
+        if (missingTranslations.length === 0) return;
+
+        const resMap = fetch(`/translate?lang=${lang}`, {
+            method: "POST",
+            body: JSON.stringify(
+                missingTranslations.map((a) => [a.app.id, a.id]),
+            ),
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(
+                        `Failed to fetch translations: ${res.status} ${res.statusText}`,
+                    );
+                }
+                return res.json() as Promise<Array<[string, string]>>;
+            })
+            .then((res) => new Map(res));
+
+        for (const achievement of missingTranslations) {
+            // Assign promise back to the map
+            const res = resMap.then(
+                (res) =>
+                    res.get(`${achievement.app.id}:${achievement.id}`) ?? "",
+            ); // TODO
+            translations.set(achievement, res);
+        }
+    }
+
+    $effect.root(() => {
+        $effect(() => {
+            if (translate) translateAchievements(getLocale());
+        });
+
+        return () => {};
+    });
 </script>
 
 <script lang="ts">
-    import type { SteamAppAchievement } from "@project/lib";
+    import { SteamAppAchievement, type LanguageCode } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
     import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
+    import { getLocale, localizeHref } from "$lib/paraglide/runtime";
+    import TranslationToggle from "$lib/TranslationToggle.svelte";
     import { SteamUserAchievement } from "@project/lib";
     import Badge from "./_badge.svelte";
-    import TranslationToggle from "$lib/TranslationToggle.svelte";
+    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
 
     interface Props {
         achievement: SteamUserAchievement | SteamAppAchievement;
@@ -20,6 +76,15 @@
     const size = 64;
 
     const imgClass = "border-surface-300 bg-surface-900 rounded border";
+
+    $effect(() => {
+        achievements.add(achievement);
+
+        return () => {
+            achievements.delete(achievement);
+            translations.delete(achievement);
+        };
+    });
 </script>
 
 <div class="card">
@@ -95,14 +160,26 @@
                         </p>
                     {:else}
                         <p class="text-surface-100 line-clamp-3 text-xs">
-                            {@html translate && achievement.translation
-                                ? achievement.translation
-                                : achievement.description}
+                            {#if !translate || achievement.language === getLocale()}
+                                {achievement.description}
+                            {:else}
+                                {#await translations.get(achievement)}
+                                    <span class="text-surface-500">
+                                        {m.loading()}
+                                    </span>
+                                {:then translation}
+                                    {@html translation}
+                                {:catch error}
+                                    <span class="text-error"
+                                        >{error.message}</span
+                                    >
+                                {/await}
+                            {/if}
                         </p>
                     {/if}
                 </div>
-                <div>
-                    {#if achievement.translation}
+                <div class="z-50">
+                    {#if achievement.language !== getLocale()}
                         <TranslationToggle
                             class="preset-outlined-surface-500 text-surface-600-400 h-7 w-7"
                             bind:translate

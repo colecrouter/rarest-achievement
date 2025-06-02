@@ -20,11 +20,10 @@ export class SteamUserAchievement extends SteamAppAchievement {
         meta: SteamAchievementRawMeta,
         global: SteamAchievementRawGlobalStats,
         lang: APILanguageCode,
-        translation: string | null,
         steamid: string,
         userStats: SteamUserAchievementRawStats | null,
     ) {
-        super(game, meta, global, lang, translation);
+        super(game, meta, global, lang);
         this.#steamid = steamid;
         this.#userStats = userStats;
     }

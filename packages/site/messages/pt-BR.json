@@ -203,7 +203,7 @@
     "signIn": "Entrar",
     "splashAlertDescription": "Estamos enviando milhares de requisições para obter seus dados. Se você acha que está demorando muito, tente recarregar a página.",
     "splashAlertTitle": "Isso pode levar um minuto...",
-    "splashLoadingHeader": "Carregando...",
+    "loading": "Carregando...",
     "splashSourceLabel": "Origem:",
     "statusHidden": "Oculto",
     "statusLocked": "Bloqueado",
@@ -267,5 +267,9 @@
             "shortDescription": "Conecte-se com amigos e compare o progresso das suas conquistas.",
             "description": "Descubra automaticamente as conquistas dos seus amigos e compare seu progresso. Compartilhe suas conquistas nas redes sociais e mostre suas habilidades nos jogos."
         }
+    },
+    "translation": {
+        "show": "Mostrar tradução automática",
+        "hide": "Mostrar texto original"
     }
 }

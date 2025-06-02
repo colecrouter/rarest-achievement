@@ -203,7 +203,7 @@
 	"signIn": "登录",
 	"splashAlertDescription": "我们正在发送数千个请求以获取您的数据。如觉得等待时间过长，请尝试刷新页面。",
 	"splashAlertTitle": "这可能需要一些时间……",
-	"splashLoadingHeader": "加载中……",
+	"loading": "加载中……",
 	"splashSourceLabel": "来源：",
 	"statusHidden": "隐藏",
 	"statusLocked": "已锁定",
@@ -267,5 +267,9 @@
 			"shortDescription": "与好友互动，比较成就进度。",
 			"description": "自动查找好友成就并与您的数据对比，在社交媒体上分享您的游戏实力。"
 		}
+	},
+	"translation": {
+		"show": "显示自动翻译",
+		"hide": "显示原文"
 	}
 }

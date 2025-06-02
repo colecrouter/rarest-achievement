@@ -37,11 +37,11 @@ export type LanguageEntry = (typeof Languages)[number];
 export type APILanguageCode = (typeof Languages)[number]["apiCode"];
 export type LanguageCode = (typeof Languages)[number]["storeCode"];
 
-export const getLanguageByAPICode = (code: APILanguageCode): LanguageEntry | undefined => {
+export const getLanguageByAPICode = (code: APILanguageCode | (string & {})): LanguageEntry | undefined => {
     return Languages.find((lang) => lang.apiCode === code);
 };
 
-export const getLanguageByCode = (code: LanguageCode): LanguageEntry | undefined => {
+export const getLanguageByCode = (code: LanguageCode | (string & {})): LanguageEntry | undefined => {
     return Languages.find((lang) => lang.storeCode === code);
 };
 

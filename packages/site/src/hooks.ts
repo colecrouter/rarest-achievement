@@ -50,15 +50,15 @@ export const transport: Transport = {
     SteamUserAchievement: {
         encode: (data) => data instanceof SteamUserAchievement && data.serializeUser(),
         decode: (data: ReturnType<SteamUserAchievement["serializeUser"]>) => {
-            const [app, stats, global, lang, translation, steamid, userStats] = data;
-            return new SteamUserAchievement(app, stats, global, lang, translation, steamid, userStats);
+            const [app, stats, global, lang, steamid, userStats] = data;
+            return new SteamUserAchievement(app, stats, global, lang, steamid, userStats);
         },
     },
     SteamAppAchievement: {
         encode: (data) => data instanceof SteamAppAchievement && data.serialize(),
         decode: (data: ReturnType<SteamAppAchievement["serialize"]>) => {
-            const [app, stats, global, lang, translation] = data;
-            return new SteamAppAchievement(app, stats, global, lang, translation);
+            const [app, stats, global, lang] = data;
+            return new SteamAppAchievement(app, stats, global, lang);
         },
     },
     SteamOwnedGame: {

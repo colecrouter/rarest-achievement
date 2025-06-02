@@ -1,5 +1,5 @@
 import type { KVNamespace } from "@cloudflare/workers-types";
-import type { SteamAppAchievement } from "@models";
+import type { SteamAppAchievement } from "../../../";
 import type { LanguageCode } from "../lang";
 import type { TranslateClient } from "./client";
 
@@ -12,7 +12,7 @@ export class TranslateRepository {
         this.#cache = cache;
     }
 
-    async translateAchievements(ach: Iterable<SteamAppAchievement>, locale: LanguageCode) {
+    async translateAchievements(ach: Array<SteamAppAchievement>, locale: LanguageCode) {
         const achievements = Array.from(ach);
 
         // Deduplicate achievements by app.id and id
@@ -79,11 +79,17 @@ export class TranslateRepository {
             }
         }
 
+        const results = new Map<SteamAppAchievement, string>();
+
         // Assign translations back onto each original achievement
         for (const ach of achievements) {
             const uniqueAch = uniqueAchievements.get(uniqueKey(ach));
             if (!uniqueAch) continue;
-            ach.translation = resultsBuffer.get(uniqueAch) ?? null;
+
+            const translation = resultsBuffer.get(uniqueAch) ?? null;
+            if (translation) results.set(ach, translation);
         }
+
+        return results;
     }
 }

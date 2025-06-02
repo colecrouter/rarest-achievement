@@ -203,7 +203,7 @@
     "signIn": "Sign In",
     "splashAlertDescription": "We're firing off thousands of requests to get your data. If you think this is taking too long, try reloading the page.",
     "splashAlertTitle": "This might take a minute...",
-    "splashLoadingHeader": "Loading...",
+    "loading": "Loading...",
     "splashSourceLabel": "Source:",
     "statusHidden": "Hidden",
     "statusLocked": "Locked",
@@ -267,5 +267,9 @@
             "shortDescription": "Connect with friends and compare your achievement progress.",
             "description": "Automatically find achievements from your friends and compare your progress. Share your achievements on social media and show off your gaming prowess."
         }
+    },
+    "translation": {
+        "show": "Show automatic translation",
+        "hide": "Show original text"
     }
 }

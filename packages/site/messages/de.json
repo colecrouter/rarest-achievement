@@ -203,7 +203,7 @@
     "signIn": "Anmelden",
     "splashAlertDescription": "Wir senden tausende Anfragen, um deine Daten abzurufen. Falls es zu lange dauert, lade die Seite neu.",
     "splashAlertTitle": "Das kann einen Moment dauern...",
-    "splashLoadingHeader": "Laden...",
+    "loading": "Laden...",
     "splashSourceLabel": "Quelle:",
     "statusHidden": "Versteckt",
     "statusLocked": "Gesperrt",
@@ -267,5 +267,9 @@
             "shortDescription": "Verbinde dich mit Freunden und vergleiche deinen Fortschritt.",
             "description": "Finde automatisch die Erfolge deiner Freunde und vergleiche deinen Fortschritt. Teile deine Erfolge in sozialen Medien und zeige, was du drauf hast."
         }
+    },
+    "translation": {
+        "show": "Automatische Übersetzung anzeigen",
+        "hide": "Originaltext anzeigen"
     }
 }

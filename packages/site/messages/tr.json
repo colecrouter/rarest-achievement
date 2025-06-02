@@ -203,7 +203,7 @@
     "signIn": "Oturum Aç",
     "splashAlertDescription": "Verilerinizi çekmek için binlerce istek gönderiyoruz. Çok uzun sürdüğünü düşünüyorsanız, sayfayı yenilemeyi deneyin.",
     "splashAlertTitle": "Bir dakika sürebilir...",
-    "splashLoadingHeader": "Yükleniyor...",
+    "loading": "Yükleniyor...",
     "splashSourceLabel": "Kaynak:",
     "statusHidden": "Gizli",
     "statusLocked": "Kilitli",
@@ -267,5 +267,9 @@
             "shortDescription": "Arkadaşlarınızla bağ kurun ve başarı ilerlemenizi karşılaştırın.",
             "description": "Arkadaşlarınızın başarılarını otomatik olarak bulun, ilerlemenizi karşılaştırın ve sosyal medyada başarılarınızı paylaşarak oyun dünyasında fark yaratın."
         }
+    },
+    "translation": {
+        "show": "Otomatik çeviriyi göster",
+        "hide": "Orijinal metni göster"
     }
 }

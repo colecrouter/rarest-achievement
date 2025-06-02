@@ -1,6 +1,6 @@
 import type { Breadcrumb } from "$lib/breadcrumbs";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { EnhancedSteamRepository, TranslateRepository, type SteamAppAchievement } from "@project/lib";
+import { EnhancedSteamRepository, type SteamAppAchievement, TranslateRepository } from "@project/lib";
 import { error } from "@sveltejs/kit";
 
 export const load = async ({ params, parent, locals }) => {

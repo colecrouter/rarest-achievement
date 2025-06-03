@@ -125,51 +125,51 @@ const getStats = async (locals: App.Locals) => {
 const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
     const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
 
-    // Pick 20 of the rarest achievements, then pick 3 random ones
-    const rarestX = 100;
-
     const query = sql`
-    WITH RankedAchievements AS (
-        SELECT 
-            achievements_stats.app_id,
-            j.value,
-            json_extract(j.value, '$.percent') AS percent,
+        WITH UserUnlocked AS (
+            SELECT
+            ua.app_id,
+            u.value AS uv
+            FROM user_achievements_stats AS ua,
+                json_each(ua.data) AS u
+            WHERE json_extract(u.value, '$.achieved') = 1
+        ),
+        Ranked AS (
+            SELECT
+            uu.app_id,
+            uu.uv,
+            gs.value AS gv,
             ROW_NUMBER() OVER (
-            PARTITION BY achievements_stats.app_id 
-            ORDER BY cast(json_extract(j.value, '$.percent') as float) ASC
+                PARTITION BY uu.app_id
+                ORDER BY cast(json_extract(gs.value, '$.percent') AS float) ASC
             ) AS rn
-        FROM achievements_stats,
-            json_each(achievements_stats.data) AS j
-        -- Optionally, exclude hidden achievements:
-        -- WHERE json_extract(j.value, '$.hidden') != 1
+            FROM UserUnlocked uu
+            JOIN achievements_stats ast
+            ON ast.app_id = uu.app_id
+            JOIN json_each(ast.data) AS gs
+            ON json_extract(gs.value, '$.name') = json_extract(uu.uv, '$.apiname')
+            WHERE cast(json_extract(gs.value, '$.percent') AS float) <= 5
         )
-        SELECT 
-        rare.app_id,
-        json_extract(rare.value, '$.name') AS name,
-        json_extract(rare.value, '$.percent') AS percent,
-        json_extract(meta.value, '$.defaultvalue') AS defaultvalue,
-        json_extract(meta.value, '$.displayName') AS displayName,
-        json_extract(meta.value, '$.hidden') AS hidden,
-        json_extract(meta.value, '$.description') AS description,
-        json_extract(meta.value, '$.icon') AS icon,
-        json_extract(meta.value, '$.icongray') AS icongray
-    FROM (
-        -- Only take the top 1 (or top 2, etc.) rare achievement per game.
-        SELECT app_id, value
-        FROM RankedAchievements
-        WHERE rn = 1
-        ORDER BY percent
-        LIMIT ${rarestX}
-    ) AS rare
-    JOIN achievements_meta
-        ON achievements_meta.app_id = rare.app_id
-    JOIN json_each(achievements_meta.data) AS meta
-        ON json_extract(meta.value, '$.name') = json_extract(rare.value, '$.name')
-    -- Using lang field from achievements_meta
-    WHERE achievements_meta.lang = ${lang}
-    ORDER BY RANDOM()
-    LIMIT 3;
-  `;
+        SELECT
+            r.app_id,
+            json_extract(r.gv, '$.name')          AS name,
+            json_extract(r.gv, '$.percent')       AS percent,
+            json_extract(meta.value, '$.defaultvalue')  AS defaultvalue,
+            json_extract(meta.value, '$.displayName')   AS displayName,
+            json_extract(meta.value, '$.hidden')        AS hidden,
+            json_extract(meta.value, '$.description')   AS description,
+            json_extract(meta.value, '$.icon')          AS icon,
+            json_extract(meta.value, '$.icongray')      AS icongray
+        FROM Ranked AS r
+        JOIN achievements_meta
+            ON achievements_meta.app_id = r.app_id
+        AND achievements_meta.lang = ${lang}
+        JOIN json_each(achievements_meta.data) AS meta
+            ON json_extract(meta.value, '$.name') = json_extract(r.gv, '$.name')
+        WHERE r.rn <= 3
+        ORDER BY RANDOM()
+        LIMIT 3;
+        `;
 
     const res = await locals.steamCacheDB.run(query);
     const results = res.results as Array<SteamAchievementRawMeta & SteamAchievementRawGlobalStats & { app_id: number }>;
@@ -187,7 +187,7 @@ const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
     const achievements = results.map((m) => {
         const app = appsRes.find((a) => a.app?.steam_appid === m.app_id);
         if (!app?.app) throw new Error("Missing app");
-        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang, null); // Ignore translation for now, language should match due to the query
+        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang);
     });
 
     return achievements;

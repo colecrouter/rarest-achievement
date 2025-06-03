@@ -112,8 +112,9 @@ class ArticleIDHandler {
         this.context = context;
     }
     element(element: Element) {
-        const id = element.getAttribute("data-publishedfileid") || "";
-        this.context.ids.push(Number.parseInt(id));
+        const data = element.getAttribute("data-publishedfileid") || "";
+        const id = Number.parseInt(data, 10);
+        this.context.ids.push(id);
     }
 }
 
@@ -163,7 +164,7 @@ export async function scrapeSteamCommunityArticles(
         .on(".workshopItemShortDesc", new DescriptionHandler(context))
         .on("img.fileRating", new StarHandler(context))
         .on("img.workshopItemPreviewImage", new ThumbnailHandler(context))
-        .on("div.workshopItemCollection", new ArticleIDHandler(context));
+        .on("a.workshopItemCollection", new ArticleIDHandler(context));
 
     // Trigger transformation and fully consume the stream.
     await rewriter.transform(response).text();
@@ -172,13 +173,16 @@ export async function scrapeSteamCommunityArticles(
     const articles: Article[] = [];
     const count = context.titles.length;
     for (let i = 0; i < count; i++) {
+        const id = context.ids[i];
+        if (!id) throw new Error("Article ID is missing for one of the articles");
+
         articles.push({
             title: unescapeHTML(context.titles[i] ?? ""),
             author: unescapeHTML(context.authors[i] || ""),
             description: unescapeHTML(context.descriptions[i] || ""),
             stars: context.stars[i] || 0,
-            thumbnail: context.thumbnails[i] || "", // include the thumbnail URL
-            id: context.ids[i] || 0, // include the article ID
+            thumbnail: context.thumbnails[i] || "",
+            id,
         });
     }
     return articles;

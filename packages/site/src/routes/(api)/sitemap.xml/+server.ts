@@ -2,22 +2,20 @@ import { locales, localizeUrl } from "$lib/paraglide/runtime";
 import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
 import { asc, desc, eq, sql } from "drizzle-orm";
 
-const escapeChars = [
-    ["&", "&amp;"],
-    ["<", "&lt;"],
-    [">", "&gt;"],
-    ["'", "&apos;"],
-    ['"', "&quot;"],
-];
-
-const escapeXml = (str: string) => {
-    return escapeChars.reduce((acc, [char, replacement]) => {
-        if (!char || !replacement) return acc;
-        return acc.replace(new RegExp(char, "g"), replacement);
-    }, str);
+const _xmlEscapeMap: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&apos;",
+    '"': "&quot;",
 };
 
+const _xmlEscapeRe = /[&<>'"]/g;
+
+const escapeXml = (str: string) => str.replace(_xmlEscapeRe, (ch) => _xmlEscapeMap[ch] ?? ch);
+
 export const GET = async ({ url, setHeaders, locals }) => {
+    console.time("Sitemap generation");
     const baseUrl = url.origin;
 
     // Fetch all cached data from database
@@ -28,25 +26,25 @@ export const GET = async ({ url, setHeaders, locals }) => {
         .leftJoin(estimatedPlayers, eq(apps.id, estimatedPlayers.app_id))
         // Sort by most common games, then rarest achievements
         .orderBy(
-            asc(sql`CAST(json_extract(achievements_stats.data, '$[0].percent' ) AS DECIMAL)`),
             desc(estimatedPlayers.estimated_players),
+            asc(sql`CAST(json_extract(achievements_stats.data, '$[0].percent' ) AS DECIMAL)`),
         )
         // Filter out achievements with percent >= 20
-        .where(sql`CAST(json_extract(achievements_stats.data, '$[0].percent') AS DECIMAL) <= 20`);
+        .where(sql`CAST(json_extract(achievements_stats.data, '$[0].percent') AS DECIMAL) <= 10`);
 
     // Create XML entries for each page.
     const generateXml = (url: string, lastmod?: Date) => {
         return /* xml */ `
-      <url>
-        <loc>${escapeXml(url)}</loc>
-        ${lastmod ? `<lastmod>${lastmod.toISOString()}</lastmod>` : ""}
-        ${locales
-            .map(
-                (locale) =>
-                    `<xhtml:link rel="alternate" hreflang="${locale}" href="${localizeUrl(escapeXml(url), { locale })}" />`,
-            )
-            .join("\n")}
-      </url>`;
+            <url>
+                <loc>${escapeXml(url)}</loc>
+                ${lastmod ? `<lastmod>${lastmod.toISOString()}</lastmod>` : ""}
+                ${locales
+                    .map(
+                        (locale) => /* xml */ `
+                            <xhtml:link rel="alternate" hreflang="${locale}" href="${localizeUrl(escapeXml(url), { locale })}" />`,
+                    )
+                    .join("\n")}
+            </url>`;
     };
 
     const sitemapEntries = [
@@ -80,16 +78,19 @@ export const GET = async ({ url, setHeaders, locals }) => {
     console.log(`Sitemap entries: ${allEntries.length}`);
 
     // Complete XML sitemap
-    const sitemap = /* xml */ `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  ${limitedEntries.join("\n")}
-</urlset>`;
+    const sitemap = /* xml */ `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+        ${limitedEntries.join("\n")}
+    </urlset>`.replace(/\n\s*/g, "");
 
     // Set the proper headers and return the sitemap content
     setHeaders({
         "Content-Type": "application/xml",
-        "Cache-Control": "ublic, max-age=0, s-maxage=86400",
+        "Cache-Control": "public, max-age=0, s-maxage=86400",
     });
+
+    console.timeEnd("Sitemap generation");
 
     return new Response(sitemap);
 };

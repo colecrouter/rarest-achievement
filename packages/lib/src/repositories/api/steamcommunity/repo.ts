@@ -13,7 +13,7 @@ export class SteamCommunityRepo {
     }
 
     async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
-        const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
+        const lang = getLanguageByCode("en")?.apiCode as APILanguageCode;
 
         const cacheKey = `steamcommunity:${achievement.app.id}:${achievement.id}:${lang}`;
         const cached = await this.#cache.get(cacheKey);

@@ -6,7 +6,7 @@
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "skipLibCheck": false,
+        "skipLibCheck": true,
         "sourceMap": true,
         "strict": true,
         "moduleResolution": "bundler",
@@ -14,10 +14,28 @@
         "target": "ESNext",
         "module": "ESNext",
         "paths": {
-            "@models": ["./models"],
-            "@models/*": ["./models/*"],
-            "@config": ["./config"],
-            "@config/*": ["./config/*"]
-        }
-    }
+            "@models": [
+                "./models"
+            ],
+            "@models/*": [
+                "./models/*"
+            ],
+            "@config": [
+                "./config"
+            ],
+            "@config/*": [
+                "./config/*"
+            ]
+        },
+        "outDir": "dist",
+        "rootDir": "src",
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.js"
+    ],
+    "exclude": [
+        "dist",
+        "src/assembly",
+    ]
 }

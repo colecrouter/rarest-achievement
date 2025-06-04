@@ -5,6 +5,7 @@
     "scripts": {
         "deploy": "wrangler deploy",
         "dev": "wrangler dev",
+        "build": "npm run build -w @project/lib",
         "start": "wrangler dev",
         "test": "vitest run",
         "cf-typegen": "wrangler types",

@@ -1,4 +1,5 @@
-import { assert, describe, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { fetchAndUpsert, getMissingKeys1D, getMissingKeys2D } from "./merge";
 
 describe("Missing Keys Functions", () => {

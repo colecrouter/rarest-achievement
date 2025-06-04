@@ -45,4 +45,11 @@ export default defineConfig({
             },
         ],
     },
+    server: {
+        fs: {
+            allow: [
+                "../..",
+            ]
+        }
+    }
 });

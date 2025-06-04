@@ -1,0 +1,11 @@
+{
+    "entries": [
+        "src/assembly/predict.ts"
+    ],
+    "targets": {
+        "release": {
+            "outFile": "dist/assembly/index.wasm",
+            "optimize": true
+        }
+    }
+}

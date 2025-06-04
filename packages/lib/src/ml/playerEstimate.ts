@@ -1,26 +1,9 @@
 import XGBoostModel from "../../steam_model.json" with { type: "json" };
-import type { SearchResults, Tree } from "./model";
-import { predict } from "./predict";
-const modelObj = XGBoostModel as SearchResults;
+import type { SearchResults } from "./model.js";
+import { predict } from "./predict.js";
+import * as wasm from "../assembly/index.js";
 
-type Features = {
-    /** Total number of reviews, as reported by `store.steampowered.com/appreviews/{app_id}` */
-    total_reviews: number;
-    /** Review score, as reported by `store.steampowered.com/appreviews/{app_id}`. This appears to be a score between 1-10 (0-9?) */
-    review_score: number;
-    /** Whether the app is free (0) or not (1) */
-    is_free: number;
-    /** Price of the app in cents (e.g. 499 for $4.99) in USD(?) */
-    price: number;
-    /** All time peak player count, as reported by `steamcharts.com/app/{app_id}/chart-data.json` */
-    all_time_peak: number;
-    /** Average player count, as reported by `steamcharts.com/app/{app_id}/chart-data.json` */
-    avg_count: number;
-    /** Peak player count for the last 24 hours, as reported by `steamcharts.com/app/{app_id}/chart-data.json` */
-    day_peak: number;
-    /** Release date of the app, as a Unix timestamp (seconds since 1970-01-01). E.g. `Date.now() / 1000` */
-    release_date_numeric: number;
-};
+const modelObj = XGBoostModel as SearchResults;
 
 /* ===== Example Usage ===== */
 
@@ -46,3 +29,17 @@ type Features = {
 // // node --experimental-strip-types score.ts
 
 export const estimatePlayerCount = (features: Features): number => predict(modelObj, features);
+
+// === new benchmark ===
+/** Compare JS vs WASM predict performance */
+export async function benchmarkEstimate(features: Features): Promise<void> {
+    console.time("JS predict");
+    const jsRes = predict(modelObj, features);
+    console.timeEnd("JS predict");
+
+    console.time("WASM predict");
+    const wasmRes = wasm.predict(modelObj, features);
+    console.timeEnd("WASM predict");
+
+    console.log("results:", { js: jsRes, wasm: wasmRes });
+}

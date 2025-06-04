@@ -1,16 +1,14 @@
-import XGBoostModel from "../../steam_model.json" with { type: "json" };
-import type { SearchResults, Tree } from "./model";
-const modelObj = XGBoostModel as SearchResults;
+import type { Features, SearchResults, Tree } from "./model";
 
 /**
  * Traverses a single tree to compute its prediction contribution.
  *
  * @param {Tree} tree - A tree from modelObj.learner.gradient_booster.model.trees.
- * @param {Record<string, number>} features - An object mapping feature names to numeric values.
+ * @param {Features} features - An object mapping feature names to numeric values.
  * @param {Array<string>} featureNames - The feature names (used with split_indices).
  * @returns {number} - The prediction from the tree.
  */
-function predictTree(tree: Tree, features: Record<string, number>, featureNames: Array<string>): number {
+function predictTree(tree: Tree, features: Features, featureNames: Array<string>): number {
     // start at the tree root (node 0)
     let node = 0;
     while (true) {
@@ -58,10 +56,10 @@ function predictTree(tree: Tree, features: Record<string, number>, featureNames:
  * Computes the full model prediction.
  *
  * @param {SearchResults} model - The JSON-parsed model object.
- * @param {Record<string, number>} features - An object mapping feature names to numeric values.
+ * @param {Features} features - An object mapping feature names to numeric values.
  * @returns {number} - The overall prediction.
  */
-export function predict(model: SearchResults, features: Record<string, number>): number {
+export function predict(model: SearchResults, features: Features): number {
     // Get the base score from the model parameters.
     // This value is provided as a string, so convert it to a number.
     const baseScore = Number.parseFloat(model.learner.learner_model_param.base_score);

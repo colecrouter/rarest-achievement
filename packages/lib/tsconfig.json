@@ -13,6 +13,7 @@
         "noUncheckedIndexedAccess": true,
         "target": "ESNext",
         "module": "ESNext",
+        "declaration": true,
         "paths": {
             "@models": [
                 "./models"
@@ -32,10 +33,10 @@
     },
     "include": [
         "src/**/*.ts",
-        "src/**/*.js"
+        "src/**/*.js",
     ],
     "exclude": [
         "dist",
-        "src/assembly",
+        "src/assembly/**/*.ts",
     ]
 }

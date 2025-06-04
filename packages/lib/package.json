@@ -15,7 +15,7 @@
         "dist"
     ],
     "scripts": {
-        "build:wasm": "asc --target release --optimize src/assembly/index.ts -o dist/assembly/index.wasm",
+        "build:wasm": "asc --config asconfig.json --target release --bindings esm",
         "build:ts": "tsc -b .",
         "build:python": "node ../../python/xgboost_model/run-training.js",
         "build": "npm run build:python && npm run build:wasm && npm run build:ts",

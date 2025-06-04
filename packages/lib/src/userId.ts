@@ -41,12 +41,14 @@ export class SteamID {
 
     static fromSteam2ID(steamID: string) {
         const [universe, type, instance] = steamID.split(":").map(Number);
+        if (!universe || !type || !instance) throw new Error("Invalid Steam ID format");
 
         return new SteamID(universe, type, instance);
     }
 
     static fromSteam3ID(steamID: string) {
         const [universe, type, instance] = steamID.slice(1, -1).split(":").map(Number);
+        if (!universe || !type || !instance) throw new Error("Invalid Steam ID format");
 
         return new SteamID(universe, type, instance);
     }

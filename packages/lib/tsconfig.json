@@ -1,23 +1,26 @@
 {
     "compilerOptions": {
-        "baseUrl": "src",
-        "allowJs": true,
-        "checkJs": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
-        "skipLibCheck": false,
-        "sourceMap": true,
-        "strict": true,
         "moduleResolution": "bundler",
         "noUncheckedIndexedAccess": true,
         "target": "ESNext",
         "module": "ESNext",
         "paths": {
-            "@models": ["./models"],
-            "@models/*": ["./models/*"],
-            "@config": ["./config"],
-            "@config/*": ["./config/*"]
-        }
+            "@models": [
+                "./models"
+            ],
+            "@models/*": [
+                "./models/*"
+            ],
+            "@config": [
+                "./config"
+            ],
+            "@config/*": [
+                "./config/*"
+            ]
+        },
+        "lib": [
+            "ESNext",
+            "DOM"
+        ],
     }
 }

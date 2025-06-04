@@ -1,14 +1,13 @@
 import { execSync } from "node:child_process";
-import { join, resolve } from "node:path";
 import { platform } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 try {
-    const isWin = platform() === "win32";
-    const baseDir = process.cwd();
+    const baseDir = dirname(fileURLToPath(import.meta.url));
     const venvDir = resolve(baseDir, "venv");
     const requirementsPath = join(baseDir, "requirements.txt");
-    const trainScript = join(baseDir, "train_model.py");
-    const basePython = isWin ? "python" : "python3";
+    const basePython = platform() === "win32" ? "python" : "python3";
 
     // Bootstrap pip if missing using --break-system-packages
     try {
@@ -38,18 +37,11 @@ try {
         execSync(`${basePython} -m venv ${venvDir}`, { stdio: "inherit" });
     }
 
-    const venvPython = isWin
-        ? join(venvDir, "Scripts", "python.exe")
-        : join(venvDir, "bin", "python");
-
     console.log("Upgrading pip...");
-    execSync(`${venvPython} -m pip install --upgrade pip`, { stdio: "inherit" });
+    execSync(`${venvDir}/bin/python -m pip install --upgrade pip`, { stdio: "inherit" });
     
     console.log("Installing dependencies...");
-    execSync(`${venvPython} -m pip install -r "${requirementsPath}"`, { stdio: "inherit" });
-    
-    console.log("Running training script...");
-    execSync(`${venvPython} "${trainScript}"`, { stdio: "inherit" });
+    execSync(`${venvDir}/bin/python -m pip install -r "${requirementsPath}"`, { stdio: "inherit" });
     
     console.log("Setup complete!");
 } catch (error) {

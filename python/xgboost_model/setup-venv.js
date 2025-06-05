@@ -14,9 +14,9 @@ try {
         execSync(`${basePython} -m pip --version`, { stdio: "ignore" });
     } catch (err) {
         console.log("pip not available. Bootstrapping pip using get-pip.py...");
-        execSync(`curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py`, { stdio: "inherit" });
+        execSync("curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py", { stdio: "inherit" });
         execSync(`${basePython} get-pip.py --break-system-packages`, { stdio: "inherit" });
-        execSync(`rm get-pip.py`, { stdio: "inherit" });
+        execSync("rm get-pip.py", { stdio: "inherit" });
     }
 
     // Ensure virtualenv is installed, but if not, we can fallback to venv
@@ -28,22 +28,22 @@ try {
         execSync(`${basePython} -m virtualenv ${venvDir}`, { stdio: "inherit" });
         created = true;
     } catch (err) {
-            console.log("virtualenv module not found. Falling back to built-in venv...");
+        console.log("virtualenv module not found. Falling back to built-in venv...");
     }
-    
+
     if (!created) {
-        // Fallback: use built-in venv 
+        // Fallback: use built-in venv
         // (Note: ensure that ensurepip is available in this environment)
         execSync(`${basePython} -m venv ${venvDir}`, { stdio: "inherit" });
     }
 
     console.log("Upgrading pip...");
     execSync(`${venvDir}/bin/python -m pip install --upgrade pip`, { stdio: "inherit" });
-    
+
     console.log("Installing dependencies...");
     execSync(`${venvDir}/bin/python -m pip install -r "${requirementsPath}"`, { stdio: "inherit" });
-    
-    console.log("Setup complete!");
+
+    console.log("Python setup complete!");
 } catch (error) {
     console.error("Error during setup:", error);
     process.exit(1);

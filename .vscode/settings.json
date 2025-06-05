@@ -11,5 +11,8 @@
     },
     "[json]": {
         "editor.defaultFormatter": "biomejs.biome"
-    }
+    },
+    "rust-analyzer.linkedProjects": [
+        "./rust/predict/Cargo.toml"
+    ]
 }

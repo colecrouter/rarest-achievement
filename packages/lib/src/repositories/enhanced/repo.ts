@@ -356,6 +356,7 @@ export class EnhancedSteamRepository {
                     continue;
                 }
 
+                console.time(`Estimating players for app ${id}`);
                 const estimatedPlayers = estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
                     avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
@@ -368,6 +369,7 @@ export class EnhancedSteamRepository {
                     is_free: appData.is_free ? 1 : 0,
                     price: appData.price_overview?.final ?? 0,
                 });
+                console.timeEnd(`Estimating players for app ${id}`);
 
                 data.set(id, estimatedPlayers);
             }

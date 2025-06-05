@@ -13,8 +13,10 @@
     },
     "scripts": {
         "build:python": "node ../../python/xgboost_model/run-training.js",
-        "build": "npm run build:python",
+        "build:rust": "node ../../rust/build.js",
+        "build": "npm-run-all --parallel build:*",
         "watch:python": "watch \"npm run build:python\" ../../python/xgboost_model/input",
+        "watch:rust": "watch \"npm run build:rust\" ../../rust/predict/src",
         "dev": "npm-run-all --parallel watch:*",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",

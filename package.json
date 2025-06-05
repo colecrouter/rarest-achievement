@@ -20,7 +20,7 @@
         "db:push": "npm run db:push --workspaces",
         "db:migrate": "npm run db:migrate --workspaces",
         "db:migration": "npm run db:migration --workspace=@project/lib",
-        "prepare": "node python/xgboost_model/setup-venv.js",
+        "prepare": "node python/xgboost_model/setup-venv.js && node rust/setup-cargo.js",
         "postinstall": "patch-package || echo 'No patches to apply'"
     },
     "devDependencies": {

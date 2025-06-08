@@ -218,7 +218,7 @@
   "errorPageTitle": "Oups...",
   "splashAlertDescription": "Nous lançons des milliers de requêtes pour récupérer vos données. Si cela vous semble long, essayez de recharger la page.",
   "splashAlertTitle": "Cela pourrait prendre une minute...",
-  "splashLoadingHeader": "Chargement...",
+  "loading": "Chargement...",
   "splashSourceLabel": "Source:",
   "statusHidden": "Caché",
   "toolbarFilterAll": "Tous",
@@ -266,6 +266,10 @@
       "shortDescription": "Connectez-vous avec vos amis et comparez votre progression en termes de succès.",
       "description": "Trouvez automatiquement les succès de vos amis et comparez vos progrès. Partagez vos succès sur les réseaux sociaux et montrez votre maîtrise du jeu."
     }
+  },
+  "translation": {
+    "show": "Afficher la traduction automatique",
+    "hide": "Afficher le texte original"
   },
   "legalContactEmail": "support@steamvault.info"
 }

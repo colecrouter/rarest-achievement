@@ -203,7 +203,7 @@
     "signIn": "Masuk",
     "splashAlertDescription": "Kami sedang mengirim ribuan permintaan untuk mendapatkan data Anda. Jika terasa lama, coba muat ulang halaman.",
     "splashAlertTitle": "Mungkin Perlu Waktu Sedikit...",
-    "splashLoadingHeader": "Memuat...",
+    "loading": "Memuat...",
     "splashSourceLabel": "Sumber:",
     "statusHidden": "Tersembunyi",
     "statusLocked": "Terkunci",
@@ -267,5 +267,9 @@
             "shortDescription": "Terhubung dengan teman-teman dan bandingkan progres pencapaian Anda.",
             "description": "Temukan pencapaian dari teman secara otomatis dan bandingkan progres Anda. Bagikan pencapaian Anda di media sosial dan pamerkan keahlian gaming Anda."
         }
+    },
+    "translation": {
+        "show": "Tampilkan terjemahan otomatis",
+        "hide": "Tampilkan teks asli"
     }
 }

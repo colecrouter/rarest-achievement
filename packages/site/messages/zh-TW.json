@@ -203,7 +203,7 @@
 	"signIn": "登入",
 	"splashAlertDescription": "我們正在發送數千個請求以取得您的資料。若覺得等待過久，請嘗試重新整理頁面。",
 	"splashAlertTitle": "這可能需要一點時間……",
-	"splashLoadingHeader": "載入中……",
+	"loading": "載入中……",
 	"splashSourceLabel": "來源：",
 	"statusHidden": "隱藏",
 	"statusLocked": "已鎖定",
@@ -267,5 +267,9 @@
 			"shortDescription": "與好友互動、比較成就進度。",
 			"description": "自動發現好友成就並與您的數據比較，在社群中分享您的遊戲實力。"
 		}
+	},
+	"translation": {
+		"show": "顯示自動翻譯",
+		"hide": "顯示原文"
 	}
 }

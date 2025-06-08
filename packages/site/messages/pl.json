@@ -203,7 +203,7 @@
     "signIn": "Zaloguj się",
     "splashAlertDescription": "Wysyłamy tysiące zapytań, aby pobrać Twoje dane. Jeśli to trwa zbyt długo, spróbuj odświeżyć stronę.",
     "splashAlertTitle": "Może to chwilę potrwać...",
-    "splashLoadingHeader": "Ładowanie...",
+    "loading": "Ładowanie...",
     "splashSourceLabel": "Źródło:",
     "statusHidden": "Ukryty",
     "statusLocked": "Zablokowany",
@@ -267,5 +267,9 @@
             "shortDescription": "Łącz się z przyjaciółmi i porównuj postępy.",
             "description": "Automatycznie odnajduj osiągnięcia swoich znajomych i porównuj swój postęp. Udostępniaj osiągnięcia w mediach społecznościowych i chwal się swoimi sukcesami."
         }
+    },
+    "translation": {
+        "show": "Pokaż automatyczne tłumaczenie",
+        "hide": "Pokaż oryginalny tekst"
     }
 }

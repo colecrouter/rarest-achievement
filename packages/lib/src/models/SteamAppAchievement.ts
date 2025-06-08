@@ -17,24 +17,21 @@ export class SteamAppAchievement {
     #meta: SteamAchievementRawMeta;
     #globalStats: SteamAchievementRawGlobalStats;
     #lang: APILanguageCode;
-    translation: string | null;
 
     constructor(
         app: SteamApp,
         stats: SteamAchievementRawMeta,
         global: SteamAchievementRawGlobalStats,
         lang: APILanguageCode,
-        translation: string | null,
     ) {
         this.#app = app;
         this.#meta = stats;
         this.#globalStats = global;
         this.#lang = lang;
-        this.translation = translation;
     }
 
     serialize() {
-        return [this.#app, this.#meta, this.#globalStats, this.#lang, this.translation] satisfies ConstructorParameters<
+        return [this.#app, this.#meta, this.#globalStats, this.#lang] satisfies ConstructorParameters<
             typeof SteamAppAchievement
         >;
     }

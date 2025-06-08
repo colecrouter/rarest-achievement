@@ -106,6 +106,6 @@ def generate_csv(app_ids, output_file):
 if __name__ == '__main__':
     app_ids = [  2767030 ]
     
-    output_file = 'steam_data.csv'
+    output_file = 'input/steam_data.csv'
     generate_csv(app_ids, output_file)
     print("Data generation complete. See", output_file)

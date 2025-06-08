@@ -39,7 +39,7 @@ def main():
     import os
     print("Current working directory:", os.getcwd())
 
-    csv_file = 'steam_data.csv'
+    csv_file = 'input/steam_data.csv'
     df = load_data(csv_file)
     X, y = preprocess_data(df)
     # Split data into training and testing sets

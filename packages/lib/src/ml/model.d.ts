@@ -2,6 +2,25 @@
     This file represents the structure of a JSON-exported scikit-learn model.
 */
 
+export type Features = {
+    /** Total number of reviews, as reported by `store.steampowered.com/appreviews/{app_id}` */
+    total_reviews: number;
+    /** Review score, as reported by `store.steampowered.com/appreviews/{app_id}`. This appears to be a score between 1-10 (0-9?) */
+    review_score: number;
+    /** Whether the app is free (0) or not (1) */
+    is_free: number;
+    /** Price of the app in cents (e.g. 499 for $4.99) in USD(?) */
+    price: number;
+    /** All time peak player count, as reported by `steamcharts.com/app/{app_id}/chart-data.json` */
+    all_time_peak: number;
+    /** Average player count, as reported by `steamcharts.com/app/{app_id}/chart-data.json` */
+    avg_count: number;
+    /** Peak player count for the last 24 hours, as reported by `steamcharts.com/app/{app_id}/chart-data.json` */
+    day_peak: number;
+    /** Release date of the app, as a Unix timestamp (seconds since 1970-01-01). E.g. `Date.now() / 1000` */
+    release_date_numeric: number;
+};
+
 export interface SearchResults {
     learner: Learner;
     version: number[];
@@ -9,7 +28,7 @@ export interface SearchResults {
 
 export interface Learner {
     attributes: Attributes;
-    feature_names: string[];
+    feature_names: Array<keyof Features>;
     feature_types: string[];
     gradient_booster: GradientBooster;
     learner_model_param: LearnerModelParam;

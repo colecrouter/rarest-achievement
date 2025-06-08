@@ -1,5 +1,5 @@
-import { Errable } from "../../error";
-import type { APILanguageCode } from "../api/lang";
+import { Errable } from "../../error.ts";
+import type { APILanguageCode } from "../api/lang.ts";
 
 /**
  * For a 1D map, return the keys that are missing.

@@ -4,10 +4,14 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 try {
+    const isWin = platform() === "win32";
     const baseDir = dirname(fileURLToPath(import.meta.url));
     const venvDir = resolve(baseDir, "venv");
     const requirementsPath = join(baseDir, "requirements.txt");
-    const basePython = platform() === "win32" ? "python" : "python3";
+    const basePython = isWin ? "python" : "python3";
+        const venvPython = isWin
+        ? join(venvDir, "Scripts", "python.exe")
+        : join(venvDir, "bin", "python");
 
     // Bootstrap pip if missing using --break-system-packages
     try {
@@ -38,10 +42,10 @@ try {
     }
 
     console.log("Upgrading pip...");
-    execSync(`${venvDir}/bin/python -m pip install --upgrade pip`, { stdio: "inherit" });
+    execSync(`${venvPython} -m pip install --upgrade pip`, { stdio: "inherit" });
     
     console.log("Installing dependencies...");
-    execSync(`${venvDir}/bin/python -m pip install -r "${requirementsPath}"`, { stdio: "inherit" });
+    execSync(`${venvPython} -m pip install -r "${requirementsPath}"`, { stdio: "inherit" });
     
     console.log("Setup complete!");
 } catch (error) {

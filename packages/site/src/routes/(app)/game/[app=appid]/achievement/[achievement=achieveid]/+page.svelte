@@ -532,9 +532,7 @@
                                                 {#each articleResult.articles as article}
                                                     <div class="card p-4">
                                                         <a
-                                                            href={localizeHref(
-                                                                `https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`,
-                                                            )}
+                                                            href={`https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
@@ -592,9 +590,7 @@
                                                 {#each articleResult.videos as video}
                                                     <div class="card p-4">
                                                         <a
-                                                            href={localizeHref(
-                                                                `https://www.youtube.com/watch?v=${video.videoId}`,
-                                                            )}
+                                                            href={`https://www.youtube.com/watch?v=${video.videoId}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >

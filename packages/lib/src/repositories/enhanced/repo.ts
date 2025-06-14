@@ -1,4 +1,3 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
 import {
     type APILanguageCode,
     type LanguageCode,

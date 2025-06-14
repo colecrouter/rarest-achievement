@@ -22,5 +22,8 @@
             "ESNext",
             "DOM"
         ],
+        "types": [
+            "@cloudflare/workers-types",
+        ]
     }
 }

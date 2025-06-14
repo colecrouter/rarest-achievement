@@ -1,5 +1,4 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
-import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
 import type {
     ProjectDB,
     SteamAuthenticatedAPIClient,
@@ -28,6 +27,7 @@ declare global {
                 STEAM_CACHE: KVNamespace;
                 DB: D1Database;
                 GOOGLE_PROJECT_ID: string;
+                AI: Ai;
             };
         }
     }

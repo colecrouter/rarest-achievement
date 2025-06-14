@@ -1,4 +1,3 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
 import type { SteamAppAchievement } from "../../../";
 import type { LanguageCode } from "../lang";
 import type { TranslateClient } from "./client";

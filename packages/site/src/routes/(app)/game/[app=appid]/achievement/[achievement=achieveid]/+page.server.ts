@@ -11,7 +11,7 @@ export const load = async ({ parent, url, locals, platform }) => {
 
     const steamRepo = new EnhancedSteamRepository(locals);
     const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE);
-    const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE);
+    const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE, platform.env.AI);
 
     const game = await steamRepo.getGameAchievements([app], locale);
     const gameAchievements = [...(game.data.get(app.id)?.values() ?? [])];

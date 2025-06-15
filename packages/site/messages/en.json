@@ -271,5 +271,6 @@
     "translation": {
         "show": "Show automatic translation",
         "hide": "Show original text"
-    }
+    },
+    "achievementArticlesNotFound": "No relevant guides found... Someone should make one!"
 }

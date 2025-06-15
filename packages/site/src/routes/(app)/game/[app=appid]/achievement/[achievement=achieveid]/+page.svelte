@@ -574,6 +574,12 @@
                                                             </div>
                                                         </a>
                                                     </div>
+                                                {:else}
+                                                    <div
+                                                        class="p-4 text-surface-400"
+                                                    >
+                                                        {m.achievementArticlesNotFound()}
+                                                    </div>
                                                 {/each}
                                             </div>
                                         </div>
@@ -640,6 +646,12 @@
                                                                 </div>
                                                             </div>
                                                         </a>
+                                                    </div>
+                                                {:else}
+                                                    <div
+                                                        class="p-4 text-surface-400"
+                                                    >
+                                                        {m.achievementArticlesNotFound()}
                                                     </div>
                                                 {/each}
                                             </div>

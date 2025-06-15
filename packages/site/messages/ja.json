@@ -271,5 +271,6 @@
     "translation": {
         "show": "自動翻訳を表示",
         "hide": "原文を表示"
-    }
+    },
+    "achievementArticlesNotFound": "関連ガイドが見つかりません…誰か作るべきです！"
 }

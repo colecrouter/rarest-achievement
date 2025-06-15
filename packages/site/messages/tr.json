@@ -21,6 +21,7 @@
     "achievementArticlesSteamCommunityTitle": "Steam Topluluğu Rehberleri",
     "achievementArticlesYouTubeDescription": "Bu başarıyı açmaya yönelik yararlı video rehberleri.",
     "achievementArticlesYouTubeTitle": "YouTube Video Rehberleri",
+    "achievementArticlesNotFound": "İlgili rehber bulunamadı... Birisi bir tane yapmalı!",
     "achievementDetails": "Detaylar",
     "achievementOfPlayers": "oyuncuların",
     "achievementOtherAchievementsDescription": "Bu oyundaki tüm başarılarınızdaki ilerlemeniz",
@@ -237,7 +238,7 @@
     "viewOnSteam": "Steam'de Gör",
     "aboutFaq": {
         "question1": "Steam Vault nedir?",
-        "answer1": "Steam Vault, Steam üzerindeki tüm başarılarınızı görüntülemenizi sağlayan bir platformdur. En nadir başarılarınızı bulmanıza yardımcı olur.",
+        "answer1": "Steam Vault, Steam üzerindeki tüm başarılarınızı görüntümenizi sağlayan bir platformdur. En nadir başarılarınızı bulmanıza yardımcı olur.",
         "question2": "Steam Vault neden özel?",
         "answer2": "Steam'in katı API yönergeleri nedeniyle, birçok kullanıcı için binlerce oyunda başarı takibi zordur. Steam Vault, bu boşluğu doldurup size mümkün olan en fazla veri ve içgörü sağlar.",
         "question3": "Steam hesabımı nasıl bağlayabilirim?",

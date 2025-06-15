@@ -271,5 +271,6 @@
   "translation": {
     "show": "Mostrar traducción automática",
     "hide": "Mostrar texto original"
-  }
+  },
+  "achievementArticlesNotFound": "No se encontraron guías relevantes… ¡Alguien debería hacer una!"
 }

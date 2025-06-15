@@ -271,5 +271,6 @@
     "translation": {
         "show": "Automatische Übersetzung anzeigen",
         "hide": "Originaltext anzeigen"
-    }
+    },
+    "achievementArticlesNotFound": "Keine passenden Anleitungen gefunden… Jemand sollte eine erstellen!"
 }

@@ -271,5 +271,6 @@
     "translation": {
         "show": "Tampilkan terjemahan otomatis",
         "hide": "Tampilkan teks asli"
-    }
+    },
+    "achievementArticlesNotFound": "Tidak ada panduan yang relevan… Seseorang harus membuatnya!"
 }

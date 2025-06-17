@@ -6,18 +6,22 @@ import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-    plugins: [sentrySvelteKit({
-        sourceMapsUploadOptions: {
-            org: "cole-crouter",
-            project: "steam-vault"
-        }
-    }), tailwindcss(), sveltekit(), // @ts-ignore
-    paraglideVitePlugin({
-        project: "./project.inlang",
-        outdir: "./src/lib/paraglide",
-        strategy: ["url"],
-        disableAsyncLocalStorage: true,
-    })],
+    plugins: [
+        sentrySvelteKit({
+            sourceMapsUploadOptions: {
+                org: "cole-crouter",
+                project: "steam-vault",
+            },
+        }),
+        tailwindcss(),
+        sveltekit(), // @ts-ignore
+        paraglideVitePlugin({
+            project: "./project.inlang",
+            outdir: "./src/lib/paraglide",
+            strategy: ["url", "preferredLanguage", "baseLocale"],
+            disableAsyncLocalStorage: true,
+        }),
+    ],
     test: {
         workspace: [
             {
@@ -47,9 +51,7 @@ export default defineConfig({
     },
     server: {
         fs: {
-            allow: [
-                "../..",
-            ]
-        }
-    }
+            allow: ["../.."],
+        },
+    },
 });

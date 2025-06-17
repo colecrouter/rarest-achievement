@@ -1,4 +1,4 @@
-import type { Tree, Features, SearchResults } from "./model";
+import type { Features, SearchResults, Tree } from "./model";
 
 /**
  * Traverses a single tree to compute its prediction contribution.

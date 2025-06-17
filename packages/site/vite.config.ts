@@ -1,5 +1,5 @@
-import { sentrySvelteKit } from "@sentry/sveltekit";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
+import { sentrySvelteKit } from "@sentry/sveltekit";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { svelteTesting } from "@testing-library/svelte/vite";

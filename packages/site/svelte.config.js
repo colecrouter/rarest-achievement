@@ -12,6 +12,28 @@ const config = {
         alias: {
             lib: "../../packages/lib/src/index",
         },
+        csp: {
+            directives: {
+                "default-src": ["self"],
+                "img-src": [
+                    "self",
+                    "data:",
+                    // Achievement icons
+                    "https://shared.akamai.steamstatic.com/",
+                    "https://store.akamai.steamstatic.com/",
+                    "https://steamcdn-a.akamaihd.net/",
+                    "https://cdn.cloudflare.steamstatic.com/",
+                    // User avatars
+                    "https://avatars.steamstatic.com/",
+                    "https://cdn.fastly.steamstatic.com/",
+                    "https://avatars.fastly.steamstatic.com/",
+                    // Steam guide images
+                    "https://images.steamusercontent.com/",
+                    // YouTube thumbnails
+                    "https://i.ytimg.com/",
+                ],
+            },
+        },
     },
 };
 

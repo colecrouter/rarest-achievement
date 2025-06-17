@@ -97,7 +97,7 @@ export class YouTubeRepository {
             return data.filter((_, index) => relevance[index]);
         });
 
-        await this.#cache.put(cacheKey, JSON.stringify({ data: guides.data, error: guides.error }), {
+        await this.#cache.put(cacheKey, JSON.stringify({ data: guides.data, error: guides.error?.message }), {
             expirationTtl: 60 * 60 * 24,
         }); // Cache for 24 hours
 

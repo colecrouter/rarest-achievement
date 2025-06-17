@@ -4,6 +4,7 @@
         "noUncheckedIndexedAccess": true,
         "target": "ESNext",
         "module": "ESNext",
+        "strict": true,
         "paths": {
             "@models": [
                 "./models"

@@ -7,7 +7,7 @@
             "**/worker-configuration.d.ts",
             "**/src/lib/paraglide/**"
         ],
-        "include": ["packages/**/src/**/*"]
+        "include": ["packages/**/*"]
     },
     "formatter": {
         "indentStyle": "space",

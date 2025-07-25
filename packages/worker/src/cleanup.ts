@@ -1,38 +1,46 @@
 import {
     type ProjectDB,
-    SteamAPIRepository,
     type SteamAuthenticatedAPIClient,
-    SteamCacheDBRepository,
+    type VaultService,
+    achievementsMeta,
+    achievementsStats,
     apps,
+    getLanguageByAPICode,
 } from "@project/lib";
-import { asc, lt } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
+import { chunkArray } from "../../lib/src/repositories/sqlite/utils";
 
-export const refreshStaleApps = async (db: ProjectDB, api: SteamAuthenticatedAPIClient, count: number) => {
+export const refreshStaleApps = async (db: ProjectDB, service: VaultService, count: number) => {
     const ONE_DAY_AGO = new Date();
     ONE_DAY_AGO.setDate(ONE_DAY_AGO.getDate() - 1);
 
     // Get the oldest apps that are older than 1 day
-    const appIds = await db
+    const keys = await db
         .select({ id: apps.id, lang: apps.lang })
         .from(apps)
         .where(lt(apps.updated_at, ONE_DAY_AGO))
         .orderBy(asc(apps.updated_at))
         .limit(count);
 
-    // Build new API repository, so we can fetch fresh data
-    const apiRepository = new SteamAPIRepository(api);
-    const dbRepository = new SteamCacheDBRepository(db);
+    if (keys.length === 0) return;
 
-    for (const app of appIds) {
-        // If the app is not in the database, skip it
-        if (!app.id) continue;
+    for (const pair of keys) {
+        // Delete the stale apps
+        await db.batch([
+            db.delete(apps).where(and(eq(apps.id, pair.id), eq(apps.lang, pair.lang))),
+            db
+                .delete(achievementsMeta)
+                .where(and(eq(achievementsMeta.app_id, pair.id), eq(achievementsMeta.lang, pair.lang))),
+            db.delete(achievementsStats).where(and(eq(achievementsStats.app_id, pair.id))),
+        ]);
 
-        // Fetch the app details from the API
-        const appsResponse = await apiRepository.getApps([app.id], app.lang);
-        const achievementResponse = await apiRepository.getGameAchievements([app.id], app.lang);
+        const lang = getLanguageByAPICode(pair.lang);
+        if (!lang) throw new Error(`Unsupported language code: ${pair.lang}`);
 
-        // Update the app in the database
-        await dbRepository.putApps(appsResponse.data, app.lang);
-        await dbRepository.putGameAchievements(achievementResponse.data, app.lang);
+        // Fetch the latest app data from the API
+        await service.getAppsWithFullData({
+            appIds: [pair.id],
+            lang: lang.storeCode,
+        });
     }
 };

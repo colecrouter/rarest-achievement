@@ -17,5 +17,5 @@ export const replaceCdnUrl = (url: string) => {
 
     const newUrl = new URL("http://localhost:5173/image");
     newUrl.searchParams.set("url", url);
-    return newUrl.toString();
+    return newUrl.pathname + newUrl.search;
 };

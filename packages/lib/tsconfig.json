@@ -6,12 +6,27 @@
         "module": "ESNext",
         "strict": true,
         "paths": {
-            "@models": ["./models"],
-            "@models/*": ["./models/*"],
-            "@config": ["./config"],
-            "@config/*": ["./config/*"]
+            "@models": [
+                "./models"
+            ],
+            "@models/*": [
+                "./models/*"
+            ],
+            "@config": [
+                "./config"
+            ],
+            "@config/*": [
+                "./config/*"
+            ]
         },
-        "lib": ["ESNext", "DOM"],
-        "types": ["@cloudflare/workers-types"]
+        "lib": [
+            "ESNext",
+            "DOM"
+        ],
+        "types": [
+            "@cloudflare/workers-types",
+            "node"
+        ],
+        "noErrorTruncation": true
     }
 }

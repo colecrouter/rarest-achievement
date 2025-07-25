@@ -1,4 +1,4 @@
-import type { APILanguageCode } from "../lang";
+import type { APILanguageCode } from "../../../lang";
 
 export type GetPlayerAchievementsQuery<L extends APILanguageCode | undefined> = {
     steamid: string; // 64-bit Steam ID

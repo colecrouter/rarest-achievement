@@ -1,5 +1,5 @@
 import type { SteamAppAchievement } from "../../../";
-import type { LanguageCode } from "../lang";
+import type { LanguageCode } from "../../../lang";
 import type { TranslateClient } from "./client";
 
 export class TranslateRepository {

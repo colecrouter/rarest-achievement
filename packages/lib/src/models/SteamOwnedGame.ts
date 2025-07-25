@@ -3,14 +3,14 @@ import type { OwnedGame } from "../repositories/api/steampowered/owned";
 export class SteamOwnedGame {
     #owned: OwnedGame<false>;
 
-    constructor(data: OwnedGame<false>) {
-        this.#owned = data;
+    constructor({ owned }: { owned: OwnedGame<false> }) {
+        this.#owned = owned;
     }
 
     serialize() {
         return {
             owned: this.#owned,
-        };
+        } satisfies ConstructorParameters<typeof SteamOwnedGame>[0];
     }
 
     get id() {

@@ -1,5 +1,5 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import type { LanguageCode } from "../lang";
+import type { LanguageCode } from "../../../lang";
 import type { ISearchResponse } from "./types/ISearchResponse";
 
 export class YouTubeClient {

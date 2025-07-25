@@ -1,6 +1,6 @@
 import type { GetFriendsListQuery, GetFriendsListResponse } from "../../api/steampowered/friends";
 import { BaseSteamAPIClient } from "../baseClient";
-import type { APILanguageCode } from "../lang";
+import type { APILanguageCode } from "../../../lang";
 import type {
     GetGlobalAchievementPercentagesForAppQuery,
     GetGlobalAchievementPercentagesForAppResponse,

@@ -1,5 +1,5 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import type { APILanguageCode } from "../lang";
+import type { APILanguageCode } from "../../../lang";
 import { scrapeSteamCommunityArticles } from "./articles";
 import type { User } from "./types";
 import { searchSteamCommunityUsers } from "./users";

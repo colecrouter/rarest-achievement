@@ -1,9 +1,11 @@
 // https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Hover
 
+import type { APILanguageCode } from "../..";
+
 export type GetAppHoverQuery = {
     appid: string;
     cc?: string; // ISO 3166-1 alpha-2 country code
-    l?: string; // Language code
+    l?: APILanguageCode; // Language code
 };
 
 /**

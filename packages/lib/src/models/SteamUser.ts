@@ -1,20 +1,22 @@
 import { isBypassCdnEnabled } from "../config/cdnConfig";
 import { replaceCdnUrl } from "../config/dev";
+import type { OwnedGame } from "../repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../repositories/api/steampowered/playerSummary";
+import { SteamOwnedGame } from "./SteamOwnedGame";
 
 export type SteamUserRaw = GetPlayerSummariesResponse["response"]["players"][number];
 
 export class SteamUser {
     #player: SteamUserRaw;
+    #ownedApps: OwnedGame<false>[];
 
-    constructor(data: SteamUserRaw) {
+    constructor({ data, ownedApps }: { data: SteamUserRaw; ownedApps: OwnedGame<false>[] }) {
         this.#player = data;
+        this.#ownedApps = ownedApps;
     }
 
-    serialize() {
-        return {
-            player: this.#player,
-        };
+    serialize(): ConstructorParameters<typeof SteamUser>[0] {
+        return { data: this.#player, ownedApps: this.#ownedApps } satisfies ConstructorParameters<typeof SteamUser>[0];
     }
 
     get id() {
@@ -56,6 +58,10 @@ export class SteamUser {
 
     get lastLoggedIn() {
         return "lastlogoff" in this.#player ? new Date(this.#player.lastlogoff * 1000) : undefined;
+    }
+
+    get ownedApps() {
+        return this.#ownedApps.map((app) => new SteamOwnedGame({ owned: app }));
     }
 }
 

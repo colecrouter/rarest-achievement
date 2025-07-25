@@ -1,4 +1,4 @@
-import type { LanguageCode } from "../../lang";
+import type { LanguageCode } from "../../../../lang";
 
 export interface ITranslateRequest {
     /** Text to translate */

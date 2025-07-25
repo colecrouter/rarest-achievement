@@ -18,12 +18,15 @@
     },
     "linter": {
         "rules": {
-            "style": {
-                "useConst": "off"
-            },
             "complexity": {
                 "noStaticOnlyClass": "off"
             }
         }
-    }
+    },
+    "overrides": [
+        {
+            "include": ["**/*.svelte"],
+            "linter": { "rules": { "style": { "useConst": "off", "useImportType": "off" } } }
+        }
+    ]
 }

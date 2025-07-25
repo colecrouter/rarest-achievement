@@ -1,5 +1,5 @@
 import { type Locale, getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
-import { countDistinct, inArray, sql, sum, eq, and, lte, isNotNull } from "drizzle-orm";
+import { countDistinct, inArray, sql, sum, eq, and, lte, isNotNull, count } from "drizzle-orm";
 import {
     type APILanguageCode,
     type SteamAchievementRawGlobalStats,
@@ -103,15 +103,14 @@ const getStats = async (locals: App.Locals) => {
         locals.steamCacheDB.select({ gameCount: countDistinct(apps.id) }).from(apps),
         locals.steamCacheDB
             .select({
-                achievementCount: sum(achievementsStats.ach_id),
+                achievementCount: count(achievementsStats.ach_id),
             })
-            .from(achievementsStats)
-            .groupBy(achievementsStats.app_id),
+            .from(achievementsStats),
     ]);
     const [userCount, gameCount, achievementCount] = [
         userCounts?.userCount ?? 0,
         gamesIndexed?.gameCount ?? 0,
-        Number.parseInt(achievementsIndexed?.achievementCount ?? "0"),
+        achievementsIndexed?.achievementCount ?? 0,
     ];
 
     return {

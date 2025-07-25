@@ -90,6 +90,8 @@ export class SteamAppAchievement {
     }
 
     get language() {
-        return getLanguageByAPICode(this.#lang)?.storeCode;
+        const lang = getLanguageByAPICode(this.#lang)?.storeCode;
+        if (!lang) throw new Error(`Unknown language code: ${this.#lang}`);
+        return lang;
     }
 }

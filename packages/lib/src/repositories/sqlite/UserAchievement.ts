@@ -127,6 +127,7 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
     private friendsOfUserId?: string;
     private unlockedFilter?: boolean;
     private searchTerm?: string;
+    private rarityThreshold?: number;
     private lang: LanguageCode = "en";
 
     constructor(
@@ -212,6 +213,17 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
     }
 
     /**
+     * Filter achievements by rarity threshold (0-1 float, e.g. 0.05 for 5%)
+     */
+    withRarityThreshold(maxRarity: number): this {
+        if (maxRarity < 0 || maxRarity > 1) {
+            throw new Error(`Rarity threshold must be between 0 and 1, got ${maxRarity}`);
+        }
+        this.rarityThreshold = maxRarity * 100;
+        return this;
+    }
+
+    /**
      * Build and execute the composed query
      */
     async build(
@@ -247,9 +259,15 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
      * 1. Filtering by unlocked status (more complex filtering)
      * 2. Using search functionality (needs achievement metadata)
      * 3. No explicit app IDs provided (would need "all owned games" logic)
+     * 4. Filtering by rarity threshold (needs rarity data)
      */
     private shouldUseComprehensiveSQL(): boolean {
-        return this.unlockedFilter !== undefined || this.searchTerm !== undefined || this.appIds.size === 0;
+        return (
+            this.unlockedFilter !== undefined ||
+            this.searchTerm !== undefined ||
+            this.appIds.size === 0 ||
+            this.rarityThreshold !== undefined
+        );
     }
 
     /**
@@ -326,6 +344,10 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
             whereConditions.push(
                 this.unlockedFilter ? isNotNull(userAchievements.unlocked_at) : isNull(userAchievements.unlocked_at),
             );
+        }
+
+        if (this.rarityThreshold !== undefined) {
+            whereConditions.push(sql`${achievementsStats.percent} <= ${this.rarityThreshold}`);
         }
 
         // Apply search filter using JOIN (avoids parameter explosion)
@@ -498,6 +520,11 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
                         ? isNotNull(userAchievements.unlocked_at)
                         : isNull(userAchievements.unlocked_at),
                 );
+            }
+
+            // Apply rarity threshold filter
+            if (this.rarityThreshold !== undefined) {
+                whereConditions.push(sql`${achievementsStats.percent} <= ${this.rarityThreshold}`);
             }
 
             // Apply search filter using already joined achievements_meta

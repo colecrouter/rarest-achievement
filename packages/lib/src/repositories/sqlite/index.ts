@@ -190,7 +190,7 @@ export class VaultService {
             .compose()
             .withLanguage(params.lang)
             .withAppIds(params.appIds)
-            .withRarityThreshold(params.maxRarityPercent || 10.0); // Default to achievements with <10% unlock rate
+            .withRarityThreshold(params.maxRarityPercent || 0.1); // Default to achievements with <10% unlock rate
 
         // Add search if provided
         if (params.search) {

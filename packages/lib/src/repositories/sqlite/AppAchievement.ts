@@ -35,6 +35,7 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
     private whereConditions: unknown[] = [];
     private requiresEnglishFallback = false;
     private searchTerm?: string;
+    private rarityThreshold?: number;
 
     constructor(
         // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
@@ -85,10 +86,14 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
     }
 
     /**
-     * Filter achievements by rarity threshold (percentage)
+     * Filter achievements by rarity threshold (0-1 float, e.g. 0.05 for 5%)
      */
-    withRarityThreshold(maxPercent: number): this {
-        this.whereConditions.push(sql`${achievementsStats.percent} <= ${maxPercent}`);
+    withRarityThreshold(maxRarity: number): this {
+        if (maxRarity < 0 || maxRarity > 1) {
+            throw new Error(`Rarity threshold must be between 0 and 1, got ${maxRarity}`);
+        }
+        this.rarityThreshold = maxRarity * 100;
+        this.whereConditions.push(sql`${achievementsStats.percent} <= ${this.rarityThreshold}`);
         return this;
     }
 

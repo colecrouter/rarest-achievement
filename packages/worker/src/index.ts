@@ -1,6 +1,6 @@
 import { type ProjectDB, SteamAuthenticatedAPIClient, VaultService, type schema } from "@project/lib";
 import { drizzle } from "drizzle-orm/d1";
-import { refreshStaleApps } from "./cleanup";
+import { deleteStaleUsers, refreshStaleApps } from "./cleanup";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -19,11 +19,9 @@ export default {
     scheduled: async (scheduledTime, env, ctx) => {
         const db = drizzle<typeof schema>(env.DB) as unknown as ProjectDB; // TODO: Fix this type
         const service = new VaultService(db, new SteamAuthenticatedAPIClient(env.STEAM_API_KEY));
-        const api = new SteamAuthenticatedAPIClient(env.STEAM_API_KEY);
 
-        refreshStaleApps(db, service, 100);
+        await refreshStaleApps(db, service, 100);
 
-        // TODO delete old user data
-        // I haven't decided what data I want for global stats yet
+        await deleteStaleUsers(db);
     },
 } satisfies ExportedHandler<Env>;

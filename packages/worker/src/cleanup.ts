@@ -5,7 +5,9 @@ import {
     achievementsMeta,
     achievementsStats,
     apps,
+    users,
     getLanguageByAPICode,
+    userAchievements,
 } from "@project/lib";
 import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import { chunkArray } from "../../lib/src/repositories/sqlite/utils";
@@ -42,5 +44,29 @@ export const refreshStaleApps = async (db: ProjectDB, service: VaultService, cou
             appIds: [pair.id],
             lang: lang.storeCode,
         });
+    }
+};
+
+export const deleteStaleUsers = async (db: ProjectDB) => {
+    const ONE_DAY_AGO = new Date();
+    ONE_DAY_AGO.setDate(ONE_DAY_AGO.getDate() - 1);
+
+    // Get the oldest users that are older than 1 day
+    const keys = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(lt(users.updated_at, ONE_DAY_AGO))
+        .orderBy(asc(users.updated_at));
+
+    if (keys.length === 0) return;
+
+    // This isn't exactly scalable, but it works for now
+    // It also doesn't violate foreign key constraints, because achievements could be updated independently of the user (in the future maybe)
+    for (const key of keys) {
+        // Delete the stale user data
+        await db.batch([
+            db.delete(users).where(eq(users.id, key.id)),
+            db.delete(userAchievements).where(eq(userAchievements.user_id, key.id)),
+        ]);
     }
 };

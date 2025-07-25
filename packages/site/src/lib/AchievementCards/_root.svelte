@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import Transition from "$lib/Transition.svelte";
     import type { SteamAppAchievement, SteamUserAchievement } from "lib";
     import { flip } from "svelte/animate";
@@ -7,6 +6,7 @@
     import { crossfade } from "svelte/transition";
     import Card from "./_card.svelte";
     import Placeholder from "./_placeholder.svelte";
+    import { getAchievementSortManager } from "$lib/SortManager/AchievementSortManager";
 
     interface Props {
         achievements: MaybePromise<
@@ -37,17 +37,19 @@
         },
     });
 
-    const sortManager = getSortManager();
+    const sortManager = getAchievementSortManager();
 </script>
 
 {#await achievements}
     <div class={grid}>
-        {#each new Array(6) as _}
+        {#each new Array(6)}
             <Placeholder {secondary} />
         {/each}
     </div>
 {:then achievements}
-    {@const sortedAchievements = sortManager.sort(achievements)}
+    {@const sortedAchievements = sortManager.sort(achievements) as Array<
+        SteamUserAchievement | SteamAppAchievement
+    >}
     <div class={grid}>
         {#if !sortedAchievements || sortedAchievements.length === 0}
             <Transition>

@@ -1,7 +1,5 @@
 import { SteamApp, SteamAppAchievement, SteamUserAchievement } from "@project/lib";
 
-type RemoveFirst<T extends unknown[]> = T extends [unknown, ...infer U] ? U : never;
-
 type Params<T> = ConstructorParameters<
     T extends SteamUserAchievement ? typeof SteamUserAchievement : typeof SteamAppAchievement
 >;
@@ -43,8 +41,8 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
         // Return record where value is ConstructorParams<T> MINUS the first element (the app)
         const a = [...apps.entries()].map(([app, achievements]) => {
             const params = achievements.map((a) => {
-                const [, ...params] = a instanceof SteamUserAchievement ? a.serializeUser() : a.serialize();
-                return params as RemoveFirst<Params<T>>;
+                const { app, ...rest } = a.serialize();
+                return rest as Omit<Params<T>[0], "app">;
             });
 
             return [app.serialize(), params] as const;
@@ -58,11 +56,9 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 
         for (const [appParams, achievements] of value) {
             if (!appParams) continue;
-            const [id, details, players, lang] = appParams;
-            const app = new SteamApp(id, details, players, lang);
+            const app = new SteamApp(appParams);
             for (const params of achievements) {
-                const [meta, global, lang] = params;
-                const achievement = new SteamAppAchievement(app, meta, global, lang);
+                const achievement = new SteamAppAchievement({ app, ...params });
                 apps.push(achievement);
             }
         }
@@ -70,18 +66,17 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
         return apps;
     }
 
-    public decodeUserAchievements(value: ReturnType<typeof this.encode>) {
+    public decodeUserAchievements(value: ReturnType<AchievementArrayContext<SteamUserAchievement>["encode"]>) {
         const apps = new Array<SteamUserAchievement>();
 
         for (const [appParams, achievements] of value) {
-            const [id, details, players, lang] = appParams;
-            const app = new SteamApp(id, details, players, lang);
+            const app = new SteamApp(appParams);
             for (const params of achievements) {
-                const [meta, global, lang, steamid, userStats] = params;
+                const { user, userStats } = params;
                 // Don't check for truthiness of userStats! It can be null
                 // I made that mistake before...
-                if (!steamid || userStats === undefined) continue;
-                const achievement = new SteamUserAchievement(app, meta, global, lang, steamid, userStats ?? null);
+                if (!user || userStats === undefined) continue;
+                const achievement = new SteamUserAchievement({ app, ...params });
                 apps.push(achievement);
             }
         }

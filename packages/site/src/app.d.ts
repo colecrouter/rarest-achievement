@@ -5,6 +5,7 @@ import type {
     SteamStoreAPIClient,
     SteamUser,
     TranslateClient,
+    VaultService,
 } from "@project/lib";
 
 // for information about these interfaces
@@ -18,6 +19,7 @@ declare global {
             steamUser: SteamUser | null;
             steamCacheDB: ProjectDB;
             miscCache: KVNamespace;
+            vault: VaultService;
         }
         // interface PageData {}
         // interface PageState {}

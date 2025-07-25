@@ -3,11 +3,10 @@
     import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";
-    import IndexError from "$lib/IndexError.svelte";
-    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import { m } from "$lib/paraglide/messages";
     import { deLocalizeUrl, getLocale } from "$lib/paraglide/runtime";
     import type { Rarity } from "$lib/rarity";
+    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
     import Server from "@lucide/svelte/icons/server";
@@ -19,12 +18,12 @@
     import Breadcrumbs from "../../Breadcrumbs.svelte";
 
     let { data } = $props();
-    let { app, achievements, friends, loggedIn: user } = $derived(data);
+    let { app, achievements, loggedIn: user } = $derived(data);
 
     let recentUnlocks = $derived(
         !user
             ? null
-            : achievements
+            : achievements.data
                   .filter((a) => a instanceof SteamUserAchievement) // Type guard, user check should be enough
                   .filter((a) => a.unlocked)
                   .sort(
@@ -37,11 +36,11 @@
     let unlockedCount = $derived(
         !user
             ? 0
-            : achievements
+            : achievements.data
                   .filter((a) => a instanceof SteamUserAchievement)
                   .filter((achievement) => achievement.unlocked).length,
     );
-    let totalCount = $derived(achievements.length);
+    let totalCount = $derived(achievements.data.length);
 
     let isSignedIn = true;
     let donutchart: HTMLCanvasElement | null = null;
@@ -54,7 +53,7 @@
         [-1, m.statusLocked()],
     ] as const;
     let unlockedAchievementsGroupedByRarity = $derived([
-        ...Map.groupBy(achievements?.values() ?? [], (achievement) =>
+        ...Map.groupBy(achievements.data.values() ?? [], (achievement) =>
             "unlocked" in achievement && achievement.unlocked
                 ? rarities.find(
                       ([percentage]) =>
@@ -66,7 +65,7 @@
 
     let achievementsGroupedByRarity = $derived([
         ...Map.groupBy(
-            achievements?.values() ?? [],
+            achievements.data.values() ?? [],
             (achievement) =>
                 rarities.find(
                     ([percentage]) =>
@@ -169,7 +168,7 @@
     <meta
         name="description"
         content={m.appPageMetaDescription({
-            achievementCount: achievements.length,
+            achievementCount: achievements.data.length,
             appName: app.name,
         })}
     />
@@ -178,7 +177,7 @@
     <meta
         property="og:description"
         content={m.appPageMetaDescription({
-            achievementCount: achievements.length,
+            achievementCount: achievements.data.length,
             appName: app.name,
         })}
     />
@@ -188,7 +187,7 @@
     <meta
         property="keywords"
         content={m.appPageMetaKeywords({
-            achievementCount: achievements.length,
+            achievementCount: achievements.data.length,
             appId: app.id,
             appName: app.name,
         })}
@@ -437,9 +436,9 @@
             {m.gamePageAchievementLeaderboardTitle()}
         </h2>
 
-        <Toolbar {achievements} />
+        <Toolbar data={achievements} />
 
-        <AchievementCards {achievements} />
+        <AchievementCards achievements={achievements.data} />
     </section>
 
     <!-- Friends Who Play -->
@@ -447,18 +446,7 @@
         <h2 class="mb-6 text-2xl font-bold">
             {m.gamePageFriendsWhoPlayTitle()}
         </h2>
-        <!-- TODO island -->
-        {#if isSignedIn}
-            {#await friends then f}
-                {#if f}
-                    {@const { data: error } = f.friends}
-                    {#if error}
-                        <IndexError />
-                    {/if}
-                {/if}
-            {/await}
-        {/if}
-        <FriendCards data={friends.then((r) => r?.friends?.data ?? null)} />
+        <FriendCards allAchievements={data.friendsWithAchievement} />
     </div>
 
     <!-- Similar Games -->

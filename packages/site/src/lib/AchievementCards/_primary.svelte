@@ -65,7 +65,6 @@
     import TranslationToggle from "$lib/TranslationToggle.svelte";
     import { SteamUserAchievement } from "@project/lib";
     import Badge from "./_badge.svelte";
-    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
 
     interface Props {
         achievement: SteamUserAchievement | SteamAppAchievement;

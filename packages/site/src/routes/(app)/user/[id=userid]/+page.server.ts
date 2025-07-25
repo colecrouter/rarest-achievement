@@ -1,74 +1,38 @@
+import { AchievementURLParameterParser } from "$lib/SortManager/AchievementSortManager.js";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { EnhancedSteamRepository, userScores } from "@project/lib";
+import { error } from "@sveltejs/kit";
 
-export const load = async ({ parent, locals }) => {
+export const load = async ({ url, params, locals }) => {
     // Need to load the locale synchronously
     const locale = getLocale();
 
+    const { id } = params;
+    // I've avoided calling await parent() here because it causes unnecessary parent reruns
+    const { data } = await locals.vault.users.compose().withUserIds([id]).build({ limit: 1 });
+    const user = data.find((u) => u.id === id);
+    if (!user) error(404, "User not found");
+
     const achievements = (async () => {
-        const repo = new EnhancedSteamRepository(locals);
-        const { user: u } = await parent();
+        const paramParser = new AchievementURLParameterParser({
+            method: "rarity_pct",
+            direction: "asc",
+        });
 
-        // Fetch owned games
-        console.time("Fetching owned games");
-        const { data: ownedGameMap, error: err1 } = await repo.getOwnedGames([u]);
-        const ownedGames = [...ownedGameMap.values()].flat();
-        console.timeEnd("Fetching owned games");
+        const config = paramParser.parseFromURL(url);
 
-        // Fetch Steam apps concurrently; ignore failed fetches via try/catch
-        const gameIds = [...new Set(ownedGames.map((game) => game.id))];
+        const achievementsForUserQuery = locals.vault.userAchievements
+            .compose()
+            .withLanguage(locale)
+            .withUserIds([user.id])
+            .withUnlockedStatus(true);
 
-        console.time("Fetching game apps");
-        const { data: gameMap, error: err2 } = await repo.getApps(gameIds, locale);
-        const gameApps = [...gameMap.values()];
-        console.timeEnd("Fetching game apps");
+        if (config.search) achievementsForUserQuery.withSearch(config.search);
 
-        // Batch fetch achievements for all valid games and the user in one call
-        console.time("Fetching achievements");
-        const { data: allAchievements, error: err3 } = await repo.getUserAchievements(gameApps, [u], locale);
-        console.timeEnd("Fetching achievements");
-
-        // Flatten the achievements map to get a list of all achievements
-        const allGames = [...allAchievements.values()];
-        const allGamesForUser = allGames.map((m) => m.get(u.id)).filter((g) => !!g);
-        const allAchievementsForUser = [...allGamesForUser.map((m) => [...m.values()])]
-            .flat()
-            .filter((a) => a.unlocked);
-
-        // Update user score
-        const score = allAchievementsForUser.filter((achieve) => achieve?.unlocked).length;
-
-        console.time("Updating user score");
-        await locals.steamCacheDB
-            .insert(userScores)
-            .values({
-                user_id: u.id,
-                rare_count: score,
-            })
-            .onConflictDoUpdate({
-                target: [userScores.user_id],
-                set: {
-                    rare_count: score,
-                    updated_at: new Date(),
-                },
-            });
-        console.timeEnd("Updating user score");
-
-        console.log("Achievements for user:", allAchievementsForUser.length);
-
-        const err = err1 || err2 || err3;
-        if (err) console.error("Error fetching data:", err);
-
-        console.log("allAchievementsForUser:", allAchievementsForUser);
-
-        return {
-            achievements: allAchievementsForUser,
-            rareCount: score,
-            didErr: Boolean(err),
-        };
+        return achievementsForUserQuery.build({ limit: 32, sort: config });
     })();
 
     return {
+        user,
         achievements,
     };
 };

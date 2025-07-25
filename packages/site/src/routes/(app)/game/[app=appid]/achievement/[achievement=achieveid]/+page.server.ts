@@ -1,6 +1,12 @@
 import { GOOGLE_API_KEY } from "$env/static/private";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { EnhancedSteamRepository, Errable, SteamCommunityRepo, YouTubeRepository } from "@project/lib";
+import {
+    Attempt,
+    SteamCommunityRepo,
+    YouTubeRepository,
+    type SteamAppAchievement,
+    type SteamOwnedGame,
+} from "@project/lib";
 
 export const load = async ({ parent, url, locals, platform }) => {
     const locale = getLocale();
@@ -9,75 +15,50 @@ export const load = async ({ parent, url, locals, platform }) => {
     const { app, loggedIn, achievement } = data;
     if (!platform) throw new Error("No platform found");
 
-    const steamRepo = new EnhancedSteamRepository(locals);
     const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE);
     const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE, platform.env.AI);
 
-    const game = await steamRepo.getGameAchievements([app], locale);
-    const gameAchievements = [...(game.data.get(app.id)?.values() ?? [])];
+    const gameAchievements = await locals.vault.appAchievements
+        .compose()
+        .withLanguage(locale)
+        .withAppIds([app.id])
+        .build();
 
     const friendsWithAchievement = (async () => {
-        return Errable.try(async (setError) => {
-            if (!loggedIn) return null;
-            if (url.searchParams.get("tab") !== "friends") return null;
+        if (!loggedIn) return null;
+        if (url.searchParams.get("tab") !== "friends") return null;
 
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-            const oneYearAgo = new Date();
-            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-            // Fetch friends who own the game
-            const { data: friends, error: err1 } = await steamRepo.getFriends([loggedIn]);
-            if (err1) setError(err1);
+        // Fetch achievements for each friend who owns the game
+        const result = await locals.vault.userAchievements
+            .compose()
+            .withLanguage(locale)
+            .withAppIds([app.id])
+            .withFriendsOf(loggedIn.id)
+            .build({ limit: 10000 }); // TODO
 
-            const filteredFriends = [...friends.values()]
-                .flat()
-                .filter((f) => {
-                    const isPrivate = f.private;
-                    const isOldEnough = f.created && f.created < oneMonthAgo;
-                    const isDead = f.lastLoggedIn && f.lastLoggedIn < oneYearAgo;
+        const filteredPrivateOrBot = result.map((d) =>
+            d
+                .filter(
+                    (d) =>
+                        d.user.lastLoggedIn &&
+                        d.user.lastLoggedIn >= oneMonthAgo &&
+                        d.user.created &&
+                        d.user.created < oneYearAgo &&
+                        !d.user.private,
+                )
+                .sort(
+                    (a, b) =>
+                        // Sort by last logged in first
+                        (b.user.lastLoggedIn ?? new Date(0)).getTime() - (a.user.lastLoggedIn ?? new Date(0)).getTime(),
+                ),
+        );
 
-                    return !isPrivate && isOldEnough && !isDead;
-                })
-                .sort((a, b) => {
-                    const aLastLoggedIn = a.lastLoggedIn ?? new Date(0);
-                    const bLastLoggedIn = b.lastLoggedIn ?? new Date(0);
-                    return bLastLoggedIn.getTime() - aLastLoggedIn.getTime();
-                })
-                .slice(0, 100);
-
-            // Get owned games for each friend
-            const { data: ownedGames, error: err2 } = await steamRepo.getOwnedGames(filteredFriends);
-            if (err2) setError(err2);
-            const filteredFriendsWithGame = filteredFriends.filter((friend) => {
-                const friendOwnedGames = ownedGames.get(friend.id) ?? [];
-                return friendOwnedGames.some((game) => game.id === app.id);
-            });
-
-            // Fetch achievements for each friend who owns the game
-            const { data: achievements, error: err3 } = await steamRepo.getUserAchievements(
-                [app],
-                filteredFriendsWithGame,
-                locale,
-            );
-            if (err3) setError(err3);
-
-            const achievementsForGame = achievements.get(app.id);
-            const friendsWithAchievement = filteredFriendsWithGame
-                .map((f) => ({
-                    friend: f,
-                    achievements: [...(achievementsForGame?.get(f.id)?.values() ?? [])],
-                    owned:
-                        ownedGames.get(f.id)?.find((game) => game.id === app.id) ??
-                        (() => {
-                            throw new Error("Game not found");
-                        })(),
-                    achievement: achievements.get(app.id)?.get(f.id)?.get(achievement.id),
-                }))
-                .filter((f) => f.owned !== undefined && f.achievement?.unlocked);
-
-            return friendsWithAchievement;
-        });
+        return filteredPrivateOrBot;
     })();
 
     const articles = (async () => {
@@ -86,7 +67,7 @@ export const load = async ({ parent, url, locals, platform }) => {
         const { data: articles, error: err1 } = await steamComRepo.searchGuides(achievement, locale);
         const { data: videos, error: err2 } = await youtubeRepo.searchGuides(achievement, locale);
 
-        return new Errable(
+        return Attempt.fromSimple(
             {
                 articles: articles?.slice(0, 3) ?? [],
                 videos: videos?.slice(0, 3) ?? [],

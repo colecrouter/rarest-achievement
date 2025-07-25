@@ -2,16 +2,18 @@ import { dev } from "$app/environment";
 import { GOOGLE_API_KEY, STEAM_API_KEY } from "$env/static/private";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 import {
-    EnhancedSteamRepository,
     SteamAuthenticatedAPIClient,
     SteamStoreAPIClient,
     TranslateClient,
+    VaultService,
     setBypassCdnEnabled,
+    getLanguageByCode,
 } from "@project/lib";
 import { handleErrorWithSentry, initCloudflareSentryHandle, sentryHandle } from "@sentry/sveltekit";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
+import { getLocale } from "./lib/paraglide/runtime";
 
 // creating a handle to use the paraglide middleware
 const paraglideHandle: Handle = ({ event, resolve }) =>
@@ -32,14 +34,20 @@ const authHandle: Handle = async ({ event, resolve }) => {
     if (!event.platform) throw new Error("Platform not found");
     event.locals.steamCacheDB = drizzle(event.platform.env.DB);
 
-    const repo = new EnhancedSteamRepository(event.locals);
+    event.locals.vault = new VaultService(event.locals.steamCacheDB, event.locals.steamClient);
 
     // Get details for the logged-in user
     event.locals.steamUser = null; // Default to null if no steamId is found
     const steamId = event.cookies.get("steamid");
     if (steamId) {
-        const { data: users } = await repo.getUsers([steamId]);
-        const user = users.get(steamId);
+        const locale = getLocale();
+        const apiLang = getLanguageByCode(locale)?.apiCode || "english";
+        const usersResult = await event.locals.vault.users
+            .compose(apiLang)
+            .withUserIds([steamId])
+            .build({ limit: 1 });
+        
+        const user = usersResult.data?.find((u) => u.id === steamId);
         if (!user) {
             // Remove the cookie if the user is not found
             event.cookies.delete("steamid", { path: "/" });

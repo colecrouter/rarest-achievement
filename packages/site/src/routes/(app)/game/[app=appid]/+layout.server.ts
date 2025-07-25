@@ -1,15 +1,18 @@
 import type { Breadcrumb } from "$lib/breadcrumbs";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { EnhancedSteamRepository } from "@project/lib";
+import { getLanguageByCode } from "@project/lib";
 import { error } from "@sveltejs/kit";
 
 export const load = async ({ params, locals }) => {
-    const repo = new EnhancedSteamRepository(locals);
-
     const appId = Number.parseInt(params.app);
-    const results = await repo.getApps([appId], getLocale());
 
-    const app = results.data.get(appId);
+    // Convert locale to API language code
+    const locale = getLocale();
+
+    // Use composable query instead of direct repository call
+    const results = await locals.vault.apps.compose().withLanguage(locale).withAppIds([appId]).build({ limit: 1 });
+
+    const app = results.data.find((item) => item.id === appId);
     if (!app) error(404, "Game not found");
 
     const breadcrumbs = [

@@ -1,27 +1,91 @@
-<script lang="ts">
+<!--
+    Achievement Sorting/Filtering Toolbar Component
+    
+    A universal toolbar that adapts to both client-side and server-side sorting contexts.
+    
+    Features:
+    - Automatic detection of client vs server mode
+    - Type-safe URL generation for server mode using sort manager's built-in methods
+    - Support for search, sorting, filtering, and direction controls
+    - Adaptive UI based on data type (UserAchievement vs AppAchievement)
+    - Proper internationalization support
+    
+    The component automatically detects whether it's running in:
+    - Server mode: Renders navigation links using the sort manager's URL generation
+    - Client mode: Renders interactive controls that update the sort manager state
+-->
+
+<script lang="ts" module>
+    import type {
+        RepositoryResult,
+        SortDirection,
+        SteamAppAchievement,
+        SteamUserAchievement,
+    } from "@project/lib";
+
+    // Type guard to check if manager has URL generation capabilities
+    function isServerSortManager(
+        manager: AchievementClientSortManager | AchievementServerSortManager,
+    ): manager is AchievementServerSortManager {
+        return "generateUrl" in manager;
+    }
+
+    // Helper function to determine if data has unlocked property (UserAchievement)
+    function hasUnlocked(
+        item: SteamUserAchievement | SteamAppAchievement,
+    ): item is SteamUserAchievement {
+        return "unlocked" in item;
+    }
+
+    // Helper function to check if data supports filtering (has unlocked achievements)
+    function supportsFiltering<
+        TData extends SteamUserAchievement | SteamAppAchievement,
+    >(data: TData[]): boolean {
+        if (!data.length) return false;
+        const userAchievements = data.filter(
+            hasUnlocked,
+        ) as SteamUserAchievement[];
+        if (userAchievements.length !== data.length) return false;
+
+        return (
+            userAchievements.some((a) => a.unlocked) &&
+            userAchievements.some((a) => !a.unlocked)
+        );
+    }
+</script>
+
+<script
+    lang="ts"
+    generics="TData extends SteamUserAchievement | SteamAppAchievement"
+>
     import { m } from "$lib/paraglide/messages.js";
     import KeyRound from "@lucide/svelte/icons/key-round";
     import Lock from "@lucide/svelte/icons/lock";
     import SquareDashed from "@lucide/svelte/icons/square-dashed";
-    import type {
-        SteamAppAchievement,
-        SteamUserAchievement,
-    } from "@project/lib";
+
     import { Segment } from "@skeletonlabs/skeleton-svelte";
     import { crossfade } from "svelte/transition";
-    import { getSortManager } from "./UrlParamMapper.svelte";
+    import { goto } from "$app/navigation";
+    import {
+        AchievementClientSortManager,
+        AchievementServerSortManager,
+        getAchievementSortManager,
+    } from "./AchievementSortManager";
 
-    interface Props {
-        achievements: Array<SteamUserAchievement | SteamAppAchievement>;
+    interface Props<TData extends SteamUserAchievement | SteamAppAchievement> {
+        data: MaybePromise<RepositoryResult<TData>>;
     }
 
-    let { achievements }: Props = $props();
+    let { data }: Props<TData> = $props();
 
-    const sortManager = getSortManager();
+    const sortManager = $derived(getAchievementSortManager());
+    const serverMode = $derived(isServerSortManager(sortManager));
+    const currentMethod = $derived(sortManager.method);
+
+    let searchTimeout: ReturnType<typeof setTimeout>;
 
     const [send, receive] = crossfade({
         duration: 200,
-        // when you remove an element
         fallback(node) {
             const style = getComputedStyle(node);
             const transform = style.transform === "none" ? "" : style.transform;
@@ -35,134 +99,294 @@
 
     const segmentRounded = "rounded-container";
     const segmentBorder = "preset-outlined-surface-300-700 p-2";
+
+    // Helper function to generate URLs for server mode using the sort manager's URL generation
+    function generateSortUrl(overrides: {
+        method?: "rarity_pct" | "rarity_score" | "unlocked_at";
+        filter?: string;
+        direction?: SortDirection;
+        search?: string;
+    }): string {
+        if (!serverMode) return "#";
+        return (sortManager as AchievementServerSortManager).generateUrl(
+            overrides,
+        );
+    }
+
+    // Helper function to handle clicks in client mode or navigate in server mode
+    function handleMethodChange(method: string) {
+        if (serverMode) {
+            goto(generateSortUrl({ method: method as any }));
+        } else {
+            (sortManager as AchievementClientSortManager).method =
+                method as any;
+        }
+    }
+
+    function handleFilterChange(filter: string) {
+        if (serverMode) {
+            goto(generateSortUrl({ filter }));
+        } else {
+            (sortManager as AchievementClientSortManager).filter = filter;
+        }
+    }
+
+    function handleDirectionToggle() {
+        if (serverMode) {
+            goto(
+                generateSortUrl({
+                    direction: sortManager.direction === "asc" ? "desc" : "asc",
+                }),
+            );
+        } else {
+            const clientManager = sortManager as AchievementClientSortManager;
+            clientManager.direction =
+                clientManager.direction === "asc" ? "desc" : "asc";
+        }
+    }
+
+    // Get the configuration for available sort methods with proper localization
+    function getAvailableMethods(resolvedData: TData[]) {
+        const firstItem = resolvedData[0];
+
+        if (firstItem && hasUnlocked(firstItem)) {
+            // UserAchievement data - supports all methods including unlocked_at
+            return [
+                { method: "rarity_pct", label: m.toolbarSortMethodRarity() },
+                {
+                    method: "rarity_score",
+                    label: m.toolbarSortMethodPlayerCount(),
+                },
+                { method: "unlocked_at", label: m.toolbarSortMethodUnlocked() },
+            ] as const;
+        }
+
+        // AppAchievement data - only supports rarity methods
+        return [
+            { method: "rarity_pct", label: m.toolbarSortMethodRarity() },
+            { method: "rarity_score", label: m.toolbarSortMethodPlayerCount() },
+        ] as const;
+    }
+
+    // Helper function to check if we have an error state that should be displayed
+    function shouldShowError(
+        repositoryResult: RepositoryResult<TData>,
+    ): boolean {
+        return (
+            repositoryResult.isFailure() ||
+            (repositoryResult.isPartial() && repositoryResult.data.length === 0)
+        );
+    }
 </script>
 
 <div class="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-    <!-- Search Input -->
-    <input
-        type="search"
-        placeholder={m.toolbarSearchPlaceholder()}
-        bind:value={sortManager.search}
-        class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
-    />
-
-    <!-- Sort Method Selection -->
-    <div class="flex flex-col items-center gap-2 md:flex-row">
-        <label class="text-surface-300 text-sm">
-            <span hidden>{m.toolbarSortBy()}</span>
-            <Segment
-                value={sortManager.method}
-                onValueChange={(e) => {
-                    sortManager.method = e.value as typeof sortManager.method;
-                }}
-                border={segmentBorder}
-                rounded={segmentRounded}
-            >
-                <Segment.Item classes="text-sm" value="percentage">
-                    {m.toolbarSortMethodRarity()}
-                </Segment.Item>
-                <Segment.Item classes="text-sm" value="count">
-                    {m.toolbarSortMethodPlayerCount()}
-                </Segment.Item>
-                {#if achievements.find((a) => "unlocked" in a)}
-                    <Segment.Item classes="text-sm" value="unlocked">
-                        {m.toolbarSortMethodUnlocked()}
-                    </Segment.Item>
-                {/if}
-            </Segment>
-        </label>
-    </div>
-
-    <!-- Filter Status Selection -->
-    <!-- Only show if there are a mix of unlocked and locked achievements -->
-    {#if achievements.every((a) => "unlocked" in a) && achievements.some((a) => a.unlocked) && achievements.some((a) => !a.unlocked)}
+    {#await data}
+        <!-- Loading placeholder while data resolves -->
+        <input
+            type="search"
+            placeholder={m.toolbarSearchPlaceholder()}
+            disabled
+            class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3 opacity-50"
+        />
         <div class="flex flex-col items-center gap-2 md:flex-row">
-            <label class="text-surface-300 text-sm">
-                <span hidden>{m.toolbarFilterBy()}</span>
-                <Segment
-                    value={sortManager.filter}
-                    onValueChange={(e) => {
-                        sortManager.filter =
-                            e.value as typeof sortManager.filter;
-                    }}
-                    border={segmentBorder}
-                    rounded={segmentRounded}
-                >
-                    <Segment.Item labelClasses="text-sm" value="all">
-                        <span hidden>{m.toolbarFilterAll()}</span>
-                        <SquareDashed />
-                    </Segment.Item>
-                    {#if achievements.find((a) => "unlocked" in a)}
-                        <Segment.Item labelClasses="text-sm" value="unlocked">
-                            <span hidden>{m.toolbarFilterUnlocked()}</span>
-                            <KeyRound />
-                        </Segment.Item>
-                        <Segment.Item labelClasses="text-sm" value="locked">
-                            <span hidden>{m.toolbarFilterLocked()}</span>
-                            <Lock />
-                        </Segment.Item>
-                    {/if}
-                </Segment>
-            </label>
+            <div class="bg-surface-700 h-10 w-32 animate-pulse rounded"></div>
         </div>
-    {/if}
-
-    <!-- Sort Direction Toggle -->
-    <button
-        onclick={() =>
-            (sortManager.direction =
-                sortManager.direction === "asc" ? "desc" : "asc")}
-        aria-label={m.toolbarSortDirectionToggle()}
-        class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
-    >
-        <!-- These icons are just ArrowUpWideNarrow and ArrowDownNarrowWide from lucide -->
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide-icon lucide lucide-arrow-up-wide-narrow top-0 left-0"
+        <button
+            disabled
+            aria-label={m.toolbarSortDirectionToggle()}
+            class="btn preset-outlined-surface-300-700 text-surface-300 py-3 opacity-50"
         >
-            {#if sortManager.direction === "asc"}
-                <path
-                    d="m3 8 4-4 4 4"
-                    in:receive={{ key: 0 }}
-                    out:send={{ key: 0 }}
-                ></path>
-                <path d="M7 4v16" in:receive={{ key: 1 }} out:send={{ key: 1 }}
-                ></path>
-                <path
-                    d="M11 12h10"
-                    in:receive={{ key: 2 }}
-                    out:send={{ key: 2 }}
-                ></path>
-                <path d="M11 16h7" in:receive={{ key: 3 }} out:send={{ key: 3 }}
-                ></path>
-                <path d="M11 20h4" in:receive={{ key: 4 }} out:send={{ key: 4 }}
-                ></path>
-            {:else}
-                <path
-                    d="m3 16 4 4 4-4"
-                    in:receive={{ key: 0 }}
-                    out:send={{ key: 0 }}
-                ></path>
-                <path d="M7 20V4" in:receive={{ key: 1 }} out:send={{ key: 1 }}
-                ></path>
-                <path d="M11 4h4" in:receive={{ key: 2 }} out:send={{ key: 2 }}
-                ></path>
-                <path d="M11 8h7" in:receive={{ key: 3 }} out:send={{ key: 3 }}
-                ></path>
-                <path
-                    d="M11 12h10"
-                    in:receive={{ key: 4 }}
-                    out:send={{ key: 4 }}
-                ></path>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide-icon lucide lucide-arrow-up-wide-narrow"
+            >
+                <path d="m3 8 4-4 4 4"></path>
+                <path d="M7 4v16"></path>
+                <path d="M11 12h10"></path>
+                <path d="M11 16h7"></path>
+                <path d="M11 20h4"></path>
+            </svg>
+        </button>
+    {:then repositoryResult}
+        {@const resolvedData = repositoryResult.data}
+        {@const availableMethods = getAvailableMethods(resolvedData)}
+
+        {#if shouldShowError(repositoryResult)}
+            <!-- Error State -->
+            <div class="text-error-500 flex items-center gap-4">
+                <input
+                    type="search"
+                    placeholder={m.toolbarSearchPlaceholder()}
+                    disabled
+                    class="input border-error-500 bg-surface-800 text-surface-100 grow py-3 opacity-50"
+                />
+                <div class="text-sm">
+                    {repositoryResult.error?.message || "Failed to load data"}
+                </div>
+            </div>
+        {:else}
+            <!-- Success/Partial Success State -->
+            {#if repositoryResult.isPartial()}
+                <!-- Show warning for partial data -->
+                <div class="text-warning-500 mb-2 text-sm">
+                    ⚠️ Some data could not be loaded: {repositoryResult.error
+                        ?.message}
+                </div>
             {/if}
-        </svg>
-    </button>
+
+            <!-- Search Input -->
+            <input
+                type="search"
+                placeholder={m.toolbarSearchPlaceholder()}
+                bind:value={sortManager.search}
+                class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
+                oninput={serverMode
+                    ? () => {
+                          const captured = sortManager.search;
+                          // Debounce search in server mode
+                          clearTimeout(searchTimeout);
+                          searchTimeout = setTimeout(() => {
+                              goto(generateSortUrl({ search: captured }));
+                          }, 300);
+                      }
+                    : undefined}
+            />
+
+            <!-- Sort Method Selection -->
+            <div class="flex flex-col items-center gap-2 md:flex-row">
+                <label class="text-surface-300 text-sm">
+                    <span hidden>{m.toolbarSortBy()}</span>
+                    {#key currentMethod}
+                        <Segment
+                            value={currentMethod}
+                            onValueChange={(e) =>
+                                handleMethodChange(e.value as string)}
+                            border={segmentBorder}
+                            rounded={segmentRounded}
+                        >
+                            {#each availableMethods as methodConfig}
+                                <Segment.Item
+                                    classes="text-sm"
+                                    value={methodConfig.method}
+                                >
+                                    {methodConfig.label}
+                                </Segment.Item>
+                            {/each}
+                        </Segment>
+                    {/key}
+                </label>
+            </div>
+
+            <!-- Filter Status Selection -->
+            {#if supportsFiltering(resolvedData)}
+                <!-- <div class="flex flex-col items-center gap-2 md:flex-row">
+                    <label class="text-surface-300 text-sm">
+                        <span hidden>{m.toolbarFilterBy()}</span>
+                        <Segment
+                            value={sortManager.filter}
+                            onValueChange={(e) => handleFilterChange(e.value ?? "")}
+                            border={segmentBorder}
+                            rounded={segmentRounded}
+                        >
+                            <Segment.Item labelClasses="text-sm" value="all">
+                                <span hidden>{m.toolbarFilterAll()}</span>
+                                <SquareDashed />
+                            </Segment.Item>
+                            <Segment.Item labelClasses="text-sm" value="unlocked">
+                                <span hidden>{m.toolbarFilterUnlocked()}</span>
+                                <KeyRound />
+                            </Segment.Item>
+                            <Segment.Item labelClasses="text-sm" value="locked">
+                                <span hidden>{m.toolbarFilterLocked()}</span>
+                                <Lock />
+                            </Segment.Item>
+                        </Segment>
+                    </label>
+                </div> -->
+            {/if}
+
+            <!-- Sort Direction Toggle -->
+            <button
+                onclick={handleDirectionToggle}
+                aria-label={m.toolbarSortDirectionToggle()}
+                class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
+            >
+                <!-- SVG content same as original -->
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide-icon lucide lucide-arrow-up-wide-narrow top-0 left-0"
+                >
+                    {#if sortManager.direction === "asc"}
+                        <path
+                            d="m3 8 4-4 4 4"
+                            in:receive={{ key: 0 }}
+                            out:send={{ key: 0 }}
+                        ></path>
+                        <path
+                            d="M7 4v16"
+                            in:receive={{ key: 1 }}
+                            out:send={{ key: 1 }}
+                        ></path>
+                        <path
+                            d="M11 12h10"
+                            in:receive={{ key: 2 }}
+                            out:send={{ key: 2 }}
+                        ></path>
+                        <path
+                            d="M11 16h7"
+                            in:receive={{ key: 3 }}
+                            out:send={{ key: 3 }}
+                        ></path>
+                        <path
+                            d="M11 20h4"
+                            in:receive={{ key: 4 }}
+                            out:send={{ key: 4 }}
+                        ></path>
+                    {:else}
+                        <path
+                            d="m3 16 4 4 4-4"
+                            in:receive={{ key: 0 }}
+                            out:send={{ key: 0 }}
+                        ></path>
+                        <path
+                            d="M7 20V4"
+                            in:receive={{ key: 1 }}
+                            out:send={{ key: 1 }}
+                        ></path>
+                        <path
+                            d="M11 4h4"
+                            in:receive={{ key: 2 }}
+                            out:send={{ key: 2 }}
+                        ></path>
+                        <path
+                            d="M11 8h7"
+                            in:receive={{ key: 3 }}
+                            out:send={{ key: 3 }}
+                        ></path>
+                        <path
+                            d="M11 12h10"
+                            in:receive={{ key: 4 }}
+                            out:send={{ key: 4 }}
+                        ></path>
+                    {/if}
+                </svg>
+            </button>
+        {/if}
+    {/await}
 </div>

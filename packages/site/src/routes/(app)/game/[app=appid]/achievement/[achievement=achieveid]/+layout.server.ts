@@ -1,19 +1,22 @@
 import type { Breadcrumb } from "$lib/breadcrumbs";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { EnhancedSteamRepository, type SteamAppAchievement, TranslateRepository } from "@project/lib";
+import { TranslateRepository } from "@project/lib";
 import { error } from "@sveltejs/kit";
 
 export const load = async ({ params, parent, locals }) => {
     const achievementId = decodeURIComponent(params.achievement);
 
-    const repo = new EnhancedSteamRepository(locals);
     const translate = new TranslateRepository(locals.translateClient, locals.miscCache);
 
     const { app, breadcrumbs: parentBreadcrumbs } = await parent();
 
-    const { data: achievements } = await repo.getGameAchievements([app], getLocale());
-    const achievement = achievements.get(app.id)?.get(achievementId);
-    if (!achievement) error(404, "Game not found");
+    const { data: achievements } = await locals.vault.appAchievements
+        .compose()
+        .withLanguage(getLocale())
+        .withAppIds([app.id])
+        .build();
+    const achievement = achievements?.find((a) => a.id === achievementId);
+    if (!achievement) error(404, "Achievement not found");
 
     const translation =
         getLocale() !== achievement.language

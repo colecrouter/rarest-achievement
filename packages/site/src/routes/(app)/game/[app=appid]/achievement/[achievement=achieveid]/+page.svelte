@@ -41,7 +41,7 @@
 
     let statsChart = $state<HTMLCanvasElement>();
     $effect(() => {
-        const rarityChartData = [...(gameAchievements?.values() ?? [])]
+        const rarityChartData = [...(gameAchievements.data.values() ?? [])]
             .slice()
             .sort((a, b) => a.globalPercentage - b.globalPercentage)
             .map((current) => ({
@@ -121,7 +121,7 @@
                     const index = first.index;
                     const selectedAchievement = rarityChartData[index]?.id;
                     if (!selectedAchievement) return;
-                    const selectedAchievementId = gameAchievements?.find(
+                    const selectedAchievementId = gameAchievements.data.find(
                         (a) => a.id === selectedAchievement,
                     )?.id;
                     if (!selectedAchievementId) return;
@@ -141,7 +141,7 @@
                     const index = first.index;
                     const selectedAchievement = rarityChartData[index]?.id;
                     if (!selectedAchievement) return;
-                    const selectedAchievementId = gameAchievements?.find(
+                    const selectedAchievementId = gameAchievements.data.find(
                         (a) => a.id === selectedAchievement,
                     )?.id;
                     if (!selectedAchievementId) return;
@@ -475,7 +475,7 @@
                                 {#if gameAchievements}
                                     <AchievementCards
                                         achievements={[
-                                            ...gameAchievements.values(),
+                                            ...gameAchievements.data.values(),
                                         ]}
                                         secondary
                                     />
@@ -487,14 +487,11 @@
             {:else if activeTab === "friends"}
                 <Transition>
                     <div class="mt-6 space-y-8">
-                        {#await friendsWithAchievement then { error }}
-                            {#if error}
-                                <IndexError />
-                            {/if}
-                        {/await}
                         <FriendCards
                             secondary
-                            data={friendsWithAchievement.then((d) => d.data)}
+                            hideLocked
+                            allAchievements={friendsWithAchievement}
+                            targetAchievement={achievement}
                         />
                     </div>
                 </Transition>
@@ -529,7 +526,7 @@
                                                 {m.achievementArticlesSteamCommunityDescription()}
                                             </p>
                                             <div class="mt-4 space-y-4">
-                                                {#each articleResult.articles as article}
+                                                {#each articleResult?.articles ?? [] as article}
                                                     <div class="card p-4">
                                                         <a
                                                             href={`https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`}
@@ -593,7 +590,7 @@
                                                 {m.achievementArticlesYouTubeDescription()}
                                             </p>
                                             <div class="mt-4 space-y-4">
-                                                {#each articleResult.videos as video}
+                                                {#each articleResult?.videos ?? [] as video}
                                                     <div class="card p-4">
                                                         <a
                                                             href={`https://www.youtube.com/watch?v=${video.videoId}`}

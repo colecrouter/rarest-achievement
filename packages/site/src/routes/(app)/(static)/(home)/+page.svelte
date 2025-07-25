@@ -2,7 +2,15 @@
     import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
     import { m } from "$lib/paraglide/messages.js";
-    import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
+    import {
+        deLocalizeUrl,
+        getLocale,
+        localizeHref,
+    } from "$lib/paraglide/runtime";
+    import {
+        AchievementClientSortManager,
+        setAchievementClientSortManager,
+    } from "$lib/SortManager/AchievementSortManager.js";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Crown from "@lucide/svelte/icons/crown";
@@ -72,6 +80,8 @@
     let exploreTarget = $state<HTMLElement | null>(null);
 
     $inspect(exploreTarget);
+
+    setAchievementClientSortManager();
 </script>
 
 <svelte:head>

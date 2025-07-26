@@ -18,10 +18,10 @@ export const load = async ({ parent, locals }) => {
         ? await locals.vault.userAchievements
               .compose()
               .withLanguage(locale)
-              .withAppIds([app.id])
+              .withAppIds(app.id)
               .withUserIds([locals.steamUser.id])
               .build()
-        : await locals.vault.appAchievements.compose().withLanguage(locale).withAppIds([app.id]).build();
+        : await locals.vault.appAchievements.compose().withLanguage(locale).withAppIds(app.id).build();
 
     const friendsWithAchievement = (async () => {
         if (!locals.steamUser) return null;
@@ -35,7 +35,7 @@ export const load = async ({ parent, locals }) => {
         const result = await locals.vault.userAchievements
             .compose()
             .withLanguage(locale)
-            .withAppIds([app.id])
+            .withAppIds(app.id)
             .withFriendsOf(locals.steamUser.id)
             .build({ limit: 10000 }); // TODO
 
@@ -65,7 +65,6 @@ export const load = async ({ parent, locals }) => {
                 .filter(([, ach]) => ach.every((a) => !a.unlocked))
                 .map(([userId]) => userId),
         );
-        console.log(usersWhoHaventPlayed);
 
         return filteredPrivateOrBot.map((achievements) =>
             achievements.filter((a) => !usersWhoHaventPlayed.has(a.user.id)),

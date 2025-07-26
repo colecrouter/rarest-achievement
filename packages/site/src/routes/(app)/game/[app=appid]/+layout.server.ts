@@ -10,7 +10,7 @@ export const load = async ({ params, locals }) => {
     const locale = getLocale();
 
     // Use composable query instead of direct repository call
-    const results = await locals.vault.apps.compose().withLanguage(locale).withAppIds([appId]).build({ limit: 1 });
+    const results = await locals.vault.apps.compose().withLanguage(locale).withAppIds(appId).build({ limit: 1 });
 
     const app = results.data.find((item) => item.id === appId);
     if (!app) error(404, "Game not found");

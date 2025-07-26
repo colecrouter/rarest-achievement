@@ -1,9 +1,9 @@
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, inArray } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { Attempt, type SteamAuthenticatedAPIClient, ownedGames, users } from "../..";
 import { SteamUser, type SteamUserRaw } from "../../models";
-import type { OwnedGame } from "../api/steampowered/owned";
 import { generateTimingId } from "../../utils/timing";
+import type { OwnedGame } from "../api/steampowered/owned";
 import {
     type ComposableQueryOptions,
     type ComposableQueryResult,
@@ -11,8 +11,8 @@ import {
     type QueryComposer,
     createQueryResult,
 } from "../composable";
-import { type Repository, type RepositoryParams, RepositoryResult } from "../repository";
-import { safeFetch, safeInsert } from "./utils";
+import type { Repository } from "../repository";
+import { safeInsert } from "./utils";
 
 type UserSortMethod = "id";
 
@@ -236,45 +236,34 @@ export const upsertUsers = async (
     // Fetch user details for missing IDs
     if (missingUserIds.size !== 0) {
         const validData = [];
+        // Get all missing user data in batches to avoid API limits
+        const missingUserIdsArray = missingUserIds.values().toArray();
 
-        try {
-            // Get all missing user data in batches to avoid API limits
-            const missingUserIdsArray = missingUserIds.values().toArray();
-            const STEAM_API_BATCH_SIZE = 100; // Conservative limit for Steam API
-            const userDataBatches = [];
+        const missingPlayerSummaries = await Attempt.try(() => {
+            return steamApi.getPlayerSummaries(missingUserIdsArray);
+        });
+        if (!accumulatedError && missingPlayerSummaries.error) accumulatedError = missingPlayerSummaries.error;
 
-            for (let i = 0; i < missingUserIdsArray.length; i += STEAM_API_BATCH_SIZE) {
-                const batch = missingUserIdsArray.slice(i, i + STEAM_API_BATCH_SIZE);
-                const batchData = await steamApi.getPlayerSummaries(batch).then((data) => data.response.players);
-                userDataBatches.push(...batchData);
-            }
-            const missingUserData = userDataBatches;
-
-            const missingOwnedGames = await safeFetch(missingUserIds.values().toArray(), async (userId) => ({
-                user: userId,
-                games: await steamApi
+        const missingOwnedGames = await Attempt.all(
+            missingUserIdsArray.map((userId) => {
+                return steamApi
                     .getOwnedGames({ steamid: userId, include_played_free_games: true })
                     .then((d) => (d && "games" in d.response && d.response.games ? d.response.games : []))
-                    .then((d) => d.filter((d) => d !== undefined)),
-            }));
-            if (!accumulatedError && missingOwnedGames.error) accumulatedError = missingOwnedGames.error;
+                    .then((d) => ({ user: userId, games: d }));
+            }),
+        );
+        if (!accumulatedError && missingOwnedGames.error) accumulatedError = missingOwnedGames.error;
 
-            for (const userId of missingUserIds) {
-                const userData = missingUserData.find((u) => u.steamid === userId);
-                const ownedGamesData = missingOwnedGames.data.find((o) => o.user === userId);
+        for (const userId of missingUserIds) {
+            const userData = missingPlayerSummaries.data?.response.players.find((u) => u.steamid === userId);
+            const ownedGamesData = missingOwnedGames.data.find((o) => o.user === userId);
 
-                if (userData) {
-                    validData.push({
-                        id: userData.steamid,
-                        user: userData,
-                        ownedGames: ownedGamesData ? ownedGamesData.games : [],
-                    });
-                } else throw new Error(`Missing user data for ID: ${userId}`);
-            }
-        } catch (error) {
-            console.error("Error fetching missing user data:", error);
-            if (!accumulatedError) {
-                accumulatedError = error as Error; // Store the first error encountered
+            if (userData) {
+                validData.push({
+                    id: userData.steamid,
+                    user: userData,
+                    ownedGames: ownedGamesData ? ownedGamesData.games : [],
+                });
             }
         }
 

@@ -1,4 +1,4 @@
-import { type AnyTable, type Column, type InferSelectModel, getTableColumns, getTableName, and } from "drizzle-orm";
+import { type AnyTable, type Column, type InferSelectModel, and, getTableColumns, getTableName } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type Query, type SQL, sql } from "drizzle-orm/sql";
 import type { SQLiteInsert, SQLiteInsertBase, SQLiteTable, TableConfig } from "drizzle-orm/sqlite-core";
@@ -6,6 +6,7 @@ import { Attempt, type AttemptStatus } from "../..";
 
 const SQL_PARAM_LIMIT = 100; // Maximum number of parameters a single SQLite query can handle
 
+// Deprecated: Use FetchManager instead for better control
 const FETCH_LIMIT = 10;
 
 /**
@@ -70,46 +71,6 @@ export async function safeInsert<T extends SQLiteTable, Input>(
     }
 
     return allResults;
-}
-
-/**
- * Safely chunk requests into batches to avoid overwhelming the dev server.
- * Stops iterating if an error is encountered.
- *
- * @param inputs  array of input items to process
- * @param fetch   a function that, given an input item, returns a Promise<data>
- */
-export async function safeFetch<Input, Output>(
-    inputs: Input[],
-    fetch: (input: Input) => Promise<Output>,
-): Promise<Attempt<Output[], AttemptStatus.Ok | AttemptStatus.Partial>> {
-    // Handle empty arrays
-    if (inputs.length === 0) {
-        return Attempt.ok([]);
-    }
-
-    const chunks = chunkArray(inputs, FETCH_LIMIT);
-    const allResults: Output[] = [];
-    let firstError: Error | undefined;
-
-    for (const chunk of chunks) {
-        const promises: Promise<Output>[] = chunk.map(fetch);
-        const results = await Attempt.all(promises);
-
-        if (results.hasData()) {
-            allResults.push(...results.data);
-        }
-
-        if (results.isError() && !firstError) {
-            firstError = results.error;
-        }
-    }
-
-    if (firstError) {
-        return Attempt.partial(allResults, firstError);
-    }
-
-    return Attempt.ok(allResults);
 }
 
 export function searchTerms(column: Column | SQL, search: string): SQL {

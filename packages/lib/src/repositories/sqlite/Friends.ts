@@ -140,18 +140,62 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
                 // Ensure all friend users exist in the users table BEFORE inserting friend relationships
                 if (allFriendIds.size > 0) {
-                    console.log(`� Ensuring ${allFriendIds.size} friend users exist in database`);
-                    await upsertUsers(this.db, this.steamApi, Array.from(allFriendIds));
-                }
+                    console.log(`👥 Ensuring ${allFriendIds.size} friend users exist in database`);
+                    const friendUsersResult = await upsertUsers(this.db, this.steamApi, Array.from(allFriendIds));
 
-                // Now insert friend relationships (foreign keys should be satisfied)
-                if (friendsToInsert.length > 0) {
-                    console.log(`💾 Inserting ${friendsToInsert.length} friend relationships`);
-                    await safeInsert(
-                        this.db,
-                        friendsToInsert,
-                        (friendsBatch) => this.db.insert(friends).values(friendsBatch).onConflictDoNothing(), // Don't update existing friendships
+                    if (friendUsersResult.error) {
+                        console.warn("Some friend users could not be fetched:", friendUsersResult.error);
+                    }
+
+                    // Check which friend users actually exist in the database after upsert
+                    const existingFriendUsers = new Set<string>();
+                    const FRIEND_CHUNK_SIZE = 100;
+                    const allFriendIdsArray = Array.from(allFriendIds);
+
+                    for (let i = 0; i < allFriendIdsArray.length; i += FRIEND_CHUNK_SIZE) {
+                        const chunk = allFriendIdsArray.slice(i, i + FRIEND_CHUNK_SIZE);
+                        const chunkResults = await this.db
+                            .selectDistinct({ id: users.id })
+                            .from(users)
+                            .where(inArray(users.id, chunk));
+
+                        for (const result of chunkResults) {
+                            existingFriendUsers.add(result.id);
+                        }
+                    }
+
+                    // Filter friend relationships to only include those where both user and friend exist
+                    const validFriendsToInsert = friendsToInsert.filter((friendship) =>
+                        existingFriendUsers.has(friendship.friend_id),
                     );
+
+                    if (validFriendsToInsert.length !== friendsToInsert.length) {
+                        console.warn(
+                            `⚠️ Filtered out ${friendsToInsert.length - validFriendsToInsert.length} friend relationships due to missing friend users`,
+                        );
+                    }
+
+                    // Now insert friend relationships (foreign keys should be satisfied)
+                    if (validFriendsToInsert.length > 0) {
+                        console.log(`💾 Inserting ${validFriendsToInsert.length} friend relationships`);
+                        await safeInsert(
+                            this.db,
+                            validFriendsToInsert,
+                            (friendsBatch) => this.db.insert(friends).values(friendsBatch).onConflictDoNothing(), // Don't update existing friendships
+                        );
+                    }
+                } else {
+                    // If no allFriendIds, we can insert friendsToInsert directly (shouldn't happen in practice)
+                    if (friendsToInsert.length > 0) {
+                        console.log(
+                            `💾 Inserting ${friendsToInsert.length} friend relationships (no friend users to validate)`,
+                        );
+                        await safeInsert(
+                            this.db,
+                            friendsToInsert,
+                            (friendsBatch) => this.db.insert(friends).values(friendsBatch).onConflictDoNothing(), // Don't update existing friendships
+                        );
+                    }
                 }
             }
         }

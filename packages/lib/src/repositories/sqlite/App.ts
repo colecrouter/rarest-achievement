@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, type ColumnsSelection, type SQL } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     Attempt,
@@ -26,6 +26,7 @@ import {
 } from "../composable";
 import { type Repository, type RepositoryParams, RepositoryResult } from "../repository";
 import { safeInsert, searchTerms } from "./utils";
+import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 
 type AppSortMethod = "id";
 
@@ -35,8 +36,9 @@ export interface AppSortFilters {
 
 class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
     private appIds: Set<number> = new Set();
-    private whereConditions: unknown[] = [];
-    private ctes: unknown[] = [];
+    private whereConditions: SQL[] = [];
+    // biome-ignore lint/suspicious/noExplicitAny: I don't think there's a way to type this properly
+    private ctes: WithSubqueryWithSelection<Record<string, any>, string>[] = [];
     private lang: LanguageCode = "en";
     private searchTerm?: string; /// TODO
 
@@ -126,57 +128,42 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         const timingId = generateTimingId();
         console.time(`${timingId} AppQueryComposer.build`);
 
-        let accumulatedError: Error | null = null;
-
         // First ensure all required data exists (this may accumulate errors)
         const ensureDataResult = await this.ensureDataExists();
-        if (ensureDataResult.error && !accumulatedError) {
-            accumulatedError = ensureDataResult.error;
-            console.warn("Failed to ensure all data exists, continuing with existing data:", ensureDataResult.error);
-        }
+        if (ensureDataResult.error) console.warn("Failed to ensure all data exists:", ensureDataResult.error);
 
         // Start with base query
-        let query = this.db.select({ apps: apps }).from(apps);
+        let query = this.db.select({ apps: apps }).from(apps).$dynamic();
 
-        // Add CTEs if any exist
+        // Add CTEs if any exist, ensure they are applied to the main query
+        // We need to redeclare because I guess "with" needs to be applied before select
         if (this.ctes.length > 0) {
             query = this.db
-                // @ts-expect-error - Drizzle CTE types are complex
                 .with(...this.ctes)
                 .select({ apps: apps })
-                .from(apps);
+                .from(apps)
+                .$dynamic();
         }
-
-        // Make query dynamic for where conditions
-        const dynamicQuery = query.$dynamic();
 
         // Add language filter and all other where conditions
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
         const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
 
-        let finalQuery = dynamicQuery;
-        if (allConditions.length > 0) {
-            // @ts-expect-error - Drizzle where condition types
-            finalQuery = finalQuery.where(and(...allConditions));
-        }
+        if (allConditions.length > 0) query = query.where(and(...allConditions));
 
         // Apply sorting
         if (options.sort) {
             const sortDir = options.sort.direction === "desc" ? desc : asc;
             const sortMethod = apps.id; // Currently only "id" is supported
-            finalQuery = finalQuery.orderBy(sortDir(sortMethod));
+            query = query.orderBy(sortDir(sortMethod));
         }
 
         // Apply pagination
-        if (options.limit !== undefined) {
-            finalQuery = finalQuery.limit(options.limit);
-        }
-        if (options.cursor !== undefined) {
-            finalQuery = finalQuery.offset(options.cursor);
-        }
+        if (options.limit !== undefined) query = query.limit(options.limit);
+        if (options.cursor !== undefined) query = query.offset(options.cursor);
 
         // Execute the main query
-        const appRows = await finalQuery;
+        const appRows = await query;
 
         // Get player estimates if required - check all returned app IDs
         let estimatedPlayersRows: Array<{ estimated_players: typeof estimatedPlayers.$inferSelect }> = [];
@@ -207,20 +194,24 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         console.timeEnd(`${timingId} AppQueryComposer.build`);
 
         // Return ComposableQueryResult with error propagation
-        return createQueryResult(items, options.cursor, accumulatedError);
-    }
-
-    /**
-     * Execute the query - alias for build() for backward compatibility
-     */
-    async execute(options?: ComposableQueryOptions<AppSortMethod>): Promise<ComposableQueryResult<SteamApp>> {
-        return this.build(options || {});
+        return createQueryResult(items, options.cursor, ensureDataResult.error);
     }
 
     /**
      * Ensure all required data exists in the database
      */
     private async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
+        /*
+            I'm putting this because I'll probably forget later. The reason this looks gross is because I've created a weird model:
+            - If `apps` exists, then `achievements_meta` must exist in the same language
+            - If `apps` exists, then `achievements_stats` must exist in a same-or-different language
+            - `estimated_players` is independent from `apps` and can be deleted/recreated separately
+
+            This results in us checking for "`apps`, et. all" separately from "`estimated_players`", then `findMissingApps` being responsible for figuring out what to fetch. This is because I removed the "updated_at" field on the `achievements_meta` and `achievements_stats` tables. A better solution probably exists.
+
+            Ideally, player estimates would be fetched alongside the rest, but in practice I don't think it matters too much (different API entirely).
+        */
+
         if (this.appIds.size === 0) return Attempt.ok(undefined);
 
         let accumulatedError: Error | null = null;
@@ -399,86 +390,62 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
 
         console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
 
-        // Pre-check with language-agnostic tables to avoid redundant fetching
+        // Pre-check with language-agnostic tables for existing data
         const existingStatsRows = await this.db
             .selectDistinct({ app_id: achievementsStats.app_id, ach_id: achievementsStats.ach_id })
             .from(achievementsStats)
             .where(inArray(achievementsStats.app_id, appIds));
 
-        const validData: Array<{
-            appDetails: SteamAppRaw | null;
-            appId: number;
-            achievementStats: Array<{ app_id: number; ach_id: string; percent: number }> | undefined;
-            achievementMeta: unknown;
-        }> = [];
-
-        let accumulatedError: Error | null = null;
-
         // Sequential processing: one Promise.all per app
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
-        // Use Attempt.all to fetch data for all apps, preserving partial successes
-        const appDataAttempts = appIds.map(async (id) =>
-            Attempt.try(async () => {
-                // Fetch all data for this app in parallel
-                const [appDetails, achievementMeta, achievementStats] = await Promise.all([
-                    // App details (language-specific)
-                    SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data),
-                    // Achievement metadata with smart translation detection
-                    this.fetchAchievementMetaWithFallbackDetection(id, lang),
-                    // Achievement stats (language-agnostic) - only if not already present
-                    existingStatsRows.some((row) => row.app_id === id)
-                        ? undefined // Don't fetch if already present
-                        : this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
-                              if (statsResponse?.achievementpercentages?.achievements) {
-                                  return statsResponse.achievementpercentages.achievements.map((ach) => ({
-                                      app_id: id,
-                                      ach_id: ach.name,
-                                      percent: ach.percent,
-                                  }));
-                              }
-                              return [];
-                          }),
-                ]);
+        // App data fetch helper
+        // It's *really* important to do this app by app, rather than endpoint by endpoint,
+        // because if we fail before hitting the last endpoint, we will have zero results.
+        // By doing it this way, we are always guaranteed to have at least some results.
+        const fetchAppData = async (id: number) => {
+            const [appDetails, achievementMeta, achievementStats] = await Promise.all([
+                // Language dependent queries
+                SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data),
+                this.fetchAchievementMetaWithFallbackDetection(id, lang),
+                // *might already exist* - check `existingStatsRows` first
+                existingStatsRows.some((row) => row.app_id === id)
+                    ? undefined // Don't fetch if already present
+                    : this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
+                          if (statsResponse?.achievementpercentages?.achievements) {
+                              return statsResponse.achievementpercentages.achievements.map((ach) => ({
+                                  app_id: id,
+                                  ach_id: ach.name,
+                                  percent: ach.percent,
+                              }));
+                          }
+                          return [];
+                      }),
+            ]);
 
-                return {
-                    appDetails: appDetails || null,
-                    appId: id,
-                    achievementStats,
-                    achievementMeta,
-                };
-            }),
-        );
+            return {
+                appDetails: appDetails || null,
+                appId: id,
+                achievementStats,
+                achievementMeta,
+            };
+        };
 
-        const appsResult = await Attempt.all(appDataAttempts);
-
-        // Collect successful data
-        if (appsResult.hasData()) {
-            for (const appAttempt of appsResult.data) {
-                if (appAttempt.hasData()) {
-                    validData.push(appAttempt.data);
-                }
-            }
-        }
-
-        // Store the first error encountered
-        if (appsResult.error && !accumulatedError) {
-            accumulatedError = appsResult.error;
-        }
+        const validData = await Attempt.all(appIds.map((id) => fetchAppData(id)));
 
         // Insert all successfully fetched data (database operation - let it throw)
-        if (validData.length > 0) {
+        if (validData.data.length > 0) {
             console.time(`${timingId} AppQueryComposer.fetchAndUpsertApps:insertData`);
             // Prepare all data for insertion
-            const appData = validData.map((data) => ({
+            const appData = validData.data.map((data) => ({
                 lang: lang,
                 id: data.appId,
                 data: data.appDetails,
             }));
-            const achievementStatsData = validData
+            const achievementStatsData = validData.data
                 .flatMap((data) => data.achievementStats)
                 .filter((s) => s !== undefined);
-            const achievementMetaData = validData.flatMap((data) => {
+            const achievementMetaData = validData.data.flatMap((data) => {
                 const results = [];
                 const achievementMeta = data.achievementMeta as {
                     requested: Array<{
@@ -574,8 +541,8 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
 
         console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertApps`);
 
-        // Return success or partial based on whether we encountered errors
-        return Attempt.fromSimple(undefined, accumulatedError);
+        // Return our request attempt without any data (not needed)
+        return validData.map(() => undefined);
     }
 
     /**
@@ -613,71 +580,55 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
             >,
         );
 
-        const playerCountData: Array<{ app_id: number; estimated_players: number | undefined }> = [];
         let accumulatedError: Error | null = null;
 
         // Use Attempt.all to handle player count estimation for all apps
-        const playerEstimateAttempts = missingPlayerIds.map(async (appId) =>
-            Attempt.try(async () => {
-                const appDetails = appDetailsMap.get(appId);
-                if (!appDetails) {
-                    console.warn(`No app details found for app ${appId}, inserting null player estimate`);
-                    // Still insert a record with null/undefined to mark that we attempted estimation
-                    return {
-                        app_id: appId,
-                        estimated_players: undefined,
-                    };
-                }
-
-                const playerCount = await Promise.all([
-                    SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
-                    SteamChartsAPIClient.getAppChartData(appId),
-                ]).then(([appReviews, appPlayerCount]): number | undefined => {
-                    if (!appReviews || !appPlayerCount) {
-                        console.warn(`Missing review or chart data for app ${appId}`);
-                        return 0;
-                    }
-                    const estimate = estimatePlayerCount({
-                        all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
-                        avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
-                        day_peak: appPlayerCount
-                            .filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
-                            .reduce((acc, curr) => Math.max(acc, curr[1]), 0),
-                        release_date_numeric: new Date(appDetails.release_date?.date ?? 0).getTime() / 1000,
-                        review_score: appReviews.query_summary.review_score,
-                        total_reviews: appReviews.query_summary.total_reviews,
-                        is_free: appDetails.is_free ? 1 : 0,
-                        price: appDetails.price_overview?.final ?? 0,
-                    });
-                    return estimate;
-                });
-
+        const playerEstimateAttempts = missingPlayerIds.map(async (appId) => {
+            const appDetails = appDetailsMap.get(appId);
+            if (!appDetails) {
+                console.warn(`No app details found for app ${appId}, inserting null player estimate`);
+                // Still insert a record with null/undefined to mark that we attempted estimation
                 return {
                     app_id: appId,
-                    estimated_players: playerCount,
+                    estimated_players: undefined,
                 };
-            }),
-        );
-
-        const estimatesResult = await Attempt.all(playerEstimateAttempts);
-
-        // Collect successful data
-        if (estimatesResult.hasData()) {
-            for (const estimateAttempt of estimatesResult.data) {
-                if (estimateAttempt.hasData()) {
-                    playerCountData.push(estimateAttempt.data);
-                }
             }
-        }
 
-        // Store the first error encountered
-        if (estimatesResult.error && !accumulatedError) {
-            accumulatedError = estimatesResult.error;
-        }
+            const playerCount = await Promise.all([
+                SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
+                SteamChartsAPIClient.getAppChartData(appId),
+            ]).then(([appReviews, appPlayerCount]): number | undefined => {
+                if (!appReviews || !appPlayerCount) {
+                    console.warn(`Missing review or chart data for app ${appId}`);
+                    return 0;
+                }
+                const estimate = estimatePlayerCount({
+                    all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
+                    avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
+                    day_peak: appPlayerCount
+                        .filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
+                        .reduce((acc, curr) => Math.max(acc, curr[1]), 0),
+                    release_date_numeric: new Date(appDetails.release_date?.date ?? 0).getTime() / 1000,
+                    review_score: appReviews.query_summary.review_score,
+                    total_reviews: appReviews.query_summary.total_reviews,
+                    is_free: appDetails.is_free ? 1 : 0,
+                    price: appDetails.price_overview?.final ?? 0,
+                });
+                return estimate;
+            });
+
+            return {
+                app_id: appId,
+                estimated_players: playerCount,
+            };
+        });
+
+        const playerCountData = await Attempt.all(playerEstimateAttempts);
+        if (playerCountData.error) accumulatedError = playerCountData.error;
 
         // Insert estimated player counts (database operation - let it throw)
-        if (playerCountData.length > 0) {
-            await safeInsert(this.db, playerCountData, (chunk) =>
+        if (playerCountData.data.length > 0) {
+            await safeInsert(this.db, playerCountData.data, (chunk) =>
                 this.db
                     .insert(estimatedPlayers)
                     .values(chunk)
@@ -970,46 +921,50 @@ export class AppRepository implements Repository<SteamApp, AppSortFilters, AppSo
                 achievementMeta: unknown;
             }> = [];
 
-            // Sequential processing: one Promise.all per app
-            try {
-                for (const id of missingIds) {
-                    // If anything messes up in here (which it *will*, when rate limit), execution of this block will stop immediately
-                    // This is intentional to avoid partial updates and ensure we only insert complete data
+            const fetchAppData = async (id: number) => {
+                const [appDetails, achievementMeta, achievementStats] = await Promise.all([
+                    // App details (language-specific)
+                    SteamStoreAPIClient.getAppDetails(id, { l }).then((res) => Object.values(res)[0]?.data),
+                    // Achievement metadata with smart translation detection
+                    this.fetchAchievementMetaWithFallbackDetection(id, l),
+                    // Achievement stats (language-agnostic) - only if not already present
+                    existingStatsRows.some((row) => row.app_id === id)
+                        ? undefined // Don't fetch if already present
+                        : this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
+                              if (statsResponse?.achievementpercentages?.achievements) {
+                                  return statsResponse.achievementpercentages.achievements.map((ach) => ({
+                                      app_id: id,
+                                      ach_id: ach.name,
+                                      percent: ach.percent,
+                                  }));
+                              }
+                              return [];
+                          }),
+                ]);
 
-                    // Fetch all data for this app in parallel
-                    const [appDetails, achievementMeta, achievementStats] = await Promise.all([
-                        // App details (language-specific)
-                        SteamStoreAPIClient.getAppDetails(id, { l }).then((res) => Object.values(res)[0]?.data),
-                        // Achievement metadata with smart translation detection
-                        this.fetchAchievementMetaWithFallbackDetection(id, l),
-                        // Achievement stats (language-agnostic) - only if not already present
-                        existingStatsRows
-                            ? undefined // Don't fetch if already present
-                            : this.steamApi
-                                  .getGlobalAchievementPercentagesForApp({ gameid: id })
-                                  .then((statsResponse) => {
-                                      if (statsResponse?.achievementpercentages?.achievements) {
-                                          return statsResponse.achievementpercentages.achievements.map((ach) => ({
-                                              app_id: id,
-                                              ach_id: ach.name,
-                                              percent: ach.percent,
-                                          }));
-                                      }
-                                      return [];
-                                  }),
-                    ]);
+                return {
+                    appDetails: appDetails || null,
+                    appId: id,
+                    achievementStats,
+                    achievementMeta,
+                };
+            };
 
-                    validData.push({
-                        appDetails: appDetails || null,
-                        appId: id,
-                        achievementStats,
-                        achievementMeta,
-                    });
-                }
-            } catch (error) {
-                console.warn(`Failed to fetch app data: ${error}`);
-                if (!accumulatedError) {
-                    accumulatedError = error as Error; // Store the first error encountered
+            // Sequential processing with early stopping on first failure
+            for (const appId of missingIds) {
+                const result = await Attempt.try(async () => {
+                    return await fetchAppData(appId);
+                });
+
+                if (result.hasData()) {
+                    validData.push(result.data);
+                } else {
+                    // Store error and stop immediately
+                    if (!accumulatedError) {
+                        accumulatedError = result.error;
+                    }
+                    console.warn(`Failed to fetch app ${appId}, stopping further fetches:`, result.error);
+                    break;
                 }
             }
 

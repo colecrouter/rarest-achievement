@@ -35,6 +35,8 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
     private whereConditions: unknown[] = [];
     private requiresEnglishFallback = false;
     private searchTerm?: string;
+    // TODO just copy from UserAchievementsQueryComposer, or extract common logic?
+    // I shrugged off "base class" but honestly that's not a bad idea
     private rarityThreshold?: number;
 
     constructor(

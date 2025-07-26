@@ -1,4 +1,4 @@
-import { type SQL, and, asc, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { type SQL, and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     achievementsStats,
@@ -24,6 +24,7 @@ import {
 } from "../composable";
 import type { Repository, RepositoryParams, RepositorySort } from "../repository";
 import type { AppAchievementRepository } from "./AppAchievement";
+import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { upsertUsers } from "./User";
 import { achievementsMeta } from "./schema";
@@ -53,6 +54,11 @@ import { safeInsert, searchTerms } from "./utils";
  *    - `withFriendsOf()` - Uses INNER JOIN on friends table (avoids fetching friend IDs)
  *    - `withSearch()` - Uses INNER JOIN on achievements_meta table
  *    - `withUnlockedStatus()` - Uses IS NULL/IS NOT NULL conditions
+ *
+ * 5. **Friends Support**: When `withFriendsOf()` is used:
+ *    - Data fetching (`ensureUserDataExists`) fetches friend user IDs first, then calls `upsertUsers`
+ *    - Query execution uses JOIN with friends table to avoid parameter explosion
+ *    - Achievement data fetching uses the same JOIN pattern for consistency
  *
  * ## How Parameter Explosion is Avoided:
  *
@@ -136,6 +142,7 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
+        private friendsRepository: FriendsRepository,
     ) {}
 
     /**
@@ -285,7 +292,13 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
 
         if (this.friendsOfUserId) {
             // Use JOIN with friends table instead of fetching friend IDs (avoids parameter explosion)
-            // This will be handled in the main query JOIN, no separate userIds needed
+            // But we still need to ensure the friends' data exists in the database
+            const ensureResult = await this.ensureUserDataExists();
+            if (ensureResult.isError()) {
+                console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
+                return Attempt.partial([], ensureResult.error);
+            }
+            // The actual user filtering will be handled in the main query JOIN below
         } else if (this.userIds.size > 0) {
             // Direct user IDs are safe as they're top-level parameters
             const ensureResult = await this.ensureUserDataExists();
@@ -686,12 +699,35 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
 
     /**
      * Ensure user data exists in the database
+     *
+     * Note: For friends mode, we need to resolve the actual friend user IDs first
+     * because `upsertUsers` requires the actual user IDs to fetch profile/owned games data.
+     * The query execution part uses JOINs to avoid parameter explosion.
      */
     private async ensureUserDataExists(): Promise<Attempt<void, AttemptStatus>> {
-        // Determine userIds and appIds from instance properties
+        // For user data, we need to determine the actual users to upsert
         let userIds: string[] = [];
         if (this.friendsOfUserId) {
-            userIds = [this.friendsOfUserId];
+            // When friendsOfUserId is set, we first need to ensure the friends data exists
+            // This will populate the friends table if it doesn't exist yet
+            console.log(`🔍 Ensuring friends data exists for user ${this.friendsOfUserId}`);
+            const friendsResult = await this.friendsRepository
+                .compose()
+                .withUserIds(this.friendsOfUserId)
+                .build({ limit: 1000 }); // Get up to 1000 friends
+
+            if (friendsResult.error) {
+                console.warn(`Failed to fetch friends for user ${this.friendsOfUserId}:`, friendsResult.error);
+            }
+
+            // Now get the actual friend IDs from the friends table
+            const friendIds = await this.db
+                .selectDistinct({ friend_id: friends.friend_id })
+                .from(friends)
+                .where(eq(friends.user_id, this.friendsOfUserId));
+
+            userIds = friendIds.map((f) => f.friend_id);
+            console.log(`🔍 Found ${userIds.length} friends for user ${this.friendsOfUserId}`);
         } else {
             userIds = Array.from(this.userIds);
         }
@@ -712,33 +748,46 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
      * This is the missing piece - we need to populate the user_achievements table
      */
     private async ensureUserAchievementDataExists(): Promise<Attempt<void, AttemptStatus>> {
-        // Determine which users to fetch owned games for
-        const filterUserIds = this.friendsOfUserId ? [this.friendsOfUserId] : Array.from(this.userIds);
-        if (filterUserIds.length === 0) return Attempt.ok(undefined);
-        const appFilterIds = Array.from(this.appIds);
-
         const timingId = generateTimingId();
         console.time(`${timingId} ensureUserAchievementDataExists`);
-        console.log(`🔄 Ensuring achievement data exists for ${filterUserIds.length} users`);
 
-        // Get all owned games for these users (database operation - let it throw)
-        let ownedGamesQuery = this.db
+        // Build base query that will be used for both owned games and missing data queries
+        let baseQuery = this.db
             .selectDistinct({
                 user_id: ownedGames.user_id,
                 app_id: ownedGames.app_id,
             })
             .from(ownedGames)
-            .where(inArray(ownedGames.user_id, filterUserIds))
             .$dynamic();
 
-        if (appFilterIds.length > 0) {
-            ownedGamesQuery = ownedGamesQuery.where(inArray(ownedGames.app_id, appFilterIds));
+        // Apply user filtering - use different approaches for friends vs direct user IDs
+        if (this.friendsOfUserId) {
+            console.log(`🔄 Ensuring achievement data exists for friends of user ${this.friendsOfUserId}`);
+            // Use JOIN with friends table to get owned games for friends (avoids parameter explosion)
+            baseQuery = baseQuery
+                .innerJoin(friends, eq(friends.friend_id, ownedGames.user_id))
+                .where(eq(friends.user_id, this.friendsOfUserId));
+        } else if (this.userIds.size > 0) {
+            const filterUserIds = Array.from(this.userIds);
+            console.log(`🔄 Ensuring achievement data exists for ${filterUserIds.length} users`);
+            baseQuery = baseQuery.where(inArray(ownedGames.user_id, filterUserIds));
+        } else {
+            console.log("⚠️ No users specified for achievement data fetching");
+            console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
+            return Attempt.ok(undefined);
         }
 
-        const ownedGamesResult = await ownedGamesQuery;
+        // Apply app filtering if specified
+        const appFilterIds = Array.from(this.appIds);
+        if (appFilterIds.length > 0) {
+            baseQuery = baseQuery.where(inArray(ownedGames.app_id, appFilterIds));
+        }
+
+        // Get all owned games for the target users
+        const ownedGamesResult = await baseQuery;
 
         if (ownedGamesResult.length === 0) {
-            console.log("⚠️ No owned games found for users");
+            console.log("⚠️ No owned games found for target users");
             console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
             return Attempt.ok(undefined);
         }
@@ -756,15 +805,11 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
         );
         console.log(`📊 Found ${ownedGamesResult.length} user-game combinations to check`);
 
-        // Determine missing user+app pairs via pure SQL join diff (database operation - let it throw)
+        // Now find missing user achievement data using the same filtering approach
         const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
-        // Build a single where clause combining filters and missing check
-        const whereConditions: SQL[] = [inArray(ownedGames.user_id, filterUserIds)];
-        if (appFilterIds.length > 0) {
-            whereConditions.push(inArray(ownedGames.app_id, appFilterIds));
-        }
-        whereConditions.push(isNull(userAchievements.ach_id));
-        const missingData = await this.db
+
+        // Build missing data query with the same user filtering logic
+        let missingDataQuery = this.db
             .selectDistinct({ user_id: ownedGames.user_id, app_id: ownedGames.app_id })
             .from(ownedGames)
             .innerJoin(
@@ -779,8 +824,27 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
                     eq(userAchievements.ach_id, achievementsMeta.ach_id),
                 ),
             )
-            .where(and(...whereConditions))
             .$dynamic();
+
+        // Apply the same user filtering as above
+        const whereConditions: SQL[] = [isNull(userAchievements.ach_id)];
+        if (this.friendsOfUserId) {
+            // Use JOIN with friends table for friends filtering
+            missingDataQuery = missingDataQuery.innerJoin(friends, eq(friends.friend_id, ownedGames.user_id));
+            whereConditions.push(eq(friends.user_id, this.friendsOfUserId));
+        } else if (this.userIds.size > 0) {
+            const filterUserIds = Array.from(this.userIds);
+            whereConditions.push(inArray(ownedGames.user_id, filterUserIds));
+        }
+
+        // Apply app filtering if specified
+        if (appFilterIds.length > 0) {
+            whereConditions.push(inArray(ownedGames.app_id, appFilterIds));
+        }
+
+        missingDataQuery = missingDataQuery.where(and(...whereConditions));
+
+        const missingData = await missingDataQuery;
 
         if (missingData.length === 0) {
             console.log("✅ All user achievement data already exists");
@@ -790,73 +854,35 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
 
         console.log(`🚀 Need to fetch achievement data for ${missingData.length} user-game combinations`);
 
-        // Fetch achievement data in batches to avoid API limits
-        const BATCH_SIZE = 10; // Conservative limit for Steam API achievement calls
-        const achievementDataToInsert: Array<{
-            user_id: string;
-            app_id: number;
-            ach_id: string;
-            unlocked_at: Date | null;
-        }> = [];
-
-        let accumulatedError: Error | null = null;
-
-        for (let i = 0; i < missingData.length; i += BATCH_SIZE) {
-            const batch = missingData.slice(i, i + BATCH_SIZE);
-            console.log(
-                `📥 Fetching achievement batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(missingData.length / BATCH_SIZE)}`,
-            );
-
-            // Use Attempt.all to handle parallel API calls with proper error aggregation
-            const batchAttempts = batch.map(async (row) => {
-                const { user_id, app_id } = row;
-                return Attempt.try(async () => {
-                    const achievements = await this.steamApi.getPlayerAchievements({
-                        steamid: user_id,
-                        appid: app_id,
-                    });
-
-                    const achievementList: Array<{
-                        user_id: string;
-                        app_id: number;
-                        ach_id: string;
-                        unlocked_at: Date | null;
-                    }> = [];
-
-                    if (achievements?.playerstats?.achievements) {
-                        for (const ach of achievements.playerstats.achievements) {
-                            achievementList.push({
-                                user_id,
-                                app_id: Number(app_id),
-                                ach_id: ach.apiname,
-                                unlocked_at:
-                                    ach.achieved && ach.unlocktime > 0 ? new Date(ach.unlocktime * 1000) : null,
-                            });
-                        }
-                    }
-
-                    return achievementList;
-                });
+        const fetchUserAchievements = async (row: { user_id: string; app_id: number }) => {
+            const { user_id, app_id } = row;
+            const achievements = await this.steamApi.getPlayerAchievements({
+                steamid: user_id,
+                appid: app_id,
             });
 
-            const batchResult = await Attempt.all(batchAttempts);
+            const achievementList = [];
 
-            // Collect data from successful attempts
-            if (batchResult.hasData()) {
-                // batchResult.data is an array of Attempt objects (from Attempt.try())
-                // We need to extract the data from each successful Attempt
-                for (const attemptResult of batchResult.data) {
-                    if (attemptResult.hasData()) {
-                        achievementDataToInsert.push(...attemptResult.data);
-                    }
+            if (achievements?.playerstats?.achievements) {
+                for (const ach of achievements.playerstats.achievements) {
+                    achievementList.push({
+                        user_id,
+                        app_id: Number(app_id),
+                        ach_id: ach.apiname,
+                        unlocked_at: ach.achieved && ach.unlocktime > 0 ? new Date(ach.unlocktime * 1000) : null,
+                    });
                 }
             }
 
-            // Accumulate the first error we encounter
-            if (batchResult.error && !accumulatedError) {
-                accumulatedError = batchResult.error;
-            }
-        }
+            return achievementList;
+        };
+
+        // Fetch all user achievements concurrently with partial result support
+        const achievementsResult = await Attempt.all(missingData.map((row) => fetchUserAchievements(row)));
+
+        // Collect all achievement data from successful fetches
+        const achievementDataToInsert = achievementsResult.data.flat();
+        const accumulatedError = achievementsResult.error;
 
         if (achievementDataToInsert.length > 0) {
             console.log(`💾 Inserting ${achievementDataToInsert.length} achievement records`);
@@ -889,7 +915,9 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
 
         // Return appropriate result based on whether we encountered errors
         return Attempt.fromSimple(undefined, accumulatedError);
-    } /**
+    }
+
+    /**
      * Build final SteamUserAchievement objects from database rows
      */
     private async buildResultsFromRows(
@@ -979,6 +1007,7 @@ export class UserAchievementRepository
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
+        private friendsRepository: FriendsRepository,
     ) {}
 
     /**
@@ -990,6 +1019,7 @@ export class UserAchievementRepository
             this.steamApi,
             this.appAchievementRepository,
             this.userRepository,
+            this.friendsRepository,
         );
     }
 }

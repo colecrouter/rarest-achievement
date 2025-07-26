@@ -23,8 +23,14 @@ export class VaultService {
         this.appRepo = new AppRepository(sqlite, steamApi);
         this.appAchRepo = new AppAchievementRepository(sqlite, this.appRepo);
         this.userRepo = new UserRepository(sqlite, steamApi);
-        this.userAchRepo = new UserAchievementRepository(sqlite, steamApi, this.appAchRepo, this.userRepo);
         this.friendRepo = new FriendsRepository(sqlite, steamApi, this.userRepo);
+        this.userAchRepo = new UserAchievementRepository(
+            sqlite,
+            steamApi,
+            this.appAchRepo,
+            this.userRepo,
+            this.friendRepo,
+        );
     }
 
     // Composable methods that avoid parameter explosion

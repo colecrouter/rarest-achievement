@@ -1,6 +1,6 @@
 import { asc, desc, inArray } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { Attempt, type SteamAuthenticatedAPIClient, ownedGames, users } from "../..";
+import { Attempt, type SteamAuthenticatedAPIClient, getFetchManager, ownedGames, users } from "../..";
 import { SteamUser, type SteamUserRaw } from "../../models";
 import { generateTimingId } from "../../utils/timing";
 import type { OwnedGame } from "../api/steampowered/owned";
@@ -207,6 +207,7 @@ export class UserRepository
     }
 }
 
+// TODO I don't like this and it doesn't fit any other pattern, but it works for now
 export const upsertUsers = async (
     // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
     sqlite: DrizzleD1Database<any>,
@@ -214,7 +215,7 @@ export const upsertUsers = async (
     ids: string[],
 ) => {
     // Fetch summary to figure out what's missing using chunked queries to avoid parameter limit
-    const CHUNK_SIZE = 100; // Conservative chunk size for SQLite parameters
+    const CHUNK_SIZE = 100;
     const allExistingUserRows = [];
 
     for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
@@ -244,6 +245,7 @@ export const upsertUsers = async (
         });
         if (!accumulatedError && missingPlayerSummaries.error) accumulatedError = missingPlayerSummaries.error;
 
+        getFetchManager().reset({ maxFetches: 150 }); // We'll say max 150 users for now (who am I kidding, I am making this up as I go)
         const missingOwnedGames = await Attempt.all(
             missingUserIdsArray.map((userId) => {
                 return steamApi
@@ -270,55 +272,57 @@ export const upsertUsers = async (
         console.debug(`Users to insert: ${validData.length}`);
 
         // Insert missing data into the database
-        await safeInsert(sqlite, validData, (u) =>
-            sqlite
-                .insert(users)
-                .values(
-                    u.map((data) => ({
-                        id: data.id,
-                        data: data.user,
-                        updated_at: new Date(),
-                    })),
-                )
-                .onConflictDoUpdate({
-                    target: users.id,
-                    set: {
-                        data: users.data,
-                        updated_at: new Date(),
-                    },
-                }),
-        );
-        await safeInsert(
-            sqlite,
-            validData.flatMap((d) =>
-                d.ownedGames.map((g) => ({
-                    user_id: d.id,
-                    ownedGames: g,
-                })),
-            ),
-            (u) =>
+        await Promise.all([
+            safeInsert(sqlite, validData, (u) =>
                 sqlite
-                    .insert(ownedGames)
+                    .insert(users)
                     .values(
                         u.map((data) => ({
-                            user_id: data.user_id,
-                            app_id: data.ownedGames.appid,
-                            last_played_at: data.ownedGames.rtime_last_played
-                                ? new Date(data.ownedGames.rtime_last_played * 1000) // Convert seconds to milliseconds
-                                : null,
-                            playtime_2w_minutes: data.ownedGames.playtime_2weeks ?? null,
-                            playtime_total_minutes: data.ownedGames.playtime_forever ?? null,
+                            id: data.id,
+                            data: data.user,
+                            updated_at: new Date(),
                         })),
                     )
                     .onConflictDoUpdate({
-                        target: [ownedGames.user_id, ownedGames.app_id],
+                        target: users.id,
                         set: {
-                            last_played_at: ownedGames.last_played_at,
-                            playtime_2w_minutes: ownedGames.playtime_2w_minutes,
-                            playtime_total_minutes: ownedGames.playtime_total_minutes,
+                            data: users.data,
+                            updated_at: new Date(),
                         },
                     }),
-        );
+            ),
+            safeInsert(
+                sqlite,
+                validData.flatMap((d) =>
+                    d.ownedGames.map((g) => ({
+                        user_id: d.id,
+                        ownedGames: g,
+                    })),
+                ),
+                (u) =>
+                    sqlite
+                        .insert(ownedGames)
+                        .values(
+                            u.map((data) => ({
+                                user_id: data.user_id,
+                                app_id: data.ownedGames.appid,
+                                last_played_at: data.ownedGames.rtime_last_played
+                                    ? new Date(data.ownedGames.rtime_last_played * 1000) // Convert seconds to milliseconds
+                                    : null,
+                                playtime_2w_minutes: data.ownedGames.playtime_2weeks ?? null,
+                                playtime_total_minutes: data.ownedGames.playtime_forever ?? null,
+                            })),
+                        )
+                        .onConflictDoUpdate({
+                            target: [ownedGames.user_id, ownedGames.app_id],
+                            set: {
+                                last_played_at: ownedGames.last_played_at,
+                                playtime_2w_minutes: ownedGames.playtime_2w_minutes,
+                                playtime_total_minutes: ownedGames.playtime_total_minutes,
+                            },
+                        }),
+            ),
+        ]);
     }
 
     return Attempt.fromSimple(null, accumulatedError);

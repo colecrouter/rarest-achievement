@@ -24,11 +24,12 @@ import {
 } from "../composable";
 import type { Repository, RepositoryParams, RepositorySort } from "../repository";
 import type { AppAchievementRepository } from "./AppAchievement";
+import type { AppRepository } from "./App";
 import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { upsertUsers } from "./User";
 import { achievementsMeta } from "./schema";
-import { safeInsert, searchTerms } from "./utils";
+import { chunkArray, safeInsert, searchTerms } from "./utils";
 
 /**
  * UserAchievement Repository - Pure SQL Composition Architecture
@@ -143,6 +144,7 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
         private friendsRepository: FriendsRepository,
+        private appRepository: AppRepository,
     ) {}
 
     /**
@@ -736,11 +738,14 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
         // First, ensure user profile and owned games data exists
         const result = await upsertUsers(this.db, this.steamApi, userIds);
 
+        // Then, ensure app data exists for the apps we'll be querying
+        const appDataResult = await this.ensureAppDataExists();
+
         // Then, ensure user achievement data exists for their owned games
         const achievementResult = await this.ensureUserAchievementDataExists();
 
-        // Combine the results - if either has an error, propagate it
-        return result.and(achievementResult);
+        // Combine all results - if any has an error, propagate it
+        return result.and(appDataResult).and(achievementResult);
     }
 
     /**
@@ -918,6 +923,71 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
     }
 
     /**
+     * Ensure app data exists in the database for the apps we'll be querying
+     * This fetches app metadata and achievement definitions that we need for JOINs
+     */
+    private async ensureAppDataExists(): Promise<Attempt<void, AttemptStatus>> {
+        const timingId = generateTimingId();
+        console.time(`${timingId} ensureAppDataExists`);
+
+        // Collect all app IDs that we need data for
+        const requiredAppIds = new Set<number>();
+
+        // Add explicitly requested app IDs
+        for (const appId of this.appIds) {
+            requiredAppIds.add(appId);
+        }
+
+        // If no explicit app IDs, we need to get app IDs from owned games for the target users
+        if (requiredAppIds.size === 0) {
+            // Build query to get all owned game app IDs for target users
+            let ownedGamesQuery = this.db.selectDistinct({ app_id: ownedGames.app_id }).from(ownedGames).$dynamic();
+
+            // Apply user filtering same as in other methods
+            if (this.friendsOfUserId) {
+                ownedGamesQuery = ownedGamesQuery
+                    .innerJoin(friends, eq(friends.friend_id, ownedGames.user_id))
+                    .where(eq(friends.user_id, this.friendsOfUserId));
+            } else if (this.userIds.size > 0) {
+                ownedGamesQuery = ownedGamesQuery.where(inArray(ownedGames.user_id, Array.from(this.userIds)));
+            } else {
+                console.log("⚠️ No users specified for app data fetching");
+                console.timeEnd(`${timingId} ensureAppDataExists`);
+                return Attempt.ok(undefined);
+            }
+
+            const ownedGameResults = await ownedGamesQuery;
+            for (const row of ownedGameResults) {
+                requiredAppIds.add(row.app_id);
+            }
+        }
+
+        if (requiredAppIds.size === 0) {
+            console.log("⚠️ No app IDs found to ensure data for");
+            console.timeEnd(`${timingId} ensureAppDataExists`);
+            return Attempt.ok(undefined);
+        }
+
+        console.log(`🚀 Ensuring app data exists for ${requiredAppIds.size} apps`);
+
+        // Use the App repository to ensure app data exists
+        const chunked = chunkArray(Array.from(requiredAppIds), 80);
+        const appDataResult = await Attempt.all(
+            chunked.map((chunk) => this.appRepository.compose().withLanguage(this.lang).withAppIds(chunk).build()),
+        );
+
+        console.timeEnd(`${timingId} ensureAppDataExists`);
+
+        if (appDataResult.error) {
+            console.warn("Failed to ensure app data exists:", appDataResult.error);
+            return Attempt.partial(undefined, appDataResult.error);
+        }
+
+        console.log(`✅ App data ensured for ${requiredAppIds.size} apps`);
+        return Attempt.ok(undefined);
+    }
+
+    /**
      * Build final SteamUserAchievement objects from database rows
      */
     private async buildResultsFromRows(
@@ -1008,6 +1078,7 @@ export class UserAchievementRepository
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
         private friendsRepository: FriendsRepository,
+        private appRepository: AppRepository,
     ) {}
 
     /**
@@ -1020,6 +1091,7 @@ export class UserAchievementRepository
             this.appAchievementRepository,
             this.userRepository,
             this.friendsRepository,
+            this.appRepository,
         );
     }
 }

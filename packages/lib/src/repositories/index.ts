@@ -8,6 +8,6 @@ export * from "./api/translate/client";
 export * from "./api/translate/repo";
 export * from "./sqlite/schema";
 export * as schema from "./sqlite/schema";
-// export * from "./enhanced/repo";
 export * from "./sqlite";
 export * from "./repository";
+export * from "./fetchManager";

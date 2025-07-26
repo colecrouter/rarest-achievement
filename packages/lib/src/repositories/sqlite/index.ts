@@ -30,6 +30,7 @@ export class VaultService {
             this.appAchRepo,
             this.userRepo,
             this.friendRepo,
+            this.appRepo,
         );
     }
 

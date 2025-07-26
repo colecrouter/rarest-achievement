@@ -148,11 +148,10 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
         if (this.appIds.size === 0) return;
 
         // Ensure app data exists by using the app repository
-        const appIds = Array.from(this.appIds);
         await this.appRepository
             .compose()
             .withLanguage(this.lang)
-            .withAppIds(appIds)
+            .withAppIds(this.appIds)
             .build({
                 limit: 1000,
                 sort: { method: "id", direction: "asc" },

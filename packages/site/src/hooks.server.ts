@@ -8,9 +8,13 @@ import {
     VaultService,
     setBypassCdnEnabled,
     getLanguageByCode,
+    FetchManager,
+    setFetchManager,
+    getFetchManager,
+    type SteamUser,
 } from "@project/lib";
 import { handleErrorWithSentry, initCloudflareSentryHandle, sentryHandle } from "@sentry/sveltekit";
-import type { Handle } from "@sveltejs/kit";
+import type { Handle, HandleFetch } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
 import { getLocale } from "./lib/paraglide/runtime";
@@ -27,6 +31,10 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
     });
 
 const authHandle: Handle = async ({ event, resolve }) => {
+    // Initialize fetch manager for this request
+    const fetchManager = new FetchManager();
+    setFetchManager(fetchManager);
+
     event.locals.steamClient = new SteamAuthenticatedAPIClient(STEAM_API_KEY);
     event.locals.steamStoreClient = new SteamStoreAPIClient();
 
@@ -40,13 +48,8 @@ const authHandle: Handle = async ({ event, resolve }) => {
     event.locals.steamUser = null; // Default to null if no steamId is found
     const steamId = event.cookies.get("steamid");
     if (steamId) {
-        const locale = getLocale();
-        const apiLang = getLanguageByCode(locale)?.apiCode || "english";
-        const usersResult = await event.locals.vault.users
-            .compose(apiLang)
-            .withUserIds([steamId])
-            .build({ limit: 1 });
-        
+        const usersResult = await event.locals.vault.users.compose().withUserIds([steamId]).build({ limit: 1 });
+
         const user = usersResult.data?.find((u) => u.id === steamId);
         if (!user) {
             // Remove the cookie if the user is not found
@@ -84,3 +87,48 @@ export const init = () => {
 };
 
 export const handleError = handleErrorWithSentry();
+
+/**
+ * Intercept all fetch requests to automatically inject abort signals and count fetches
+ */
+export const handleFetch: HandleFetch = async ({ request, fetch }) => {
+    const manager = getFetchManager();
+
+    // If no FetchManager in context, just pass through
+    if (!manager) {
+        return fetch(request);
+    }
+
+    // Check fetch limits before making the request
+    if (manager.hasHitLimit()) {
+        const error = new Error(
+            `Fetch limit exceeded: ${manager.fetchCount}/${manager.config?.maxFetches ?? FetchManager.MAX_FETCHES} (${request.url})`,
+        );
+
+        console.warn(error.message);
+        throw error;
+    }
+
+    // Increment counter
+    manager.incrementFetchCount();
+
+    // Log status for monitoring
+    if (manager.isNearLimit() || manager.fetchCount % 50 === 0) {
+        console.log(`📡 Fetch ${manager.fetchCount}/${manager.config?.maxFetches}: ${request.url}`);
+    }
+
+    // Clone the request and inject the abort signal
+    const modifiedRequest = new Request(request, {
+        signal: manager.abortSignal,
+    });
+
+    try {
+        return await fetch(modifiedRequest);
+    } catch (error) {
+        // Log failed fetches for debugging
+        if (manager.isNearLimit()) {
+            console.warn(`❌ Fetch failed for ${request.url}: ${error}`);
+        }
+        throw error;
+    }
+};

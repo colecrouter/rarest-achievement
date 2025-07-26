@@ -2,11 +2,9 @@ import { type AnyTable, type Column, type InferSelectModel, and, getTableColumns
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type Query, type SQL, sql } from "drizzle-orm/sql";
 import type { SQLiteInsert, SQLiteInsertBase, SQLiteTable, TableConfig } from "drizzle-orm/sqlite-core";
-import { Attempt, type AttemptStatus } from "../..";
 
 const SQL_PARAM_LIMIT = 100; // Maximum number of parameters a single SQLite query can handle
 
-// Deprecated: Use FetchManager instead for better control
 const FETCH_LIMIT = 10;
 
 /**
@@ -58,6 +56,9 @@ export async function safeInsert<T extends SQLiteTable, Input>(
 
     const chunks = chunkByLimit(values, build);
     const builders = chunks.map((c) => build(c));
+
+    if (builders.some((b) => b.toSQL().params.length > SQL_PARAM_LIMIT))
+        throw new Error("Chunked insert exceeds SQLite parameter limit");
 
     // Break builders into smaller chunks to avoid overwhelming dev environment
     const builderChunks = chunkArray(builders, FETCH_LIMIT);

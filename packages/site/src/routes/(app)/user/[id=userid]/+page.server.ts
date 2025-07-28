@@ -26,7 +26,7 @@ export const load = async ({ url, locals, parent }) => {
 
         if (config.search) achievementsForUserQuery.withSearch(config.search);
 
-        return achievementsForUserQuery.build({ limit: 32, sort: config });
+        return achievementsForUserQuery.build({ limit: 30, sort: config });
     })();
 
     // TODO: refactor score calculation

@@ -8,6 +8,9 @@
     import Card from "./_card.svelte";
     import Placeholder from "./_placeholder.svelte";
 
+    // 30 :P because it is a multiple of 3 & 2 & 1, so CSS grid can handle it well
+    const ACHIEVEMENT_COUNT = 30;
+
     interface Props {
         achievements: MaybePromise<
             Array<SteamUserAchievement | SteamAppAchievement>
@@ -97,7 +100,7 @@
             </Transition>
         {:else}
             <!-- Show cached achievements -->
-            {#each sortedAchievements.slice(0, 32) as achievement (achievement.id + achievement.app.id)}
+            {#each sortedAchievements.slice(0, ACHIEVEMENT_COUNT) as achievement (achievement.id + achievement.app.id)}
                 <div
                     in:receive={{ key: achievement.id + achievement.app.id }}
                     out:send={{ key: achievement.id + achievement.app.id }}
@@ -108,8 +111,8 @@
             {/each}
 
             <!-- Fill remaining spaces with placeholders while loading -->
-            {#if isLoading && sortedAchievements.length < 32}
-                {#each new Array(32 - sortedAchievements.length) as _, i (i + 1000)}
+            {#if isLoading && sortedAchievements.length < ACHIEVEMENT_COUNT}
+                {#each new Array(ACHIEVEMENT_COUNT - sortedAchievements.length) as _, i (i + 1000)}
                     <Placeholder {secondary} />
                 {/each}
             {/if}

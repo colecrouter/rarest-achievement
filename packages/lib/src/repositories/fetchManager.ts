@@ -58,7 +58,7 @@ export class FetchManager {
             // Global limit
             FetchManager.MAX_FETCHES - this.totalCount,
             // Config limit
-            (this.subConfig?.maxFetches ?? 0) - this.subCount,
+            (this.subConfig?.maxFetches ?? FetchManager.MAX_FETCHES) - this.subCount,
         );
     }
 

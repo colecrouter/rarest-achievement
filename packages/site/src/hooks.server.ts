@@ -113,7 +113,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch }) => {
         manager.incrementFetchCount();
 
         // Log status for monitoring
-        if (manager.isNearLimit() || manager.fetchCount % 50 === 0) manager.logStatus();
+        if (manager.fetchCount % 50 === 0) manager.logStatus();
 
         // Clone the request and inject the abort signal
         const modifiedRequest = new Request(request, {

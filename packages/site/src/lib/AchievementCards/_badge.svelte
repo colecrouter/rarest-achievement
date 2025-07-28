@@ -44,7 +44,9 @@
     {:else if sortManager.method === "rarity_score"}
         {#if achievement.globalCount === null}
             ???
-        {:else if achievement.app.estimatedPlayers && achievement.globalPercentage < 0.1}
+        {:else if achievement.app.estimatedPlayers !== null && achievement.app.estimatedPlayers < 0}
+            ???
+        {:else if achievement.app.estimatedPlayers !== null && achievement.globalPercentage < 0.1}
             &lt;{numberFormat.format(achievement.app.estimatedPlayers * 0.001)}
         {:else}
             {numberFormat.format(achievement.globalCount)}

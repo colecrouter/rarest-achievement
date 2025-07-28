@@ -191,13 +191,14 @@ export class Attempt<T, S extends AttemptStatus = AttemptStatus> {
 
     /**
      * Combines this Attempt with another Attempt, returning a new Attempt with the final value.
+     * If this is Ok, returns this. If this fails but other succeeds, returns other.
+     * If both are partial, the result is a partial with other's data and other's error.
      * If either Attempt is a failure, the result is a failure.
-     * If either are partial, the result is a partial.
-     * If both are successful, the result is a success.
      */
-    or<U>(other: Attempt<U, AttemptStatus>) {
+    or<U>(other: Attempt<U, AttemptStatus>): Attempt<T | U, AttemptStatus> {
         const thisError = this.error as Error;
         const otherError = other.error as Error;
+        const thisData = this.data as T;
         const otherData = other.data as U;
 
         switch (this.status) {
@@ -206,17 +207,17 @@ export class Attempt<T, S extends AttemptStatus = AttemptStatus> {
                     return Attempt.partial(otherData, thisError);
                 }
                 if (other.isPartial()) {
-                    return Attempt.partial(otherData, thisError);
+                    return Attempt.partial(otherData, otherError);
                 }
                 return Attempt.fail<U>(otherError);
             case AttemptStatus.Ok:
                 switch (other.status) {
                     case AttemptStatus.Failure:
-                        return Attempt.fail<U>(otherError);
+                        return Attempt.fail<T>(otherError);
                     case AttemptStatus.Partial:
                         return Attempt.partial(otherData, otherError);
                     case AttemptStatus.Ok:
-                        return Attempt.ok(otherData);
+                        return Attempt.ok(thisData);
                 }
         }
 

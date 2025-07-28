@@ -12,6 +12,7 @@
             "@config/*": ["./config/*"]
         },
         "lib": ["ESNext", "DOM"],
-        "types": ["@cloudflare/workers-types"]
+        "types": ["@cloudflare/workers-types", "node"],
+        "noErrorTruncation": true
     }
 }

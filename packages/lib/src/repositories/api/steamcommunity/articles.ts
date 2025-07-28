@@ -1,6 +1,6 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import type { HTMLRewriter } from "htmlrewriter";
-import type { APILanguageCode } from "../lang";
+import type { APILanguageCode } from "../../../lang";
 import { unescapeHTML } from "../utils";
 import { getHTMLRewriter } from "./htmlRewriterHelper";
 import type { Article } from "./types";

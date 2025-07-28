@@ -10,7 +10,7 @@ export interface Encodable {
  * serialization. T is the type being deduplicated and Encoded is the
  * object representation.
  */
-export abstract class DeduplicationContext<Class extends Encodable, Params extends [Key, ...unknown[]]> {
+export abstract class DeduplicationContext<Class extends Encodable, Params extends [Key, Record<string, unknown>]> {
     /** The encodeCache is a WeakMap that maps the object to its constructor parameters. */
     protected encodeCache = new WeakMap<Class, Params>();
     /** The decodeCache is a Map that maps the serial number to the object. */

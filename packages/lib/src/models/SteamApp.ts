@@ -15,16 +15,18 @@ export class SteamApp {
     #estimatedPlayers: number | null;
     #lang: APILanguageCode;
 
-    constructor(id: number, data: SteamAppRaw, estimatedPlayers: number | null, lang: APILanguageCode) {
+    constructor({
+        data,
+        estimatedPlayers,
+        lang,
+    }: {
+        data: SteamAppRaw;
+        estimatedPlayers: number | null;
+        lang: APILanguageCode;
+    }) {
         this.#app = data;
         this.#estimatedPlayers = estimatedPlayers;
         this.#lang = lang;
-    }
-
-    serialize() {
-        return [this.id, this.#app, this.#estimatedPlayers, this.#lang] satisfies ConstructorParameters<
-            typeof SteamApp
-        >;
     }
 
     get id() {
@@ -66,5 +68,13 @@ export class SteamApp {
 
     get estimatedPlayers() {
         return this.#estimatedPlayers;
+    }
+
+    serialize() {
+        return {
+            data: this.#app,
+            estimatedPlayers: this.#estimatedPlayers,
+            lang: this.#lang,
+        } satisfies ConstructorParameters<typeof SteamApp>[0];
     }
 }

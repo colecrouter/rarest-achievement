@@ -20,17 +20,18 @@ export const GET = async ({ url, setHeaders, locals }) => {
 
     // Fetch all cached data from database
     const achievements = await locals.steamCacheDB
-        .select()
+        .select({
+            apps,
+            achievement_stats: achievementsStats,
+            estimated_players: estimatedPlayers,
+        })
         .from(apps)
         .leftJoin(achievementsStats, eq(apps.id, achievementsStats.app_id))
         .leftJoin(estimatedPlayers, eq(apps.id, estimatedPlayers.app_id))
         // Sort by most common games, then rarest achievements
-        .orderBy(
-            desc(estimatedPlayers.estimated_players),
-            asc(sql`CAST(json_extract(achievements_stats.data, '$[0].percent' ) AS DECIMAL)`),
-        )
-        // Filter out achievements with percent >= 20
-        .where(sql`CAST(json_extract(achievements_stats.data, '$[0].percent') AS DECIMAL) <= 10`);
+        .orderBy(desc(estimatedPlayers.estimated_players), asc(achievementsStats.percent))
+        // Filter out achievements with percent >= 10 (10%)
+        .where(sql`${achievementsStats.percent} <= 10`);
 
     // Create XML entries for each page.
     const generateXml = (url: string, lastmod?: Date) => {
@@ -47,15 +48,44 @@ export const GET = async ({ url, setHeaders, locals }) => {
             </url>`;
     };
 
+    // Group achievements by app to avoid duplicate app pages
+    const appGroups = new Map<
+        number,
+        {
+            app: (typeof achievements)[0]["apps"];
+            achievements: Array<{ ach_id: string; percent: number }>;
+        }
+    >();
+
+    for (const row of achievements) {
+        const appId = row.apps.id;
+        if (!appGroups.has(appId)) {
+            appGroups.set(appId, {
+                app: row.apps,
+                achievements: [],
+            });
+        }
+
+        if (row.achievement_stats) {
+            const appGroup = appGroups.get(appId);
+            if (appGroup) {
+                appGroup.achievements.push({
+                    ach_id: row.achievement_stats.ach_id,
+                    percent: row.achievement_stats.percent,
+                });
+            }
+        }
+    }
+
     const sitemapEntries = [
         ...new Set(
-            achievements.flatMap((page) => {
-                const appUrl = `${baseUrl}/game/${page.apps.id}`;
-                const lastmod = page.apps.updated_at;
+            Array.from(appGroups.values()).flatMap((group) => {
+                const appUrl = `${baseUrl}/game/${group.app.id}`;
+                const lastmod = group.app.updated_at;
                 const appPage = generateXml(appUrl, lastmod);
 
-                const achievementPages = (page.achievements_stats?.data ?? []).map((achievement) => {
-                    const achievementUrl = `${baseUrl}/game/${page.apps.id}/achievement/${encodeURIComponent(achievement.name)}`;
+                const achievementPages = group.achievements.map((achievement) => {
+                    const achievementUrl = `${baseUrl}/game/${group.app.id}/achievement/${encodeURIComponent(achievement.ach_id)}`;
                     return generateXml(achievementUrl, lastmod);
                 });
 
@@ -95,5 +125,5 @@ export const GET = async ({ url, setHeaders, locals }) => {
     return new Response(sitemap);
 };
 
-// respond to HEAD the same as GET so Googlebot can “fetch”
+// respond to HEAD the same as GET so Googlebot can "fetch"
 export const HEAD = GET;

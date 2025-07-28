@@ -20,14 +20,12 @@ export class SteamSearchApp {
     }
 
     serialize() {
-        return [
-            {
-                appid: this.#appid,
-                name: this.#name,
-                icon: this.#icon,
-                logo: this.#logo,
-            },
-        ] satisfies ConstructorParameters<typeof SteamSearchApp>;
+        return {
+            appid: this.#appid,
+            name: this.#name,
+            icon: this.#icon,
+            logo: this.#logo,
+        } satisfies ConstructorParameters<typeof SteamSearchApp>[0];
     }
 
     get id() {

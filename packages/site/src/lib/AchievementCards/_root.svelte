@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
+    import { getAchievementSortManager } from "$lib/SortManager/AchievementSortManager";
     import Transition from "$lib/Transition.svelte";
     import type { SteamAppAchievement, SteamUserAchievement } from "lib";
     import { flip } from "svelte/animate";
@@ -7,6 +7,9 @@
     import { crossfade } from "svelte/transition";
     import Card from "./_card.svelte";
     import Placeholder from "./_placeholder.svelte";
+
+    // 30 :P because it is a multiple of 3 & 2 & 1, so CSS grid can handle it well
+    const ACHIEVEMENT_COUNT = 30;
 
     interface Props {
         achievements: MaybePromise<
@@ -37,18 +40,52 @@
         },
     });
 
-    const sortManager = getSortManager();
+    const sortManager = getAchievementSortManager();
+
+    // State caching - track the last resolved data and loading state
+    let cachedAchievements: Array<
+        SteamUserAchievement | SteamAppAchievement
+    > | null = $state(null);
+    let isLoading = $state(false);
+
+    // Update cached data when new data resolves, and track loading state
+    $effect(() => {
+        const currentData = achievements;
+
+        (async () => {
+            // It's a promise - mark as loading
+            isLoading = true;
+
+            try {
+                // Wait for the promise to resolve
+                const resolvedAchievements = await currentData;
+                cachedAchievements = resolvedAchievements;
+            } catch (error) {
+                // If it fails, keep the cached data and set loading to false
+                console.error("Failed to load achievements:", error);
+            } finally {
+                isLoading = false;
+            }
+        })();
+    });
 </script>
 
-{#await achievements}
+{#if !cachedAchievements}
+    <!-- Initial loading state - no cached data available -->
     <div class={grid}>
-        {#each new Array(6) as _}
+        {#each new Array(6) as _, i (i)}
             <Placeholder {secondary} />
         {/each}
     </div>
-{:then achievements}
-    {@const sortedAchievements = sortManager.sort(achievements)}
-    <div class={grid}>
+{:else}
+    {@const sortedAchievements = sortManager.sort(cachedAchievements) as Array<
+        SteamUserAchievement | SteamAppAchievement
+    >}
+    <div
+        class={grid}
+        class:opacity-75={isLoading}
+        class:pointer-events-none={isLoading}
+    >
         {#if !sortedAchievements || sortedAchievements.length === 0}
             <Transition>
                 <!-- No achievements available -->
@@ -62,7 +99,8 @@
                 </div>
             </Transition>
         {:else}
-            {#each sortedAchievements.slice(0, 32) as achievement (achievement.id + achievement.app.id)}
+            <!-- Show cached achievements -->
+            {#each sortedAchievements.slice(0, ACHIEVEMENT_COUNT) as achievement (achievement.id + achievement.app.id)}
                 <div
                     in:receive={{ key: achievement.id + achievement.app.id }}
                     out:send={{ key: achievement.id + achievement.app.id }}
@@ -71,6 +109,13 @@
                     <Card {achievement} {secondary} />
                 </div>
             {/each}
+
+            <!-- Fill remaining spaces with placeholders while loading -->
+            {#if isLoading && sortedAchievements.length < ACHIEVEMENT_COUNT}
+                {#each new Array(ACHIEVEMENT_COUNT - sortedAchievements.length) as _, i (i + 1000)}
+                    <Placeholder {secondary} />
+                {/each}
+            {/if}
         {/if}
     </div>
-{/await}
+{/if}

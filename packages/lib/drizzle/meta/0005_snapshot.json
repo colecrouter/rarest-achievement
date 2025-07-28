@@ -1,0 +1,509 @@
+{
+    "version": "6",
+    "dialect": "sqlite",
+    "id": "01e71fbc-7213-4006-bfae-f1ef440bd8f3",
+    "prevId": "57e22796-6ffa-4549-98fe-d64d712f8b2b",
+    "tables": {
+        "achievements_meta": {
+            "name": "achievements_meta",
+            "columns": {
+                "app_id": {
+                    "name": "app_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "lang": {
+                    "name": "lang",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "ach_id": {
+                    "name": "ach_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "default_value": {
+                    "name": "default_value",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "hidden": {
+                    "name": "hidden",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "icon": {
+                    "name": "icon",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "icon_gray": {
+                    "name": "icon_gray",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "achievements_meta_app_id_ach_id_lang_pk": {
+                    "columns": ["app_id", "ach_id", "lang"],
+                    "name": "achievements_meta_app_id_ach_id_lang_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "achievements_stats": {
+            "name": "achievements_stats",
+            "columns": {
+                "app_id": {
+                    "name": "app_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "ach_id": {
+                    "name": "ach_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "percent": {
+                    "name": "percent",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_achievements_stats_timestamp": {
+                    "name": "idx_achievements_stats_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "achievements_stats_app_id_ach_id_pk": {
+                    "columns": ["app_id", "ach_id"],
+                    "name": "achievements_stats_app_id_ach_id_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "apps": {
+            "name": "apps",
+            "columns": {
+                "app_id": {
+                    "name": "app_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "data": {
+                    "name": "data",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "lang": {
+                    "name": "lang",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_apps_timestamp": {
+                    "name": "idx_apps_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "apps_app_id_lang_pk": {
+                    "columns": ["app_id", "lang"],
+                    "name": "apps_app_id_lang_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "estimated_players": {
+            "name": "estimated_players",
+            "columns": {
+                "app_id": {
+                    "name": "app_id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "estimated_players": {
+                    "name": "estimated_players",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_estimated_players_timestamp": {
+                    "name": "idx_estimated_players_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "friends": {
+            "name": "friends",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "friend_id": {
+                    "name": "friend_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "friend_since": {
+                    "name": "friend_since",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_friends_since": {
+                    "name": "idx_friends_since",
+                    "columns": ["friend_since"],
+                    "isUnique": false
+                },
+                "idx_friends_timestamp": {
+                    "name": "idx_friends_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "friends_user_id_users_user_id_fk": {
+                    "name": "friends_user_id_users_user_id_fk",
+                    "tableFrom": "friends",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["user_id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                },
+                "friends_friend_id_users_user_id_fk": {
+                    "name": "friends_friend_id_users_user_id_fk",
+                    "tableFrom": "friends",
+                    "tableTo": "users",
+                    "columnsFrom": ["friend_id"],
+                    "columnsTo": ["user_id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "friends_user_id_friend_id_pk": {
+                    "columns": ["user_id", "friend_id"],
+                    "name": "friends_user_id_friend_id_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "owned_games": {
+            "name": "owned_games",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "app_id": {
+                    "name": "app_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "playtime_last_two_weeks": {
+                    "name": "playtime_last_two_weeks",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "playtime_total": {
+                    "name": "playtime_total",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "last_played_at": {
+                    "name": "last_played_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "owned_games_user_id_users_user_id_fk": {
+                    "name": "owned_games_user_id_users_user_id_fk",
+                    "tableFrom": "owned_games",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["user_id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "owned_games_user_id_app_id_pk": {
+                    "columns": ["user_id", "app_id"],
+                    "name": "owned_games_user_id_app_id_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "user_achievements_stats": {
+            "name": "user_achievements_stats",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "app_id": {
+                    "name": "app_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "ach_id": {
+                    "name": "ach_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "unlocked_at": {
+                    "name": "unlocked_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "user_achievements_stats_user_id_users_user_id_fk": {
+                    "name": "user_achievements_stats_user_id_users_user_id_fk",
+                    "tableFrom": "user_achievements_stats",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["user_id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "user_achievements_stats_user_id_app_id_ach_id_pk": {
+                    "columns": ["user_id", "app_id", "ach_id"],
+                    "name": "user_achievements_stats_user_id_app_id_ach_id_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "user_scores": {
+            "name": "user_scores",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "rare_count": {
+                    "name": "rare_count",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_user_scores_timestamp": {
+                    "name": "idx_user_scores_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "user_scores_user_id_users_user_id_fk": {
+                    "name": "user_scores_user_id_users_user_id_fk",
+                    "tableFrom": "user_scores",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["user_id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "users": {
+            "name": "users",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "data": {
+                    "name": "data",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_users_timestamp": {
+                    "name": "idx_users_timestamp",
+                    "columns": ["updated_at"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        }
+    },
+    "views": {},
+    "enums": {},
+    "_meta": {
+        "schemas": {},
+        "tables": {},
+        "columns": {}
+    },
+    "internal": {
+        "indexes": {}
+    }
+}

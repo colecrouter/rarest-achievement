@@ -1,6 +1,6 @@
 import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import { Errable } from "../../../error";
-import type { LanguageCode } from "../lang";
+import { Attempt } from "../../../error";
+import type { LanguageCode } from "../../../lang";
 import { unescapeHTML } from "../utils";
 import { YouTubeClient } from "./client";
 
@@ -35,10 +35,10 @@ export class YouTubeRepository {
                 data: YouTubeGuide[];
                 error: string | null;
             };
-            return new Errable(data, error ? new Error(error) : null);
+            return Attempt.fromSimple(data, error ? new Error(error) : null);
         }
 
-        const guides = await Errable.try(async () => {
+        const guides = await Attempt.try(async () => {
             const guides = await this.#client.fetchVideos(achievement, locale, 5);
             const data = guides.items.map((item) => ({
                 title: unescapeHTML(item.snippet.title),

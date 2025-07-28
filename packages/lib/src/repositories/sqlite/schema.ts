@@ -1,15 +1,7 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { foreignKey, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import type {
-    SteamAchievementRawGlobalStats,
-    SteamAchievementRawMeta,
-    SteamAppRaw,
-    SteamFriendsListRaw,
-    SteamUserAchievementRawStats,
-    SteamUserRaw,
-} from "../../models";
-import type { APILanguageCode } from "../api/lang";
-import type { OwnedGame } from "../api/steampowered/owned";
+import type { APILanguageCode } from "../../lang";
+import type { SteamAppRaw, SteamUserRaw } from "../../models";
 
 export const users = sqliteTable(
     "users",
@@ -26,27 +18,29 @@ export const users = sqliteTable(
 export const apps = sqliteTable(
     "apps",
     {
-        id: integer("app_id").notNull().primaryKey(),
+        id: integer("app_id").notNull(),
         data: text("data", { mode: "json" }).$type<SteamAppRaw>(),
         lang: text("lang").notNull().$type<APILanguageCode>(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
     },
-    (table) => [index("idx_apps_timestamp").on(table.updated_at)],
+    (table) => [primaryKey({ columns: [table.id, table.lang] }), index("idx_apps_timestamp").on(table.updated_at)],
 );
 
 export const achievementsStats = sqliteTable(
     "achievements_stats",
     {
-        app_id: integer("app_id").notNull().primaryKey(),
-        data: text("data", { mode: "json" }).$type<SteamAchievementRawGlobalStats[]>(),
+        app_id: integer("app_id").notNull(),
+        // data: text("data", { mode: "json" }).$type<SteamAchievementRawGlobalStats[]>(),
+        ach_id: text("ach_id").notNull(),
+        percent: integer("percent").notNull(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
     },
     (table) => [
-        foreignKey({ columns: [table.app_id], foreignColumns: [apps.id] }),
+        primaryKey({ columns: [table.app_id, table.ach_id] }),
         index("idx_achievements_stats_timestamp").on(table.updated_at),
     ],
 );
@@ -56,16 +50,16 @@ export const achievementsMeta = sqliteTable(
     {
         app_id: integer("app_id").notNull(),
         lang: text("lang").notNull().$type<APILanguageCode>(),
-        data: text("data", { mode: "json" }).$type<SteamAchievementRawMeta[] | null>(),
-        updated_at: integer("updated_at", { mode: "timestamp" })
-            .notNull()
-            .$defaultFn(() => new Date()),
+        // data: text("data", { mode: "json" }).$type<SteamAchievementRawMeta[] | null>(),
+        ach_id: text("ach_id").notNull(),
+        default_value: integer("default_value").notNull(),
+        display_name: text("display_name").notNull(),
+        hidden: integer("hidden").notNull().default(0),
+        description: text("description"),
+        icon: text("icon").notNull(),
+        icon_gray: text("icon_gray").notNull(),
     },
-    (table) => [
-        primaryKey({ columns: [table.app_id, table.lang] }),
-        foreignKey({ columns: [table.app_id], foreignColumns: [apps.id] }),
-        index("idx_achievements_meta_timestamp").on(table.updated_at),
-    ],
+    (table) => [primaryKey({ columns: [table.app_id, table.ach_id, table.lang] })],
 );
 
 export const userAchievements = sqliteTable(
@@ -73,54 +67,65 @@ export const userAchievements = sqliteTable(
     {
         user_id: text("user_id").notNull(),
         app_id: integer("app_id").notNull(),
-        data: text("data", { mode: "json" }).$type<SteamUserAchievementRawStats[]>(),
-        updated_at: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+        ach_id: text("ach_id").notNull(),
+        unlocked_at: integer("unlocked_at", { mode: "timestamp" }),
+        updated_at: integer("updated_at", { mode: "timestamp" })
+            .notNull()
+            .$defaultFn(() => new Date()),
     },
     (table) => [
-        primaryKey({ columns: [table.user_id, table.app_id] }),
+        primaryKey({ columns: [table.user_id, table.app_id, table.ach_id] }),
         foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
-        foreignKey({ columns: [table.app_id], foreignColumns: [apps.id] }),
-        index("idx_user_achievements_timestamp").on(table.updated_at),
     ],
 );
 
 export const ownedGames = sqliteTable(
     "owned_games",
     {
-        user_id: text("user_id").notNull().primaryKey(),
-        data: text("data", { mode: "json" }).notNull().$type<OwnedGame<false>[]>(),
-        updated_at: integer("updated_at", { mode: "timestamp" })
-            .notNull()
-            .$defaultFn(() => new Date()),
+        user_id: text("user_id").notNull(),
+        app_id: integer("app_id").notNull(),
+        playtime_2w_minutes: integer("playtime_last_two_weeks"),
+        playtime_total_minutes: integer("playtime_total"),
+        last_played_at: integer("last_played_at", { mode: "timestamp" }),
     },
     (table) => [
+        primaryKey({ columns: [table.user_id, table.app_id] }),
         foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
-        index("idx_owned_games_timestamp").on(table.updated_at),
     ],
 );
 
 export const friends = sqliteTable(
     "friends",
     {
-        user_id: text("user_id").notNull().primaryKey(),
-        data: text("data", { mode: "json" }).notNull().$type<SteamFriendsListRaw>(),
+        /** The principal user's ID */
+        user_id: text("user_id").notNull(),
+        /** The friend's user ID */
+        friend_id: text("friend_id").notNull(),
+        friend_since: integer("friend_since", { mode: "timestamp" }).notNull(),
         updated_at: integer("updated_at", { mode: "timestamp" })
             .notNull()
             .$defaultFn(() => new Date()),
     },
     (table) => [
+        primaryKey({ columns: [table.user_id, table.friend_id] }),
         foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
+        foreignKey({ columns: [table.friend_id], foreignColumns: [users.id] }),
+        index("idx_friends_since").on(table.friend_since),
         index("idx_friends_timestamp").on(table.updated_at),
     ],
 );
 
-export const estimatedPlayers = sqliteTable("estimated_players", {
-    app_id: integer("app_id").notNull().primaryKey(),
-    estimated_players: integer("estimated_players"),
-    updated_at: integer("updated_at", { mode: "timestamp" })
-        .notNull()
-        .$defaultFn(() => new Date()),
-});
+export const estimatedPlayers = sqliteTable(
+    "estimated_players",
+    {
+        app_id: integer("app_id").notNull().primaryKey(),
+        estimated_players: integer("estimated_players"),
+        updated_at: integer("updated_at", { mode: "timestamp" })
+            .notNull()
+            .$defaultFn(() => new Date()),
+    },
+    (table) => [index("idx_estimated_players_timestamp").on(table.updated_at)],
+);
 
 export const userScores = sqliteTable(
     "user_scores",
@@ -133,7 +138,7 @@ export const userScores = sqliteTable(
     },
     (table) => [
         foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
-        index("idx_rare_achievements_timestamp").on(table.updated_at),
+        index("idx_user_scores_timestamp").on(table.updated_at),
     ],
 );
 

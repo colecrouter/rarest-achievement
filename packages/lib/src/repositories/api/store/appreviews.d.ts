@@ -1,4 +1,4 @@
-// Added types for appreviews
+import type { APILanguageCode } from "../..";
 
 export type GetAppReviewsQuery = {
     cursor?: string;
@@ -8,8 +8,8 @@ export type GetAppReviewsQuery = {
     end_date?: string;
     date_range_type?: "include" | "exclude" | "all";
     filter?: "recent" | "updated" | "all" | "summary";
-    language?: string;
-    l?: string;
+    language?: APILanguageCode;
+    l?: APILanguageCode;
     review_type?: "all" | "positive" | "negative";
     purchase_type?: "all" | "non_steam_purchase" | "steam";
     playtime_filter_min?: string;

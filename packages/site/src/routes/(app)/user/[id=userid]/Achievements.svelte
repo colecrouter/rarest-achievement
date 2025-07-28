@@ -1,22 +1,25 @@
 <script lang="ts">
     import AchievementCards from "$lib/AchievementCards";
-    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
+    import IndexError from "$lib/IndexError.svelte";
+    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import { m } from "$lib/paraglide/messages.js";
-    import type { SteamUser, SteamUserAchievement } from "@project/lib";
+    import type {
+        RepositoryResult,
+        SteamUser,
+        SteamUserAchievement,
+    } from "@project/lib";
     import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
     import PublicProfile from "../../(static)/about/PublicProfile.svelte";
-    import Toolbar from "../../../../lib/SortManager/Toolbar.svelte";
     import Podium from "./Podium.svelte";
 
     interface Props {
-        achievements: SteamUserAchievement[];
+        topThree: SteamUserAchievement[];
+        achievements: Promise<RepositoryResult<SteamUserAchievement>>;
         user: SteamUser;
     }
-    let { achievements, user }: Props = $props();
-    const sortManager = getSortManager();
+    let { achievements, topThree, user }: Props = $props();
+
     let activeTab = $state("grid");
-    let topThree = $derived(sortManager.sort(achievements).slice(0, 3));
-    let filteredAchievements = $derived(sortManager.sort(achievements));
 </script>
 
 {#if user.private}
@@ -66,13 +69,11 @@
             class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
         >
             {#if topThree.length === 3}
-                {#key filteredAchievements}
-                    <Podium place={2} achievement={topThree[1]!} />
+                <Podium place={2} achievement={topThree[1]!} />
 
-                    <Podium place={1} achievement={topThree[0]!} />
+                <Podium place={1} achievement={topThree[0]!} />
 
-                    <Podium place={3} achievement={topThree[2]!} />
-                {/key}
+                <Podium place={3} achievement={topThree[2]!} />
             {:else}
                 <!-- Base thing -->
                 <div class="flex h-full w-full items-center justify-center">
@@ -89,22 +90,31 @@
         </div>
     </section>
 
+    {#await achievements then { error }}
+        {#if error}
+            <!-- TODO move this into the card component? -->
+            <IndexError />
+        {/if}
+    {/await}
+
     <!-- Achievement Leaderboard -->
     <section>
         <h2 class="mb-4 text-2xl font-bold">{m.userPageLeaderboardTitle()}</h2>
 
-        <Toolbar {achievements} />
+        <Toolbar data={achievements} />
 
         <!-- Tabs -->
         <Tabs value={activeTab} onValueChange={(e) => (activeTab = e.value)}>
             {#snippet list()}
                 <Tabs.Control value="grid">{m.userViewTable()}</Tabs.Control>
-                <Tabs.Control value="list">{m.userViewList()}</Tabs.Control>
+                <!-- <Tabs.Control value="list">{m.userViewList()}</Tabs.Control> -->
             {/snippet}
 
             {#snippet content()}
                 <Tabs.Panel value="grid">
-                    <AchievementCards {achievements} />
+                    <AchievementCards
+                        achievements={achievements.then((d) => d.data)}
+                    />
                 </Tabs.Panel>
 
                 <Tabs.Panel value="list">
@@ -138,7 +148,7 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-surface-700 divide-y">
+                            <!-- <tbody class="divide-surface-700 divide-y">
                                 {#each filteredAchievements as achievement}
                                     {#if achievement.unlocked !== null}
                                         <tr
@@ -192,7 +202,7 @@
                                         </tr>
                                     {/if}
                                 {/each}
-                            </tbody>
+                            </tbody> -->
                         </table>
                     </div>
                 </Tabs.Panel>

@@ -8,37 +8,59 @@
 </script>
 
 <script lang="ts">
+    import { m } from "$lib/paraglide/messages.js";
+    import { localizeHref } from "$lib/paraglide/runtime";
     import type { Rarity } from "$lib/rarity";
     import {
         SteamUserAchievement,
         SteamUserStatus,
-        type SteamOwnedGame,
+        type SteamAppAchievement,
         type SteamUser,
     } from "@project/lib";
     import { Progress } from "@skeletonlabs/skeleton-svelte";
-    import { m } from "$lib/paraglide/messages.js";
-    import { localizeHref } from "$lib/paraglide/runtime";
 
     interface Props {
         friend: SteamUser;
-        owned: SteamOwnedGame;
-        achievements: Array<SteamUserAchievement>;
-        achievement?: SteamUserAchievement;
+        allAchievements: Array<SteamUserAchievement>;
+        targetAchievement?: SteamAppAchievement;
         secondary?: boolean;
     }
 
-    let { achievements, friend, achievement, owned, secondary }: Props =
+    let { allAchievements, friend, targetAchievement, secondary }: Props =
         $props();
 
+    let owned = $derived(
+        allAchievements
+            .find((a) => a instanceof SteamUserAchievement)
+            ?.user.ownedApps?.find(
+                (g) => g.id === targetAchievement?.app.id,
+            ) ?? {
+            playtime: 0,
+        },
+    );
+
     let unlockedCount = $derived(
-        [...achievements.values()]
+        [...allAchievements.values()]
             .filter((a) => a instanceof SteamUserAchievement)
             .filter((achievement) => achievement.unlocked).length,
     );
-    let totalCount = $derived(achievements.length);
+    let totalCount = $derived(allAchievements.length);
 
     let completion = $derived((unlockedCount / totalCount) * 100);
     let color = $derived(barColor(completion / 100));
+    let achievementInQuestionForFriend = $derived(
+        allAchievements.find(
+            (a) =>
+                a instanceof SteamUserAchievement &&
+                a.id === targetAchievement?.id,
+        ),
+    );
+    // DO NOT USE `owned` or `targetAchievement` because it can be undefined
+    let playTime = $derived(
+        allAchievements?.[0]?.user?.ownedApps?.find(
+            (g) => g.id === allAchievements?.[0]?.app.id,
+        )?.playtime,
+    );
 </script>
 
 <div class="card {secondary && 'secondary'} p-4">
@@ -66,22 +88,22 @@
                 {friend.displayName}
             </a>
             <div class="text-surface-300 text-xs">
-                {#if achievement}
-                    {#if achievement.unlocked}
-                        {m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString()}
+                {#if targetAchievement && achievementInQuestionForFriend}
+                    {#if achievementInQuestionForFriend.unlocked}
+                        {m.statusUnlocked()}: {achievementInQuestionForFriend.unlocked.toLocaleDateString()}
                     {:else}
                         {m.statusLocked()}
                     {/if}
                 {:else}
                     {m.friendHoursPlayed({
-                        hours: ((owned.playtime ?? 0) / 60).toFixed(1),
+                        hours: ((playTime ?? 0) / 60).toFixed(1),
                     })}
                 {/if}
             </div>
         </div>
     </div>
     <div class="mb-3">
-        {#if friend.private || !achievements.length}
+        {#if friend.private || !allAchievements.length}
             <div class="text-surface-800">
                 {m.profilePrivate()}
             </div>

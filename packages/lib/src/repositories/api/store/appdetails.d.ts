@@ -1,10 +1,12 @@
 // https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details
 
+import type { APILanguageCode } from "../..";
+
 export type GetAppDetailsQuery<T extends Array<keyof AppDetailsData> | undefined> = {
     appids: string;
     filters?: T; // original filter definition updated below via AppDetailsData
     cc?: string; // ISO 3166-1 alpha-2 country code
-    l?: string; // Language code
+    l?: APILanguageCode; // Language code
 };
 
 // Added interface to represent full app details data

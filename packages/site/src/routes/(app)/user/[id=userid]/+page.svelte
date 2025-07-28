@@ -4,9 +4,29 @@
     import Splash from "$lib/loading/Splash.svelte";
     import { m } from "$lib/paraglide/messages.js";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
+    import type { PageData } from "./$types.js";
     import Achievements from "./Achievements.svelte";
 
-    let { data } = $props();
+    let { data }: { data: PageData } = $props();
+
+    // Get the type of the resolved topThree data
+    type TopThreeData = Awaited<typeof data.topThree>;
+
+    // Track if we've loaded topThree once to avoid re-showing splash
+    let hasLoadedOnce = $state(false);
+    let cachedTopThree = $state<TopThreeData | null>(null);
+
+    // Use an effect to handle caching when the promise resolves
+    $effect(() => {
+        if (data.topThree && typeof data.topThree.then === "function") {
+            data.topThree.then((resolved: TopThreeData) => {
+                if (!hasLoadedOnce) {
+                    hasLoadedOnce = true;
+                    cachedTopThree = resolved;
+                }
+            });
+        }
+    });
 </script>
 
 <svelte:head>
@@ -34,17 +54,37 @@
 <main class="container mx-auto px-4 py-8">
     <Breadcrumbs path={data.breadcrumbs} />
 
-    {#await data.achievements}
+    {#if hasLoadedOnce && cachedTopThree}
+        <!-- Use cached data to avoid remounting -->
         <Transition>
-            <Splash message={data.message} />
-        </Transition>
-    {:then { achievements, didErr }}
-        <Transition>
-            {#if didErr}
+            {#if cachedTopThree.isError()}
                 <IndexError />
+            {:else}
+                <Achievements
+                    topThree={cachedTopThree.data}
+                    user={data.user}
+                    achievements={data.achievements}
+                />
             {/if}
-
-            <Achievements user={data.user} {achievements} />
         </Transition>
-    {/await}
+    {:else}
+        <!-- Show loading state and await first time -->
+        {#await data.topThree}
+            <Transition>
+                <Splash message={data.message} />
+            </Transition>
+        {:then topThree}
+            <Transition>
+                {#if topThree.isError()}
+                    <IndexError />
+                {:else}
+                    <Achievements
+                        topThree={topThree.data}
+                        user={data.user}
+                        achievements={data.achievements}
+                    />
+                {/if}
+            </Transition>
+        {/await}
+    {/if}
 </main>

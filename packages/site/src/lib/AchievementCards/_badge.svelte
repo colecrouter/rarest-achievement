@@ -13,10 +13,10 @@
 </script>
 
 <script lang="ts">
-    import { getSortManager } from "$lib/SortManager/UrlParamMapper.svelte";
     import { m } from "$lib/paraglide/messages.js";
     import { getLocale } from "$lib/paraglide/runtime";
     import { getRarity } from "$lib/rarity";
+    import { getAchievementSortManager } from "$lib/SortManager/AchievementSortManager";
     import Lock from "@lucide/svelte/icons/lock";
     import type { SteamAppAchievement } from "@project/lib";
     // biome-ignore lint/style/useImportType: <explanation>
@@ -27,28 +27,31 @@
     }
     let { achievement }: Props = $props();
 
-    const sortManager = getSortManager();
+    const sortManager = getAchievementSortManager();
+
     const rarity = $derived(getRarity(achievement.globalPercentage));
 </script>
 
 <div
     class="badge bg-{rarity} text-surface-900 heading-line-height px-1.5 py-0 text-xs font-bold"
 >
-    {#if sortManager.method === "percentage"}
+    {#if sortManager.method === "rarity_pct"}
         {#if achievement.globalPercentage < 0.1}
             &lt;0.1%
         {:else}
             {achievement.globalPercentage}%
         {/if}
-    {:else if sortManager.method === "count"}
+    {:else if sortManager.method === "rarity_score"}
         {#if achievement.globalCount === null}
             ???
-        {:else if achievement.app.estimatedPlayers && achievement.globalPercentage < 0.1}
+        {:else if achievement.app.estimatedPlayers !== null && achievement.app.estimatedPlayers < 0}
+            ???
+        {:else if achievement.app.estimatedPlayers !== null && achievement.globalPercentage < 0.1}
             &lt;{numberFormat.format(achievement.app.estimatedPlayers * 0.001)}
         {:else}
             {numberFormat.format(achievement.globalCount)}
         {/if}
-    {:else if sortManager.method === "unlocked" && achievement instanceof SteamUserAchievement}
+    {:else if sortManager.method === "unlocked_at" && achievement instanceof SteamUserAchievement}
         <!-- show days elapsed since -->
         {#if achievement.unlocked}
             {@const daysSinceUnlocked = Math.floor(

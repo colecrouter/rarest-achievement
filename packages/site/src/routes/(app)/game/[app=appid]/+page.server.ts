@@ -1,10 +1,10 @@
 import { getLocale } from "$lib/paraglide/runtime.js";
 import {
     type APILanguageCode,
-    EnhancedSteamRepository,
-    Errable,
+    Attempt,
     type SteamAppAchievement,
-    friends,
+    type SteamUser,
+    type SteamUserAchievement,
     getLanguageByCode,
 } from "@project/lib";
 
@@ -13,64 +13,66 @@ export const load = async ({ parent, locals }) => {
 
     const locale = getLocale();
 
-    const repo = new EnhancedSteamRepository(locals);
+    // If the user is logged in, fetch user achievements instead of global achievements
+    const achievements = locals.steamUser
+        ? await locals.vault.userAchievements
+              .compose()
+              .withLanguage(locale)
+              .withAppIds(app.id)
+              .withUserIds([locals.steamUser.id])
+              .build()
+        : await locals.vault.appAchievements.compose().withLanguage(locale).withAppIds(app.id).build();
 
-    let achievements: SteamAppAchievement[] | undefined;
-    let err: Error | null = null;
-    if (locals.steamUser) {
-        const { data: achievementsMap, error: achieveErr } = await repo.getUserAchievements(
-            [app],
-            [locals.steamUser],
-            locale,
+    const friendsWithAchievement = (async () => {
+        if (!locals.steamUser) return null;
+
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        // Fetch achievements for each friend who owns the game
+        const result = await locals.vault.userAchievements
+            .compose()
+            .withLanguage(locale)
+            .withAppIds(app.id)
+            .withFriendsOf(locals.steamUser.id)
+            .build({ limit: 10000 }); // TODO
+
+        const filteredPrivateOrBot = result.map((d) =>
+            d
+                .filter(
+                    (d) =>
+                        d.user.lastLoggedIn &&
+                        d.user.lastLoggedIn >= oneMonthAgo &&
+                        d.user.created &&
+                        d.user.created < oneYearAgo &&
+                        !d.user.private,
+                )
+                .sort(
+                    (a, b) =>
+                        // Sort by last logged in first
+                        (b.user.lastLoggedIn ?? new Date(0)).getTime() - (a.user.lastLoggedIn ?? new Date(0)).getTime(),
+                ),
         );
-        achievements = [...(achievementsMap.get(app.id)?.get(locals.steamUser.id)?.values() ?? [])];
-        err = achieveErr;
-    } else {
-        const { data: achievementsMap, error: achieveErr } = await repo.getGameAchievements([app], locale);
-        achievements = [...(achievementsMap.get(app.id)?.values() ?? [])];
-        err = achieveErr;
-    }
 
-    const friends = (async () => {
-        if (!locals.steamUser) return undefined;
+        const grouped = Map.groupBy(filteredPrivateOrBot.data, (u) => u.user.id);
+        const usersWhoHaventPlayed = new Set(
+            grouped
+                .entries()
+                // We could try filtering by playtime, but it's not reliable for my acct due to API key belonging to me
+                // In practice, either or both is *probably* fine
+                .filter(([, ach]) => ach.every((a) => !a.unlocked))
+                .map(([userId]) => userId),
+        );
 
-        const { data: friendMap, error: err1 } = await repo.getFriends([locals.steamUser]);
-
-        const f = friendMap.get(locals.steamUser.id);
-        if (!f) return undefined;
-
-        const { data: ownedMap, error: err2 } = await repo.getOwnedGames(f);
-
-        // ONLY FETCH THE CURRENT APP
-        const { data: friendAchievements, error: err3 } = await repo.getUserAchievements([app], f, locale);
-
-        const friends = f
-            .map((friend) => {
-                const ownedGames = ownedMap.get(friend.id);
-                const ownedGame = ownedGames?.find((game) => game.id === app.id);
-                if (!ownedGame?.playtime || ownedGame.playtime === 0) return null;
-                const achievements = friendAchievements.get(app.id)?.get(friend.id);
-                if (!achievements) return null;
-                const friendAchievementsList = [...achievements.values()].flat();
-                if (!friendAchievementsList) return null;
-                return {
-                    friend,
-                    owned: ownedGame,
-                    achievements: friendAchievementsList,
-                };
-            })
-            .filter((friend) => friend !== null)
-            .sort((a, b) => (b.owned.playtime ?? 0) - (a.owned.playtime ?? 0));
-
-        // Map back into friends
-        return {
-            friends: new Errable(friends, err1 || err2 || err3),
-        };
+        return filteredPrivateOrBot.map((achievements) =>
+            achievements.filter((a) => !usersWhoHaventPlayed.has(a.user.id)),
+        );
     })();
 
     return {
         achievements,
-        didErr: Boolean(err),
-        friends,
+        friendsWithAchievement,
     };
 };

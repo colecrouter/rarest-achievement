@@ -12,7 +12,7 @@ Steam Vault is an open-source project that attempts to provide meaningful info a
 
 ### Structure
 
-Steam Vault leverages SvelteKit & Svelte 5 for the "web" portion of the project, and a minimal TypeScript exclusively for scheduled tasks. Both parts are tied together by a shared library package that contains the core logic and data structures.
+Steam Vault leverages SvelteKit & Svelte 5 for the "web" portion of the project, and a minimal "worker" exclusively for scheduled tasks. Both parts are tied together by a shared library package that contains the core logic and data structures.
 
 This repository is a monorepo that contains the following packages:
 

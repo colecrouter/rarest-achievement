@@ -5,7 +5,8 @@
             "**/node_modules/**",
             "**/.svelte-kit/**",
             "**/worker-configuration.d.ts",
-            "**/src/lib/paraglide/**"
+            "**/src/lib/paraglide/**",
+            "./packages/lib/steam_model.json"
         ],
         "include": ["packages/**/*"]
     },
@@ -18,12 +19,15 @@
     },
     "linter": {
         "rules": {
-            "style": {
-                "useConst": "off"
-            },
             "complexity": {
                 "noStaticOnlyClass": "off"
             }
         }
-    }
+    },
+    "overrides": [
+        {
+            "include": ["**/*.svelte"],
+            "linter": { "rules": { "style": { "useConst": "off", "useImportType": "off" } } }
+        }
+    ]
 }

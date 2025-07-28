@@ -1,6 +1,6 @@
 export * from "./SteamApp";
 export * from "./SteamAppAchievement";
-export * from "./SteamFriendsList";
+export * from "./SteamFriendUser";
 export * from "./SteamOwnedGame";
 export * from "./SteamSearchApp";
 export * from "./SteamSearchUser";

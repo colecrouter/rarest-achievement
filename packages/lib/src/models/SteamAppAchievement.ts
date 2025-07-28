@@ -18,22 +18,31 @@ export class SteamAppAchievement {
     #globalStats: SteamAchievementRawGlobalStats;
     #lang: APILanguageCode;
 
-    constructor(
-        app: SteamApp,
-        stats: SteamAchievementRawMeta,
-        global: SteamAchievementRawGlobalStats,
-        lang: APILanguageCode,
-    ) {
+    constructor({
+        app,
+        meta,
+        globalStats,
+        lang,
+    }: {
+        app: SteamApp;
+        meta: SteamAchievementRawMeta;
+        globalStats: SteamAchievementRawGlobalStats;
+        lang: APILanguageCode;
+        translationStatus?: "native" | "fallback";
+    }) {
         this.#app = app;
-        this.#meta = stats;
-        this.#globalStats = global;
+        this.#meta = meta;
+        this.#globalStats = globalStats;
         this.#lang = lang;
     }
 
     serialize() {
-        return [this.#app, this.#meta, this.#globalStats, this.#lang] satisfies ConstructorParameters<
-            typeof SteamAppAchievement
-        >;
+        return {
+            app: this.#app,
+            meta: this.#meta,
+            globalStats: this.#globalStats,
+            lang: this.#lang,
+        } satisfies ConstructorParameters<typeof SteamAppAchievement>[0];
     }
 
     get id() {
@@ -81,6 +90,8 @@ export class SteamAppAchievement {
     }
 
     get language() {
-        return getLanguageByAPICode(this.#lang)?.storeCode;
+        const lang = getLanguageByAPICode(this.#lang)?.storeCode;
+        if (!lang) throw new Error(`Unknown language code: ${this.#lang}`);
+        return lang;
     }
 }

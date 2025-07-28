@@ -1,4 +1,4 @@
-import type { APILanguageCode } from "../repositories/api/lang";
+import type { APILanguageCode } from "../lang";
 import type { GetPlayerAchievementsResponse } from "../repositories/api/steampowered/playerAchievement";
 import type { SteamApp } from "./SteamApp";
 import {
@@ -6,31 +6,43 @@ import {
     type SteamAchievementRawMeta,
     SteamAppAchievement,
 } from "./SteamAppAchievement";
+import type { SteamUser } from "./SteamUser";
 
 export type SteamUserAchievementRawStats = NonNullable<
     GetPlayerAchievementsResponse<undefined>
 >["playerstats"]["achievements"][number];
 
 export class SteamUserAchievement extends SteamAppAchievement {
-    #steamid: string;
     #userStats: SteamUserAchievementRawStats | null;
+    #user: SteamUser;
 
-    constructor(
-        game: SteamApp,
-        meta: SteamAchievementRawMeta,
-        global: SteamAchievementRawGlobalStats,
-        lang: APILanguageCode,
-        steamid: string,
-        userStats: SteamUserAchievementRawStats | null,
-    ) {
-        super(game, meta, global, lang);
-        this.#steamid = steamid;
+    constructor({
+        app,
+        meta,
+        globalStats,
+        lang,
+        user,
+        userStats,
+    }: {
+        app: SteamApp;
+        meta: SteamAchievementRawMeta;
+        globalStats: SteamAchievementRawGlobalStats;
+        lang: APILanguageCode;
+        user: SteamUser;
+        userStats: SteamUserAchievementRawStats | null;
+    }) {
+        super({ app, meta, globalStats, lang });
+        this.#user = user;
         this.#userStats = userStats;
     }
 
-    serializeUser() {
+    serialize(): ConstructorParameters<typeof SteamUserAchievement>[0] {
         const base = super.serialize();
-        return [...base, this.#steamid, this.#userStats] as ConstructorParameters<typeof SteamUserAchievement>;
+        return { ...base, user: this.#user, userStats: this.#userStats };
+    }
+
+    get user() {
+        return this.#user;
     }
 
     get unlocked() {

@@ -1,6 +1,6 @@
 // https://wiki.teamfortress.com/wiki/WebAPI/GetSchemaForGame
 
-import type { APILanguageCode } from "../lang";
+import type { APILanguageCode } from "../../../lang";
 
 export type GetSchemaForGameQuery = {
     appid: number; // AppID

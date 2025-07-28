@@ -17,13 +17,11 @@ export class SteamSearchUser {
     }
 
     serialize() {
-        return [
-            {
-                name: this.#name,
-                userId: this.#userId,
-                avatarUrl: this.#avatarUrl,
-            },
-        ] satisfies ConstructorParameters<typeof SteamSearchUser>;
+        return {
+            name: this.#name,
+            userId: this.#userId,
+            avatarUrl: this.#avatarUrl,
+        } satisfies ConstructorParameters<typeof SteamSearchUser>[0];
     }
 
     get id() {

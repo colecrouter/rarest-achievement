@@ -1,20 +1,21 @@
 import { type Locale, getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
 import {
     type APILanguageCode,
-    EnhancedSteamRepository,
     type SteamAchievementRawGlobalStats,
     type SteamAchievementRawMeta,
     SteamApp,
     SteamAppAchievement,
     type SteamID,
+    achievementsMeta,
     achievementsStats,
     apps,
     getLanguageByCode,
     resolveSteamID,
+    userAchievements,
     userScores,
 } from "@project/lib";
 import { fail, redirect } from "@sveltejs/kit";
-import { countDistinct, inArray, sql, sum } from "drizzle-orm";
+import { and, count, countDistinct, eq, inArray, isNotNull, lte, sql, sum } from "drizzle-orm";
 
 export const actions = {
     search: async ({ request }) => {
@@ -83,19 +84,16 @@ const getShowcaseAchievements = async (locals: App.Locals, locale: Locale) => {
     ];
 
     // Fetch the achievements for the showcase cards
-    const repo = new EnhancedSteamRepository(locals);
-    const { data: showcase2Apps } = await repo.getApps(
-        showcase2IDs.map((m) => m.game),
-        locale,
-    );
-    const { data: showcase2Achievements } = await repo.getGameAchievements([...showcase2Apps.values()], locale);
+    const showcase2Achievements = await locals.vault.appAchievements
+        .compose()
+        .withLanguage(locale)
+        .withAppIds(showcase2IDs.map((m) => m.game))
+        .withAchievementIds(showcase2IDs.map((m) => m.achievement))
+        .build();
 
-    const showcase2 = showcase2IDs
-        .map(({ game, achievement }) => showcase2Achievements.get(game)?.get(achievement))
-        .filter((m) => !!m);
-    if (showcase2.length !== 3) throw new Error("Missing achievements");
+    if (showcase2Achievements.data.length !== 3) throw new Error("Missing achievements");
 
-    return showcase2;
+    return showcase2Achievements.data;
 };
 
 const getStats = async (locals: App.Locals) => {
@@ -105,14 +103,14 @@ const getStats = async (locals: App.Locals) => {
         locals.steamCacheDB.select({ gameCount: countDistinct(apps.id) }).from(apps),
         locals.steamCacheDB
             .select({
-                achievementCount: sum(sql<number>`json_array_length(${achievementsStats.data})`),
+                achievementCount: count(achievementsStats.ach_id),
             })
             .from(achievementsStats),
     ]);
     const [userCount, gameCount, achievementCount] = [
         userCounts?.userCount ?? 0,
         gamesIndexed?.gameCount ?? 0,
-        Number.parseInt(achievementsIndexed?.achievementCount ?? "0"),
+        achievementsIndexed?.achievementCount ?? 0,
     ];
 
     return {
@@ -125,70 +123,84 @@ const getStats = async (locals: App.Locals) => {
 const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
     const lang = getLanguageByCode(locale)?.apiCode as APILanguageCode;
 
-    const query = sql`
-        WITH UserUnlocked AS (
-            SELECT
-            ua.app_id,
-            u.value AS uv
-            FROM user_achievements_stats AS ua,
-                json_each(ua.data) AS u
-            WHERE json_extract(u.value, '$.achieved') = 1
-        ),
-        Ranked AS (
-            SELECT
-            uu.app_id,
-            uu.uv,
-            gs.value AS gv,
-            ROW_NUMBER() OVER (
-                PARTITION BY uu.app_id
-                ORDER BY cast(json_extract(gs.value, '$.percent') AS float) ASC
-            ) AS rn
-            FROM UserUnlocked uu
-            JOIN achievements_stats ast
-            ON ast.app_id = uu.app_id
-            JOIN json_each(ast.data) AS gs
-            ON json_extract(gs.value, '$.name') = json_extract(uu.uv, '$.apiname')
-            WHERE cast(json_extract(gs.value, '$.percent') AS float) <= 5
-        )
-        SELECT
-            r.app_id,
-            json_extract(r.gv, '$.name')          AS name,
-            json_extract(r.gv, '$.percent')       AS percent,
-            json_extract(meta.value, '$.defaultvalue')  AS defaultvalue,
-            json_extract(meta.value, '$.displayName')   AS displayName,
-            json_extract(meta.value, '$.hidden')        AS hidden,
-            json_extract(meta.value, '$.description')   AS description,
-            json_extract(meta.value, '$.icon')          AS icon,
-            json_extract(meta.value, '$.icongray')      AS icongray
-        FROM Ranked AS r
-        JOIN achievements_meta
-            ON achievements_meta.app_id = r.app_id
-        AND achievements_meta.lang = ${lang}
-        JOIN json_each(achievements_meta.data) AS meta
-            ON json_extract(meta.value, '$.name') = json_extract(r.gv, '$.name')
-        WHERE r.rn <= 3
-        ORDER BY RANDOM()
-        LIMIT 3;
-        `;
-
-    const res = await locals.steamCacheDB.run(query);
-    const results = res.results as Array<SteamAchievementRawMeta & SteamAchievementRawGlobalStats & { app_id: number }>;
-
-    const appsRes = await locals.steamCacheDB
-        .select({ app: apps.data })
-        .from(apps)
-        .where(
-            inArray(
-                apps.id,
-                results.map((m) => m.app_id),
+    const ranked = locals.steamCacheDB
+        .select({
+            appId: userAchievements.app_id,
+            name: userAchievements.ach_id,
+            percent: achievementsStats.percent,
+            rn: sql`ROW_NUMBER() OVER (
+                    PARTITION BY ${userAchievements.app_id}
+                    ORDER BY ${achievementsStats.percent} ASC
+                )`.as("rn"),
+        })
+        .from(userAchievements)
+        .innerJoin(
+            achievementsStats,
+            and(
+                eq(achievementsStats.app_id, userAchievements.app_id),
+                eq(achievementsStats.ach_id, userAchievements.ach_id),
             ),
-        );
+        )
+        .where(and(isNotNull(userAchievements.unlocked_at), lte(achievementsStats.percent, 5)))
+        .as("ranked");
 
-    const achievements = results.map((m) => {
-        const app = appsRes.find((a) => a.app?.steam_appid === m.app_id);
-        if (!app?.app) throw new Error("Missing app");
-        return new SteamAppAchievement(new SteamApp(app.app.steam_appid, app.app, 0, lang), m, m, lang);
+    const rareRows = await locals.steamCacheDB
+        .select({
+            appId: ranked.appId,
+            name: ranked.name,
+            percent: ranked.percent,
+            defaultValue: achievementsMeta.default_value,
+            displayName: achievementsMeta.display_name,
+            hidden: achievementsMeta.hidden,
+            description: achievementsMeta.description,
+            icon: achievementsMeta.icon,
+            iconGray: achievementsMeta.icon_gray,
+        })
+        .from(ranked)
+        .innerJoin(
+            achievementsMeta,
+            and(
+                eq(achievementsMeta.app_id, ranked.appId),
+                eq(achievementsMeta.lang, lang),
+                eq(achievementsMeta.ach_id, ranked.name),
+            ),
+        )
+        .where(lte(ranked.rn, 3))
+        .orderBy(sql`RANDOM()`) // Randomly select 3 rare achievements
+        .limit(3);
+
+    type RareRow = (typeof rareRows)[number];
+
+    const appIds = rareRows.map((row: RareRow) => row.appId);
+
+    const appsRes = await locals.steamCacheDB.select({ app: apps.data }).from(apps).where(inArray(apps.id, appIds));
+
+    const constructedApps = appsRes.map((a) => {
+        if (!a.app) throw new Error("Missing app data");
+        return new SteamApp({ data: a.app, lang, estimatedPlayers: 0 });
     });
 
-    return achievements;
+    const constructedAchievements = rareRows.map((row: RareRow) => {
+        const app = constructedApps.find((a) => a.id === row.appId);
+        if (!app) throw new Error(`App with ID ${row.appId} not found`);
+        return new SteamAppAchievement({
+            app,
+            meta: {
+                name: row.name,
+                defaultvalue: row.defaultValue,
+                description: row.description ?? undefined,
+                displayName: row.displayName,
+                hidden: row.hidden,
+                icon: row.icon,
+                icongray: row.iconGray,
+            },
+            globalStats: {
+                name: row.name,
+                percent: row.percent,
+            },
+            lang,
+        });
+    });
+
+    return constructedAchievements;
 };

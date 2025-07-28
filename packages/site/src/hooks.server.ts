@@ -88,7 +88,7 @@ export const handleError = handleErrorWithSentry();
 
 // 10 concurrent fetches in dev mode
 // Needed because Miniflare gets overloaded with too many fetches
-const fetchDevLimiter = new Limiter(10);
+const fetchDevLimiter = new Limiter(5);
 
 /**
  * Intercept all fetch requests to automatically inject abort signals and count fetches

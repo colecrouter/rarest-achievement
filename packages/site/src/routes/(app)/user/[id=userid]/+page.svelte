@@ -59,13 +59,12 @@
         <Transition>
             {#if cachedTopThree.isError()}
                 <IndexError />
-            {:else}
-                <Achievements
-                    topThree={cachedTopThree.data}
-                    user={data.user}
-                    achievements={data.achievements}
-                />
             {/if}
+            <Achievements
+                topThree={cachedTopThree.data}
+                user={data.user}
+                achievements={data.achievements}
+            />
         </Transition>
     {:else}
         <!-- Show loading state and await first time -->
@@ -77,13 +76,12 @@
             <Transition>
                 {#if topThree.isError()}
                     <IndexError />
-                {:else}
-                    <Achievements
-                        topThree={topThree.data}
-                        user={data.user}
-                        achievements={data.achievements}
-                    />
                 {/if}
+                <Achievements
+                    topThree={topThree.data}
+                    user={data.user}
+                    achievements={data.achievements}
+                />
             </Transition>
         {/await}
     {/if}

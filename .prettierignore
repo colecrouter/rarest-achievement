@@ -1,5 +1,4 @@
 # Ignore everything recursively
-*
-
-# But not the .svelte files
-!*.svelte
+*.ts
+*.js
+*.json

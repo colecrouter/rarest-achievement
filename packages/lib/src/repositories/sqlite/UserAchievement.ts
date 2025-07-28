@@ -292,21 +292,20 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
         // Step 1: Determine actual user filtering approach
         const userFilterConditions: SQL[] = [];
 
+        let ensureResult: Attempt<void, AttemptStatus>;
         if (this.friendsOfUserId) {
             // Use JOIN with friends table instead of fetching friend IDs (avoids parameter explosion)
             // But we still need to ensure the friends' data exists in the database
-            const ensureResult = await this.ensureUserDataExists();
+            ensureResult = await this.ensureUserDataExists();
             if (ensureResult.isError()) {
                 console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
-                return Attempt.partial([], ensureResult.error);
             }
             // The actual user filtering will be handled in the main query JOIN below
         } else if (this.userIds.size > 0) {
             // Direct user IDs are safe as they're top-level parameters
-            const ensureResult = await this.ensureUserDataExists();
+            ensureResult = await this.ensureUserDataExists();
             if (ensureResult.isError()) {
                 console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
-                return Attempt.partial([], ensureResult.error);
             }
             const userIdsArray = this.userIds.values().toArray();
             userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
@@ -433,7 +432,7 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
         // Step 3: Build final results
         const buildResult = await this.buildResultsFromRows(userAchievementRows, timingId);
         console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
-        return buildResult;
+        return ensureResult.and(buildResult);
     }
 
     /**
@@ -451,15 +450,16 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
             // Step 1: Determine actual user filtering approach
             const userFilterConditions: SQL[] = [];
 
+            let ensureResult: Attempt<void, AttemptStatus>;
             if (this.friendsOfUserId) {
                 // Use JOIN with friends table instead of fetching friend IDs (avoids parameter explosion)
                 // This will be handled in the main query JOIN, no separate userIds needed
                 // But we still need to ensure the target user exists
-                await this.ensureUserDataExists();
+                ensureResult = await this.ensureUserDataExists();
             } else if (this.userIds.size > 0) {
                 // Direct user IDs are safe as they're top-level parameters
                 const userIdsArray = Array.from(this.userIds);
-                await this.ensureUserDataExists();
+                ensureResult = await this.ensureUserDataExists();
                 userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
             } else {
                 console.log("⚠️ No user filtering criteria provided");
@@ -604,7 +604,8 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
             const rows = await query;
 
             // Step 3: Build results directly from comprehensive query results
-            return await this.buildResultsFromComprehensiveRows(rows, timingId);
+            const result = await this.buildResultsFromComprehensiveRows(rows, timingId);
+            return ensureResult.and(result);
         } finally {
             console.timeEnd(`${timingId} UserAchievementQueryComposer.executeWithComprehensiveSQL`);
         }

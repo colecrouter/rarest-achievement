@@ -275,15 +275,6 @@
                 </div>
             </div>
         {:else}
-            <!-- Success/Partial Success State -->
-            {#if cachedData.isPartial()}
-                <!-- Show warning for partial data -->
-                <div class="text-warning-500 mb-2 text-sm">
-                    ⚠️ Some data could not be loaded: {cachedData.error
-                        ?.message}
-                </div>
-            {/if}
-
             <!-- Search Input -->
             <input
                 type="search"

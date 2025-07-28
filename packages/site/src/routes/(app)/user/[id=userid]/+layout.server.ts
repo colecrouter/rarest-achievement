@@ -19,7 +19,7 @@ export const load = async ({ params, locals }) => {
         .withLanguage(locale)
         .withUserIds([user.id])
         .withUnlockedStatus(true)
-        .build({ limit: 3, sort: { method: "rarity_score", direction: "asc" } });
+        .build({ limit: 3, sort: { method: "rarity_pct", direction: "asc" } });
 
     const breadcrumbs = [
         {

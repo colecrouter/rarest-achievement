@@ -86,6 +86,31 @@ function sortAchievements(
         return direction === "desc" ? -comparison : comparison;
     });
 
+    // Final pass: always move nullish values to the end for specific sort methods
+    if (method === "rarity_score" || method === "unlocked_at") {
+        filtered.sort((a, b) => {
+            if (method === "rarity_score") {
+                const aCount = (a as TAchievementData).globalCount;
+                const bCount = (b as TAchievementData).globalCount;
+                if (aCount == null && bCount == null) return 0;
+                if (aCount == null) return 1;
+                if (bCount == null) return -1;
+                return 0; // Keep existing order for non-null values
+            }
+
+            if (method === "unlocked_at" && "unlocked" in (a as object) && "unlocked" in (b as object)) {
+                const aUnlocked = (a as SteamUserAchievement).unlocked;
+                const bUnlocked = (b as SteamUserAchievement).unlocked;
+                if (aUnlocked == null && bUnlocked == null) return 0;
+                if (aUnlocked == null) return 1;
+                if (bUnlocked == null) return -1;
+                return 0; // Keep existing order for non-null values
+            }
+
+            return 0;
+        });
+    }
+
     return filtered;
 }
 

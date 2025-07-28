@@ -404,11 +404,17 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
                     break;
                 case "rarity_score":
                     query = query.orderBy(
+                        sortDirection(
+                            sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
+                        ),
                         sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
                     );
                     break;
                 case "unlocked_at":
-                    query = query.orderBy(sortDirection(userAchievements.unlocked_at));
+                    query = query.orderBy(
+                        sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
+                        sortDirection(userAchievements.unlocked_at),
+                    );
                     break;
             }
         }
@@ -570,11 +576,17 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
                         break;
                     case "rarity_score":
                         query = query.orderBy(
+                            sortDirection(
+                                sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
+                            ),
                             sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
                         );
                         break;
                     case "unlocked_at":
-                        query = query.orderBy(sortDirection(userAchievements.unlocked_at));
+                        query = query.orderBy(
+                            sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
+                            sortDirection(userAchievements.unlocked_at),
+                        );
                         break;
                 }
             }

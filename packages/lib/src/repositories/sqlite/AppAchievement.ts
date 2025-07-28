@@ -325,7 +325,7 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
             case "rarity_pct":
                 return achievementsStats.percent;
             case "rarity_score":
-                return sql`${estimatedPlayers.estimated_players} * (${achievementsStats.percent} / 100)`;
+                return sql`CASE WHEN ${estimatedPlayers.estimated_players} IS NULL OR ${achievementsStats.percent} IS NULL THEN 1 ELSE 0 END, ${estimatedPlayers.estimated_players} * (${achievementsStats.percent} / 100)`;
             default:
                 return achievementsStats.percent;
         }

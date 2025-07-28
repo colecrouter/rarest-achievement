@@ -626,10 +626,10 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
             const playerCount = await Promise.all([
                 SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
                 SteamChartsAPIClient.getAppChartData(appId),
-            ]).then(([appReviews, appPlayerCount]): number | undefined => {
+            ]).then(([appReviews, appPlayerCount]) => {
                 if (!appReviews || !appPlayerCount) {
                     console.warn(`Missing review or chart data for app ${appId}`);
-                    return 0;
+                    return null;
                 }
                 const estimate = estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),

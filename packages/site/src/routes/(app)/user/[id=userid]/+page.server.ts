@@ -1,19 +1,16 @@
 import { AchievementURLParameterParser } from "$lib/SortManager/AchievementSortManager.js";
 import { getLocale } from "$lib/paraglide/runtime.js";
 import { userScores } from "@project/lib";
-import { error } from "@sveltejs/kit";
 
-export const load = async ({ url, params, locals }) => {
+export const load = async ({ url, locals, parent }) => {
     // Need to load the locale synchronously
     const locale = getLocale();
 
-    const { id } = params;
-    // I've avoided calling await parent() here because it causes unnecessary parent reruns
-    const { data } = await locals.vault.users.compose().withUserIds([id]).build({ limit: 1 });
-    const user = data.find((u) => u.id === id);
-    if (!user) error(404, "User not found");
+    const { topThree, user } = await parent();
 
     const achievements = (async () => {
+        await topThree;
+
         const paramParser = new AchievementURLParameterParser({
             method: "rarity_pct",
             direction: "asc",
@@ -34,30 +31,31 @@ export const load = async ({ url, params, locals }) => {
 
     // TODO: refactor score calculation
     // TODO once migrated to workers from pages, move this into a ctx.waitUntil
-    await locals.vault.userAchievements
-        .compose()
-        .withUserIds(user.id)
-        .withUnlockedStatus(true)
-        .withRarityThreshold(0.1)
-        .build()
-        .then((a) =>
-            locals.steamCacheDB
-                .insert(userScores)
-                .values({
-                    rare_count: a.data.length,
-                    user_id: user.id,
-                })
-                .onConflictDoUpdate({
-                    target: userScores.user_id,
-                    set: {
+    achievements.then(() =>
+        locals.vault.userAchievements
+            .compose()
+            .withUserIds(user.id)
+            .withUnlockedStatus(true)
+            .withRarityThreshold(0.1)
+            .build()
+            .then((a) =>
+                locals.steamCacheDB
+                    .insert(userScores)
+                    .values({
                         rare_count: a.data.length,
-                        updated_at: new Date(),
-                    },
-                }),
-        );
+                        user_id: user.id,
+                    })
+                    .onConflictDoUpdate({
+                        target: userScores.user_id,
+                        set: {
+                            rare_count: a.data.length,
+                            updated_at: new Date(),
+                        },
+                    }),
+            ),
+    );
 
     return {
-        user,
         achievements,
     };
 };

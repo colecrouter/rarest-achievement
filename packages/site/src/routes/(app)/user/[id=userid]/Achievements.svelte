@@ -10,6 +10,7 @@
     import PublicProfile from "../../(static)/about/PublicProfile.svelte";
     import Podium from "./Podium.svelte";
     import Toolbar from "$lib/SortManager/Toolbar.svelte";
+    import IndexError from "$lib/IndexError.svelte";
 
     interface Props {
         topThree: SteamUserAchievement[];
@@ -18,10 +19,7 @@
     }
     let { achievements, topThree, user }: Props = $props();
 
-    // For now, just use simple sorting without the context
-    // The components will work without a sort manager (they have fallbacks)
     let activeTab = $state("grid");
-    let filteredAchievements = $derived(achievements);
 </script>
 
 {#if user.private}
@@ -91,6 +89,13 @@
             ></div>
         </div>
     </section>
+
+    {#await achievements then { error }}
+        {#if error}
+            <!-- TODO move this into the card component? -->
+            <IndexError />
+        {/if}
+    {/await}
 
     <!-- Achievement Leaderboard -->
     <section>

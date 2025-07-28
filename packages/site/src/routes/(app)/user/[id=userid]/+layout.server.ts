@@ -30,6 +30,7 @@ export const load = async ({ params, locals }) => {
 
     return {
         breadcrumbs,
-        topThree: topThree,
+        topThree,
+        user,
     };
 };

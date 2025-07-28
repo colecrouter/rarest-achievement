@@ -107,7 +107,7 @@
         <Tabs value={activeTab} onValueChange={(e) => (activeTab = e.value)}>
             {#snippet list()}
                 <Tabs.Control value="grid">{m.userViewTable()}</Tabs.Control>
-                <Tabs.Control value="list">{m.userViewList()}</Tabs.Control>
+                <!-- <Tabs.Control value="list">{m.userViewList()}</Tabs.Control> -->
             {/snippet}
 
             {#snippet content()}

@@ -10,13 +10,22 @@ export class SteamUser {
     #player: SteamUserRaw;
     #ownedApps: OwnedGame<false>[];
 
-    constructor({ data, ownedApps }: { data: SteamUserRaw; ownedApps: OwnedGame<false>[] }) {
+    constructor({
+        data,
+        ownedApps,
+    }: {
+        data: SteamUserRaw;
+        ownedApps: OwnedGame<false>[];
+    }) {
         this.#player = data;
         this.#ownedApps = ownedApps;
     }
 
     serialize(): ConstructorParameters<typeof SteamUser>[0] {
-        return { data: this.#player, ownedApps: this.#ownedApps } satisfies ConstructorParameters<typeof SteamUser>[0];
+        return {
+            data: this.#player,
+            ownedApps: this.#ownedApps,
+        } satisfies ConstructorParameters<typeof SteamUser>[0];
     }
 
     get id() {

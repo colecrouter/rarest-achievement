@@ -334,7 +334,11 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
                 data: row.userData,
                 ownedApps,
                 friend: originalUser,
-                friendData: { steamid: row.friendId, relationship: "friend", friend_since: row.friendSince.getTime() },
+                friendData: {
+                    steamid: row.friendId,
+                    relationship: "friend",
+                    friend_since: row.friendSince.getTime(),
+                },
             });
         });
 

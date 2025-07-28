@@ -5,9 +5,9 @@
     import { m } from "$lib/paraglide/messages.js";
     import TrophyIcon from "@lucide/svelte/icons/trophy";
     import {
-        SteamUserAchievement,
         type Attempt,
         type SteamAppAchievement,
+        SteamUserAchievement,
     } from "lib";
     import FriendCard from "./_card.svelte";
     import Placeholder from "./_placeholder.svelte";

@@ -1,5 +1,5 @@
 import { Attempt, AttemptStatus } from "../error";
-import type { LanguageCode, APILanguageCode } from "../lang";
+import type { APILanguageCode, LanguageCode } from "../lang";
 import type { QueryComposer } from "./composable";
 
 export type SortDirection = "asc" | "desc";

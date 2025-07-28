@@ -1,15 +1,15 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import type { APILanguageCode } from "../../index";
 import type { LanguageCode } from "../../lang";
 import { getLanguageByCode } from "../../lang";
-import type { APILanguageCode } from "../../index";
-import { RepositoryResult } from "../repository";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
+import { createQueryResult } from "../composable";
+import { RepositoryResult } from "../repository";
 import { AppRepository } from "./App";
 import { AppAchievementRepository } from "./AppAchievement";
 import { FriendsRepository } from "./Friends";
 import { UserRepository } from "./User";
 import { UserAchievementRepository } from "./UserAchievement";
-import { createQueryResult } from "../composable";
 
 export class VaultService {
     private appRepo: AppRepository;
@@ -163,10 +163,7 @@ export class VaultService {
     /**
      * Get apps by specific IDs with full data - efficient batching
      */
-    async getAppsWithFullData(params: {
-        appIds: number[];
-        lang: LanguageCode;
-    }) {
+    async getAppsWithFullData(params: { appIds: number[]; lang: LanguageCode }) {
         console.log(`📱 Getting ${params.appIds.length} apps with full data`);
 
         const composer = this.appRepo.compose().withLanguage(params.lang).withAppIds(params.appIds);

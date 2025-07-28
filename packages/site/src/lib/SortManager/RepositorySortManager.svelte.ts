@@ -1,6 +1,6 @@
+import { page } from "$app/state";
 import type { Repository, RepositorySort, SortDirection } from "@project/lib";
 import type { SortManager } from "./SortManager";
-import { page } from "$app/state";
 
 // Base constraints matching the Repository interface
 type BaseFilters = Record<string, string | number | undefined>;

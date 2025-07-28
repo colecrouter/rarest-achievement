@@ -13,7 +13,12 @@ export class SteamFriendUser extends SteamUser {
         ownedApps,
         friendData,
         friend,
-    }: { data: SteamUserRaw; ownedApps: OwnedGame<false>[]; friendData: Raw; friend: SteamUser }) {
+    }: {
+        data: SteamUserRaw;
+        ownedApps: OwnedGame<false>[];
+        friendData: Raw;
+        friend: SteamUser;
+    }) {
         super({ data, ownedApps });
         this.#friendData = friendData;
         this.#friend = friend;

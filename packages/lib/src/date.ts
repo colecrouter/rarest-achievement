@@ -47,7 +47,7 @@ const formatMap: Record<string, string[]> = {
 };
 
 export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
-    let normalizedDateStr = normalizeDigits(dateStr.replace(/\u00A0/g, " "));
+    const normalizedDateStr = normalizeDigits(dateStr.replace(/\u00A0/g, " "));
     let trimmed = normalizedDateStr.trim();
 
     // Pre‑normalize "pt-BR" date strings to remove the dot after month abbreviations.

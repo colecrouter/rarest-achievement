@@ -3,7 +3,7 @@
  * It returns a JSON array with the translated achievement descriptions (e.g., {"appid:achievementName": "translated description"}).
  */
 
-import { TranslateRepository, getLanguageByCode, type SteamAppAchievement } from "@project/lib";
+import { type SteamAppAchievement, TranslateRepository, getLanguageByCode } from "@project/lib";
 import { error, json } from "@sveltejs/kit";
 
 export const POST = async ({ locals, platform, request }) => {
@@ -37,11 +37,17 @@ export const POST = async ({ locals, platform, request }) => {
     const achIds = new Set(ids.map(([, achName]) => achName));
     const [requested] = await Promise.all([
         locals.vault.getAppAchievements({
-            filters: { appId: appIds.values().toArray(), achId: achIds.values().toArray() },
+            filters: {
+                appId: appIds.values().toArray(),
+                achId: achIds.values().toArray(),
+            },
             lang: "en",
         }),
         locals.vault.getAppAchievements({
-            filters: { appId: appIds.values().toArray(), achId: achIds.values().toArray() },
+            filters: {
+                appId: appIds.values().toArray(),
+                achId: achIds.values().toArray(),
+            },
             lang: locale.storeCode,
         }),
     ]);

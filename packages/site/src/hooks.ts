@@ -1,13 +1,13 @@
 import { deLocalizeUrl } from "$lib/paraglide/runtime";
 import {
     Attempt,
+    type AttemptStatus,
     SteamApp,
     SteamAppAchievement,
     SteamFriendUser,
     SteamOwnedGame,
     SteamUser,
     SteamUserAchievement,
-    type AttemptStatus,
 } from "@project/lib";
 import type { Reroute, Transport } from "@sveltejs/kit";
 import { AchievementArrayContext } from "./lib/transports/Achievements";

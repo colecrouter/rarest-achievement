@@ -1,17 +1,18 @@
-import { and, asc, desc, eq, inArray, sql, type ColumnsSelection, type SQL } from "drizzle-orm";
+import { type ColumnsSelection, type SQL, and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
+    type APILanguageCode,
     Attempt,
     type AttemptStatus,
-    type APILanguageCode,
     type LanguageCode,
     achievementsMeta,
     achievementsStats,
     apps,
     estimatedPlayers,
+    getFetchManager,
     getLanguageByCode,
     ownedGames,
-    getFetchManager,
 } from "../..";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, type SteamAppRaw } from "../../models";
@@ -27,7 +28,6 @@ import {
 } from "../composable";
 import { type Repository, type RepositoryParams, RepositoryResult } from "../repository";
 import { chunkArray, safeInsert, searchTerms } from "./utils";
-import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 
 type AppSortMethod = "id";
 
@@ -167,7 +167,9 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         const appRows = await query;
 
         // Get player estimates if required - check all returned app IDs
-        let estimatedPlayersRows: Array<{ estimated_players: typeof estimatedPlayers.$inferSelect }> = [];
+        let estimatedPlayersRows: Array<{
+            estimated_players: typeof estimatedPlayers.$inferSelect;
+        }> = [];
         if (appRows.length > 0) {
             const returnedAppIds = appRows.map((row) => row.apps.id);
             estimatedPlayersRows = await this.db
@@ -294,7 +296,10 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
 
         if (isEnglish) {
             // For English requests, just fetch from API
-            const res = await this.steamApi.getSchemaForGame({ appid: appId, l: requestedLang });
+            const res = await this.steamApi.getSchemaForGame({
+                appid: appId,
+                l: requestedLang,
+            });
             if (res?.game?.availableGameStats?.achievements) {
                 return {
                     requested: res.game.availableGameStats.achievements.map((ach) => ({
@@ -331,7 +336,10 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
 
         if (hasEnglishInDb) {
             // We have English in DB, only fetch the requested language
-            const requestedRes = await this.steamApi.getSchemaForGame({ appid: appId, l: requestedLang });
+            const requestedRes = await this.steamApi.getSchemaForGame({
+                appid: appId,
+                l: requestedLang,
+            });
             const requestedAchievements = requestedRes?.game?.availableGameStats?.achievements || [];
 
             return {
@@ -409,7 +417,10 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         const existingStatsRows = await Promise.all(
             chunked.map((chunk) =>
                 this.db
-                    .selectDistinct({ app_id: achievementsStats.app_id, ach_id: achievementsStats.ach_id })
+                    .selectDistinct({
+                        app_id: achievementsStats.app_id,
+                        ach_id: achievementsStats.ach_id,
+                    })
                     .from(achievementsStats)
                     .where(inArray(achievementsStats.app_id, chunk)),
             ),

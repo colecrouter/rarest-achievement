@@ -1,5 +1,7 @@
 <script lang="ts">
     import AchievementCards from "$lib/AchievementCards";
+    import IndexError from "$lib/IndexError.svelte";
+    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import { m } from "$lib/paraglide/messages.js";
     import type {
         RepositoryResult,
@@ -9,8 +11,6 @@
     import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
     import PublicProfile from "../../(static)/about/PublicProfile.svelte";
     import Podium from "./Podium.svelte";
-    import Toolbar from "$lib/SortManager/Toolbar.svelte";
-    import IndexError from "$lib/IndexError.svelte";
 
     interface Props {
         topThree: SteamUserAchievement[];

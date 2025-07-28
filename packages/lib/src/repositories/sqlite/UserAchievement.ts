@@ -23,8 +23,8 @@ import {
     createQueryResult,
 } from "../composable";
 import type { Repository, RepositoryParams, RepositorySort } from "../repository";
-import type { AppAchievementRepository } from "./AppAchievement";
 import type { AppRepository } from "./App";
+import type { AppAchievementRepository } from "./AppAchievement";
 import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { upsertUsers } from "./User";
@@ -827,7 +827,10 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
 
         // Build missing data query with the same user filtering logic
         let missingDataQuery = this.db
-            .selectDistinct({ user_id: ownedGames.user_id, app_id: ownedGames.app_id })
+            .selectDistinct({
+                user_id: ownedGames.user_id,
+                app_id: ownedGames.app_id,
+            })
             .from(ownedGames)
             .innerJoin(
                 achievementsMeta,
@@ -871,7 +874,10 @@ class UserAchievementQueryComposer implements QueryComposer<SteamUserAchievement
 
         console.log(`🚀 Need to fetch achievement data for ${missingData.length} user-game combinations`);
 
-        const fetchUserAchievements = async (row: { user_id: string; app_id: number }) => {
+        const fetchUserAchievements = async (row: {
+            user_id: string;
+            app_id: number;
+        }) => {
             const { user_id, app_id } = row;
             const achievements = await this.steamApi.getPlayerAchievements({
                 steamid: user_id,

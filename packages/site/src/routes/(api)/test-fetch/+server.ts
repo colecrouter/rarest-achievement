@@ -1,5 +1,5 @@
 import { dev } from "$app/environment";
-import { error, text, type RequestHandler } from "@sveltejs/kit";
+import { type RequestHandler, error, text } from "@sveltejs/kit";
 
 export const GET: RequestHandler = async ({ fetch }) => {
     if (!dev) return error(404);

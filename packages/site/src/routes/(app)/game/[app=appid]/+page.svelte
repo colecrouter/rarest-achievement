@@ -3,10 +3,10 @@
     import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
     import FriendCards from "$lib/FriendCards";
+    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import { m } from "$lib/paraglide/messages";
     import { deLocalizeUrl, getLocale } from "$lib/paraglide/runtime";
     import type { Rarity } from "$lib/rarity";
-    import Toolbar from "$lib/SortManager/Toolbar.svelte";
     import Calendar from "@lucide/svelte/icons/calendar";
     import GamepadIcon from "@lucide/svelte/icons/gamepad";
     import Server from "@lucide/svelte/icons/server";

@@ -76,7 +76,10 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
                 // Don't check for truthiness of userStats! It can be null
                 // I made that mistake before...
                 if (!user || userStats === undefined) continue;
-                const achievement = new SteamUserAchievement({ app, ...params });
+                const achievement = new SteamUserAchievement({
+                    app,
+                    ...params,
+                });
                 apps.push(achievement);
             }
         }

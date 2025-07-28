@@ -1,16 +1,16 @@
 <script lang="ts">
     import { page } from "$app/state";
     import AchievementCards from "$lib/AchievementCards";
+    import {
+        AchievementClientSortManager,
+        setAchievementClientSortManager,
+    } from "$lib/SortManager/AchievementSortManager.js";
     import { m } from "$lib/paraglide/messages.js";
     import {
         deLocalizeUrl,
         getLocale,
         localizeHref,
     } from "$lib/paraglide/runtime";
-    import {
-        AchievementClientSortManager,
-        setAchievementClientSortManager,
-    } from "$lib/SortManager/AchievementSortManager.js";
     import Award from "@lucide/svelte/icons/award";
     import ChevronRight from "@lucide/svelte/icons/chevron-right";
     import Crown from "@lucide/svelte/icons/crown";

@@ -5,9 +5,9 @@ import {
     achievementsMeta,
     achievementsStats,
     apps,
-    users,
     getLanguageByAPICode,
     userAchievements,
+    users,
 } from "@project/lib";
 import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import { chunkArray } from "../../lib/src/repositories/sqlite/utils";

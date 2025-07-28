@@ -4,8 +4,8 @@
     import Splash from "$lib/loading/Splash.svelte";
     import { m } from "$lib/paraglide/messages.js";
     import Breadcrumbs from "../../Breadcrumbs.svelte";
-    import Achievements from "./Achievements.svelte";
     import type { PageData } from "./$types.js";
+    import Achievements from "./Achievements.svelte";
 
     let { data }: { data: PageData } = $props();
 

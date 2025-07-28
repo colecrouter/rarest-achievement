@@ -287,12 +287,13 @@
 
             <!-- Filter Status Selection -->
             {#if supportsFiltering(resolvedData)}
-                <!-- <div class="flex flex-col items-center gap-2 md:flex-row">
+                <div class="flex flex-col items-center gap-2 md:flex-row">
                     <label class="text-surface-300 text-sm">
                         <span hidden>{m.toolbarFilterBy()}</span>
                         <Segment
-                            value={sortManager.filter}
-                            onValueChange={(e) => handleFilterChange(e.value ?? "")}
+                            value={sortManager.filter ?? "all"}
+                            onValueChange={(e) =>
+                                handleFilterChange(e.value ?? "")}
                             border={segmentBorder}
                             rounded={segmentRounded}
                         >
@@ -300,7 +301,10 @@
                                 <span hidden>{m.toolbarFilterAll()}</span>
                                 <SquareDashed />
                             </Segment.Item>
-                            <Segment.Item labelClasses="text-sm" value="unlocked">
+                            <Segment.Item
+                                labelClasses="text-sm"
+                                value="unlocked"
+                            >
                                 <span hidden>{m.toolbarFilterUnlocked()}</span>
                                 <KeyRound />
                             </Segment.Item>
@@ -310,7 +314,7 @@
                             </Segment.Item>
                         </Segment>
                     </label>
-                </div> -->
+                </div>
             {/if}
 
             <!-- Sort Direction Toggle -->

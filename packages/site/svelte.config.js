@@ -32,6 +32,7 @@ const config = {
                     // YouTube thumbnails
                     "https://i.ytimg.com/",
                 ],
+                "style-src": ["self", "unsafe-inline"],
             },
         },
     },

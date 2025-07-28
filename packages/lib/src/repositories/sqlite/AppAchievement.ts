@@ -20,7 +20,7 @@ import {
 import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
 import { achievementsMeta } from "./schema";
-import { getTableAliasedColumns, searchTerms } from "./utils";
+import { chunkArray, getTableAliasedColumns, searchTerms } from "./utils";
 
 export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 
@@ -308,13 +308,8 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
                 meta: getTableAliasedColumns(achievementsMeta),
             })
             .from(achievementsMeta)
-            .where(
-                and(
-                    inArray(achievementsMeta.app_id, uniqueAppIds),
-                    inArray(achievementsMeta.ach_id, allAchIds),
-                    eq(achievementsMeta.lang, "english"),
-                ),
-            );
+            .where(and(inArray(achievementsMeta.app_id, uniqueAppIds), eq(achievementsMeta.lang, "english")))
+            .then((rows) => rows.filter((row) => allAchIds.includes(row.ach_id)));
     }
 
     /**

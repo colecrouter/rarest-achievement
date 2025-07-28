@@ -9,10 +9,17 @@
     - Support for search, sorting, filtering, and direction controls
     - Adaptive UI based on data type (UserAchievement vs AppAchievement)
     - Proper internationalization support
+    - State caching to avoid flickering between promise states
+    - Progressive loading with disabled inputs during data transitions
     
     The component automatically detects whether it's running in:
     - Server mode: Renders navigation links using the sort manager's URL generation
     - Client mode: Renders interactive controls that update the sort manager state
+    
+    State Management:
+    - Caches resolved data to prevent loading states when new promises are created
+    - Shows current data with disabled controls during loading transitions
+    - Only shows full loading placeholders on initial load (no cached data)
 -->
 
 <script lang="ts" module>
@@ -63,9 +70,9 @@
     import Lock from "@lucide/svelte/icons/lock";
     import SquareDashed from "@lucide/svelte/icons/square-dashed";
 
+    import { goto } from "$app/navigation";
     import { Segment } from "@skeletonlabs/skeleton-svelte";
     import { crossfade } from "svelte/transition";
-    import { goto } from "$app/navigation";
     import {
         AchievementClientSortManager,
         AchievementServerSortManager,
@@ -80,9 +87,36 @@
 
     const sortManager = $derived(getAchievementSortManager());
     const serverMode = $derived(isServerSortManager(sortManager));
-    const currentMethod = $derived(sortManager.method);
+    let currentMethod = $derived(sortManager.method);
+    let currentDirection = $derived(sortManager.direction);
 
     let searchTimeout: ReturnType<typeof setTimeout>;
+
+    // State caching - track the last resolved data and loading state
+    let cachedData: RepositoryResult<TData> | null = $state(null);
+    let isLoading = $state(false);
+
+    // Update cached data when new data resolves, and track loading state
+    $effect(() => {
+        const currentData = data;
+
+        (async () => {
+            // It's a promise - mark as loading
+            isLoading = true;
+
+            try {
+                // Wait for the promise to resolve
+                cachedData = await currentData;
+            } catch (error) {
+                // If it fails, keep the cached data and set loading to false
+                console.error("Failed to load data:", error);
+                isLoading = false;
+                return;
+            } finally {
+                isLoading = false;
+            }
+        })();
+    });
 
     const [send, receive] = crossfade({
         duration: 200,
@@ -115,11 +149,13 @@
 
     // Helper function to handle clicks in client mode or navigate in server mode
     function handleMethodChange(method: string) {
+        // Optimistically update
+        currentMethod = method as any;
+
         if (serverMode) {
             goto(generateSortUrl({ method: method as any }));
         } else {
-            (sortManager as AchievementClientSortManager).method =
-                method as any;
+            sortManager.method = method as any;
         }
     }
 
@@ -132,16 +168,18 @@
     }
 
     function handleDirectionToggle() {
+        // Optimistically update
+        currentDirection = currentDirection === "asc" ? "desc" : "asc";
+
         if (serverMode) {
             goto(
                 generateSortUrl({
-                    direction: sortManager.direction === "asc" ? "desc" : "asc",
+                    direction: currentDirection,
                 }),
             );
         } else {
             const clientManager = sortManager as AchievementClientSortManager;
-            clientManager.direction =
-                clientManager.direction === "asc" ? "desc" : "asc";
+            clientManager.direction = currentDirection;
         }
     }
 
@@ -179,9 +217,13 @@
     }
 </script>
 
-<div class="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-    {#await data}
-        <!-- Loading placeholder while data resolves -->
+<div
+    class="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:gap-6"
+    class:opacity-75={isLoading}
+    class:pointer-events-none={isLoading}
+>
+    {#if !cachedData}
+        <!-- Initial loading state - no cached data available -->
         <input
             type="search"
             placeholder={m.toolbarSearchPlaceholder()}
@@ -215,29 +257,29 @@
                 <path d="M11 20h4"></path>
             </svg>
         </button>
-    {:then repositoryResult}
-        {@const resolvedData = repositoryResult.data}
+    {:else}
+        {@const resolvedData = cachedData.data}
         {@const availableMethods = getAvailableMethods(resolvedData)}
 
-        {#if shouldShowError(repositoryResult)}
+        {#if shouldShowError(cachedData)}
             <!-- Error State -->
             <div class="text-error-500 flex items-center gap-4">
                 <input
                     type="search"
                     placeholder={m.toolbarSearchPlaceholder()}
-                    disabled
-                    class="input border-error-500 bg-surface-800 text-surface-100 grow py-3 opacity-50"
+                    class="input border-error-500 bg-surface-800 text-surface-100 grow py-3"
+                    class:opacity-50={isLoading}
                 />
                 <div class="text-sm">
-                    {repositoryResult.error?.message || "Failed to load data"}
+                    {cachedData.error?.message || "Failed to load data"}
                 </div>
             </div>
         {:else}
             <!-- Success/Partial Success State -->
-            {#if repositoryResult.isPartial()}
+            {#if cachedData.isPartial()}
                 <!-- Show warning for partial data -->
                 <div class="text-warning-500 mb-2 text-sm">
-                    ⚠️ Some data could not be loaded: {repositoryResult.error
+                    ⚠️ Some data could not be loaded: {cachedData.error
                         ?.message}
                 </div>
             {/if}
@@ -264,24 +306,22 @@
             <div class="flex flex-col items-center gap-2 md:flex-row">
                 <label class="text-surface-300 text-sm">
                     <span hidden>{m.toolbarSortBy()}</span>
-                    {#key currentMethod}
-                        <Segment
-                            value={currentMethod}
-                            onValueChange={(e) =>
-                                handleMethodChange(e.value as string)}
-                            border={segmentBorder}
-                            rounded={segmentRounded}
-                        >
-                            {#each availableMethods as methodConfig}
-                                <Segment.Item
-                                    classes="text-sm"
-                                    value={methodConfig.method}
-                                >
-                                    {methodConfig.label}
-                                </Segment.Item>
-                            {/each}
-                        </Segment>
-                    {/key}
+                    <Segment
+                        value={currentMethod}
+                        onValueChange={(e) =>
+                            handleMethodChange(e.value as string)}
+                        border={segmentBorder}
+                        rounded={segmentRounded}
+                    >
+                        {#each availableMethods as methodConfig}
+                            <Segment.Item
+                                classes="text-sm"
+                                value={methodConfig.method}
+                            >
+                                {methodConfig.label}
+                            </Segment.Item>
+                        {/each}
+                    </Segment>
                 </label>
             </div>
 
@@ -336,7 +376,7 @@
                     stroke-linejoin="round"
                     class="lucide-icon lucide lucide-arrow-up-wide-narrow top-0 left-0"
                 >
-                    {#if sortManager.direction === "asc"}
+                    {#if currentDirection === "asc"}
                         <path
                             d="m3 8 4-4 4 4"
                             in:receive={{ key: 0 }}
@@ -392,5 +432,5 @@
                 </svg>
             </button>
         {/if}
-    {/await}
+    {/if}
 </div>

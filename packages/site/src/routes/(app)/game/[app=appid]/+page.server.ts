@@ -1,12 +1,4 @@
 import { getLocale } from "$lib/paraglide/runtime.js";
-import {
-    type APILanguageCode,
-    Attempt,
-    type SteamAppAchievement,
-    type SteamUser,
-    type SteamUserAchievement,
-    getLanguageByCode,
-} from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
     const { app } = await parent();

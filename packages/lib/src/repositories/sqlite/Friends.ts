@@ -2,6 +2,7 @@ import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { Attempt, friends, ownedGames, users } from "../..";
 import { SteamFriendUser } from "../../models";
+import type { SteamUserRaw } from "../../models/SteamUser";
 import { generateTimingId } from "../../utils/timing";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import {
@@ -12,7 +13,7 @@ import {
     createQueryResult,
 } from "../composable";
 import type { Repository } from "../repository";
-import { type UserRepository, upsertUsers } from "./User";
+import type { UserRepository } from "./User";
 import { safeInsert } from "./utils";
 
 type FriendsSortMethod = "id" | "friend_since";
@@ -56,20 +57,14 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
         console.time(`${timingId} FriendsQueryComposer.build`);
 
         // Ensure data exists first
-        let accumulatedError: Error | null = null;
-
-        try {
-            await this.ensureDataExists();
-        } catch (error) {
-            accumulatedError = error as Error;
-            console.warn("Failed to ensure all friend data exists, continuing with existing data:", error);
-        }
+        // Note: Database errors should bubble up, API errors are handled internally
+        await this.ensureDataExists();
 
         // Execute main query
         const results = await this.executeMainQuery(options);
 
         console.timeEnd(`${timingId} FriendsQueryComposer.build`);
-        return createQueryResult(results, options.cursor, accumulatedError);
+        return createQueryResult(results, options.cursor);
     }
 
     /**
@@ -85,25 +80,20 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
         // First ensure main users exist in the users table
         console.log(`👤 Ensuring ${ids.length} main users exist in database`);
-        await upsertUsers(this.db, this.steamApi, ids);
-
-        // Fetch summary to figure out what friends data is missing - chunk to avoid parameter limits
-        const friendUsers = [];
-        const CHUNK_SIZE = 100;
-        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-            const chunk = ids.slice(i, i + CHUNK_SIZE);
-            const chunkResults = await this.db
-                .selectDistinct({
-                    id: friends.user_id,
-                    friend_id: friends.friend_id,
-                })
-                .from(friends)
-                .where(inArray(friends.user_id, chunk));
-            friendUsers.push(...chunkResults);
+        const userEnsureResult = await this.userRepository.compose().withUserIds(ids).ensureDataExists();
+        if (userEnsureResult.error) {
+            console.warn("Failed to ensure users exist for friends query:", userEnsureResult.error);
         }
 
-        const presentUserIds = new Set(friendUsers.map((e) => e.id));
-        const missingUserIds = new Set(ids).difference(presentUserIds);
+        // Fetch summary to figure out what friends data is missing
+        // This is consumer-controlled (friends composer controls user IDs), so inArray is safe
+        const existingFriendsUsers = await this.db
+            .selectDistinct({ user_id: friends.user_id })
+            .from(friends)
+            .where(inArray(friends.user_id, ids));
+
+        const existingUserIds = new Set(existingFriendsUsers.map((r) => r.user_id));
+        const missingUserIds = new Set(ids.filter((id) => !existingUserIds.has(id)));
 
         // Fetch friends lists for users that don't have friends data yet
         if (missingUserIds.size !== 0) {
@@ -138,63 +128,35 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
                     });
                 });
 
-                // Ensure all friend users exist in the users table BEFORE inserting friend relationships
+                // Ensure all friend users exist in the users table AFTER inserting friend relationships
+                // First, insert friend relationships to avoid parameter explosion in user data fetching
+                if (friendsToInsert.length > 0) {
+                    console.log(`� Inserting ${friendsToInsert.length} friend relationships`);
+                    await safeInsert(
+                        this.db,
+                        friendsToInsert,
+                        (friendsBatch) => this.db.insert(friends).values(friendsBatch).onConflictDoNothing(), // Don't update existing friendships
+                    );
+                }
+
+                // Now ensure friend users exist using subquery from friends table (avoids parameter explosion)
                 if (allFriendIds.size > 0) {
-                    console.log(`👥 Ensuring ${allFriendIds.size} friend users exist in database`);
-                    const friendUsersResult = await upsertUsers(this.db, this.steamApi, Array.from(allFriendIds));
+                    console.log(`👥 Ensuring ${allFriendIds.size} friend users exist in database using subquery`);
+                    
+                    // Create subquery for friend user IDs from the friends table we just populated
+                    const friendUserIdsSubquery = sql`(
+                        SELECT DISTINCT friend_id AS user_id 
+                        FROM friends 
+                        WHERE user_id IN (${sql.join(Array.from(this.userIds), sql`, `)})
+                    )`;
+
+                    const friendUsersResult = await this.userRepository
+                        .compose()
+                        .withRequiredEntitySubquery("user", friendUserIdsSubquery)
+                        .ensureDataExists();
 
                     if (friendUsersResult.error) {
                         console.warn("Some friend users could not be fetched:", friendUsersResult.error);
-                    }
-
-                    // Check which friend users actually exist in the database after upsert
-                    const existingFriendUsers = new Set<string>();
-                    const FRIEND_CHUNK_SIZE = 100;
-                    const allFriendIdsArray = Array.from(allFriendIds);
-
-                    for (let i = 0; i < allFriendIdsArray.length; i += FRIEND_CHUNK_SIZE) {
-                        const chunk = allFriendIdsArray.slice(i, i + FRIEND_CHUNK_SIZE);
-                        const chunkResults = await this.db
-                            .selectDistinct({ id: users.id })
-                            .from(users)
-                            .where(inArray(users.id, chunk));
-
-                        for (const result of chunkResults) {
-                            existingFriendUsers.add(result.id);
-                        }
-                    }
-
-                    // Filter friend relationships to only include those where both user and friend exist
-                    const validFriendsToInsert = friendsToInsert.filter((friendship) =>
-                        existingFriendUsers.has(friendship.friend_id),
-                    );
-
-                    if (validFriendsToInsert.length !== friendsToInsert.length) {
-                        console.warn(
-                            `⚠️ Filtered out ${friendsToInsert.length - validFriendsToInsert.length} friend relationships due to missing friend users`,
-                        );
-                    }
-
-                    // Now insert friend relationships (foreign keys should be satisfied)
-                    if (validFriendsToInsert.length > 0) {
-                        console.log(`💾 Inserting ${validFriendsToInsert.length} friend relationships`);
-                        await safeInsert(
-                            this.db,
-                            validFriendsToInsert,
-                            (friendsBatch) => this.db.insert(friends).values(friendsBatch).onConflictDoNothing(), // Don't update existing friendships
-                        );
-                    }
-                } else {
-                    // If no allFriendIds, we can insert friendsToInsert directly (shouldn't happen in practice)
-                    if (friendsToInsert.length > 0) {
-                        console.log(
-                            `💾 Inserting ${friendsToInsert.length} friend relationships (no friend users to validate)`,
-                        );
-                        await safeInsert(
-                            this.db,
-                            friendsToInsert,
-                            (friendsBatch) => this.db.insert(friends).values(friendsBatch).onConflictDoNothing(), // Don't update existing friendships
-                        );
                     }
                 }
             }
@@ -217,20 +179,14 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
         const ids = Array.from(this.userIds);
 
-        // Get friends data first - chunk the query to avoid parameter limits
-        const friendUsers = [];
-        const CHUNK_SIZE = 100;
-        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-            const chunk = ids.slice(i, i + CHUNK_SIZE);
-            const chunkResults = await this.db
-                .selectDistinct({
-                    id: friends.user_id,
-                    friend_id: friends.friend_id,
-                })
-                .from(friends)
-                .where(inArray(friends.user_id, chunk));
-            friendUsers.push(...chunkResults);
-        }
+        // Get friends data first - consumer-controlled user IDs, so inArray is safe
+        const friendUsers = await this.db
+            .selectDistinct({
+                id: friends.user_id,
+                friend_id: friends.friend_id,
+            })
+            .from(friends)
+            .where(inArray(friends.user_id, ids));
 
         // Get users for friends
         const friendsToFetch = new Set(friendUsers.map((f) => f.friend_id));
@@ -238,7 +194,21 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
             options.sort?.method === "friend_since" ? sql`${friends.friend_since}` : sql`${friends.friend_id}`;
         const sortDirection = options.sort?.direction !== "desc" ? desc : asc;
 
-        await upsertUsers(this.db, this.steamApi, Array.from(friendsToFetch));
+        // Create a subquery for the friend user IDs we need instead of using explicit IDs
+        // This avoids parameter explosion when there are many friends
+        const friendUserIdsSubquery = sql`
+            SELECT DISTINCT ${friends.friend_id} as user_id 
+            FROM ${friends} 
+            WHERE ${inArray(friends.user_id, ids)}
+        `;
+
+        const friendUsersEnsureResult = await this.userRepository
+            .compose()
+            .withRequiredEntitySubquery("user", friendUserIdsSubquery)
+            .ensureDataExists();
+        if (friendUsersEnsureResult.error) {
+            console.warn("Failed to ensure friend user data exists:", friendUsersEnsureResult.error);
+        }
 
         // Fetch original users for mapping
         const originalUsersResponse = await this.userRepository
@@ -256,74 +226,82 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
         const originalUsersMap = new Map(originalUsersResponse.data.map((u) => [u.serialize().data.steamid, u]));
 
-        // Build main query with pagination - chunk to avoid parameter limits
-        const allFriendRows = [];
-        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-            const chunk = ids.slice(i, i + CHUNK_SIZE);
-            const friendQuery = this.db
-                .select({
-                    userId: friends.user_id,
-                    friendId: users.id,
-                    userData: users.data,
-                    friendSince: friends.friend_since,
-                    updatedAt: users.updated_at,
-                })
-                .from(friends)
-                .innerJoin(users, eq(users.id, friends.friend_id))
-                .where(inArray(friends.user_id, chunk))
-                .orderBy(sortDirection(sortMethod))
-                .$dynamic();
+        // Build main query with pagination and owned games in a single query to avoid parameter explosion
+        // Use SQL-level pagination instead of application-level pagination
+        const friendsWithGamesQuery = this.db
+            .select({
+                userId: friends.user_id,
+                friendId: users.id,
+                userData: users.data,
+                friendSince: friends.friend_since,
+                updatedAt: users.updated_at,
+                // Owned games data
+                gameUserId: ownedGames.user_id,
+                appId: ownedGames.app_id,
+                playtime2weeks: ownedGames.playtime_2w_minutes,
+                playtimeForever: ownedGames.playtime_total_minutes,
+                rtimeLastPlayed: ownedGames.last_played_at,
+            })
+            .from(friends)
+            .innerJoin(users, eq(users.id, friends.friend_id))
+            .leftJoin(ownedGames, eq(ownedGames.user_id, friends.friend_id))
+            .where(inArray(friends.user_id, ids))
+            .orderBy(sortDirection(sortMethod))
+            .limit(options.limit || 1000)
+            .offset(options.cursor || 0);
 
-            const chunkResults = await friendQuery;
-            allFriendRows.push(...chunkResults);
-        }
+        const allRows = await friendsWithGamesQuery;
 
-        // Apply pagination to the combined results
-        const startIndex = options.cursor || 0;
-        const endIndex = options.limit ? startIndex + options.limit : allFriendRows.length;
-        const friendRows = allFriendRows.slice(startIndex, endIndex);
+        // Group the results by friend
+        const friendsMap = new Map<
+            string,
+            {
+                userId: string;
+                friendId: string;
+                userData: SteamUserRaw;
+                friendSince: Date;
+                updatedAt: Date;
+                ownedGames: Array<{
+                    appId: number;
+                    playtime2weeks: number | null;
+                    playtimeForever: number | null;
+                    rtimeLastPlayed: Date | null;
+                }>;
+            }
+        >();
 
-        // Get the friend IDs from the results
-        const limitedFriendIds = friendRows.map((row) => row.friendId);
+        for (const row of allRows) {
+            if (!friendsMap.has(row.friendId)) {
+                friendsMap.set(row.friendId, {
+                    userId: row.userId,
+                    friendId: row.friendId,
+                    userData: row.userData,
+                    friendSince: row.friendSince,
+                    updatedAt: row.updatedAt,
+                    ownedGames: [],
+                });
+            }
 
-        // Then get all owned games for these friends - chunk to avoid parameter limits
-        const ownedGamesRows = [];
-        if (limitedFriendIds.length > 0) {
-            for (let i = 0; i < limitedFriendIds.length; i += CHUNK_SIZE) {
-                const chunk = limitedFriendIds.slice(i, i + CHUNK_SIZE);
-                const chunkResults = await this.db
-                    .select({
-                        userId: ownedGames.user_id,
-                        appId: ownedGames.app_id,
-                        playtime2weeks: ownedGames.playtime_2w_minutes,
-                        playtimeForever: ownedGames.playtime_total_minutes,
-                        rtimeLastPlayed: ownedGames.last_played_at,
-                    })
-                    .from(ownedGames)
-                    .where(inArray(ownedGames.user_id, chunk));
-                ownedGamesRows.push(...chunkResults);
+            const friend = friendsMap.get(row.friendId);
+            if (!friend) throw new Error(`Friend ${row.friendId} not found in map`);
+            if (row.appId !== null) {
+                friend.ownedGames.push({
+                    appId: row.appId,
+                    playtime2weeks: row.playtime2weeks,
+                    playtimeForever: row.playtimeForever,
+                    rtimeLastPlayed: row.rtimeLastPlayed,
+                });
             }
         }
 
-        // Group owned games by user ID
-        const ownedGamesByUser = new Map<string, typeof ownedGamesRows>();
-        for (const game of ownedGamesRows) {
-            if (!ownedGamesByUser.has(game.userId)) {
-                ownedGamesByUser.set(game.userId, []);
-            }
-            const userGames = ownedGamesByUser.get(game.userId);
-            if (userGames) {
-                userGames.push(game);
-            }
-        }
+        const friendRows = Array.from(friendsMap.values());
 
         const items = friendRows.map((row) => {
             const originalUser = originalUsersMap.get(row.userId);
             if (!originalUser) throw new Error(`Original user ${row.userId} missing`);
 
             // Transform owned games data to match OwnedGame<false> format
-            const userOwnedGames = ownedGamesByUser.get(row.friendId) || [];
-            const ownedApps = userOwnedGames.map((game) => ({
+            const ownedApps = row.ownedGames.map((game) => ({
                 appid: game.appId,
                 playtime_2weeks: game.playtime2weeks ?? undefined,
                 playtime_forever: game.playtimeForever ?? undefined,

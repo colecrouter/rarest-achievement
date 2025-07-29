@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { type SQL, and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     Attempt,
@@ -113,6 +113,14 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
         const searchCondition = sql`(${displayNameCondition} OR ${descriptionCondition})`;
         this.whereConditions.push(searchCondition);
 
+        return this;
+    }
+
+    /**
+     * Filter achievements by app IDs from a subquery (avoids parameter explosion)
+     */
+    withRequiredAppSubquery(appIdsSubquery: any): this {
+        this.whereConditions.push(inArray(achievementsStats.app_id, appIdsSubquery));
         return this;
     }
 
@@ -299,16 +307,28 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
         if (!this.requiresEnglishFallback || data.length === 0) return [];
 
         const allAchIds = data.map((row) => row.ach_id);
-        const uniqueAppIds = Array.from(this.appIds);
+        // Extract app IDs from the data itself rather than using potentially large this.appIds
+        const dataAppIds = [...new Set(data.map((row) => row.app_id))];
+
+        // Use composition with VALUES CTE to avoid parameter explosion
+        if (dataAppIds.length === 0) return [];
+
+        const requiredAppsCTE = this.db.$with("required_apps_fallback").as(
+            this.db.select({ 
+                app_id: sql<number>`value`.as("app_id") 
+            }).from(sql`(VALUES ${sql.join(dataAppIds.map(id => sql`(${id})`), sql`, `)}) AS t(value)`)
+        );
 
         return await this.db
+            .with(requiredAppsCTE)
             .select({
                 app_id: achievementsMeta.app_id,
                 ach_id: achievementsMeta.ach_id,
                 meta: getTableAliasedColumns(achievementsMeta),
             })
             .from(achievementsMeta)
-            .where(and(inArray(achievementsMeta.app_id, uniqueAppIds), eq(achievementsMeta.lang, "english")))
+            .innerJoin(requiredAppsCTE, eq(achievementsMeta.app_id, requiredAppsCTE.app_id))
+            .where(eq(achievementsMeta.lang, "english"))
             .then((rows) => rows.filter((row) => allAchIds.includes(row.ach_id)));
     }
 

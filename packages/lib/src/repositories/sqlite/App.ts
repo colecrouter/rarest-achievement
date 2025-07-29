@@ -1,4 +1,4 @@
-import { type ColumnsSelection, type SQL, and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { type SQL, and, asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
@@ -23,11 +23,11 @@ import { SteamStoreAPIClient } from "../api/store/client";
 import {
     type ComposableQueryOptions,
     type ComposableQueryResult,
-    type QueryComposer,
+    type SubqueryConsumer,
     createQueryResult,
 } from "../composable";
-import { type Repository, type RepositoryParams, RepositoryResult } from "../repository";
-import { chunkArray, safeInsert, searchTerms } from "./utils";
+import type { Repository } from "../repository";
+import { safeInsert, searchTerms } from "./utils";
 
 type AppSortMethod = "id";
 
@@ -35,13 +35,14 @@ export interface AppSortFilters {
     id: number;
 }
 
-class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
+class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private appIds: Set<number> = new Set();
     private whereConditions: SQL[] = [];
     // biome-ignore lint/suspicious/noExplicitAny: I don't think there's a way to type this properly
     private ctes: WithSubqueryWithSelection<Record<string, any>, string>[] = [];
     private lang: LanguageCode = "en";
     private searchTerm?: string; /// TODO
+    private requiredAppSubquery?: SQL; // For cross-repository data dependencies
 
     constructor(
         // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
@@ -123,6 +124,17 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
     }
 
     /**
+     * Accept a subquery that defines which app entities are required
+     * This enables cross-repository data dependency resolution without parameter explosion
+     */
+    withRequiredEntitySubquery(entityType: string, subquery: SQL): this {
+        if (entityType === "apps") {
+            this.requiredAppSubquery = subquery;
+        }
+        return this;
+    }
+
+    /**
      * Build and execute the composed query with error propagation
      */
     async build(options: ComposableQueryOptions<AppSortMethod> = {}): Promise<ComposableQueryResult<SteamApp>> {
@@ -166,18 +178,36 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         // Execute the main query
         const appRows = await query;
 
-        // Get player estimates if required - check all returned app IDs
+        // Get player estimates if required - use subquery to avoid parameter explosion
         let estimatedPlayersRows: Array<{
             estimated_players: typeof estimatedPlayers.$inferSelect;
         }> = [];
         if (appRows.length > 0) {
-            const returnedAppIds = appRows.map((row) => row.apps.id);
+            // Build app IDs subquery with the same conditions as the main query
+            let appIdsQuery = this.db.select({ id: apps.id }).from(apps).$dynamic();
+            
+            // Add CTEs if any exist
+            if (this.ctes.length > 0) {
+                appIdsQuery = this.db
+                    .with(...this.ctes)
+                    .select({ id: apps.id })
+                    .from(apps)
+                    .$dynamic();
+            }
+            
+            // Add language filter and all other where conditions (same as main query)
+            const lang = getLanguageByCode(this.lang)?.apiCode || "english";
+            const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
+            if (allConditions.length > 0) {
+                appIdsQuery = appIdsQuery.where(and(...allConditions));
+            }
+
             estimatedPlayersRows = await this.db
                 .select({
                     estimated_players: estimatedPlayers,
                 })
                 .from(estimatedPlayers)
-                .where(inArray(estimatedPlayers.app_id, returnedAppIds));
+                .where(inArray(estimatedPlayers.app_id, appIdsQuery));
         }
 
         // Map results to SteamApp objects
@@ -202,8 +232,9 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
 
     /**
      * Ensure all required data exists in the database
+     * Uses subqueries when available to avoid parameter explosion
      */
-    private async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
+    async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
         /*
             I'm putting this because I'll probably forget later. The reason this looks gross is because I've created a weird model:
             - If `apps` exists, then `achievements_meta` must exist in the same language
@@ -223,7 +254,7 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         getFetchManager().reset({ maxFetches: 450 });
 
         // Check for missing apps
-        const missingAppIds = await this.findMissingApps(Array.from(this.appIds));
+        const missingAppIds = await this.findMissingApps();
         if (missingAppIds.length > 0) {
             console.log(`📦 Fetching ${missingAppIds.length} missing apps`);
             const appsResult = await this.fetchAndUpsertApps(missingAppIds);
@@ -236,7 +267,7 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         getFetchManager().reset({ maxFetches: 150 }); // (150 apps * 1 request per app = 150)
 
         // Check for missing player estimates
-        const missingPlayerIds = await this.findMissingPlayerEstimates(Array.from(this.appIds));
+        const missingPlayerIds = await this.findMissingPlayerEstimates();
         if (missingPlayerIds.length > 0) {
             console.log(`📊 Fetching ${missingPlayerIds.length} missing player estimates`);
             const playerEstimatesResult = await this.fetchAndUpsertPlayerEstimates(missingPlayerIds);
@@ -249,42 +280,83 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
     }
 
     /**
-     * Find apps that are missing from the database
+     * Find apps that are missing from the database using Drizzle-based approach
+     * Uses notExists for subqueries and inArray for consumer-controlled parameters
      */
-    private async findMissingApps(appIds: number[]): Promise<number[]> {
+    private async findMissingApps(): Promise<number[]> {
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
-        const chunked = chunkArray(appIds, 80);
-        const presentIds = new Set(
-            await Promise.all(
-                chunked.map((chunk) =>
-                    this.db
-                        .selectDistinct({ id: apps.id })
-                        .from(apps)
-                        .where(and(eq(apps.lang, lang), inArray(apps.id, chunk))),
-                ),
-            ).then((results) => results.flatMap((e) => e.map((r) => r.id))),
-        );
 
-        return appIds.filter((id) => !presentIds.has(id));
+        if (this.requiredAppSubquery) {
+            // Use provided subquery from cross-repository dependency with notExists
+            const missingAppsQuery = this.db
+                .select({ app_id: sql<number>`required_apps.app_id` })
+                .from(sql`(${this.requiredAppSubquery}) AS required_apps`)
+                .where(
+                    notExists(
+                        this.db
+                            .select()
+                            .from(apps)
+                            .where(and(eq(apps.id, sql`required_apps.app_id`), eq(apps.lang, lang))),
+                    ),
+                );
+
+            const result = await missingAppsQuery;
+            return result.map((row) => row.app_id);
+        }
+
+        if (this.appIds.size > 0) {
+            // Consumer-controlled app IDs - safe to use inArray directly
+            const appIdsArray = Array.from(this.appIds);
+            const existingApps = await this.db
+                .selectDistinct({ id: apps.id })
+                .from(apps)
+                .where(and(eq(apps.lang, lang), inArray(apps.id, appIdsArray)));
+
+            const existingIds = new Set(existingApps.map((row) => row.id));
+            return appIdsArray.filter((id) => !existingIds.has(id));
+        }
+
+        // No apps needed
+        return [];
     }
 
     /**
-     * Find apps missing player count estimates
+     * Find apps missing player count estimates using Drizzle-based approach
+     * Uses notExists for subqueries and inArray for consumer-controlled parameters
      */
-    private async findMissingPlayerEstimates(appIds: number[]): Promise<number[]> {
-        const chunked = chunkArray(appIds, 80);
-        const existingPlayerIds = new Set(
-            await Promise.all(
-                chunked.map((chunk) =>
-                    this.db
-                        .selectDistinct({ app_id: estimatedPlayers.app_id })
-                        .from(estimatedPlayers)
-                        .where(inArray(estimatedPlayers.app_id, chunk)),
-                ),
-            ).then((results) => results.flatMap((e) => e.map((r) => r.app_id))),
-        );
+    private async findMissingPlayerEstimates(): Promise<number[]> {
+        if (this.requiredAppSubquery) {
+            // Use provided subquery from cross-repository dependency with notExists
+            const missingPlayerEstimatesQuery = this.db
+                .select({ app_id: sql<number>`required_apps.app_id` })
+                .from(sql`(${this.requiredAppSubquery}) AS required_apps`)
+                .where(
+                    notExists(
+                        this.db
+                            .select()
+                            .from(estimatedPlayers)
+                            .where(eq(estimatedPlayers.app_id, sql`required_apps.app_id`)),
+                    ),
+                );
 
-        return appIds.filter((id) => !existingPlayerIds.has(id));
+            const result = await missingPlayerEstimatesQuery;
+            return result.map((row) => row.app_id);
+        }
+
+        if (this.appIds.size > 0) {
+            // Consumer-controlled app IDs - safe to use inArray directly
+            const appIdsArray = Array.from(this.appIds);
+            const existingPlayerEstimates = await this.db
+                .selectDistinct({ app_id: estimatedPlayers.app_id })
+                .from(estimatedPlayers)
+                .where(inArray(estimatedPlayers.app_id, appIdsArray));
+
+            const existingIds = new Set(existingPlayerEstimates.map((row) => row.app_id));
+            return appIdsArray.filter((id) => !existingIds.has(id));
+        }
+
+        // No apps needed
+        return [];
     }
 
     /**
@@ -412,20 +484,6 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
 
         console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
 
-        // Pre-check with language-agnostic tables for existing data
-        const chunked = chunkArray(appIds, 80);
-        const existingStatsRows = await Promise.all(
-            chunked.map((chunk) =>
-                this.db
-                    .selectDistinct({
-                        app_id: achievementsStats.app_id,
-                        ach_id: achievementsStats.ach_id,
-                    })
-                    .from(achievementsStats)
-                    .where(inArray(achievementsStats.app_id, chunk)),
-            ),
-        ).then((results) => results.flat());
-
         // Sequential processing: one Promise.all per app
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
@@ -438,18 +496,16 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
                 // Language dependent queries
                 SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang),
-                // *might already exist* - check `existingStatsRows` first
-                existingStatsRows.some((row) => row.app_id === id)
-                    ? undefined // Don't fetch if already present
-                    : this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
-                          if (statsResponse?.achievementpercentages?.achievements) {
-                              return statsResponse.achievementpercentages.achievements.map((ach) => ({
-                                  app_id: id,
-                                  ach_id: ach.name,
-                                  percent: ach.percent,
-                              }));
-                          }
-                          return [];
+                // Always fetch stats - upsert logic will handle duplicates
+                this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
+                    if (statsResponse?.achievementpercentages?.achievements) {
+                        return statsResponse.achievementpercentages.achievements.map((ach) => ({
+                            app_id: id,
+                            ach_id: ach.name,
+                            percent: ach.percent,
+                        }));
+                    }
+                    return [];
                       }),
             ]);
 
@@ -584,35 +640,41 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         const timingId = generateTimingId();
         console.time(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
 
-        const chunked = chunkArray(appIds, 50);
-        const existingPlayersRows = await Promise.all(
-            chunked.map((chunk) =>
-                this.db
-                    .selectDistinct({ app_id: estimatedPlayers.app_id })
-                    .from(estimatedPlayers)
-                    .where(inArray(estimatedPlayers.app_id, chunk)),
-            ),
-        ).then((results) => results.flat());
+        // Insert the app IDs we need to check into a temporary structure
+        // and use composition to find missing estimates and get app details
+        const lang = getLanguageByCode(this.lang)?.apiCode || "english";
+        
+        // Create a CTE with required app IDs, then find missing estimates and get app details in one query
+        const requiredAppsCTE = this.db.$with("required_apps").as(
+            this.db.select({ 
+                app_id: sql<number>`value`.as("app_id") 
+            }).from(sql`(VALUES ${sql.join(appIds.map(id => sql`(${id})`), sql`, `)}) AS t(value)`)
+        );
 
-        const existingPlayerIds = new Set(existingPlayersRows.map((row) => row.app_id));
-        const missingPlayerIds = appIds.filter((id) => !existingPlayerIds.has(id));
+        const appDetailsRows = await this.db
+            .with(requiredAppsCTE)
+            .select({ 
+                id: apps.id, 
+                data: apps.data 
+            })
+            .from(requiredAppsCTE)
+            .innerJoin(apps, eq(requiredAppsCTE.app_id, apps.id))
+            .where(
+                and(
+                    eq(apps.lang, lang),
+                    notExists(
+                        this.db
+                            .select({ app_id: estimatedPlayers.app_id })
+                            .from(estimatedPlayers)
+                            .where(eq(estimatedPlayers.app_id, requiredAppsCTE.app_id))
+                    )
+                )
+            );
 
-        if (missingPlayerIds.length === 0) {
+        if (appDetailsRows.length === 0) {
             console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
             return Attempt.ok(undefined);
         }
-
-        // Get app details for player estimation (database operation - let it throw)
-        const lang = getLanguageByCode(this.lang)?.apiCode || "english";
-        const missingPlayerChunked = chunkArray(missingPlayerIds, 80);
-        const appDetailsRows = await Promise.all(
-            missingPlayerChunked.map((chunk) =>
-                this.db
-                    .select({ id: apps.id, data: apps.data })
-                    .from(apps)
-                    .where(and(inArray(apps.id, chunk), eq(apps.lang, lang))),
-            ),
-        ).then((results) => results.flat());
 
         const appDetailsMap = new Map(
             appDetailsRows.filter((app) => app.data !== null).map((app) => [app.id, app.data]) as Array<
@@ -623,7 +685,8 @@ class AppQueryComposer implements QueryComposer<SteamApp, AppSortMethod> {
         let accumulatedError: Error | null = null;
 
         // Use Attempt.all to handle player count estimation for all apps
-        const playerEstimateAttempts = missingPlayerIds.map(async (appId) => {
+        const playerEstimateAttempts = appDetailsRows.map(async (row) => {
+            const appId = row.id;
             const appDetails = appDetailsMap.get(appId);
             if (!appDetails) {
                 console.warn(`No app details found for app ${appId}, inserting null player estimate`);

@@ -1,4 +1,4 @@
-import type { SteamAppAchievement, SteamUserAchievement } from "@models";
+import type { SteamAppAchievement, SteamUserAchievement } from "../../..";
 import { Attempt } from "../../../error";
 import type { LanguageCode } from "../../../lang";
 import { unescapeHTML } from "../utils";
@@ -35,7 +35,7 @@ export class YouTubeRepository {
                 data: YouTubeGuide[];
                 error: string | null;
             };
-            return Attempt.fromSimple(data, error ? new Error(error) : null);
+            return Attempt.from(data, error ? new Error(error) : null);
         }
 
         const guides = await Attempt.try(async () => {

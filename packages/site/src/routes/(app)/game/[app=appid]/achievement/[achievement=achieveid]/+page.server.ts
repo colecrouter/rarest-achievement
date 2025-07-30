@@ -67,7 +67,7 @@ export const load = async ({ parent, url, locals, platform }) => {
         const { data: articles, error: err1 } = await steamComRepo.searchGuides(achievement, locale);
         const { data: videos, error: err2 } = await youtubeRepo.searchGuides(achievement, locale);
 
-        return Attempt.fromSimple(
+        return Attempt.from(
             {
                 articles: articles?.slice(0, 3) ?? [],
                 videos: videos?.slice(0, 3) ?? [],

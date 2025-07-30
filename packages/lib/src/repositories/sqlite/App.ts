@@ -276,7 +276,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             }
         }
 
-        return Attempt.fromSimple(undefined, accumulatedError);
+        return Attempt.from(undefined, accumulatedError);
     }
 
     /**
@@ -757,7 +757,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
 
         // Return success or partial based on whether we encountered errors
-        return Attempt.fromSimple(undefined, accumulatedError);
+        return Attempt.from(undefined, accumulatedError);
     }
 }
 

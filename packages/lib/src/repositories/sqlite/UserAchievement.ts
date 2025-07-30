@@ -743,7 +743,7 @@ class UserAchievementQueryComposer
         console.log(`✅ Built ${results.length} final user achievements from comprehensive query`);
 
         // Return success or partial based on whether we had any errors during user data fetching
-        return Attempt.fromSimple(results, userDataResult.error);
+        return Attempt.from(results, userDataResult.error);
     }
 
     /**
@@ -987,7 +987,7 @@ class UserAchievementQueryComposer
         console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
 
         // Return appropriate result based on whether we encountered errors
-        return Attempt.fromSimple(undefined, accumulatedError);
+        return Attempt.from(undefined, accumulatedError);
     }
 
     /**
@@ -1052,7 +1052,7 @@ class UserAchievementQueryComposer
         const uniqueAppIds = [...new Set(userAchievementRows.map((row) => row.app_id))];
 
         // Use safe approach for app achievements to avoid parameter explosion
-        let appAchievementsResult: Attempt<SteamAppAchievement[], AttemptStatus>;
+        let appAchievementsResult: Attempt<SteamAppAchievement[]>;
 
         if (uniqueAppIds.length <= 50) {
             // Safe to use direct approach for small sets
@@ -1089,10 +1089,7 @@ class UserAchievementQueryComposer
                 }
             }
 
-            appAchievementsResult =
-                hasError && allAppAchievements.length === 0
-                    ? Attempt.fromSimple([], firstError!)
-                    : Attempt.ok(allAppAchievements);
+            appAchievementsResult = Attempt.from(allAppAchievements, firstError);
         }
 
         const userDataResult = await this.userRepository.compose().withUserIds(uniqueUserIds).build();
@@ -1142,7 +1139,7 @@ class UserAchievementQueryComposer
         console.log(`✅ Built ${results.length} final user achievements`);
 
         // Return success or partial based on whether we had any errors during dependency fetching
-        return Attempt.fromSimple(results, combinedResult.error);
+        return Attempt.from(results, combinedResult.error);
     }
 }
 

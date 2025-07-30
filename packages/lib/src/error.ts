@@ -49,11 +49,12 @@ export class Attempt<T, S extends AttemptStatus = AttemptStatus> {
         this.error = error;
     }
 
-    static fromSimple<U>(data: U, error: null): Attempt<U, AttemptStatus.Ok>;
-    static fromSimple<U>(data: U, error: Error): Attempt<U, AttemptStatus.Partial>;
-    static fromSimple<U>(data: null, error: Error): Attempt<U, AttemptStatus.Failure>;
-    static fromSimple<U>(data: U | null, error: Error | null): Attempt<U, AttemptStatus>;
-    static fromSimple<U>(data: U | null, error: Error | null = null): Attempt<U, AttemptStatus> {
+    static from<U>(data: U, error: null): Attempt<U, AttemptStatus.Ok>;
+    static from<U>(data: U, error: Error): Attempt<U, AttemptStatus.Partial>;
+    static from<U>(data: null, error: Error): Attempt<U, AttemptStatus.Failure>;
+    static from<U>(data: U, error: Error | null): Attempt<U, AttemptStatus.Ok | AttemptStatus.Partial>;
+    static from<U>(data: U | null, error: Error): Attempt<U, AttemptStatus.Partial | AttemptStatus.Failure>;
+    static from<U>(data: U | null, error: Error | null = null): Attempt<U, AttemptStatus> {
         if (error === null) {
             return Attempt.ok(data as U);
         }

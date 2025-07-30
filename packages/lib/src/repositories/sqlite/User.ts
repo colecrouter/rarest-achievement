@@ -254,7 +254,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
             ),
         ]);
 
-        return Attempt.fromSimple(undefined, accumulatedError);
+        return Attempt.from(undefined, accumulatedError);
     }
 
     /**

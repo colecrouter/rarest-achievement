@@ -1,26 +1,19 @@
-import { type SQL, and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { type SQL, and, asc, desc, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import {
-    Attempt,
-    type AttemptStatus,
-    type LanguageCode,
-    achievementsStats,
-    estimatedPlayers,
-    getLanguageByCode,
-} from "../..";
+import { type LanguageCode, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
 import { SteamAppAchievement } from "../../models";
 import { generateTimingId } from "../../utils/timing";
 import {
     type ComposableQueryOptions,
     type ComposableQueryResult,
     type ComposableRepository,
-    type QueryComposer,
     createQueryResult,
 } from "../composable";
 import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
+import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import { achievementsMeta } from "./schema";
-import { chunkArray, getTableAliasedColumns, searchTerms } from "./utils";
+import { getTableAliasedColumns } from "./utils";
 
 export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 
@@ -29,98 +22,22 @@ export interface AppAchievementFilters {
     achId?: string;
 }
 
-class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, AppAchievementSortMethod> {
-    private appIds: Set<number> = new Set();
-    private achIds: Set<string> = new Set();
-    private whereConditions: unknown[] = [];
+class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppAchievement, AppAchievementSortMethod> {
     private requiresEnglishFallback = false;
-    private searchTerm?: string;
-    // TODO just copy from UserAchievementsQueryComposer, or extract common logic?
-    // I shrugged off "base class" but honestly that's not a bad idea
-    private rarityThreshold?: number;
 
     constructor(
         // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
+        db: DrizzleD1Database<any>,
         private appRepository: AppRepository,
-        private lang: LanguageCode = "en",
-    ) {}
-
-    /**
-     * Set the language for this query
-     */
-    withLanguage(lang: LanguageCode): this {
-        this.lang = lang;
-        this.requiresEnglishFallback = lang !== "en";
-        return this;
-    }
-
-    /**
-     * Filter achievements by specific app IDs
-     */
-    withAppIds(appIds: number | Iterable<number>): this {
-        if (typeof appIds === "number") {
-            this.appIds.add(appIds);
-        } else {
-            for (const id of appIds) {
-                this.appIds.add(id);
-            }
-        }
-
-        this.whereConditions.push(inArray(achievementsStats.app_id, Array.from(this.appIds)));
-        return this;
-    }
-
-    /**
-     * Filter achievements by specific achievement IDs
-     */
-    withAchievementIds(achIds: string | Iterable<string>): this {
-        if (typeof achIds === "string") {
-            this.achIds.add(achIds);
-        } else {
-            for (const id of achIds) {
-                this.achIds.add(id);
-            }
-        }
-
-        this.whereConditions.push(inArray(achievementsStats.ach_id, Array.from(this.achIds)));
-        return this;
-    }
-
-    /**
-     * Filter achievements by rarity threshold (0-1 float, e.g. 0.05 for 5%)
-     */
-    withRarityThreshold(maxRarity: number): this {
-        if (maxRarity < 0 || maxRarity > 1) {
-            throw new Error(`Rarity threshold must be between 0 and 1, got ${maxRarity}`);
-        }
-        this.rarityThreshold = maxRarity * 100;
-        this.whereConditions.push(sql`${achievementsStats.percent} <= ${this.rarityThreshold}`);
-        return this;
-    }
-
-    /**
-     * Filter achievements by search term (searches display name and description)
-     */
-    withSearch(search: string): this {
-        this.searchTerm = search;
-
-        // Create search conditions for both display_name and description
-        const displayNameCondition = searchTerms(sql`${achievementsMeta.display_name}`, search);
-        const descriptionCondition = searchTerms(sql`${achievementsMeta.description}`, search);
-
-        // Combine with OR - achievement matches if either display name or description matches
-        const searchCondition = sql`(${displayNameCondition} OR ${descriptionCondition})`;
-        this.whereConditions.push(searchCondition);
-
-        return this;
+    ) {
+        super(db);
     }
 
     /**
      * Filter achievements by app IDs from a subquery (avoids parameter explosion)
      */
-    withRequiredAppSubquery(appIdsSubquery: any): this {
-        this.whereConditions.push(inArray(achievementsStats.app_id, appIdsSubquery));
+    withRequiredAppSubquery(appIdsSubquery: SQL): this {
+        this.addEntitySubqueryCondition("apps", appIdsSubquery);
         return this;
     }
 
@@ -203,10 +120,37 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
             .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
             .$dynamic();
 
+        // Add CTEs if any exist
+        if (this.ctes.length > 0) {
+            query = this.db
+                .with(...this.ctes)
+                .select({
+                    app_id: achievementsStats.app_id,
+                    ach_id: achievementsStats.ach_id,
+                    meta: getTableAliasedColumns(achievementsMeta),
+                    stats: getTableAliasedColumns(achievementsStats),
+                })
+                .from(achievementsStats)
+                .leftJoin(
+                    achievementsMeta,
+                    and(
+                        eq(achievementsStats.app_id, achievementsMeta.app_id),
+                        eq(achievementsStats.ach_id, achievementsMeta.ach_id),
+                        eq(achievementsMeta.lang, lang),
+                    ),
+                )
+                .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
+                .$dynamic();
+        }
+
         // Apply where conditions
-        if (this.whereConditions.length > 0) {
-            // @ts-expect-error - Drizzle where condition types
-            query = query.where(and(...this.whereConditions));
+        const allConditions = this.buildStandardWhereConditions();
+        if (allConditions.length > 0) {
+            // Filter out any undefined conditions and apply
+            const definedConditions = allConditions.filter((condition): condition is SQL => condition !== undefined);
+            if (definedConditions.length > 0) {
+                query = query.where(and(...definedConditions));
+            }
         }
 
         // Apply sorting and pagination

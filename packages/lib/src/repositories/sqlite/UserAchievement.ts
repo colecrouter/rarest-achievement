@@ -19,13 +19,13 @@ import {
     type ComposableQueryOptions,
     ComposableQueryResult,
     type ComposableRepository,
-    type QueryComposer,
     type SubqueryProvider,
     createQueryResult,
 } from "../composable";
 import type { Repository, RepositoryParams, RepositorySort } from "../repository";
 import type { AppRepository } from "./App";
 import type { AppAchievementRepository } from "./AppAchievement";
+import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { achievementsMeta } from "./schema";
@@ -49,34 +49,16 @@ import { safeInsert, searchTerms } from "./utils";
  *    - **Direct Mode**: Simple query with minimal JOINs for basic filtering
  *    - **Comprehensive Mode**: Single comprehensive SQL query with all metadata JOINs
  *
- * 4. **Composable Filters**: Each filter method adds SQL conditions without parameter explosion:
- *    - `withUserIds()` - Direct parameter passing (safe)
- *    - `withAppIds()` - Direct parameter passing (safe)
- *    - `withFriendsOf()` - Uses INNER JOIN on friends table (avoids fetching friend IDs)
- *    - `withSearch()` - Uses INNER JOIN on achievements_meta table
- *    - `withUnlockedStatus()` - Uses IS NULL/IS NOT NULL conditions
- *
- * 5. **Friends Support**: When `withFriendsOf()` is used:
- *    - Data fetching (`ensureUserDataExists`) fetches friend user IDs first, then ensures user data exists via UserRepository
- *    - Query execution uses JOIN with friends table to avoid parameter explosion
- *    - Achievement data fetching uses the same JOIN pattern for consistency
- *
  * ## How Parameter Explosion is Avoided:
  *
  * ### Before (Problematic):
  * ```typescript
- * // Step 1: Get all user's owned games OR friends
- * const ownedGameIds = await getOwnedGames(userId); // Returns 1000+ app IDs
- * const friendIds = await getFriendsUserIds(userId); // Returns 500+ friend IDs
- *
- * // Step 2: Pass those IDs to next query - FAILS due to SQL parameter limits
  * const achievements = await query.where(inArray(apps.id, ownedGameIds)); // 💥 FAILS
  * const friendAchievements = await query.where(inArray(userAchievements.user_id, friendIds)); // 💥 FAILS
  * ```
  *
  * ### After (Fixed):
  * ```typescript
- * // Single query with JOIN - no parameter explosion
  * const achievements = await db
  *   .select()
  *   .from(userAchievements)
@@ -84,18 +66,6 @@ import { safeInsert, searchTerms } from "./utils";
  *   .innerJoin(friends, eq(friends.friend_id, userAchievements.user_id))   // All friends
  *   .where(eq(friends.user_id, userId)); // ✅ WORKS
  * ```
- *
- * ## Processing Mode Selection:
- *
- * - **Direct Mode**: Used for simple filtering with specific app IDs and no search/unlocked filters
- * - **Comprehensive Mode**: Used when:
- *   - Filtering by unlocked status (requires achievement metadata)
- *   - Using search functionality (requires achievement metadata)
- *   - No app IDs specified (requires "all owned games" logic)
- *
- * The comprehensive mode builds a single SQL query that includes all necessary JOINs to fetch
- * user achievements along with their metadata, completely eliminating the need for separate
- * AppAchievement repository calls and parameter passing.
  */
 
 export type UserAchievementSortMethod = "rarity_pct" | "rarity_score" | "unlocked_at";
@@ -128,33 +98,67 @@ export interface UserAchievementRepositoryParams<SortMethod extends UserAchievem
  * Uses SQL composition with JOINs to avoid parameter explosion
  */
 class UserAchievementQueryComposer
-    implements QueryComposer<SteamUserAchievement, UserAchievementSortMethod>, SubqueryProvider
+    extends BaseAchievementQueryComposer<SteamUserAchievement, UserAchievementSortMethod>
+    implements SubqueryProvider
 {
     private userIds: Set<string> = new Set();
-    private appIds: Set<number> = new Set();
-    private achievementIds: Set<string> = new Set();
     private friendsOfUserId?: string;
     private unlockedFilter?: boolean;
-    private searchTerm?: string;
-    private rarityThreshold?: number;
-    private lang: LanguageCode = "en";
 
     constructor(
         // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
+        db: DrizzleD1Database<any>,
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
         private friendsRepository: FriendsRepository,
         private appRepository: AppRepository,
-    ) {}
+    ) {
+        super(db);
+    }
 
     /**
-     * Set the language for this query
+     * Create inArray condition for app IDs using userAchievements table
      */
-    withLanguage(lang: LanguageCode): this {
-        this.lang = lang;
-        return this;
+    protected createAppIdsCondition(appIds: number[]): SQL {
+        return inArray(userAchievements.app_id, appIds);
+    }
+
+    /**
+     * Create inArray condition for achievement IDs using userAchievements table
+     */
+    protected createAchievementIdsCondition(achIds: string[]): SQL {
+        return inArray(userAchievements.ach_id, achIds);
+    }
+
+    /**
+     * Apply sorting to a query based on the sort options
+     * Handles UserAchievement-specific sorting patterns (rarity_pct, rarity_score, unlocked_at)
+     */
+    // biome-ignore lint/suspicious/noExplicitAny: Generic query type from Drizzle
+    private applySorting(query: any, options: ComposableQueryOptions<UserAchievementSortMethod>): any {
+        if (!options.sort) return query;
+
+        const sortDirection = options.sort.direction === "desc" ? desc : asc;
+
+        switch (options.sort.method) {
+            case "rarity_pct":
+                return query.orderBy(sortDirection(achievementsStats.percent));
+            case "rarity_score":
+                return query.orderBy(
+                    sortDirection(
+                        sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
+                    ),
+                    sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
+                );
+            case "unlocked_at":
+                return query.orderBy(
+                    sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
+                    sortDirection(userAchievements.unlocked_at),
+                );
+            default:
+                return query;
+        }
     }
 
     /**
@@ -166,34 +170,6 @@ class UserAchievementQueryComposer
         } else {
             for (const id of userIds) {
                 this.userIds.add(id);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * Filter by specific app IDs
-     */
-    withAppIds(appIds: number | Iterable<number>): this {
-        if (typeof appIds === "number") {
-            this.appIds.add(appIds);
-        } else {
-            for (const id of appIds) {
-                this.appIds.add(id);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * Filter by specific achievement IDs
-     */
-    withAchievementIds(achievementIds: string | Iterable<string>): this {
-        if (typeof achievementIds === "string") {
-            this.achievementIds.add(achievementIds);
-        } else {
-            for (const id of achievementIds) {
-                this.achievementIds.add(id);
             }
         }
         return this;
@@ -212,25 +188,12 @@ class UserAchievementQueryComposer
      */
     withUnlockedStatus(unlocked?: boolean): this {
         this.unlockedFilter = unlocked;
-        return this;
-    }
-
-    /**
-     * Add search term for achievement names/descriptions
-     */
-    withSearch(search: string): this {
-        this.searchTerm = search;
-        return this;
-    }
-
-    /**
-     * Filter achievements by rarity threshold (0-1 float, e.g. 0.05 for 5%)
-     */
-    withRarityThreshold(maxRarity: number): this {
-        if (maxRarity < 0 || maxRarity > 1) {
-            throw new Error(`Rarity threshold must be between 0 and 1, got ${maxRarity}`);
+        // Add WHERE condition for unlocked status
+        if (unlocked !== undefined) {
+            this.whereConditions.push(
+                unlocked ? isNotNull(userAchievements.unlocked_at) : isNull(userAchievements.unlocked_at),
+            );
         }
-        this.rarityThreshold = maxRarity * 100;
         return this;
     }
 
@@ -263,7 +226,7 @@ class UserAchievementQueryComposer
             neededAppsQuery = neededAppsQuery.where(inArray(ownedGames.app_id, Array.from(this.appIds)));
         }
 
-        return sql`${neededAppsQuery}`;
+        return neededAppsQuery.getSQL();
     }
 
     /**
@@ -376,46 +339,47 @@ class UserAchievementQueryComposer
             .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
             .$dynamic();
 
+        // Add CTEs if any exist
+        if (this.ctes.length > 0) {
+            query = this.db
+                .with(...this.ctes)
+                .select({
+                    user_id: userAchievements.user_id,
+                    app_id: userAchievements.app_id,
+                    ach_id: userAchievements.ach_id,
+                    unlocked_at: userAchievements.unlocked_at,
+                    rarity_pct: achievementsStats.percent,
+                })
+                .from(userAchievements)
+                // JOIN to ensure user owns the game (avoids parameter explosion)
+                .innerJoin(
+                    ownedGames,
+                    and(
+                        eq(userAchievements.user_id, ownedGames.user_id),
+                        eq(userAchievements.app_id, ownedGames.app_id),
+                    ),
+                )
+                // LEFT JOIN for rarity data
+                .leftJoin(
+                    achievementsStats,
+                    and(
+                        eq(userAchievements.app_id, achievementsStats.app_id),
+                        eq(userAchievements.ach_id, achievementsStats.ach_id),
+                    ),
+                )
+                // LEFT JOIN for estimated players (for rarity score calculation)
+                .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
+                .$dynamic();
+        }
+
         // Apply user filter (safe - these are top-level parameters)
         const whereConditions: Array<SQL | undefined> = [...userFilterConditions];
 
-        // Apply specific filters (safe - these are also top-level parameters)
-        if (this.appIds.size > 0) {
-            whereConditions.push(inArray(userAchievements.app_id, Array.from(this.appIds)));
-        }
+        // Note: Search filter is now handled via CTE in BaseAchievementQueryComposer
+        // No need for manual JOINs here anymore
 
-        if (this.achievementIds.size > 0) {
-            whereConditions.push(inArray(userAchievements.ach_id, Array.from(this.achievementIds)));
-        }
-
-        if (this.unlockedFilter !== undefined) {
-            whereConditions.push(
-                this.unlockedFilter ? isNotNull(userAchievements.unlocked_at) : isNull(userAchievements.unlocked_at),
-            );
-        }
-
-        if (this.rarityThreshold !== undefined) {
-            whereConditions.push(sql`${achievementsStats.percent} <= ${this.rarityThreshold}`);
-        }
-
-        // Apply search filter using JOIN (avoids parameter explosion)
-        if (this.searchTerm) {
-            const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
-
-            query = query.leftJoin(
-                achievementsMeta,
-                and(
-                    eq(achievementsMeta.app_id, userAchievements.app_id),
-                    eq(achievementsMeta.ach_id, userAchievements.ach_id),
-                    eq(achievementsMeta.lang, apiCode),
-                ),
-            );
-
-            const appNameCondition = searchTerms(sql`json_extract(${apps.data}, '$.name')`, this.searchTerm);
-            const displayNameCondition = searchTerms(achievementsMeta.display_name, this.searchTerm);
-            const descriptionCondition = searchTerms(achievementsMeta.description, this.searchTerm);
-            whereConditions.push(or(displayNameCondition, descriptionCondition, appNameCondition));
-        }
+        // Add all pre-built WHERE conditions (app IDs, achievement IDs, unlocked status, rarity)
+        whereConditions.push(...this.buildStandardWhereConditions());
 
         // Apply friends filter using JOIN (avoids parameter explosion)
         if (this.friendsOfUserId) {
@@ -429,28 +393,7 @@ class UserAchievementQueryComposer
         query = query.where(and(...whereConditions));
 
         // Apply sorting
-        if (options.sort) {
-            const sortDirection = options.sort.direction === "desc" ? desc : asc;
-            switch (options.sort.method) {
-                case "rarity_pct":
-                    query = query.orderBy(sortDirection(achievementsStats.percent));
-                    break;
-                case "rarity_score":
-                    query = query.orderBy(
-                        sortDirection(
-                            sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
-                        ),
-                        sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
-                    );
-                    break;
-                case "unlocked_at":
-                    query = query.orderBy(
-                        sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
-                        sortDirection(userAchievements.unlocked_at),
-                    );
-                    break;
-            }
-        }
+        query = this.applySorting(query, options);
 
         // Apply pagination
         if (options.limit) {
@@ -554,41 +497,66 @@ class UserAchievementQueryComposer
                 .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
                 .$dynamic();
 
+            // Add CTEs if any exist
+            if (this.ctes.length > 0) {
+                query = this.db
+                    .with(...this.ctes)
+                    .select({
+                        user_id: userAchievements.user_id,
+                        app_id: userAchievements.app_id,
+                        ach_id: userAchievements.ach_id,
+                        unlocked_at: userAchievements.unlocked_at,
+                        rarity_pct: achievementsStats.percent,
+                        // Achievement metadata from achievements_meta
+                        display_name: achievementsMeta.display_name,
+                        description: achievementsMeta.description,
+                        default_value: achievementsMeta.default_value,
+                        hidden: achievementsMeta.hidden,
+                        icon: achievementsMeta.icon,
+                        icon_gray: achievementsMeta.icon_gray,
+                        // App data (JSON field)
+                        app_data: apps.data,
+                        app_lang: apps.lang,
+                        estimated_players: estimatedPlayers.estimated_players,
+                    })
+                    .from(userAchievements)
+                    // JOIN to ensure user owns the game (handles "all owned games" case)
+                    .innerJoin(
+                        ownedGames,
+                        and(
+                            eq(userAchievements.user_id, ownedGames.user_id),
+                            eq(userAchievements.app_id, ownedGames.app_id),
+                        ),
+                    )
+                    // JOIN for achievement metadata (replaces separate AppAchievement fetch)
+                    .innerJoin(
+                        achievementsMeta,
+                        and(
+                            eq(userAchievements.app_id, achievementsMeta.app_id),
+                            eq(userAchievements.ach_id, achievementsMeta.ach_id),
+                            eq(achievementsMeta.lang, apiCode),
+                        ),
+                    )
+                    // JOIN for app data
+                    .innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)))
+                    // LEFT JOIN for rarity data
+                    .leftJoin(
+                        achievementsStats,
+                        and(
+                            eq(userAchievements.app_id, achievementsStats.app_id),
+                            eq(userAchievements.ach_id, achievementsStats.ach_id),
+                        ),
+                    )
+                    // LEFT JOIN for estimated players (for rarity score calculation)
+                    .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
+                    .$dynamic();
+            }
+
             // Build WHERE conditions (only safe, top-level parameters)
             const whereConditions: Array<SQL | undefined> = [...userFilterConditions];
 
-            // Apply specific app filter ONLY if provided (avoids empty array issue)
-            if (this.appIds.size > 0) {
-                whereConditions.push(inArray(userAchievements.app_id, Array.from(this.appIds)));
-            }
-            // If this.appIds is empty, we get ALL owned games via the ownedGames JOIN ✅
-
-            // Apply specific achievement filter ONLY if provided
-            if (this.achievementIds.size > 0) {
-                whereConditions.push(inArray(userAchievements.ach_id, Array.from(this.achievementIds)));
-            }
-
-            // Apply unlocked filter
-            if (this.unlockedFilter !== undefined) {
-                whereConditions.push(
-                    this.unlockedFilter
-                        ? isNotNull(userAchievements.unlocked_at)
-                        : isNull(userAchievements.unlocked_at),
-                );
-            }
-
-            // Apply rarity threshold filter
-            if (this.rarityThreshold !== undefined) {
-                whereConditions.push(sql`${achievementsStats.percent} <= ${this.rarityThreshold}`);
-            }
-
-            // Apply search filter using already joined achievements_meta
-            if (this.searchTerm) {
-                const appNameCondition = searchTerms(sql`json_extract(${apps.data}, '$.name')`, this.searchTerm);
-                const displayNameCondition = searchTerms(achievementsMeta.display_name, this.searchTerm);
-                const descriptionCondition = searchTerms(achievementsMeta.description, this.searchTerm);
-                whereConditions.push(or(displayNameCondition, descriptionCondition, appNameCondition));
-            }
+            // Add all pre-built WHERE conditions (app IDs, achievement IDs, unlocked status, rarity, search)
+            whereConditions.push(...this.buildStandardWhereConditions());
 
             // Apply friends filter using JOIN (if not already applied)
             if (this.friendsOfUserId) {
@@ -602,28 +570,7 @@ class UserAchievementQueryComposer
             query = query.where(and(...whereConditions));
 
             // Apply sorting
-            if (options.sort) {
-                const sortDirection = options.sort.direction === "desc" ? desc : asc;
-                switch (options.sort.method) {
-                    case "rarity_pct":
-                        query = query.orderBy(sortDirection(achievementsStats.percent));
-                        break;
-                    case "rarity_score":
-                        query = query.orderBy(
-                            sortDirection(
-                                sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
-                            ),
-                            sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
-                        );
-                        break;
-                    case "unlocked_at":
-                        query = query.orderBy(
-                            sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
-                            sortDirection(userAchievements.unlocked_at),
-                        );
-                        break;
-                }
-            }
+            query = this.applySorting(query, options);
 
             // Apply pagination
             if (options.limit) {

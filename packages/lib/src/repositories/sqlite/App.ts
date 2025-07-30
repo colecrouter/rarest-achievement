@@ -246,9 +246,11 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             Ideally, player estimates would be fetched alongside the rest, but in practice I don't think it matters too much (different API entirely).
         */
 
-        if (this.appIds.size === 0) return Attempt.ok(undefined);
+        if (this.appIds.size === 0 && !this.requiredAppSubquery) {
+            return Attempt.ok(undefined);
+        }
 
-        let accumulatedError: Error | null = null;
+        let combinedResult: Attempt<undefined, AttemptStatus> = Attempt.ok(undefined);
 
         // App fetching is most important probably, so we'll set a high limit for this one (3 requests * 150 apps = 450)
         getFetchManager().reset({ maxFetches: 450 });
@@ -258,9 +260,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         if (missingAppIds.length > 0) {
             console.log(`📦 Fetching ${missingAppIds.length} missing apps`);
             const appsResult = await this.fetchAndUpsertApps(missingAppIds);
-            if (appsResult.error && !accumulatedError) {
-                accumulatedError = appsResult.error;
-            }
+            combinedResult = combinedResult.and(appsResult);
         }
 
         // Player estimates is still relatively important (in order for player count scores, see above comment)
@@ -271,12 +271,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         if (missingPlayerIds.length > 0) {
             console.log(`📊 Fetching ${missingPlayerIds.length} missing player estimates`);
             const playerEstimatesResult = await this.fetchAndUpsertPlayerEstimates(missingPlayerIds);
-            if (playerEstimatesResult.error && !accumulatedError) {
-                accumulatedError = playerEstimatesResult.error;
-            }
+            combinedResult = combinedResult.and(playerEstimatesResult);
         }
 
-        return Attempt.from(undefined, accumulatedError);
+        return combinedResult;
     }
 
     /**
@@ -476,7 +474,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     /**
      * Fetch and upsert comprehensive app data including achievements metadata and stats
      */
-    private async fetchAndUpsertApps(appIds: number[]): Promise<Attempt<void, AttemptStatus>> {
+    private async fetchAndUpsertApps(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
         if (appIds.length === 0) return Attempt.ok(undefined);
 
         const timingId = generateTimingId();
@@ -494,9 +492,14 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const fetchAppData = async (id: number) => {
             const [appDetails, achievementMeta, achievementStats] = await Promise.all([
                 // Language dependent queries
-                SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data),
-                this.fetchAchievementMetaWithFallbackDetection(id, lang),
-                // Always fetch stats - upsert logic will handle duplicates
+                SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
+                this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
+                    console.warn(`Achievement meta fetch failed for app ${id}:`, err);
+                    // For apps with no achievements, Steam API might return errors
+                    // Return empty array to indicate "no achievements" rather than "API failure"
+                    return { requested: [], english: [], wasEnglishFromDb: false };
+                }),
+                // Always fetch stats - handle "no achievements" case gracefully
                 this.steamApi
                     .getGlobalAchievementPercentagesForApp({ gameid: id })
                     .then((statsResponse) => {
@@ -507,6 +510,12 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                                 percent: ach.percent,
                             }));
                         }
+                        return []; // Empty array is valid for games with no achievements
+                    })
+                    .catch((err) => {
+                        console.warn(`Achievement stats fetch failed for app ${id}:`, err);
+                        // For apps with no achievements, Steam API might return errors (404, 400, etc.)
+                        // Return empty array to indicate "no achievements" rather than "API failure"
                         return [];
                     }),
             ]);
@@ -519,66 +528,71 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             };
         };
 
-        const validData = await Attempt.all(appIds.map((id) => fetchAppData(id)));
+        const attempt = await Attempt.all(appIds.map((id) => fetchAppData(id)));
+        // Skip entire row only if the app details fetch completely failed
+        // Note: achievementStats/achievementMeta can be empty arrays for games with no achievements (valid)
+        // We now handle "no achievements" gracefully by returning empty arrays instead of undefined
+        const validData = attempt.data.filter((d) => {
+            return (
+                d !== undefined && // fetchAppData didn't completely fail
+                d.achievementStats !== undefined && // stats processing didn't fail (empty array is fine)
+                d.achievementMeta !== undefined
+            ); // schema processing didn't fail (empty arrays are fine)
+        });
 
         // Insert all successfully fetched data (database operation - let it throw)
-        if (validData.data.length > 0) {
+        if (validData.length > 0) {
             console.time(`${timingId} AppQueryComposer.fetchAndUpsertApps:insertData`);
             // Prepare all data for insertion
-            const appData = validData.data.map((data) => ({
-                lang: lang,
-                id: data.appId,
-                data: data.appDetails,
-            }));
-            const achievementStatsData = validData.data
-                .flatMap((data) => data.achievementStats)
+            const appData = validData
+                .filter((data) => data !== undefined)
+                .map((data) => ({
+                    lang: lang,
+                    id: data.appId,
+                    data: data.appDetails,
+                }));
+
+            // Count apps with/without achievements for logging
+            const appsWithAchievements = validData.filter(
+                (data) => data?.achievementStats && data.achievementStats.length > 0,
+            ).length;
+            const appsWithoutAchievements = validData.length - appsWithAchievements;
+
+            console.log(
+                `📊 Apps being processed: ${appsWithAchievements} with achievements, ${appsWithoutAchievements} without achievements`,
+            );
+
+            const achievementStatsData = validData
+                .flatMap((data) => data?.achievementStats)
                 .filter((s) => s !== undefined);
-            const achievementMetaData = validData.data.flatMap((data) => {
-                const results = [];
-                const achievementMeta = data.achievementMeta as {
-                    requested: Array<{
-                        app_id: number;
-                        ach_id: string;
-                        display_name: string;
-                        default_value: number;
-                        description: string | undefined;
-                        icon: string;
-                        icon_gray: string;
-                        hidden: number;
-                    }>;
-                    english: Array<{
-                        app_id: number;
-                        ach_id: string;
-                        display_name: string;
-                        default_value: number;
-                        description: string | undefined;
-                        icon: string;
-                        icon_gray: string;
-                        hidden: number;
-                    }> | null;
-                    wasEnglishFromDb: boolean;
-                };
+            const achievementMetaData = validData
+                .flatMap((data) => {
+                    const results = [];
+                    const achievementMeta = data?.achievementMeta;
 
-                // Add the requested language achievements
-                results.push(
-                    ...achievementMeta.requested.map((meta) => ({
-                        ...meta,
-                        lang,
-                    })),
-                );
+                    if (!achievementMeta) return;
 
-                // If we have English data from API (not from DB), also insert English records
-                if (lang !== "english" && achievementMeta.english && !achievementMeta.wasEnglishFromDb) {
+                    // Add the requested language achievements
                     results.push(
-                        ...achievementMeta.english.map((meta) => ({
+                        ...achievementMeta.requested.map((meta) => ({
                             ...meta,
-                            lang: "english" as const,
+                            lang,
                         })),
                     );
-                }
 
-                return results;
-            });
+                    // If we have English data from API (not from DB), also insert English records
+                    if (lang !== "english" && achievementMeta.english && !achievementMeta.wasEnglishFromDb) {
+                        results.push(
+                            ...achievementMeta.english.map((meta) => ({
+                                ...meta,
+                                lang: "english" as const,
+                            })),
+                        );
+                    }
+
+                    return results;
+                })
+                .filter((m) => m !== undefined);
 
             // Insert app details (this sets updated_at, indicating comprehensive fetch was attempted)
             await safeInsert(this.db, appData, (chunk) =>
@@ -630,13 +644,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertApps`);
 
         // Return our request attempt without any data (not needed)
-        return validData.map(() => undefined);
+        return attempt.map(() => undefined);
     }
 
     /**
      * Fetch and upsert player count estimates with full calculation
      */
-    private async fetchAndUpsertPlayerEstimates(appIds: number[]): Promise<Attempt<void, AttemptStatus>> {
+    private async fetchAndUpsertPlayerEstimates(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
         if (appIds.length === 0) return Attempt.ok(undefined);
 
         const timingId = generateTimingId();
@@ -691,29 +705,33 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             >,
         );
 
-        let accumulatedError: Error | null = null;
-
-        // Use Attempt.all to handle player count estimation for all apps
         const playerEstimateAttempts = appDetailsRows.map(async (row) => {
             const appId = row.id;
             const appDetails = appDetailsMap.get(appId);
             if (!appDetails) {
                 console.warn(`No app details found for app ${appId}, inserting null player estimate`);
                 // Still insert a record with null/undefined to mark that we attempted estimation
-                return {
+                return Attempt.ok({
                     app_id: appId,
-                    estimated_players: undefined,
-                };
+                    estimated_players: null,
+                });
             }
 
-            const playerCount = await Promise.all([
+            getFetchManager().reset({ maxFetches: 200 });
+            const playerCountData = await Attempt.all([
                 SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
                 SteamChartsAPIClient.getAppChartData(appId),
-            ]).then(([appReviews, appPlayerCount]) => {
-                if (!appReviews || !appPlayerCount) {
-                    console.warn(`Missing review or chart data for app ${appId}`);
-                    return null;
-                }
+            ]);
+
+            const playerCount = playerCountData.chain((data) => {
+                const [appReviews, appPlayerCount] = data;
+
+                if (appReviews === undefined || appPlayerCount === undefined)
+                    return Attempt.fail<number>(new Error(`Missing review or chart data for app ${appId}`));
+
+                // Sometimes chart data is null, so we'll just return null
+                if (appPlayerCount === null) return Attempt.ok(null);
+
                 const estimate = estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
                     avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
@@ -726,21 +744,21 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     is_free: appDetails.is_free ? 1 : 0,
                     price: appDetails.price_overview?.final ?? 0,
                 });
-                return estimate;
+                return Attempt.ok(estimate);
             });
 
-            return {
+            return playerCount.map((count) => ({
                 app_id: appId,
-                estimated_players: playerCount,
-            };
+                estimated_players: count,
+            }));
         });
 
-        const playerCountData = await Attempt.all(playerEstimateAttempts);
-        if (playerCountData.error) accumulatedError = playerCountData.error;
+        const playerCountData = await Promise.all(playerEstimateAttempts);
+        const filteredData = playerCountData.filter((d) => d.isOk()).map((d) => d.data);
 
         // Insert estimated player counts (database operation - let it throw)
-        if (playerCountData.data.length > 0) {
-            await safeInsert(this.db, playerCountData.data, (chunk) =>
+        if (filteredData.length > 0) {
+            await safeInsert(this.db, filteredData, (chunk) =>
                 this.db
                     .insert(estimatedPlayers)
                     .values(chunk)
@@ -757,7 +775,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
 
         // Return success or partial based on whether we encountered errors
-        return Attempt.from(undefined, accumulatedError);
+        const firstError = playerCountData.find((d) => d.isError());
+        return Attempt.from(undefined, firstError ? firstError.error : null);
     }
 }
 

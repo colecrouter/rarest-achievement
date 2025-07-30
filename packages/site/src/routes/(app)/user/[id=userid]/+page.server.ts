@@ -37,6 +37,7 @@ export const load = async ({ url, locals, parent }) => {
             .withUserIds(user.id)
             .withUnlockedStatus(true)
             .withRarityThreshold(0.1)
+            .withLanguage(locale)
             .build()
             .then((a) =>
                 locals.steamCacheDB

@@ -1,6 +1,7 @@
 import { type SQL, and, asc, desc, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type LanguageCode, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
+import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
 import { generateTimingId } from "../../utils/timing";
 import {
@@ -50,30 +51,26 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
         const timingId = generateTimingId();
         console.time(`${timingId} AppAchievementQueryComposer.build`);
 
-        let accumulatedError: Error | null = null;
-
-        // Ensure data exists and fetch main query
-        try {
-            await this.ensureDataExists();
-        } catch (error) {
-            accumulatedError = error as Error;
-            console.warn("Failed to ensure all achievement data exists, continuing with existing data:", error);
+        // Ensure data exists and get any error information
+        const ensureResult = await this.ensureDataExists();
+        if (ensureResult.error) {
+            console.warn("Failed to ensure all achievement data exists, continuing with existing data:", ensureResult.error);
         }
 
         const results = await this.executeMainQuery(options);
 
         console.timeEnd(`${timingId} AppAchievementQueryComposer.build`);
-        return createQueryResult(results, options.cursor, accumulatedError);
+        return createQueryResult(results, options.cursor, ensureResult.error);
     }
 
     /**
      * Ensure all required data exists in the database
      */
-    private async ensureDataExists(): Promise<void> {
-        if (this.appIds.size === 0) return;
+    private async ensureDataExists(): Promise<ComposableQueryResult<SteamApp>> {
+        if (this.appIds.size === 0) return createQueryResult([], 0, null);
 
         // Ensure app data exists by using the app repository
-        await this.appRepository
+        return await this.appRepository
             .compose()
             .withLanguage(this.lang)
             .withAppIds(this.appIds)

@@ -145,24 +145,58 @@ export class Attempt<T, S extends AttemptStatus = AttemptStatus> {
     }
 
     /**
+     * Helper method to combine two Attempts, preserving the highest status
+     */
+    private combineWith<U, S extends AttemptStatus>(
+        result: Attempt<U, S>,
+    ): Attempt<U, HighestStatus<this["status"], S>> {
+        // If this is Ok, just return the result
+        if (this.status === AttemptStatus.Ok) {
+            return result as unknown as Attempt<U, HighestStatus<this["status"], S>>;
+        }
+
+        // this.status is Partial, combine with result
+        if (result.isFailure()) {
+            return Attempt.fail<U>(result.error as Error) as unknown as Attempt<U, HighestStatus<this["status"], S>>;
+        }
+
+        if (result.isPartial()) {
+            return Attempt.partial(result.data as U, result.error as Error) as unknown as Attempt<
+                U,
+                HighestStatus<this["status"], S>
+            >;
+        }
+
+        // result is Ok, but this is Partial, so return Partial with result's data and this error
+        return Attempt.partial(result.data as U, this.error as Error) as unknown as Attempt<
+            U,
+            HighestStatus<this["status"], S>
+        >;
+    }
+
+    /**
      * Chains the Attempt with a function that returns another Attempt.
      * If the first attempt is a failure, the second function is not called and the error is preserved.
      */
-    chain<U, S extends AttemptStatus>(fn: (data: T) => Attempt<U, HighestStatus<S, AttemptStatus>>) {
-        switch (this.status) {
-            case AttemptStatus.Failure:
-                return Attempt.fail<U>(this.error as Error);
-            default:
-                return this.or(fn(this.data as T));
+    chain<U, S extends AttemptStatus>(fn: (data: T) => Attempt<U, S>): Attempt<U, HighestStatus<this["status"], S>> {
+        if (this.status === AttemptStatus.Failure) {
+            return Attempt.fail<U>(this.error as Error) as unknown as Attempt<U, HighestStatus<this["status"], S>>;
         }
+
+        const result = fn(this.data as T);
+        return this.combineWith(result);
     }
 
     /** Same as `chain`, but for asynchronous functions */
     async chainAsync<U, S extends AttemptStatus>(
-        fn: (data: T) => PromiseLike<Attempt<U, HighestStatus<S, AttemptStatus>>>,
-    ) {
-        const nextAttempt = await fn(this.data as T);
-        return this.chain(() => nextAttempt);
+        fn: (data: T) => PromiseLike<Attempt<U, S>>,
+    ): Promise<Attempt<U, HighestStatus<this["status"], S>>> {
+        if (this.status === AttemptStatus.Failure) {
+            return Attempt.fail<U>(this.error as Error) as unknown as Attempt<U, HighestStatus<this["status"], S>>;
+        }
+
+        const result = await fn(this.data as T);
+        return this.combineWith(result);
     }
 
     /**
@@ -295,27 +329,21 @@ export class Attempt<T, S extends AttemptStatus = AttemptStatus> {
      * Run multiple Promises in parallel, aggregating their results into a single Attempt.
      * If passed a tuple, preserves tuple shape; otherwise returns an array.
      */
-    static async all<T extends readonly unknown[]>(
-        values: T,
-    ): Promise<Attempt<{ -readonly [P in keyof T]: Awaited<T[P]> }, AttemptStatus.Ok | AttemptStatus.Partial>>;
+    static async all<const T extends readonly (PromiseLike<unknown> | unknown)[]>(
+        values: readonly [...T],
+    ): Promise<
+        | Attempt<{ [K in keyof T]: Awaited<T[K]> }, AttemptStatus.Ok>
+        | Attempt<{ [K in keyof T]: Awaited<T[K]> | undefined }, AttemptStatus.Partial>
+    >;
     static async all<T>(
         values: Iterable<T | PromiseLike<T>>,
-    ): Promise<Attempt<Awaited<T>[], AttemptStatus.Ok | AttemptStatus.Partial>>;
-    static async all<T>(values: Iterable<T | PromiseLike<T>> | readonly unknown[]) {
-        // Wait for all Promises to settle
-        const results = await Promise.allSettled(Array.isArray(values) ? values : Array.from(values));
-        // Split results into fulfilled and rejected
-        const grouped = Object.groupBy(results, (r) => r.status);
-        const fulfilled = (grouped.fulfilled ?? []) as PromiseFulfilledResult<Awaited<T>>[];
-        const rejected = (grouped.rejected ?? []) as PromiseRejectedResult[];
+    ): Promise<Attempt<Awaited<T>[], AttemptStatus.Ok> | Attempt<(Awaited<T> | undefined)[], AttemptStatus.Partial>>;
+    static async all(values: Iterable<unknown | PromiseLike<unknown>>): Promise<Attempt<unknown[], AttemptStatus>> {
+        const arr = Array.isArray(values) ? values : Array.from(values);
+        const results = await Promise.allSettled(arr);
+        const data = results.map((r) => (r.status === "fulfilled" ? r.value : undefined));
+        const firstErr = results.find((r) => r.status === "rejected")?.reason;
 
-        const data = fulfilled.map((r) => r.value) ?? [];
-        const firstErr = rejected?.[0]?.reason;
-        if (rejected[0]) {
-            return Attempt.partial(data, firstErr as Error);
-        }
-
-        // If all Promises were fulfilled, return a successful Attempt
-        return Attempt.ok(data);
+        return Attempt.from(data, (firstErr as Error) ?? null);
     }
 }

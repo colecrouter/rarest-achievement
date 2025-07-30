@@ -70,32 +70,28 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
         const timingId = generateTimingId();
         console.time(`${timingId} UserQueryComposer.build`);
 
-        let accumulatedError: Error | null = null;
-
         // Ensure data exists first
         const ensureResult = await this.ensureDataExists();
         if (ensureResult.error) {
-            accumulatedError = ensureResult.error;
             console.warn("Failed to ensure all user data exists, continuing with existing data:", ensureResult.error);
         }
 
         // Execute main query
         let results: SteamUser[];
+        let queryError: Error | null = null;
         try {
             results = await this.executeMainQuery(options);
         } catch (error) {
-            if (accumulatedError) {
-                console.warn("Additional error during User query:", error);
-            } else {
-                accumulatedError = error as Error;
-            }
+            queryError = error as Error;
             console.warn("Error during User query, returning partial results:", error);
             results = []; // Return empty results on error
         }
 
         console.timeEnd(`${timingId} UserQueryComposer.build`);
 
-        return createQueryResult(results, options.cursor, accumulatedError);
+        // Combine errors using Attempt chaining
+        const finalResult = ensureResult.and(Attempt.from(undefined, queryError));
+        return createQueryResult(results, options.cursor, finalResult.error);
     }
 
     /**
@@ -163,14 +159,12 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 
         console.debug(`Missing users: ${missingUserIds.length}`);
 
-        let accumulatedError: Error | null = null;
         const validData = [];
 
         // Fetch user summaries
         const missingPlayerSummaries = await Attempt.try(() => {
             return this.steamApi.getPlayerSummaries(missingUserIds);
         });
-        if (!accumulatedError && missingPlayerSummaries.error) accumulatedError = missingPlayerSummaries.error;
 
         // Fetch owned games for each user
         getFetchManager().reset({ maxFetches: 150 }); // We'll say max 150 users for now (who am I kidding, I am making this up as I go)
@@ -182,12 +176,11 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
                     .then((d) => ({ user: userId, games: d }));
             }),
         );
-        if (!accumulatedError && missingOwnedGames.error) accumulatedError = missingOwnedGames.error;
 
         // Combine user data
         for (const userId of missingUserIds) {
             const userData = missingPlayerSummaries.data?.response.players.find((u) => u.steamid === userId);
-            const ownedGamesData = missingOwnedGames.data.find((o) => o.user === userId);
+            const ownedGamesData = missingOwnedGames.data.find((o) => o?.user === userId);
 
             if (userData) {
                 validData.push({
@@ -254,7 +247,9 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
             ),
         ]);
 
-        return Attempt.from(undefined, accumulatedError);
+        // Combine errors from both API calls using Attempt chaining
+        const combinedResult = missingPlayerSummaries.and(missingOwnedGames.map(() => undefined));
+        return combinedResult;
     }
 
     /**

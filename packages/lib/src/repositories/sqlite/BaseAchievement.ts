@@ -1,7 +1,7 @@
 import { type SQL, and, eq, inArray, lte, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
-import { apps, getLanguageByCode, type LanguageCode } from "../..";
+import { type LanguageCode, apps, getLanguageByCode } from "../..";
 import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer } from "../composable";
 import { achievementsMeta, achievementsStats } from "./schema";
 import { searchTerms } from "./utils";

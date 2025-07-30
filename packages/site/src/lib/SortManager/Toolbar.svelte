@@ -260,168 +260,147 @@
     {:else}
         {@const resolvedData = cachedData.data}
         {@const availableMethods = getAvailableMethods(resolvedData)}
+        <!-- Search Input -->
+        <input
+            type="search"
+            placeholder={m.toolbarSearchPlaceholder()}
+            bind:value={sortManager.search}
+            class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
+            oninput={serverMode
+                ? () => {
+                      const captured = sortManager.search;
+                      // Debounce search in server mode
+                      clearTimeout(searchTimeout);
+                      searchTimeout = setTimeout(() => {
+                          goto(generateSortUrl({ search: captured }));
+                      }, 300);
+                  }
+                : undefined}
+        />
 
-        {#if shouldShowError(cachedData)}
-            <!-- Error State -->
-            <div class="text-error-500 flex items-center gap-4">
-                <input
-                    type="search"
-                    placeholder={m.toolbarSearchPlaceholder()}
-                    class="input border-error-500 bg-surface-800 text-surface-100 grow py-3"
-                    class:opacity-50={isLoading}
-                />
-                <div class="text-sm">
-                    {cachedData.error?.message || "Failed to load data"}
-                </div>
-            </div>
-        {:else}
-            <!-- Search Input -->
-            <input
-                type="search"
-                placeholder={m.toolbarSearchPlaceholder()}
-                bind:value={sortManager.search}
-                class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
-                oninput={serverMode
-                    ? () => {
-                          const captured = sortManager.search;
-                          // Debounce search in server mode
-                          clearTimeout(searchTimeout);
-                          searchTimeout = setTimeout(() => {
-                              goto(generateSortUrl({ search: captured }));
-                          }, 300);
-                      }
-                    : undefined}
-            />
+        <!-- Sort Method Selection -->
+        <div class="flex flex-col items-center gap-2 md:flex-row">
+            <label class="text-surface-300 text-sm">
+                <span hidden>{m.toolbarSortBy()}</span>
+                <Segment
+                    value={currentMethod}
+                    onValueChange={(e) => handleMethodChange(e.value as string)}
+                    border={segmentBorder}
+                    rounded={segmentRounded}
+                >
+                    {#each availableMethods as methodConfig}
+                        <Segment.Item
+                            classes="text-sm"
+                            value={methodConfig.method}
+                        >
+                            {methodConfig.label}
+                        </Segment.Item>
+                    {/each}
+                </Segment>
+            </label>
+        </div>
 
-            <!-- Sort Method Selection -->
+        <!-- Filter Status Selection -->
+        {#if supportsFiltering(resolvedData)}
             <div class="flex flex-col items-center gap-2 md:flex-row">
                 <label class="text-surface-300 text-sm">
-                    <span hidden>{m.toolbarSortBy()}</span>
+                    <span hidden>{m.toolbarFilterBy()}</span>
                     <Segment
-                        value={currentMethod}
-                        onValueChange={(e) =>
-                            handleMethodChange(e.value as string)}
+                        value={sortManager.filter ?? "all"}
+                        onValueChange={(e) => handleFilterChange(e.value ?? "")}
                         border={segmentBorder}
                         rounded={segmentRounded}
                     >
-                        {#each availableMethods as methodConfig}
-                            <Segment.Item
-                                classes="text-sm"
-                                value={methodConfig.method}
-                            >
-                                {methodConfig.label}
-                            </Segment.Item>
-                        {/each}
+                        <Segment.Item labelClasses="text-sm" value="all">
+                            <span hidden>{m.toolbarFilterAll()}</span>
+                            <SquareDashed />
+                        </Segment.Item>
+                        <Segment.Item labelClasses="text-sm" value="unlocked">
+                            <span hidden>{m.toolbarFilterUnlocked()}</span>
+                            <KeyRound />
+                        </Segment.Item>
+                        <Segment.Item labelClasses="text-sm" value="locked">
+                            <span hidden>{m.toolbarFilterLocked()}</span>
+                            <Lock />
+                        </Segment.Item>
                     </Segment>
                 </label>
             </div>
-
-            <!-- Filter Status Selection -->
-            {#if supportsFiltering(resolvedData)}
-                <div class="flex flex-col items-center gap-2 md:flex-row">
-                    <label class="text-surface-300 text-sm">
-                        <span hidden>{m.toolbarFilterBy()}</span>
-                        <Segment
-                            value={sortManager.filter ?? "all"}
-                            onValueChange={(e) =>
-                                handleFilterChange(e.value ?? "")}
-                            border={segmentBorder}
-                            rounded={segmentRounded}
-                        >
-                            <Segment.Item labelClasses="text-sm" value="all">
-                                <span hidden>{m.toolbarFilterAll()}</span>
-                                <SquareDashed />
-                            </Segment.Item>
-                            <Segment.Item
-                                labelClasses="text-sm"
-                                value="unlocked"
-                            >
-                                <span hidden>{m.toolbarFilterUnlocked()}</span>
-                                <KeyRound />
-                            </Segment.Item>
-                            <Segment.Item labelClasses="text-sm" value="locked">
-                                <span hidden>{m.toolbarFilterLocked()}</span>
-                                <Lock />
-                            </Segment.Item>
-                        </Segment>
-                    </label>
-                </div>
-            {/if}
-
-            <!-- Sort Direction Toggle -->
-            <button
-                onclick={handleDirectionToggle}
-                aria-label={m.toolbarSortDirectionToggle()}
-                class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
-            >
-                <!-- SVG content same as original -->
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide-icon lucide lucide-arrow-up-wide-narrow top-0 left-0"
-                >
-                    {#if currentDirection === "asc"}
-                        <path
-                            d="m3 8 4-4 4 4"
-                            in:receive={{ key: 0 }}
-                            out:send={{ key: 0 }}
-                        ></path>
-                        <path
-                            d="M7 4v16"
-                            in:receive={{ key: 1 }}
-                            out:send={{ key: 1 }}
-                        ></path>
-                        <path
-                            d="M11 12h10"
-                            in:receive={{ key: 2 }}
-                            out:send={{ key: 2 }}
-                        ></path>
-                        <path
-                            d="M11 16h7"
-                            in:receive={{ key: 3 }}
-                            out:send={{ key: 3 }}
-                        ></path>
-                        <path
-                            d="M11 20h4"
-                            in:receive={{ key: 4 }}
-                            out:send={{ key: 4 }}
-                        ></path>
-                    {:else}
-                        <path
-                            d="m3 16 4 4 4-4"
-                            in:receive={{ key: 0 }}
-                            out:send={{ key: 0 }}
-                        ></path>
-                        <path
-                            d="M7 20V4"
-                            in:receive={{ key: 1 }}
-                            out:send={{ key: 1 }}
-                        ></path>
-                        <path
-                            d="M11 4h4"
-                            in:receive={{ key: 2 }}
-                            out:send={{ key: 2 }}
-                        ></path>
-                        <path
-                            d="M11 8h7"
-                            in:receive={{ key: 3 }}
-                            out:send={{ key: 3 }}
-                        ></path>
-                        <path
-                            d="M11 12h10"
-                            in:receive={{ key: 4 }}
-                            out:send={{ key: 4 }}
-                        ></path>
-                    {/if}
-                </svg>
-            </button>
         {/if}
+
+        <!-- Sort Direction Toggle -->
+        <button
+            onclick={handleDirectionToggle}
+            aria-label={m.toolbarSortDirectionToggle()}
+            class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
+        >
+            <!-- SVG content same as original -->
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide-icon lucide lucide-arrow-up-wide-narrow top-0 left-0"
+            >
+                {#if currentDirection === "asc"}
+                    <path
+                        d="m3 8 4-4 4 4"
+                        in:receive={{ key: 0 }}
+                        out:send={{ key: 0 }}
+                    ></path>
+                    <path
+                        d="M7 4v16"
+                        in:receive={{ key: 1 }}
+                        out:send={{ key: 1 }}
+                    ></path>
+                    <path
+                        d="M11 12h10"
+                        in:receive={{ key: 2 }}
+                        out:send={{ key: 2 }}
+                    ></path>
+                    <path
+                        d="M11 16h7"
+                        in:receive={{ key: 3 }}
+                        out:send={{ key: 3 }}
+                    ></path>
+                    <path
+                        d="M11 20h4"
+                        in:receive={{ key: 4 }}
+                        out:send={{ key: 4 }}
+                    ></path>
+                {:else}
+                    <path
+                        d="m3 16 4 4 4-4"
+                        in:receive={{ key: 0 }}
+                        out:send={{ key: 0 }}
+                    ></path>
+                    <path
+                        d="M7 20V4"
+                        in:receive={{ key: 1 }}
+                        out:send={{ key: 1 }}
+                    ></path>
+                    <path
+                        d="M11 4h4"
+                        in:receive={{ key: 2 }}
+                        out:send={{ key: 2 }}
+                    ></path>
+                    <path
+                        d="M11 8h7"
+                        in:receive={{ key: 3 }}
+                        out:send={{ key: 3 }}
+                    ></path>
+                    <path
+                        d="M11 12h10"
+                        in:receive={{ key: 4 }}
+                        out:send={{ key: 4 }}
+                    ></path>
+                {/if}
+            </svg>
+        </button>
     {/if}
 </div>

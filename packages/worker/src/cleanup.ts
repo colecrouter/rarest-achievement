@@ -1,6 +1,5 @@
 import {
     type ProjectDB,
-    type SteamAuthenticatedAPIClient,
     type VaultService,
     achievementsMeta,
     achievementsStats,
@@ -9,8 +8,7 @@ import {
     userAchievements,
     users,
 } from "@project/lib";
-import { and, asc, eq, inArray, lt } from "drizzle-orm";
-import { chunkArray } from "../../lib/src/repositories/sqlite/utils";
+import { asc, eq, lt } from "drizzle-orm";
 
 export const refreshStaleApps = async (db: ProjectDB, service: VaultService, count: number) => {
     const ONE_DAY_AGO = new Date();
@@ -27,13 +25,18 @@ export const refreshStaleApps = async (db: ProjectDB, service: VaultService, cou
     if (keys.length === 0) return;
 
     for (const pair of keys) {
-        // Delete the stale apps
+        // Delete ALL language variants for this app - much cleaner and avoids consistency issues
         await db.batch([
-            db.delete(apps).where(and(eq(apps.id, pair.id), eq(apps.lang, pair.lang))),
+            // Delete all languages for this app
+            db
+                .delete(apps)
+                .where(eq(apps.id, pair.id)),
             db
                 .delete(achievementsMeta)
-                .where(and(eq(achievementsMeta.app_id, pair.id), eq(achievementsMeta.lang, pair.lang))),
-            db.delete(achievementsStats).where(and(eq(achievementsStats.app_id, pair.id))),
+                .where(eq(achievementsMeta.app_id, pair.id)), // Delete all language metadata
+            db
+                .delete(achievementsStats)
+                .where(eq(achievementsStats.app_id, pair.id)), // Delete stats (language-independent)
         ]);
 
         const lang = getLanguageByAPICode(pair.lang);

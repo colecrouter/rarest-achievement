@@ -908,25 +908,28 @@ class UserAchievementQueryComposer
             console.log(`💾 Inserting ${achievementDataToInsert.length} achievement records`);
 
             // Insert achievement data in chunks to avoid SQL parameter limits (database operation - let it throw)
-            await safeInsert(this.db, achievementDataToInsert, (batch) =>
-                this.db
-                    .insert(userAchievements)
-                    .values(
-                        batch.map((data) => ({
-                            user_id: data.user_id,
-                            app_id: data.app_id,
-                            ach_id: data.ach_id,
-                            unlocked_at: data.unlocked_at,
-                            updated_at: new Date(),
-                        })),
-                    )
-                    .onConflictDoUpdate({
-                        target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
-                        set: {
-                            unlocked_at: userAchievements.unlocked_at,
-                            updated_at: new Date(),
-                        },
-                    }),
+            await safeInsert(
+                this.db,
+                achievementDataToInsert.filter((d) => d !== undefined),
+                (batch) =>
+                    this.db
+                        .insert(userAchievements)
+                        .values(
+                            batch.map((data) => ({
+                                user_id: data.user_id,
+                                app_id: data.app_id,
+                                ach_id: data.ach_id,
+                                unlocked_at: data.unlocked_at,
+                                updated_at: new Date(),
+                            })),
+                        )
+                        .onConflictDoUpdate({
+                            target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
+                            set: {
+                                unlocked_at: userAchievements.unlocked_at,
+                                updated_at: new Date(),
+                            },
+                        }),
             );
             console.log("✅ Successfully inserted/updated achievement data");
         }
@@ -961,7 +964,7 @@ class UserAchievementQueryComposer
             .compose()
             .withLanguage(this.lang)
             .withRequiredEntitySubquery("apps", requiredAppsSubquery)
-            .ensureDataExists();
+            .build();
 
         console.timeEnd(`${timingId} ensureAppDataExists`);
 

@@ -185,7 +185,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         if (appRows.length > 0) {
             // Build app IDs subquery with the same conditions as the main query
             let appIdsQuery = this.db.select({ id: apps.id }).from(apps).$dynamic();
-            
+
             // Add CTEs if any exist
             if (this.ctes.length > 0) {
                 appIdsQuery = this.db
@@ -194,7 +194,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     .from(apps)
                     .$dynamic();
             }
-            
+
             // Add language filter and all other where conditions (same as main query)
             const lang = getLanguageByCode(this.lang)?.apiCode || "english";
             const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
@@ -497,16 +497,18 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                 SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang),
                 // Always fetch stats - upsert logic will handle duplicates
-                this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
-                    if (statsResponse?.achievementpercentages?.achievements) {
-                        return statsResponse.achievementpercentages.achievements.map((ach) => ({
-                            app_id: id,
-                            ach_id: ach.name,
-                            percent: ach.percent,
-                        }));
-                    }
-                    return [];
-                      }),
+                this.steamApi
+                    .getGlobalAchievementPercentagesForApp({ gameid: id })
+                    .then((statsResponse) => {
+                        if (statsResponse?.achievementpercentages?.achievements) {
+                            return statsResponse.achievementpercentages.achievements.map((ach) => ({
+                                app_id: id,
+                                ach_id: ach.name,
+                                percent: ach.percent,
+                            }));
+                        }
+                        return [];
+                    }),
             ]);
 
             return {
@@ -643,19 +645,26 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         // Insert the app IDs we need to check into a temporary structure
         // and use composition to find missing estimates and get app details
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
-        
+
         // Create a CTE with required app IDs, then find missing estimates and get app details in one query
         const requiredAppsCTE = this.db.$with("required_apps").as(
-            this.db.select({ 
-                app_id: sql<number>`value`.as("app_id") 
-            }).from(sql`(VALUES ${sql.join(appIds.map(id => sql`(${id})`), sql`, `)}) AS t(value)`)
+            this.db
+                .select({
+                    app_id: sql<number>`value`.as("app_id"),
+                })
+                .from(
+                    sql`(VALUES ${sql.join(
+                        appIds.map((id) => sql`(${id})`),
+                        sql`, `,
+                    )}) AS t(value)`,
+                ),
         );
 
         const appDetailsRows = await this.db
             .with(requiredAppsCTE)
-            .select({ 
-                id: apps.id, 
-                data: apps.data 
+            .select({
+                id: apps.id,
+                data: apps.data,
             })
             .from(requiredAppsCTE)
             .innerJoin(apps, eq(requiredAppsCTE.app_id, apps.id))
@@ -666,9 +675,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                         this.db
                             .select({ app_id: estimatedPlayers.app_id })
                             .from(estimatedPlayers)
-                            .where(eq(estimatedPlayers.app_id, requiredAppsCTE.app_id))
-                    )
-                )
+                            .where(eq(estimatedPlayers.app_id, requiredAppsCTE.app_id)),
+                    ),
+                ),
             );
 
         if (appDetailsRows.length === 0) {

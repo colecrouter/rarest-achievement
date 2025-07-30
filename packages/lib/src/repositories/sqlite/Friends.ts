@@ -142,7 +142,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
                 // Now ensure friend users exist using subquery from friends table (avoids parameter explosion)
                 if (allFriendIds.size > 0) {
                     console.log(`👥 Ensuring ${allFriendIds.size} friend users exist in database using subquery`);
-                    
+
                     // Create subquery for friend user IDs from the friends table we just populated
                     const friendUserIdsSubquery = sql`(
                         SELECT DISTINCT friend_id AS user_id 

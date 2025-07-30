@@ -108,7 +108,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
         // Find missing users using subquery pattern when available
         // Note: Database errors (SQL issues) should bubble up, not be caught
         const missingUserIds = await this.findMissingUsers();
-        
+
         if (missingUserIds.length === 0) {
             console.timeEnd(`${timingId} UserQueryComposer.ensureDataExists`);
             return Attempt.ok(undefined);
@@ -117,7 +117,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
         // Fetch and insert missing user data
         // Note: API errors are handled inside fetchAndUpsertUsers, DB errors bubble up
         const upsertResult = await this.fetchAndUpsertUsers(missingUserIds);
-        
+
         console.timeEnd(`${timingId} UserQueryComposer.ensureDataExists`);
         return upsertResult;
     }
@@ -300,11 +300,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 
         // Now get all owned games for these users using a subquery to avoid parameter limits
         // Create a subquery that matches the same user filtering and pagination as the main query
-        let userIdsSubquery = this.db
-            .select({ id: users.id })
-            .from(users)
-            .orderBy(sortDir(sortMethod))
-            .$dynamic();
+        let userIdsSubquery = this.db.select({ id: users.id }).from(users).orderBy(sortDir(sortMethod)).$dynamic();
 
         // Apply the same user ID filtering as the main query
         if (this.userIds.size > 0) {

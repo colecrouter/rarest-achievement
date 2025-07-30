@@ -314,9 +314,16 @@ class AppAchievementQueryComposer implements QueryComposer<SteamAppAchievement, 
         if (dataAppIds.length === 0) return [];
 
         const requiredAppsCTE = this.db.$with("required_apps_fallback").as(
-            this.db.select({ 
-                app_id: sql<number>`value`.as("app_id") 
-            }).from(sql`(VALUES ${sql.join(dataAppIds.map(id => sql`(${id})`), sql`, `)}) AS t(value)`)
+            this.db
+                .select({
+                    app_id: sql<number>`value`.as("app_id"),
+                })
+                .from(
+                    sql`(VALUES ${sql.join(
+                        dataAppIds.map((id) => sql`(${id})`),
+                        sql`, `,
+                    )}) AS t(value)`,
+                ),
         );
 
         return await this.db

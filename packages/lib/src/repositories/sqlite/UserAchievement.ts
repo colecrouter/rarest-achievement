@@ -11,7 +11,7 @@ import {
 } from "../..";
 import { Attempt, type AttemptStatus } from "../../error";
 import type { APILanguageCode, LanguageCode } from "../../lang";
-import { SteamApp, SteamAppAchievement, SteamFriendUser, SteamUserAchievement } from "../../models";
+import { SteamApp, type SteamAppAchievement, type SteamFriendUser, SteamUserAchievement } from "../../models";
 import type { SteamAppRaw } from "../../models/SteamApp";
 import { generateTimingId } from "../../utils/timing";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
@@ -773,14 +773,14 @@ class UserAchievementQueryComposer
 
             // Use subquery to get friend IDs instead of extracting them (avoids parameter explosion)
             console.log(`🔍 Using subquery for friends of user ${this.friendsOfUserId}`);
-            
+
             // First, ensure user profile and owned games data exists using subquery
             const friendUserIdsSubquery = sql`(
                 SELECT DISTINCT friend_id AS user_id 
                 FROM friends 
                 WHERE user_id = ${this.friendsOfUserId}
             )`;
-            
+
             result = await this.userRepository
                 .compose()
                 .withRequiredEntitySubquery("user", friendUserIdsSubquery)
@@ -788,7 +788,7 @@ class UserAchievementQueryComposer
         } else {
             const userIds = Array.from(this.userIds);
             if (userIds.length === 0) return Attempt.ok(undefined);
-            
+
             // First, ensure user profile and owned games data exists
             result = await this.userRepository.compose().withUserIds(userIds).ensureDataExists();
         }
@@ -1053,10 +1053,14 @@ class UserAchievementQueryComposer
 
         // Use safe approach for app achievements to avoid parameter explosion
         let appAchievementsResult: Attempt<SteamAppAchievement[], AttemptStatus>;
-        
+
         if (uniqueAppIds.length <= 50) {
             // Safe to use direct approach for small sets
-            appAchievementsResult = await this.appAchievementRepository.compose().withLanguage(this.lang).withAppIds(uniqueAppIds).build();
+            appAchievementsResult = await this.appAchievementRepository
+                .compose()
+                .withLanguage(this.lang)
+                .withAppIds(uniqueAppIds)
+                .build();
         } else {
             // For larger sets, chunk the requests
             const CHUNK_SIZE = 50;
@@ -1064,30 +1068,31 @@ class UserAchievementQueryComposer
             for (let i = 0; i < uniqueAppIds.length; i += CHUNK_SIZE) {
                 chunks.push(uniqueAppIds.slice(i, i + CHUNK_SIZE));
             }
-            
+
             const chunkResults = await Promise.all(
-                chunks.map(chunk => 
-                    this.appAchievementRepository.compose().withLanguage(this.lang).withAppIds(chunk).build()
-                )
+                chunks.map((chunk) =>
+                    this.appAchievementRepository.compose().withLanguage(this.lang).withAppIds(chunk).build(),
+                ),
             );
-            
+
             // Combine results
             const allAppAchievements: SteamAppAchievement[] = [];
             let hasError = false;
             let firstError: Error | null = null;
-            
+
             for (const result of chunkResults) {
                 if (result.hasData()) {
                     allAppAchievements.push(...result.data);
                 } else if (!firstError) {
                     hasError = true;
-                    firstError = new Error('Failed to fetch app achievements chunk');
+                    firstError = new Error("Failed to fetch app achievements chunk");
                 }
             }
-            
-            appAchievementsResult = hasError && allAppAchievements.length === 0 
-                ? Attempt.fromSimple([], firstError!) 
-                : Attempt.ok(allAppAchievements);
+
+            appAchievementsResult =
+                hasError && allAppAchievements.length === 0
+                    ? Attempt.fromSimple([], firstError!)
+                    : Attempt.ok(allAppAchievements);
         }
 
         const userDataResult = await this.userRepository.compose().withUserIds(uniqueUserIds).build();

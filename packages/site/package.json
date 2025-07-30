@@ -18,6 +18,7 @@
         "@lucide/svelte": "^0.488.0",
         "@number-flow/svelte": "^0.3.7",
         "@project/lib": "^1.0.0",
+        "@sentry/sveltekit": "^9.43.0",
         "@skeletonlabs/skeleton": "^3.1.2",
         "@skeletonlabs/skeleton-svelte": "^1.2.1",
         "@sveltejs/adapter-cloudflare": "^7.0.4",
@@ -45,8 +46,5 @@
     },
     "overrides": {
         "esm-env": "npm:esm-env-runtime@^0.1.1"
-    },
-    "dependencies": {
-        "@sentry/sveltekit": "^9.14.0"
     }
 }

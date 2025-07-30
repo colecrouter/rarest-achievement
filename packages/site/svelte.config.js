@@ -33,6 +33,7 @@ const config = {
                     "https://i.ytimg.com/",
                 ],
                 "style-src": ["self", "unsafe-inline"],
+                "script-src": ["self", "sha256-y2WkUILyE4eycy7x+pC0z99aZjTZlWfVwgUAfNc1sY8="],
             },
         },
     },

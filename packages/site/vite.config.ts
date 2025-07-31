@@ -1,5 +1,5 @@
-import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sentrySvelteKit } from "@sentry/sveltekit";
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { svelteTesting } from "@testing-library/svelte/vite";
@@ -13,8 +13,8 @@ export default defineConfig({
                 project: "steam-vault",
             },
         }),
-        tailwindcss(),
-        sveltekit(), // @ts-ignore
+        tailwindcss(), // @ts-ignore
+        sveltekit(),
         paraglideVitePlugin({
             project: "./project.inlang",
             outdir: "./src/lib/paraglide",

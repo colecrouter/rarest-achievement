@@ -67,6 +67,8 @@ const authHandle: Handle = async ({ event, resolve }) => {
 const initSentryHandle = initCloudflareSentryHandle({
     dsn: "https://1090e526411b74ec7e519ecf548c54b5@o4508581503172608.ingest.us.sentry.io/4509233074667520",
     tracesSampleRate: 1,
+    enableLogs: true,
+    integrations: [], // Explicitly disable all integrations to avoid HTTP instrumentation
 });
 
 // Define a no-op handle
@@ -80,11 +82,7 @@ export const handle = sequence(
     authHandle,
 );
 
-export const init = () => {
-    dev && setBypassCdnEnabled(true);
-};
-
-export const handleError = handleErrorWithSentry();
+export const init = () => dev && setBypassCdnEnabled(true);
 
 // 10 concurrent fetches in dev mode
 // Needed because Miniflare gets overloaded with too many fetches
@@ -134,3 +132,4 @@ export const handleFetch: HandleFetch = async ({ request, fetch }) => {
         if (dev) fetchDevLimiter.done();
     }
 };
+export const handleError = handleErrorWithSentry();

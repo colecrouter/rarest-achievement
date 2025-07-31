@@ -38,11 +38,12 @@ export interface AppSortFilters {
 class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private appIds: Set<number> = new Set();
     private whereConditions: SQL[] = [];
-    // biome-ignore lint/suspicious/noExplicitAny: I don't think there's a way to type this properly
-    private ctes: WithSubqueryWithSelection<Record<string, any>, string>[] = [];
+    // biome-ignore lint/suspicious/noExplicitAny: Drizzle CTE types are complex and vary by query
+    private ctes: WithSubqueryWithSelection<any, string>[] = [];
     private lang: LanguageCode = "en";
     private searchTerm?: string; /// TODO
-    private requiredAppSubquery?: SQL; // For cross-repository data dependencies
+    // Store required apps subquery for cross-repository dependencies
+    private requiredAppsSubquery?: SQL;
 
     constructor(
         // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
@@ -129,7 +130,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      */
     withRequiredEntitySubquery(entityType: string, subquery: SQL): this {
         if (entityType === "apps") {
-            this.requiredAppSubquery = subquery;
+            // Store the raw SQL subquery for use in queries
+            this.requiredAppsSubquery = subquery;
         }
         return this;
     }
@@ -246,7 +248,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             Ideally, player estimates would be fetched alongside the rest, but in practice I don't think it matters too much (different API entirely).
         */
 
-        if (this.appIds.size === 0 && !this.requiredAppSubquery) {
+        if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined) {
             return Attempt.ok(undefined);
         }
 
@@ -284,11 +286,11 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private async findMissingApps(): Promise<number[]> {
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
-        if (this.requiredAppSubquery) {
+        if (this.requiredAppsSubquery) {
             // Use provided subquery from cross-repository dependency with notExists
             const missingAppsQuery = this.db
-                .select({ app_id: sql<number>`required_apps.app_id` })
-                .from(sql`(${this.requiredAppSubquery}) AS required_apps`)
+                .select({ app_id: sql<number>`app_id`.as("app_id") })
+                .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
                 .where(
                     notExists(
                         this.db
@@ -323,11 +325,11 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      * Uses notExists for subqueries and inArray for consumer-controlled parameters
      */
     private async findMissingPlayerEstimates(): Promise<number[]> {
-        if (this.requiredAppSubquery) {
+        if (this.requiredAppsSubquery) {
             // Use provided subquery from cross-repository dependency with notExists
             const missingPlayerEstimatesQuery = this.db
-                .select({ app_id: sql<number>`required_apps.app_id` })
-                .from(sql`(${this.requiredAppSubquery}) AS required_apps`)
+                .select({ app_id: sql<number>`app_id`.as("app_id") })
+                .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
                 .where(
                     notExists(
                         this.db
@@ -816,43 +818,51 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const timingId = generateTimingId();
         console.time(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
 
-        // Insert the app IDs we need to check into a temporary structure
-        // and use composition to find missing estimates and get app details
+        // Use composition to find missing estimates and get app details
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
-        // Create a CTE with required app IDs, then find missing estimates and get app details in one query
-        const requiredAppsCTE = this.db.$with("required_apps").as(
-            this.db
-                .select({
-                    app_id: sql<number>`value`.as("app_id"),
-                })
-                .from(
-                    sql`(VALUES ${sql.join(
-                        appIds.map((id) => sql`(${id})`),
-                        sql`, `,
-                    )}) AS t(value)`,
-                ),
-        );
+        let appDetailsRows: Array<{ id: number; data: unknown }>;
 
-        const appDetailsRows = await this.db
-            .with(requiredAppsCTE)
-            .select({
-                id: apps.id,
-                data: apps.data,
-            })
-            .from(requiredAppsCTE)
-            .innerJoin(apps, eq(requiredAppsCTE.app_id, apps.id))
-            .where(
-                and(
-                    eq(apps.lang, lang),
-                    notExists(
-                        this.db
-                            .select({ app_id: estimatedPlayers.app_id })
-                            .from(estimatedPlayers)
-                            .where(eq(estimatedPlayers.app_id, requiredAppsCTE.app_id)),
+        if (this.requiredAppsSubquery) {
+            // Use provided subquery from cross-repository dependency to avoid parameter explosion
+            appDetailsRows = await this.db
+                .select({
+                    id: apps.id,
+                    data: apps.data,
+                })
+                .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+                .innerJoin(apps, eq(sql`required_apps.app_id`, apps.id))
+                .where(
+                    and(
+                        eq(apps.lang, lang),
+                        notExists(
+                            this.db
+                                .select({ app_id: estimatedPlayers.app_id })
+                                .from(estimatedPlayers)
+                                .where(eq(estimatedPlayers.app_id, sql`required_apps.app_id`)),
+                        ),
                     ),
-                ),
-            );
+                );
+        } else {
+            appDetailsRows = await this.db
+                .select({
+                    id: apps.id,
+                    data: apps.data,
+                })
+                .from(apps)
+                .innerJoin(apps, eq(apps.id, inArray(apps.id, appIds)))
+                .where(
+                    and(
+                        eq(apps.lang, lang),
+                        notExists(
+                            this.db
+                                .select({ app_id: estimatedPlayers.app_id })
+                                .from(estimatedPlayers)
+                                .where(eq(estimatedPlayers.app_id, apps.id)),
+                        ),
+                    ),
+                );
+        }
 
         if (appDetailsRows.length === 0) {
             console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);

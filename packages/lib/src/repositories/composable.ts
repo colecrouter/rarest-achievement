@@ -50,32 +50,32 @@ export interface QueryComposer<TResult, TSortMethod extends string> {
 }
 
 /**
- * Interface for composers that can provide subqueries to define required data
+ * Interface for composers that can provide CTEs to define required data
  * This enables cross-repository data dependency resolution without parameter explosion
  */
 export interface SubqueryProvider {
     /**
-     * Build a subquery that selects the IDs of required entities
-     * Returns a SQL subquery that can be used by dependency repositories
+     * Build a CTE that selects the IDs of required entities
+     * Returns a CTE that can be used by dependency repositories
      * to determine what data needs to be fetched
      */
-    buildRequiredEntitySubquery?(entityType: string): SQL | undefined;
+    buildRequiredEntitySubquery?(entityType: string, cteName: string): SQL | undefined;
 }
 
 /**
- * Interface for composers that can accept subqueries to determine required data
+ * Interface for composers that can accept CTEs to determine required data
  * This allows repositories to avoid parameter explosion when ensuring dependency data exists
  */
 export interface SubqueryConsumer<TResult, TSortMethod extends string> extends QueryComposer<TResult, TSortMethod> {
     /**
-     * Accept a subquery that defines which entities are required
-     * This subquery will be used instead of explicit ID arrays for data existence checking
+     * Accept a CTE that defines which entities are required
+     * This CTE will be used instead of explicit ID arrays for data existence checking
      */
     withRequiredEntitySubquery?(entityType: string, subquery: SQL): this;
 
     /**
      * Ensure required data exists based on current filter state
-     * Uses subqueries when available, falls back to explicit IDs when needed
+     * Uses CTEs when available, falls back to explicit IDs when needed
      */
     ensureDataExists?(): Promise<Attempt<void, AttemptStatus>>;
 }

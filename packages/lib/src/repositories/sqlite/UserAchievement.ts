@@ -743,8 +743,8 @@ class UserAchievementQueryComposer
 
             // First, ensure user profile and owned games data exists using subquery
             const friendUserIdsSubquery = sql`(
-                SELECT DISTINCT friend_id AS user_id 
-                FROM friends 
+                SELECT DISTINCT friend_id AS user_id
+                FROM friends
                 WHERE user_id = ${this.friendsOfUserId}
             )`;
 

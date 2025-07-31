@@ -9,7 +9,7 @@
         "start": "wrangler dev",
         "test": "vitest run",
         "cf-typegen": "wrangler types",
-        "lint": "tsc --noEmit --skipLibCheck --pretty",
+        "check": "tsc --noEmit --skipLibCheck --pretty",
         "postinstall": "npm run cf-typegen",
         "db:migrate": "wrangler d1 migrations apply steam-data"
     },

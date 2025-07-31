@@ -7,8 +7,7 @@
         "build": "npm run build -w @project/lib && vite build",
         "preview": "vite preview",
         "db:migrate": "wrangler d1 migrations apply steam-data",
-        "lint": "svelte-kit sync && svelte-check --ignore ../../node_modules --no-tsconfig",
-        "machine-translate": "inlang machine translate --project project.inlang",
+        "check": "svelte-kit sync && svelte-check",
         "test": "vitest run"
     },
     "type": "module",

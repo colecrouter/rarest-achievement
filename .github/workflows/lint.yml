@@ -26,5 +26,5 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
-      - name: Run `svelte-check`
-        run: npx svelte-check --output human
+      - name: Run `check`
+        run: npm run check

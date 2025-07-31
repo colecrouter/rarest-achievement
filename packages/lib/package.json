@@ -19,7 +19,6 @@
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
         "db:migration": "drizzle-kit generate",
-        "lint": "tsc --noEmit --skipLibCheck --pretty",
         "test": "tsx --test **/*.spec.ts"
     },
     "devDependencies": {

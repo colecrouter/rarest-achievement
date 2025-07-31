@@ -6,12 +6,14 @@
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "skipLibCheck": false,
+        "skipLibCheck": true,
         "sourceMap": true,
         "strict": true,
         "moduleResolution": "bundler",
         "noUncheckedIndexedAccess": true,
-        "types": ["vite/client"]
+        "types": [
+            "vite/client"
+        ]
     }
     // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
     // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files

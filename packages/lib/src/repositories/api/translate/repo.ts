@@ -11,82 +11,75 @@ export class TranslateRepository {
         this.#cache = cache;
     }
 
-    async translateAchievements(ach: Array<SteamAppAchievement>, locale: LanguageCode) {
-        const achievements = Array.from(ach);
+    /**
+     * Translate achievements for the given games.
+     * This method is optimized for translating all achievements for entire games at once.
+     */
+    async translateAchievements(achievements: Array<SteamAppAchievement>, locale: LanguageCode) {
+        if (achievements.length === 0) return new Map<SteamAppAchievement, string>();
 
-        // Deduplicate achievements by app.id and id
-        const uniqueKey = (ach: SteamAppAchievement) => `${ach.app.id}:${ach.id}`;
-        const achievementGroups = Map.groupBy(achievements, uniqueKey);
-        const uniqueAchievements = new Map<string, SteamAppAchievement>(
-            achievementGroups
-                .entries()
-                // biome-ignore lint/style/noNonNullAssertion: <explanation>
-                .map(([key, group]) => [key, group[0]!] as const),
-        );
-
-        // Group by app id for game‐level caching
+        // Group achievements by app ID for efficient caching and translation
         const achievementsByApp = new Map<number, SteamAppAchievement[]>();
-        for (const uniqueAch of uniqueAchievements.values()) {
-            const appId = uniqueAch.app.id;
+        for (const achievement of achievements) {
+            const appId = achievement.app.id;
             const group = achievementsByApp.get(appId) ?? [];
-            group.push(uniqueAch);
+            group.push(achievement);
             achievementsByApp.set(appId, group);
         }
 
-        // Buffer to hold all translations
-        const resultsBuffer = new Map<SteamAppAchievement, string | null>();
+        const results = new Map<SteamAppAchievement, string>();
 
-        // Process each game's achievements in one go
+        // Process each game's achievements
         for (const [appId, appAchievements] of achievementsByApp.entries()) {
             const cacheKey = `translate:${appId}:${locale}`;
             const cachedJson = await this.#cache.get(cacheKey);
             const cachedMap: Record<string, string> = cachedJson ? JSON.parse(cachedJson) : {};
 
-            let dirty = false; // <- only mark true when we add new ones
+            let dirty = false;
 
-            // Seed buffer from cache
-            for (const achItem of appAchievements) {
-                resultsBuffer.set(achItem, cachedMap[achItem.id] ?? null);
-            }
+            // Find achievements that need translation
+            const toTranslate = appAchievements.filter(
+                (achievement) => !cachedMap[achievement.id] && achievement.description,
+            );
 
-            // Find which need translation
-            const toTranslate = appAchievements.filter((a) => !resultsBuffer.get(a) && a.description);
-            if (toTranslate.length === 0) continue;
+            // Translate missing achievements
+            if (toTranslate.length > 0) {
+                try {
+                    const strings = toTranslate.map((a) => a.description ?? "");
+                    const response = await this.#client.translateText({
+                        q: strings,
+                        target: locale,
+                    });
 
-            try {
-                const strings = toTranslate.map((a) => a.description ?? "");
-                const res = await this.#client.translateText({
-                    q: strings,
-                    target: locale,
-                });
-                if (!res.data.translations) throw new Error("No translations found");
-
-                // Merge new translations
-                toTranslate.forEach((achItem, idx) => {
-                    const translation = res.data.translations[idx]?.translatedText;
-                    if (translation) {
-                        cachedMap[achItem.id] = translation;
-                        resultsBuffer.set(achItem, translation);
-                        dirty = true;
+                    if (!response.data.translations) {
+                        throw new Error("No translations found in response");
                     }
-                });
 
-                // Update KV with the full map
-                if (dirty) await this.#cache.put(cacheKey, JSON.stringify(cachedMap));
-            } catch (error) {
-                console.error("Error translating achievements:", error);
+                    // Update cache with new translations
+                    toTranslate.forEach((achievement, idx) => {
+                        const translation = response.data.translations[idx]?.translatedText;
+                        if (translation) {
+                            cachedMap[achievement.id] = translation;
+                            dirty = true;
+                        }
+                    });
+
+                    // Save updated cache
+                    if (dirty) {
+                        await this.#cache.put(cacheKey, JSON.stringify(cachedMap));
+                    }
+                } catch (error) {
+                    console.error(`Error translating achievements for app ${appId}:`, error);
+                }
             }
-        }
 
-        const results = new Map<SteamAppAchievement, string>();
-
-        // Assign translations back onto each original achievement
-        for (const ach of achievements) {
-            const uniqueAch = uniqueAchievements.get(uniqueKey(ach));
-            if (!uniqueAch) continue;
-
-            const translation = resultsBuffer.get(uniqueAch) ?? null;
-            if (translation) results.set(ach, translation);
+            // Add results for this app
+            for (const achievement of appAchievements) {
+                const translation = cachedMap[achievement.id];
+                if (translation) {
+                    results.set(achievement, translation);
+                }
+            }
         }
 
         return results;

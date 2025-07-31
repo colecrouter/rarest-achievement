@@ -22,32 +22,33 @@
             .toArray();
         if (missingTranslations.length === 0) return;
 
+        // Group achievements by app ID to reduce API calls
+        const appIds = new Set(missingTranslations.map((a) => a.app.id))
+            .values()
+            .toArray();
+
         const resMap = fetch(`/translate?lang=${lang}`, {
             method: "POST",
-            body: JSON.stringify(
-                missingTranslations.map((a) => [a.app.id, a.id]),
-            ),
-        })
-            .then((res) => {
-                if (!res.ok) {
-                    throw new Error(
-                        `Failed to fetch translations: ${res.status} ${res.statusText}`,
-                    );
-                }
-                return res.json() as Promise<Array<[string, string]>>;
-            })
-            .then((res) => new Map(res));
+            body: JSON.stringify(appIds),
+        }).then((res) => {
+            if (!res.ok) {
+                throw new Error(
+                    `Failed to fetch translations: ${res.status} ${res.statusText}`,
+                );
+            }
+            return res.json() as Promise<Record<string, string>>;
+        });
 
         for (const achievement of missingTranslations) {
             // Assign promise back to the map
             const res = resMap.then(
-                (res) =>
-                    res.get(`${achievement.app.id}:${achievement.id}`) ?? "",
-            ); // TODO
+                (res) => res[`${achievement.app.id}:${achievement.id}`] ?? "",
+            );
             translations.set(achievement, res);
         }
     }
 
+    // I'm fairly confident this is another memory leak, but it's fine for now
     $effect.root(() => {
         $effect(() => {
             if (translate) translateAchievements(getLocale());

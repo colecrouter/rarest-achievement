@@ -20,8 +20,7 @@ export const load = async ({ params, parent, locals }) => {
 
     const translation =
         getLocale() !== achievement.language
-            ? ((await translate.translateAchievements([achievement], getLocale())).values().take(1).toArray()[0] ??
-              null)
+            ? ((await translate.translateAchievements([achievement], getLocale())).get(achievement) ?? null)
             : null;
 
     const breadcrumbs = [

@@ -460,6 +460,8 @@ class UserAchievementQueryComposer
                     hidden: achievementsMeta.hidden,
                     icon: achievementsMeta.icon,
                     icon_gray: achievementsMeta.icon_gray,
+                    // Also select the actual language used (for fallback detection)
+                    achievement_lang: achievementsMeta.lang,
                     // App data (JSON field)
                     app_data: apps.data,
                     app_lang: apps.lang,
@@ -474,13 +476,19 @@ class UserAchievementQueryComposer
                         eq(userAchievements.app_id, ownedGames.app_id),
                     ),
                 )
-                // JOIN for achievement metadata (replaces separate AppAchievement fetch)
+                // JOIN for achievement metadata with fallback logic (requested language -> English)
                 .innerJoin(
                     achievementsMeta,
                     and(
                         eq(userAchievements.app_id, achievementsMeta.app_id),
                         eq(userAchievements.ach_id, achievementsMeta.ach_id),
-                        eq(achievementsMeta.lang, apiCode),
+                        // Fallback logic: try requested language first, then English
+                        sql`${achievementsMeta.lang} = (
+                            SELECT COALESCE(
+                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
+                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
+                            )
+                        )`,
                     ),
                 )
                 // JOIN for app data
@@ -514,6 +522,8 @@ class UserAchievementQueryComposer
                         hidden: achievementsMeta.hidden,
                         icon: achievementsMeta.icon,
                         icon_gray: achievementsMeta.icon_gray,
+                        // Also select the actual language used (for fallback detection)
+                        achievement_lang: achievementsMeta.lang,
                         // App data (JSON field)
                         app_data: apps.data,
                         app_lang: apps.lang,
@@ -528,13 +538,19 @@ class UserAchievementQueryComposer
                             eq(userAchievements.app_id, ownedGames.app_id),
                         ),
                     )
-                    // JOIN for achievement metadata (replaces separate AppAchievement fetch)
+                    // JOIN for achievement metadata with fallback logic (requested language -> English)
                     .innerJoin(
                         achievementsMeta,
                         and(
                             eq(userAchievements.app_id, achievementsMeta.app_id),
                             eq(userAchievements.ach_id, achievementsMeta.ach_id),
-                            eq(achievementsMeta.lang, apiCode),
+                            // Fallback logic: try requested language first, then English
+                            sql`${achievementsMeta.lang} = (
+                                SELECT COALESCE(
+                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
+                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
+                                )
+                            )`,
                         ),
                     )
                     // JOIN for app data
@@ -609,6 +625,7 @@ class UserAchievementQueryComposer
             hidden: number;
             icon: string;
             icon_gray: string;
+            achievement_lang: APILanguageCode; // Language actually used for achievement metadata
             app_data: SteamAppRaw | null; // SteamAppRaw data
             app_lang: APILanguageCode; // APILanguageCode
             estimated_players: number | null;
@@ -667,12 +684,15 @@ class UserAchievementQueryComposer
                               percent: 0, // Default value when no stats available
                           };
 
+                // Determine effective language: use achievement_lang if available, otherwise app_lang
+                const effectiveLanguage = row.achievement_lang || row.app_lang;
+
                 results.push(
                     new SteamUserAchievement({
                         app: app,
                         meta: meta,
                         globalStats: globalStats,
-                        lang: row.app_lang,
+                        lang: effectiveLanguage, // Use the actual achievement language
                         user: user,
                         userStats: row.unlocked_at
                             ? {
@@ -1013,6 +1033,7 @@ class UserAchievementQueryComposer
                 .build();
         } else {
             // For larger sets, chunk the requests
+            // TODO this is still giving me PTSD
             const CHUNK_SIZE = 50;
             const chunks: number[][] = [];
             for (let i = 0; i < uniqueAppIds.length; i += CHUNK_SIZE) {

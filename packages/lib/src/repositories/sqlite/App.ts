@@ -362,6 +362,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      * Checks database for English version first to avoid redundant API calls.
      */
     private async fetchAchievementMetaWithFallbackDetection(appId: number, requestedLang: APILanguageCode) {
+        console.log(`🔤 Fetching achievement meta for app ${appId} with requested language: ${requestedLang}`);
         const isEnglish = requestedLang === "english";
 
         if (isEnglish) {
@@ -403,6 +404,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             .where(and(eq(achievementsMeta.app_id, appId), eq(achievementsMeta.lang, "english")));
 
         const hasEnglishInDb = existingEnglishMeta.length > 0;
+        console.log(`🔤 App ${appId}: English in DB: ${hasEnglishInDb} (${existingEnglishMeta.length} achievements)`);
 
         if (hasEnglishInDb) {
             // We have English in DB, only fetch the requested language
@@ -412,29 +414,120 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             });
             const requestedAchievements = requestedRes?.game?.availableGameStats?.achievements || [];
 
-            return {
-                requested: requestedAchievements.map((ach) => ({
-                    app_id: appId,
-                    ach_id: ach.name,
-                    display_name: ach.displayName,
-                    default_value: ach.defaultvalue,
-                    description: ach.description ?? undefined,
-                    icon: ach.icon,
-                    icon_gray: ach.icongray,
-                    hidden: ach.hidden ? 1 : 0,
-                })),
-                english: existingEnglishMeta.map((ach) => ({
-                    app_id: appId,
-                    ach_id: ach.ach_id,
-                    display_name: ach.display_name,
-                    default_value: ach.default_value,
-                    description: ach.description ?? undefined,
-                    icon: ach.icon,
-                    icon_gray: ach.icon_gray,
-                    hidden: ach.hidden,
-                })),
-                wasEnglishFromDb: true,
+            console.log(
+                `🔤 App ${appId}: Found ${requestedAchievements.length} achievements in ${requestedLang} (with English from DB)`,
+            );
+
+            // Convert requested achievements to our format for comparison
+            const requestedMapped = requestedAchievements.map((ach) => ({
+                app_id: appId,
+                ach_id: ach.name,
+                display_name: ach.displayName,
+                default_value: ach.defaultvalue,
+                description: ach.description ?? undefined,
+                icon: ach.icon,
+                icon_gray: ach.icongray,
+                hidden: ach.hidden ? 1 : 0,
+            }));
+
+            const englishMapped = existingEnglishMeta.map((ach) => ({
+                app_id: appId,
+                ach_id: ach.ach_id,
+                display_name: ach.display_name,
+                default_value: ach.default_value,
+                description: ach.description ?? undefined,
+                icon: ach.icon,
+                icon_gray: ach.icon_gray,
+                hidden: ach.hidden,
+            }));
+
+            // Achievement fallback detection logic:
+            // 1. Compare [lang] vs English achievements by matching ach_id (not array position)
+            // 2. If identical (same display_name, description), store ONLY English to avoid duplication
+            // 3. [lang] app record is still created (for re-fetch prevention)
+            // 4. UI will use Google Translate on English text when displaying in [lang]
+            const requestedMap = new Map(requestedMapped.map((ach) => [ach.ach_id, ach]));
+            const englishMap = new Map(englishMapped.map((ach) => [ach.ach_id, ach]));
+
+            const areIdentical =
+                requestedMapped.length === englishMapped.length &&
+                requestedMapped.every((req) => {
+                    const eng = englishMap.get(req.ach_id);
+                    return (
+                        eng &&
+                        req.ach_id === eng.ach_id &&
+                        req.display_name === eng.display_name &&
+                        req.description === eng.description
+                    );
+                });
+
+            console.log(
+                `🔤 App ${appId}: Achievements identical: ${areIdentical} (${requestedMapped.length} vs ${englishMapped.length})`,
+            );
+            if (!areIdentical) {
+                // Show first few differences for debugging
+                let diffCount = 0;
+                for (const req of requestedMapped) {
+                    if (diffCount >= 3) break;
+
+                    const eng = englishMap.get(req.ach_id);
+                    if (!eng) {
+                        console.log(
+                            `🔤 App ${appId} diff #${diffCount}: Achievement "${req.ach_id}" exists in ${requestedLang} but not in English`,
+                        );
+                        diffCount++;
+                    } else {
+                        const nameMatch = req.display_name === eng.display_name;
+                        const descMatch = req.description === eng.description;
+                        if (!nameMatch || !descMatch) {
+                            console.log(
+                                `🔤 App ${appId} diff #${diffCount}: "${req.ach_id}" - Name(${nameMatch}): "${req.display_name}" vs "${eng.display_name}"`,
+                            );
+                            diffCount++;
+                        }
+                    }
+                }
+                // Check for English achievements missing in requested language
+                for (const eng of englishMapped) {
+                    if (diffCount >= 3) break;
+                    if (!requestedMap.has(eng.ach_id)) {
+                        console.log(
+                            `🔤 App ${appId} diff #${diffCount}: Achievement "${eng.ach_id}" exists in English but not in ${requestedLang}`,
+                        );
+                        diffCount++;
+                    }
+                }
+            }
+
+            let result: {
+                requested: typeof requestedMapped;
+                english: typeof englishMapped;
+                wasEnglishFromDb: boolean;
             };
+            if (areIdentical) {
+                console.log(
+                    `🔤 App ${appId}: Achievements identical in ${requestedLang} and English (English from DB), storing only English version`,
+                );
+                result = {
+                    requested: [], // Empty - use English fallback
+                    english: englishMapped,
+                    wasEnglishFromDb: true,
+                };
+            } else {
+                console.log(
+                    `🔤 App ${appId}: Achievements differ between ${requestedLang} and English (English from DB), storing both versions`,
+                );
+                result = {
+                    requested: requestedMapped,
+                    english: englishMapped,
+                    wasEnglishFromDb: true,
+                };
+            }
+
+            console.log(
+                `🔤 App ${appId} fallback result (English from DB): requested=${result.requested.length}, english=${result.english.length}, wasEnglishFromDb=${result.wasEnglishFromDb}`,
+            );
+            return result;
         }
 
         // We don't have English in DB, fetch both requested language and English
@@ -446,29 +539,86 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const requestedAchievements = requestedRes?.game?.availableGameStats?.achievements || [];
         const englishAchievements = englishRes?.game?.availableGameStats?.achievements || [];
 
-        return {
-            requested: requestedAchievements.map((ach) => ({
-                app_id: appId,
-                ach_id: ach.name,
-                display_name: ach.displayName,
-                default_value: ach.defaultvalue,
-                description: ach.description ?? undefined,
-                icon: ach.icon,
-                icon_gray: ach.icongray,
-                hidden: ach.hidden ? 1 : 0,
-            })),
-            english: englishAchievements.map((ach) => ({
-                app_id: appId,
-                ach_id: ach.name,
-                display_name: ach.displayName,
-                default_value: ach.defaultvalue,
-                description: ach.description ?? undefined,
-                icon: ach.icon,
-                icon_gray: ach.icongray,
-                hidden: ach.hidden ? 1 : 0,
-            })),
-            wasEnglishFromDb: false,
+        console.log(
+            `🔤 App ${appId}: Found ${requestedAchievements.length} achievements in ${requestedLang}, ${englishAchievements.length} in English`,
+        );
+
+        // Convert to our format for comparison
+        const requestedMapped = requestedAchievements.map((ach) => ({
+            app_id: appId,
+            ach_id: ach.name,
+            display_name: ach.displayName,
+            default_value: ach.defaultvalue,
+            description: ach.description ?? undefined,
+            icon: ach.icon,
+            icon_gray: ach.icongray,
+            hidden: ach.hidden ? 1 : 0,
+        }));
+
+        const englishMapped = englishAchievements.map((ach) => ({
+            app_id: appId,
+            ach_id: ach.name,
+            display_name: ach.displayName,
+            default_value: ach.defaultvalue,
+            description: ach.description ?? undefined,
+            icon: ach.icon,
+            icon_gray: ach.icongray,
+            hidden: ach.hidden ? 1 : 0,
+        }));
+
+        // Achievement fallback detection logic (when English exists in DB):
+        // 1. Compare newly fetched French vs existing English by matching ach_id
+        // 2. If identical, store ONLY English to avoid duplication
+        // 3. French app record is still created (prevents re-fetching)
+        // 4. UserAchievement queries will fall back to English when French achievements missing
+        const englishMap = new Map(englishMapped.map((ach) => [ach.ach_id, ach]));
+
+        // TODO there are several faster ways to do this
+        const areIdentical =
+            requestedMapped.length === englishMapped.length &&
+            requestedMapped.every((req) => {
+                const eng = englishMap.get(req.ach_id);
+                return (
+                    eng &&
+                    req.ach_id === eng.ach_id &&
+                    req.display_name === eng.display_name &&
+                    req.description === eng.description
+                );
+            });
+
+        console.log(
+            `🔤 App ${appId}: Achievements identical: ${areIdentical} (${requestedMapped.length} vs ${englishMapped.length})`,
+        );
+
+        let result: {
+            requested: typeof requestedMapped;
+            english: typeof englishMapped;
+            wasEnglishFromDb: boolean;
         };
+        if (areIdentical) {
+            console.log(
+                `🔤 App ${appId}: Achievements identical in ${requestedLang} and English, storing only English version`,
+            );
+            result = {
+                requested: [], // Empty - use English fallback
+                english: englishMapped,
+                wasEnglishFromDb: false,
+            };
+        } else {
+            console.log(
+                `🔤 App ${appId}: Achievements differ between ${requestedLang} and English, storing both versions`,
+            );
+            result = {
+                requested: requestedMapped,
+                english: englishMapped,
+                wasEnglishFromDb: false,
+            };
+        }
+
+        console.log(
+            `🔤 App ${appId} fallback result: requested=${result.requested.length}, english=${result.english.length}, wasEnglishFromDb=${result.wasEnglishFromDb}`,
+        );
+        return result;
     }
 
     /**
@@ -495,9 +645,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                 SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
                     console.warn(`Achievement meta fetch failed for app ${id}:`, err);
-                    // For apps with no achievements, Steam API might return errors
-                    // Return empty array to indicate "no achievements" rather than "API failure"
-                    return { requested: [], english: [], wasEnglishFromDb: false };
+                    // For complete API failures, return null to indicate failure
+                    // This will cause the entire app to be skipped
+                    return null;
                 }),
                 // Always fetch stats - handle "no achievements" case gracefully
                 this.steamApi
@@ -536,14 +686,18 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             return (
                 d !== undefined && // fetchAppData didn't completely fail
                 d.achievementStats !== undefined && // stats processing didn't fail (empty array is fine)
-                d.achievementMeta !== undefined
-            ); // schema processing didn't fail (empty arrays are fine)
+                d.achievementMeta !== undefined && // meta processing didn't fail (empty arrays are fine)
+                d.achievementMeta !== null // meta fetch didn't completely fail
+            );
         });
 
         // Insert all successfully fetched data (database operation - let it throw)
         if (validData.length > 0) {
             console.time(`${timingId} AppQueryComposer.fetchAndUpsertApps:insertData`);
-            // Prepare all data for insertion
+            // Data insertion logic:
+            // - appData: Always insert French app record (prevents re-fetching French achievements)
+            // - achievementStatsData: Always English (stats are language-agnostic)
+            // - achievementMetaData: English only when identical, or both when different
             const appData = validData
                 .filter((data) => data !== undefined)
                 .map((data) => ({
@@ -570,9 +724,12 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     const results = [];
                     const achievementMeta = data?.achievementMeta;
 
-                    if (!achievementMeta) return;
+                    if (!achievementMeta || achievementMeta === null) return [];
 
                     // Add the requested language achievements
+                    console.log(
+                        `🔤 Adding ${achievementMeta.requested.length} achievements for app ${data.appId} with requested language: ${lang}`,
+                    );
                     results.push(
                         ...achievementMeta.requested.map((meta) => ({
                             ...meta,
@@ -582,6 +739,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
                     // If we have English data from API (not from DB), also insert English records
                     if (lang !== "english" && achievementMeta.english && !achievementMeta.wasEnglishFromDb) {
+                        console.log(
+                            `🔤 Adding ${achievementMeta.english.length} English fallback achievements for app ${data.appId}`,
+                        );
                         results.push(
                             ...achievementMeta.english.map((meta) => ({
                                 ...meta,

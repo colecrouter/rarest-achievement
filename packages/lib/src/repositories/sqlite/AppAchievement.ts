@@ -35,6 +35,15 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     }
 
     /**
+     * Set the language for this query and determine if English fallback is needed
+     */
+    withLanguage(lang: LanguageCode): this {
+        super.withLanguage(lang);
+        this.requiresEnglishFallback = lang !== "en";
+        return this;
+    }
+
+    /**
      * Filter achievements by app IDs from a subquery (avoids parameter explosion)
      */
     withRequiredAppSubquery(appIdsSubquery: SQL): this {
@@ -54,7 +63,10 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
         // Ensure data exists and get any error information
         const ensureResult = await this.ensureDataExists();
         if (ensureResult.error) {
-            console.warn("Failed to ensure all achievement data exists, continuing with existing data:", ensureResult.error);
+            console.warn(
+                "Failed to ensure all achievement data exists, continuing with existing data:",
+                ensureResult.error,
+            );
         }
 
         const results = await this.executeMainQuery(options);
@@ -75,7 +87,6 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
             .withLanguage(this.lang)
             .withAppIds(this.appIds)
             .build({
-                limit: 1000,
                 sort: { method: "id", direction: "asc" },
             });
     }
@@ -95,10 +106,10 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
         // Build sorting
         const sortDir = options.sort?.direction === "desc" ? desc : asc;
         const sortMethod = this.getSortMethod(options.sort?.method || "rarity_pct");
-
         // Build main query
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
         let query = this.db
+            .with(...this.ctes)
             .select({
                 app_id: achievementsStats.app_id,
                 ach_id: achievementsStats.ach_id,
@@ -116,29 +127,6 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
             )
             .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
             .$dynamic();
-
-        // Add CTEs if any exist
-        if (this.ctes.length > 0) {
-            query = this.db
-                .with(...this.ctes)
-                .select({
-                    app_id: achievementsStats.app_id,
-                    ach_id: achievementsStats.ach_id,
-                    meta: getTableAliasedColumns(achievementsMeta),
-                    stats: getTableAliasedColumns(achievementsStats),
-                })
-                .from(achievementsStats)
-                .leftJoin(
-                    achievementsMeta,
-                    and(
-                        eq(achievementsStats.app_id, achievementsMeta.app_id),
-                        eq(achievementsStats.ach_id, achievementsMeta.ach_id),
-                        eq(achievementsMeta.lang, lang),
-                    ),
-                )
-                .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
-                .$dynamic();
-        }
 
         // Apply where conditions
         const allConditions = this.buildStandardWhereConditions();
@@ -175,6 +163,14 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
                 // Use English fallback if translation is missing
                 const metaToUse = row.meta || englishMetaMap.get(`${row.app_id}-${row.ach_id}`);
 
+                // If the primary metadata has null critical fields, use English fallback
+                const englishFallback = englishMetaMap.get(`${row.app_id}-${row.ach_id}`);
+                const shouldUseEnglishFallback =
+                    metaToUse &&
+                    (!metaToUse.ach_id || !metaToUse.icon || !metaToUse.icon_gray || !metaToUse.display_name);
+
+                const finalMeta = shouldUseEnglishFallback ? englishFallback : metaToUse;
+
                 // Determine effective language
                 let effectiveLanguage = this.lang;
                 if (!row.meta && englishMetaMap.has(`${row.app_id}-${row.ach_id}`)) {
@@ -190,7 +186,12 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
                     }
                 }
 
-                if (!metaToUse) {
+                // Override effective language if we're using English fallback due to corruption
+                if (shouldUseEnglishFallback) {
+                    effectiveLanguage = "en";
+                }
+
+                if (!finalMeta) {
                     console.warn(`No metadata found for achievement ${row.ach_id} in app ${row.app_id}`);
                     return null;
                 }
@@ -199,13 +200,13 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
                 return new SteamAppAchievement({
                     app,
                     meta: {
-                        name: metaToUse.ach_id,
-                        defaultvalue: metaToUse.default_value,
-                        description: metaToUse.description ?? undefined,
-                        displayName: metaToUse.display_name,
-                        hidden: metaToUse.hidden,
-                        icon: metaToUse.icon,
-                        icongray: metaToUse.icon_gray,
+                        name: finalMeta.ach_id || row.ach_id, // Still fallback to stats ach_id if needed
+                        defaultvalue: finalMeta.default_value,
+                        description: finalMeta.description ?? undefined,
+                        displayName: finalMeta.display_name,
+                        hidden: finalMeta.hidden,
+                        icon: finalMeta.icon,
+                        icongray: finalMeta.icon_gray,
                     },
                     globalStats: {
                         name: row.ach_id,
@@ -247,37 +248,38 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     ) {
         if (!this.requiresEnglishFallback || data.length === 0) return [];
 
-        const allAchIds = data.map((row) => row.ach_id);
-        // Extract app IDs from the data itself rather than using potentially large this.appIds
-        const dataAppIds = [...new Set(data.map((row) => row.app_id))];
-
-        // Use composition with VALUES CTE to avoid parameter explosion
-        if (dataAppIds.length === 0) return [];
-
-        const requiredAppsCTE = this.db.$with("required_apps_fallback").as(
-            this.db
-                .select({
-                    app_id: sql<number>`value`.as("app_id"),
-                })
-                .from(
-                    sql`(VALUES ${sql.join(
-                        dataAppIds.map((id) => sql`(${id})`),
-                        sql`, `,
-                    )}) AS t(value)`,
-                ),
-        );
-
-        return await this.db
-            .with(requiredAppsCTE)
+        // This is exactly the same as the main query, but we filter for English metadata
+        // We do this to serve the English achievement metadata when the requested language is not available
+        // TODO compose with main query to avoid duplication, maybe avoid this func entirely & override `.withLanguage()` from parent class
+        let query = this.db
+            .with(...this.ctes)
             .select({
                 app_id: achievementsMeta.app_id,
                 ach_id: achievementsMeta.ach_id,
                 meta: getTableAliasedColumns(achievementsMeta),
             })
-            .from(achievementsMeta)
-            .innerJoin(requiredAppsCTE, eq(achievementsMeta.app_id, requiredAppsCTE.app_id))
-            .where(eq(achievementsMeta.lang, "english"))
-            .then((rows) => rows.filter((row) => allAchIds.includes(row.ach_id)));
+            .from(achievementsStats)
+            .innerJoin(
+                achievementsMeta,
+                and(
+                    eq(achievementsStats.app_id, achievementsMeta.app_id),
+                    eq(achievementsStats.ach_id, achievementsMeta.ach_id),
+                    eq(achievementsMeta.lang, "english"), // Always English for fallback
+                ),
+            )
+            .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
+            .$dynamic();
+
+        // Apply the same where conditions as the main query
+        const allConditions = this.buildStandardWhereConditions();
+        if (allConditions.length > 0) {
+            const definedConditions = allConditions.filter((condition): condition is SQL => condition !== undefined);
+            if (definedConditions.length > 0) {
+                query = query.where(and(...definedConditions));
+            }
+        }
+
+        return await query;
     }
 
     /**

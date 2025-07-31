@@ -11,7 +11,6 @@ import {
     setBypassCdnEnabled,
     setFetchManager,
 } from "@project/lib";
-import { handleErrorWithSentry, initCloudflareSentryHandle, sentryHandle } from "@sentry/sveltekit";
 import type { Handle, HandleFetch } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
@@ -64,20 +63,20 @@ const authHandle: Handle = async ({ event, resolve }) => {
     return resolve(event);
 };
 
-const initSentryHandle = initCloudflareSentryHandle({
-    dsn: "https://1090e526411b74ec7e519ecf548c54b5@o4508581503172608.ingest.us.sentry.io/4509233074667520",
-    tracesSampleRate: 1,
-    enableLogs: true,
-    integrations: [], // Explicitly disable all integrations to avoid HTTP instrumentation
-});
+// const initSentryHandle = initCloudflareSentryHandle({
+//     dsn: "https://1090e526411b74ec7e519ecf548c54b5@o4508581503172608.ingest.us.sentry.io/4509233074667520",
+//     tracesSampleRate: 1,
+//     enableLogs: true,
+//     integrations: [], // Explicitly disable all integrations to avoid HTTP instrumentation
+// });
 
 // Define a no-op handle
-const noopHandle: Handle = async ({ event, resolve }) => resolve(event);
+// const noopHandle: Handle = async ({ event, resolve }) => resolve(event);
 
 // Use Sentry handlers only in production
 export const handle = sequence(
-    dev ? noopHandle : initSentryHandle,
-    dev ? noopHandle : sentryHandle(),
+    // dev ? noopHandle : initSentryHandle,
+    // dev ? noopHandle : sentryHandle(),
     paraglideHandle,
     authHandle,
 );
@@ -132,4 +131,4 @@ export const handleFetch: HandleFetch = async ({ request, fetch }) => {
         if (dev) fetchDevLimiter.done();
     }
 };
-export const handleError = handleErrorWithSentry();
+// export const handleError = handleErrorWithSentry();

@@ -10,7 +10,6 @@ import {
     users,
 } from "../..";
 import { SteamUser, type SteamUserRaw } from "../../models";
-import { generateTimingId } from "../../utils/timing";
 import type { OwnedGame } from "../api/steampowered/owned";
 import {
     type ComposableQueryOptions,
@@ -67,9 +66,6 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
      * Build and execute the composed query
      */
     async build(options: ComposableQueryOptions<UserSortMethod> = {}): Promise<ComposableQueryResult<SteamUser>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} UserQueryComposer.build`);
-
         // Ensure data exists first
         const ensureResult = await this.ensureDataExists();
         if (ensureResult.error) {
@@ -87,8 +83,6 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
             results = []; // Return empty results on error
         }
 
-        console.timeEnd(`${timingId} UserQueryComposer.build`);
-
         // Combine errors using Attempt chaining
         const finalResult = ensureResult.and(Attempt.from(undefined, queryError));
         return createQueryResult(results, options.cursor, finalResult.error);
@@ -98,24 +92,17 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
      * Ensure user data exists in the database, fetching from API if needed
      */
     async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} UserQueryComposer.ensureDataExists`);
-
         // Find missing users using subquery pattern when available
         // Note: Database errors (SQL issues) should bubble up, not be caught
         const missingUserIds = await this.findMissingUsers();
 
         if (missingUserIds.length === 0) {
-            console.timeEnd(`${timingId} UserQueryComposer.ensureDataExists`);
             return Attempt.ok(undefined);
         }
 
         // Fetch and insert missing user data
         // Note: API errors are handled inside fetchAndUpsertUsers, DB errors bubble up
-        const upsertResult = await this.fetchAndUpsertUsers(missingUserIds);
-
-        console.timeEnd(`${timingId} UserQueryComposer.ensureDataExists`);
-        return upsertResult;
+        return await this.fetchAndUpsertUsers(missingUserIds);
     }
 
     /**
@@ -256,9 +243,6 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
      * Execute the main user query
      */
     private async executeMainQuery(options: ComposableQueryOptions<UserSortMethod>): Promise<SteamUser[]> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} UserQueryComposer.executeMainQuery`);
-
         const sortDir = options.sort?.direction === "desc" ? desc : asc;
         const sortMethod = users.id; // Currently only "id" is supported
 
@@ -289,7 +273,6 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 
         // If no users found, return empty array
         if (userRows.length === 0) {
-            console.timeEnd(`${timingId} UserQueryComposer.executeMainQuery`);
             return [];
         }
 
@@ -349,12 +332,10 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
         }
 
         // Convert map to SteamUser objects
-        const userResults = Array.from(userMap.values()).map(
-            ({ data, ownedApps }) => new SteamUser({ data, ownedApps }),
-        );
-
-        console.timeEnd(`${timingId} UserQueryComposer.executeMainQuery`);
-        return userResults;
+        return userMap
+            .values()
+            .map(({ data, ownedApps }) => new SteamUser({ data, ownedApps }))
+            .toArray();
     }
 }
 

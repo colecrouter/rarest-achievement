@@ -16,7 +16,6 @@ import {
 } from "../..";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, type SteamAppRaw } from "../../models";
-import { generateTimingId } from "../../utils/timing";
 import { SteamChartsAPIClient } from "../api/steamcharts/client";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import { SteamStoreAPIClient } from "../api/store/client";
@@ -140,9 +139,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      * Build and execute the composed query with error propagation
      */
     async build(options: ComposableQueryOptions<AppSortMethod> = {}): Promise<ComposableQueryResult<SteamApp>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} AppQueryComposer.build`);
-
         // First ensure all required data exists (this may accumulate errors)
         const ensureDataResult = await this.ensureDataExists();
         if (ensureDataResult.error) console.warn("Failed to ensure all data exists:", ensureDataResult.error);
@@ -225,8 +221,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                 lang: appRow.lang,
             });
         });
-
-        console.timeEnd(`${timingId} AppQueryComposer.build`);
 
         // Return ComposableQueryResult with error propagation
         return createQueryResult(items, options.cursor, ensureDataResult.error);
@@ -629,9 +623,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private async fetchAndUpsertApps(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
         if (appIds.length === 0) return Attempt.ok(undefined);
 
-        const timingId = generateTimingId();
-        console.time(`${timingId} AppQueryComposer.fetchAndUpsertApps`);
-
         console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
 
         // Sequential processing: one Promise.all per app
@@ -695,7 +686,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
         // Insert all successfully fetched data (database operation - let it throw)
         if (validData.length > 0) {
-            console.time(`${timingId} AppQueryComposer.fetchAndUpsertApps:insertData`);
             // Data insertion logic:
             // - appData: Always insert French app record (prevents re-fetching French achievements)
             // - achievementStatsData: Always English (stats are language-agnostic)
@@ -799,11 +789,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                         },
                     }),
             );
-
-            console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertApps:insertData`);
         }
-
-        console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertApps`);
 
         // Return our request attempt without any data (not needed)
         return attempt.map(() => undefined);
@@ -814,9 +800,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      */
     private async fetchAndUpsertPlayerEstimates(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
         if (appIds.length === 0) return Attempt.ok(undefined);
-
-        const timingId = generateTimingId();
-        console.time(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
 
         // Use composition to find missing estimates and get app details
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
@@ -865,7 +848,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         }
 
         if (appDetailsRows.length === 0) {
-            console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
             return Attempt.ok(undefined);
         }
 
@@ -941,8 +923,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     }),
             );
         }
-
-        console.timeEnd(`${timingId} AppQueryComposer.fetchAndUpsertPlayerEstimates`);
 
         // Return success or partial based on whether we encountered errors
         const firstError = playerCountData.find((d) => d.isError());

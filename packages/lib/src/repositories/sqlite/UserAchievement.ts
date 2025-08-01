@@ -13,7 +13,6 @@ import { Attempt, type AttemptStatus } from "../../error";
 import type { APILanguageCode, LanguageCode } from "../../lang";
 import { SteamApp, type SteamAppAchievement, type SteamFriendUser, SteamUserAchievement } from "../../models";
 import type { SteamAppRaw } from "../../models/SteamApp";
-import { generateTimingId } from "../../utils/timing";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import {
     type ComposableQueryOptions,
@@ -30,6 +29,7 @@ import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { achievementsMeta } from "./schema";
 import { safeInsert, searchTerms } from "./utils";
+import type { generateTimingId } from "../../utils/timing";
 
 /**
  * UserAchievement Repository - Pure SQL Composition Architecture
@@ -235,12 +235,8 @@ class UserAchievementQueryComposer
     async build(
         options: ComposableQueryOptions<UserAchievementSortMethod> = {},
     ): Promise<ComposableQueryResult<SteamUserAchievement>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} UserAchievementQueryComposer.build`);
-
         // Check if we have any user filtering criteria
         if (this.userIds.size === 0 && !this.friendsOfUserId) {
-            console.timeEnd(`${timingId} UserAchievementQueryComposer.build`);
             return createQueryResult([], options.cursor || 0);
         }
 
@@ -248,10 +244,9 @@ class UserAchievementQueryComposer
         const shouldUseComprehensiveSQL = this.shouldUseComprehensiveSQL();
 
         const resultsAttempt = await (shouldUseComprehensiveSQL
-            ? this.executeWithComprehensiveSQL(options, timingId)
-            : this.executeDirectQuery(options, timingId));
+            ? this.executeWithComprehensiveSQL(options)
+            : this.executeDirectQuery(options));
 
-        console.timeEnd(`${timingId} UserAchievementQueryComposer.build`);
         return new ComposableQueryResult(
             resultsAttempt.hasData() ? resultsAttempt.data : [],
             (options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
@@ -281,9 +276,7 @@ class UserAchievementQueryComposer
      */
     private async executeDirectQuery(
         options: ComposableQueryOptions<UserAchievementSortMethod>,
-        timingId: string,
     ): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
-        console.time(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
         console.log("🚀 Using direct query processing");
 
         // Step 1: Determine actual user filtering approach
@@ -294,21 +287,14 @@ class UserAchievementQueryComposer
             // Use JOIN with friends table instead of fetching friend IDs (avoids parameter explosion)
             // But we still need to ensure the friends' data exists in the database
             ensureResult = await this.ensureUserDataExists();
-            if (ensureResult.isError()) {
-                console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
-            }
             // The actual user filtering will be handled in the main query JOIN below
         } else if (this.userIds.size > 0) {
             // Direct user IDs are safe as they're top-level parameters
             ensureResult = await this.ensureUserDataExists();
-            if (ensureResult.isError()) {
-                console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
-            }
             const userIdsArray = this.userIds.values().toArray();
             userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
         } else {
             console.log("⚠️ No user filtering criteria provided");
-            console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
             return Attempt.ok([]);
         }
 
@@ -407,8 +393,7 @@ class UserAchievementQueryComposer
         const userAchievementRows = await query;
 
         // Step 3: Build final results
-        const buildResult = await this.buildResultsFromRows(userAchievementRows, timingId);
-        console.timeEnd(`${timingId} UserAchievementQueryComposer.executeDirectQuery`);
+        const buildResult = await this.buildResultsFromRows(userAchievementRows);
         return ensureResult.and(buildResult);
     }
 
@@ -418,35 +403,91 @@ class UserAchievementQueryComposer
      */
     private async executeWithComprehensiveSQL(
         options: ComposableQueryOptions<UserAchievementSortMethod>,
-        timingId: string,
     ): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
-        console.time(`${timingId} UserAchievementQueryComposer.executeWithComprehensiveSQL`);
         console.log("🔍 Using pure SQL composition for complex filtering");
 
-        try {
-            // Step 1: Determine actual user filtering approach
-            const userFilterConditions: SQL[] = [];
+        // Step 1: Determine actual user filtering approach
+        const userFilterConditions: SQL[] = [];
 
-            let ensureResult: Attempt<void, AttemptStatus>;
-            if (this.friendsOfUserId) {
-                // Use JOIN with friends table instead of fetching friend IDs (avoids parameter explosion)
-                // This will be handled in the main query JOIN, no separate userIds needed
-                // But we still need to ensure the target user exists
-                ensureResult = await this.ensureUserDataExists();
-            } else if (this.userIds.size > 0) {
-                // Direct user IDs are safe as they're top-level parameters
-                const userIdsArray = Array.from(this.userIds);
-                ensureResult = await this.ensureUserDataExists();
-                userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
-            } else {
-                console.log("⚠️ No user filtering criteria provided");
-                return Attempt.ok([]);
-            }
+        let ensureResult: Attempt<void, AttemptStatus>;
+        if (this.friendsOfUserId) {
+            // Use JOIN with friends table instead of fetching friend IDs (avoids parameter explosion)
+            // This will be handled in the main query JOIN, no separate userIds needed
+            // But we still need to ensure the target user exists
+            ensureResult = await this.ensureUserDataExists();
+        } else if (this.userIds.size > 0) {
+            // Direct user IDs are safe as they're top-level parameters
+            const userIdsArray = Array.from(this.userIds);
+            ensureResult = await this.ensureUserDataExists();
+            userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
+        } else {
+            console.log("⚠️ No user filtering criteria provided");
+            return Attempt.ok([]);
+        }
 
-            // Step 2: Build comprehensive SQL query with all JOINs
-            const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
+        // Step 2: Build comprehensive SQL query with all JOINs
+        const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
 
-            let query = this.db
+        let query = this.db
+            .select({
+                user_id: userAchievements.user_id,
+                app_id: userAchievements.app_id,
+                ach_id: userAchievements.ach_id,
+                unlocked_at: userAchievements.unlocked_at,
+                rarity_pct: achievementsStats.percent,
+                // Achievement metadata from achievements_meta
+                display_name: achievementsMeta.display_name,
+                description: achievementsMeta.description,
+                default_value: achievementsMeta.default_value,
+                hidden: achievementsMeta.hidden,
+                icon: achievementsMeta.icon,
+                icon_gray: achievementsMeta.icon_gray,
+                // Also select the actual language used (for fallback detection)
+                achievement_lang: achievementsMeta.lang,
+                // App data (JSON field)
+                app_data: apps.data,
+                app_lang: apps.lang,
+                estimated_players: estimatedPlayers.estimated_players,
+            })
+            .from(userAchievements)
+            // JOIN to ensure user owns the game (handles "all owned games" case)
+            .innerJoin(
+                ownedGames,
+                and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
+            )
+            // JOIN for achievement metadata with fallback logic (requested language -> English)
+            .innerJoin(
+                achievementsMeta,
+                and(
+                    eq(userAchievements.app_id, achievementsMeta.app_id),
+                    eq(userAchievements.ach_id, achievementsMeta.ach_id),
+                    // Fallback logic: try requested language first, then English
+                    sql`${achievementsMeta.lang} = (
+                            SELECT COALESCE(
+                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
+                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
+                            )
+                        )`,
+                ),
+            )
+            // JOIN for app data
+            .innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)))
+            // LEFT JOIN for rarity data
+            .leftJoin(
+                achievementsStats,
+                and(
+                    eq(userAchievements.app_id, achievementsStats.app_id),
+                    eq(userAchievements.ach_id, achievementsStats.ach_id),
+                ),
+            )
+            // LEFT JOIN for estimated players (for rarity score calculation)
+            .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
+            .$dynamic();
+
+        // Add CTEs if any exist
+        if (this.ctes.length > 0) {
+            query = this.db
+                .with(...this.ctes)
                 .select({
                     user_id: userAchievements.user_id,
                     app_id: userAchievements.app_id,
@@ -484,11 +525,11 @@ class UserAchievementQueryComposer
                         eq(userAchievements.ach_id, achievementsMeta.ach_id),
                         // Fallback logic: try requested language first, then English
                         sql`${achievementsMeta.lang} = (
-                            SELECT COALESCE(
-                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
-                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
-                            )
-                        )`,
+                                SELECT COALESCE(
+                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
+                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
+                                )
+                            )`,
                     ),
                 )
                 // JOIN for app data
@@ -504,108 +545,42 @@ class UserAchievementQueryComposer
                 // LEFT JOIN for estimated players (for rarity score calculation)
                 .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
                 .$dynamic();
-
-            // Add CTEs if any exist
-            if (this.ctes.length > 0) {
-                query = this.db
-                    .with(...this.ctes)
-                    .select({
-                        user_id: userAchievements.user_id,
-                        app_id: userAchievements.app_id,
-                        ach_id: userAchievements.ach_id,
-                        unlocked_at: userAchievements.unlocked_at,
-                        rarity_pct: achievementsStats.percent,
-                        // Achievement metadata from achievements_meta
-                        display_name: achievementsMeta.display_name,
-                        description: achievementsMeta.description,
-                        default_value: achievementsMeta.default_value,
-                        hidden: achievementsMeta.hidden,
-                        icon: achievementsMeta.icon,
-                        icon_gray: achievementsMeta.icon_gray,
-                        // Also select the actual language used (for fallback detection)
-                        achievement_lang: achievementsMeta.lang,
-                        // App data (JSON field)
-                        app_data: apps.data,
-                        app_lang: apps.lang,
-                        estimated_players: estimatedPlayers.estimated_players,
-                    })
-                    .from(userAchievements)
-                    // JOIN to ensure user owns the game (handles "all owned games" case)
-                    .innerJoin(
-                        ownedGames,
-                        and(
-                            eq(userAchievements.user_id, ownedGames.user_id),
-                            eq(userAchievements.app_id, ownedGames.app_id),
-                        ),
-                    )
-                    // JOIN for achievement metadata with fallback logic (requested language -> English)
-                    .innerJoin(
-                        achievementsMeta,
-                        and(
-                            eq(userAchievements.app_id, achievementsMeta.app_id),
-                            eq(userAchievements.ach_id, achievementsMeta.ach_id),
-                            // Fallback logic: try requested language first, then English
-                            sql`${achievementsMeta.lang} = (
-                                SELECT COALESCE(
-                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
-                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
-                                )
-                            )`,
-                        ),
-                    )
-                    // JOIN for app data
-                    .innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)))
-                    // LEFT JOIN for rarity data
-                    .leftJoin(
-                        achievementsStats,
-                        and(
-                            eq(userAchievements.app_id, achievementsStats.app_id),
-                            eq(userAchievements.ach_id, achievementsStats.ach_id),
-                        ),
-                    )
-                    // LEFT JOIN for estimated players (for rarity score calculation)
-                    .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
-                    .$dynamic();
-            }
-
-            // Build WHERE conditions (only safe, top-level parameters)
-            const whereConditions: Array<SQL | undefined> = [...userFilterConditions];
-
-            // Add all pre-built WHERE conditions (app IDs, achievement IDs, unlocked status, rarity, search)
-            whereConditions.push(...this.buildStandardWhereConditions());
-
-            // Apply friends filter using JOIN (if not already applied)
-            if (this.friendsOfUserId) {
-                query = query.innerJoin(
-                    friends,
-                    and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, this.friendsOfUserId)),
-                );
-            }
-
-            // Apply all WHERE conditions
-            query = query.where(and(...whereConditions));
-
-            // Apply sorting
-            query = this.applySorting(query, options);
-
-            // Apply pagination
-            if (options.limit) {
-                query = query.limit(options.limit);
-            }
-
-            if (options.cursor) {
-                query = query.offset(options.cursor);
-            }
-
-            console.log("🚀 Executing comprehensive SQL query with all JOINs");
-            const rows = await query;
-
-            // Step 3: Build results directly from comprehensive query results
-            const result = await this.buildResultsFromComprehensiveRows(rows, timingId);
-            return ensureResult.and(result);
-        } finally {
-            console.timeEnd(`${timingId} UserAchievementQueryComposer.executeWithComprehensiveSQL`);
         }
+
+        // Build WHERE conditions (only safe, top-level parameters)
+        const whereConditions: Array<SQL | undefined> = [...userFilterConditions];
+
+        // Add all pre-built WHERE conditions (app IDs, achievement IDs, unlocked status, rarity, search)
+        whereConditions.push(...this.buildStandardWhereConditions());
+
+        // Apply friends filter using JOIN (if not already applied)
+        if (this.friendsOfUserId) {
+            query = query.innerJoin(
+                friends,
+                and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, this.friendsOfUserId)),
+            );
+        }
+
+        // Apply all WHERE conditions
+        query = query.where(and(...whereConditions));
+
+        // Apply sorting
+        query = this.applySorting(query, options);
+
+        // Apply pagination
+        if (options.limit) {
+            query = query.limit(options.limit);
+        }
+
+        if (options.cursor) {
+            query = query.offset(options.cursor);
+        }
+
+        console.log("🚀 Executing comprehensive SQL query with all JOINs");
+        const rows = await query;
+
+        // Step 3: Build results directly from comprehensive query results
+        return this.buildResultsFromComprehensiveRows(rows);
     }
 
     /**
@@ -630,12 +605,8 @@ class UserAchievementQueryComposer
             app_lang: APILanguageCode; // APILanguageCode
             estimated_players: number | null;
         }>,
-        timingId: string,
     ): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
-        console.time(`${timingId} UserAchievementQueryComposer.buildResultsFromComprehensiveRows`);
-
         if (rows.length === 0) {
-            console.timeEnd(`${timingId} UserAchievementQueryComposer.buildResultsFromComprehensiveRows`);
             return Attempt.ok([]);
         }
 
@@ -706,7 +677,6 @@ class UserAchievementQueryComposer
             }
         }
 
-        console.timeEnd(`${timingId} UserAchievementQueryComposer.buildResultsFromComprehensiveRows`);
         console.log(`✅ Built ${results.length} final user achievements from comprehensive query`);
 
         // Return success or partial based on whether we had any errors during user data fetching
@@ -782,9 +752,6 @@ class UserAchievementQueryComposer
      * This is the missing piece - we need to populate the user_achievements table
      */
     private async ensureUserAchievementDataExists(): Promise<Attempt<void, AttemptStatus>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} ensureUserAchievementDataExists`);
-
         // Build base query that will be used for both owned games and missing data queries
         let baseQuery = this.db
             .selectDistinct({
@@ -807,7 +774,6 @@ class UserAchievementQueryComposer
             baseQuery = baseQuery.where(inArray(ownedGames.user_id, filterUserIds));
         } else {
             console.log("⚠️ No users specified for achievement data fetching");
-            console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
             return Attempt.ok(undefined);
         }
 
@@ -822,7 +788,6 @@ class UserAchievementQueryComposer
 
         if (ownedGamesResult.length === 0) {
             console.log("⚠️ No owned games found for target users");
-            console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
             return Attempt.ok(undefined);
         }
 
@@ -885,7 +850,6 @@ class UserAchievementQueryComposer
 
         if (missingData.length === 0) {
             console.log("✅ All user achievement data already exists");
-            console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
             return Attempt.ok(undefined);
         }
 
@@ -954,8 +918,6 @@ class UserAchievementQueryComposer
             console.log("✅ Successfully inserted/updated achievement data");
         }
 
-        console.timeEnd(`${timingId} ensureUserAchievementDataExists`);
-
         // Return appropriate result based on whether we encountered errors
         return Attempt.from(undefined, accumulatedError);
     }
@@ -965,15 +927,11 @@ class UserAchievementQueryComposer
      * Uses subquery-based approach to avoid parameter explosion
      */
     private async ensureAppDataExists(): Promise<Attempt<void, AttemptStatus>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} ensureAppDataExists`);
-
         // Build subquery for required apps using the same logic as our main query
         const requiredAppsSubquery = this.buildRequiredEntitySubquery("apps");
 
         if (!requiredAppsSubquery) {
             console.log("⚠️ No app subquery could be built (no users specified?)");
-            console.timeEnd(`${timingId} ensureAppDataExists`);
             return Attempt.ok(undefined);
         }
 
@@ -985,8 +943,6 @@ class UserAchievementQueryComposer
             .withLanguage(this.lang)
             .withRequiredEntitySubquery("apps", requiredAppsSubquery)
             .build();
-
-        console.timeEnd(`${timingId} ensureAppDataExists`);
 
         if (appDataResult.error) {
             console.warn("Failed to ensure app data exists:", appDataResult.error);
@@ -1008,12 +964,8 @@ class UserAchievementQueryComposer
             unlocked_at: Date | null;
             rarity_pct: number | null;
         }>,
-        timingId: string,
     ): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
-        console.time(`${timingId} UserAchievementQueryComposer.buildResultsFromRows`);
-
         if (userAchievementRows.length === 0) {
-            console.timeEnd(`${timingId} UserAchievementQueryComposer.buildResultsFromRows`);
             return Attempt.ok([]);
         }
 
@@ -1106,7 +1058,6 @@ class UserAchievementQueryComposer
             }
         }
 
-        console.timeEnd(`${timingId} UserAchievementQueryComposer.buildResultsFromRows`);
         console.log(`✅ Built ${results.length} final user achievements`);
 
         // Return success or partial based on whether we had any errors during dependency fetching

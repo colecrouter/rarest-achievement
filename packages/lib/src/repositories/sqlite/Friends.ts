@@ -3,7 +3,6 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { Attempt, friends, ownedGames, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
-import { generateTimingId } from "../../utils/timing";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import {
     type ComposableQueryOptions,
@@ -53,9 +52,6 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
     async build(
         options: ComposableQueryOptions<FriendsSortMethod> = {},
     ): Promise<ComposableQueryResult<SteamFriendUser>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} FriendsQueryComposer.build`);
-
         // Ensure data exists first
         // Note: Database errors should bubble up, API errors are handled internally
         await this.ensureDataExists();
@@ -63,7 +59,6 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
         // Execute main query
         const results = await this.executeMainQuery(options);
 
-        console.timeEnd(`${timingId} FriendsQueryComposer.build`);
         return createQueryResult(results, options.cursor);
     }
 
@@ -72,9 +67,6 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
      */
     private async ensureDataExists(): Promise<void> {
         if (this.userIds.size === 0) return;
-
-        const timingId = generateTimingId();
-        console.time(`${timingId} FriendsQueryComposer.ensureDataExists`);
 
         const ids = Array.from(this.userIds);
 
@@ -117,7 +109,9 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
             if (friendsListData.data) {
                 // Collect all unique friend IDs
                 const allFriendIds = new Set<string>();
-                const friendsToInsert = friendsListData.data.flatMap(({ userId, friendsList }) => {
+                const friendsToInsert = friendsListData.data.flatMap((r) => {
+                    if (r === undefined) return []; // Skip undefined results
+                    const { userId, friendsList } = r;
                     return friendsList.map((friend) => {
                         allFriendIds.add(friend.steamid);
                         return {
@@ -161,19 +155,13 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
                 }
             }
         }
-
-        console.timeEnd(`${timingId} FriendsQueryComposer.ensureDataExists`);
     }
 
     /**
      * Execute the main friends query
      */
     private async executeMainQuery(options: ComposableQueryOptions<FriendsSortMethod>): Promise<SteamFriendUser[]> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} FriendsQueryComposer.executeMainQuery`);
-
         if (this.userIds.size === 0) {
-            console.timeEnd(`${timingId} FriendsQueryComposer.executeMainQuery`);
             return [];
         }
 
@@ -220,7 +208,6 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
             });
 
         if (!originalUsersResponse.data) {
-            console.timeEnd(`${timingId} FriendsQueryComposer.executeMainQuery`);
             return [];
         }
 
@@ -320,7 +307,6 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
             });
         });
 
-        console.timeEnd(`${timingId} FriendsQueryComposer.executeMainQuery`);
         return items;
     }
 }

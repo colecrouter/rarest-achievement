@@ -3,7 +3,6 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type LanguageCode, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
-import { generateTimingId } from "../../utils/timing";
 import {
     type ComposableQueryOptions,
     type ComposableQueryResult,
@@ -57,9 +56,6 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     async build(
         options: ComposableQueryOptions<AppAchievementSortMethod> = {},
     ): Promise<ComposableQueryResult<SteamAppAchievement>> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} AppAchievementQueryComposer.build`);
-
         // Ensure data exists and get any error information
         const ensureResult = await this.ensureDataExists();
         if (ensureResult.error) {
@@ -71,7 +67,6 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 
         const results = await this.executeMainQuery(options);
 
-        console.timeEnd(`${timingId} AppAchievementQueryComposer.build`);
         return createQueryResult(results, options.cursor, ensureResult.error);
     }
 
@@ -97,9 +92,6 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     private async executeMainQuery(
         options: ComposableQueryOptions<AppAchievementSortMethod>,
     ): Promise<SteamAppAchievement[]> {
-        const timingId = generateTimingId();
-        console.time(`${timingId} AppAchievementQueryComposer.executeMainQuery`);
-
         // Get apps that we'll need
         const appRows = await this.getAppData();
 
@@ -216,8 +208,6 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
                 });
             })
             .filter((achievement) => achievement !== null);
-
-        console.timeEnd(`${timingId} AppAchievementQueryComposer.executeMainQuery`);
 
         return achievements;
     }

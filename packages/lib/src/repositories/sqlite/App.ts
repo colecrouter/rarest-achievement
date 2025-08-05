@@ -875,7 +875,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                 SteamChartsAPIClient.getAppChartData(appId),
             ]);
 
-            const playerCount = playerCountData.chain((data) => {
+            const playerCount = await playerCountData.chainAsync(async (data) => {
                 const [appReviews, appPlayerCount] = data;
 
                 if (appReviews === undefined || appPlayerCount === undefined)
@@ -884,7 +884,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                 // Sometimes chart data is null, so we'll just return null
                 if (appPlayerCount === null) return Attempt.ok(null);
 
-                const estimate = estimatePlayerCount({
+                const estimate = await estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
                     avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
                     day_peak: appPlayerCount

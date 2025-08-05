@@ -1,8 +1,5 @@
-import XGBoostModel from "../../steam_model.json" with { type: "json" };
 import type { Features, SearchResults } from "./model.ts";
 import { predict } from "./predict.js";
-
-const modelObj = XGBoostModel as SearchResults;
 
 /* ===== Example Usage ===== */
 
@@ -27,7 +24,10 @@ const modelObj = XGBoostModel as SearchResults;
 // // cd packages/lib/src/scikit-learn
 // // node --experimental-strip-types score.ts
 
-export const estimatePlayerCount = (features: Features): number => predict(modelObj, features);
+export const estimatePlayerCount = async (features: Features) => {
+    const { default: json } = await import("../../steam_model.json", { with: { type: "json" } });
+    return predict(json as SearchResults, features);
+};
 
 // // === new benchmark ===
 // /** Compare JS vs WASM predict performance */

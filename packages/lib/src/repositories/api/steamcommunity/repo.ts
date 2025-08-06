@@ -1,21 +1,24 @@
-import type { SteamAppAchievement, SteamUserAchievement } from "@models";
-import { Attempt, getLanguageByCode } from "../../..";
+import {
+    Attempt,
+    type SteamAppAchievement,
+    type SteamCommunityAPI,
+    type SteamUserAchievement,
+    getLanguageByCode,
+} from "../../..";
 import type { APILanguageCode, LanguageCode } from "../../../lang";
-import { SteamCommunityClient } from "./client";
 import type { Article, User } from "./types";
 
 export class SteamCommunityRepo {
-    #cache: KVNamespace;
-
-    constructor(cache: KVNamespace) {
-        this.#cache = cache;
-    }
+    constructor(
+        private cache: KVNamespace,
+        private api: SteamCommunityAPI,
+    ) {}
 
     async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
         const lang = getLanguageByCode("en")?.apiCode as APILanguageCode;
 
         const cacheKey = `steamcommunity:${achievement.app.id}:${achievement.id}:${lang}`;
-        const cached = await this.#cache.get(cacheKey);
+        const cached = await this.cache.get(cacheKey);
         if (cached) {
             const data = JSON.parse(cached) as Article[];
 
@@ -23,8 +26,8 @@ export class SteamCommunityRepo {
         }
 
         const articles = await Attempt.try(async () => {
-            const articles = await SteamCommunityClient.fetchArticles(achievement, lang, 5);
-            await this.#cache.put(cacheKey, JSON.stringify(articles), {
+            const articles = await this.api.fetchArticles(achievement, lang, 5);
+            await this.cache.put(cacheKey, JSON.stringify(articles), {
                 expirationTtl: 60 * 60 * 24,
             }); // Cache for 24 hours
             return articles;
@@ -35,15 +38,15 @@ export class SteamCommunityRepo {
 
     async searchUsers(text: string, page = 1) {
         const cacheKey = `steamcommunity:users:${text}:${page}`;
-        const cached = await this.#cache.get(cacheKey);
+        const cached = await this.cache.get(cacheKey);
         if (cached) {
             const data = JSON.parse(cached) as User[];
             return Attempt.ok(data);
         }
 
         const users = await Attempt.try(async () => {
-            const users = await SteamCommunityClient.searchUsers(text, page);
-            await this.#cache.put(cacheKey, JSON.stringify(users), {
+            const users = await this.api.searchUsers(text, page);
+            await this.cache.put(cacheKey, JSON.stringify(users), {
                 expirationTtl: 60 * 60 * 24,
             });
             return users;

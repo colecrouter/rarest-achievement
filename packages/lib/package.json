@@ -19,7 +19,7 @@
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
         "db:migration": "drizzle-kit generate",
-        "test": "tsx --test **/*.spec.ts"
+        "test": "tsx --test \"**/*.spec.ts\""
     },
     "devDependencies": {
         "drizzle-kit": "^0.30.6",

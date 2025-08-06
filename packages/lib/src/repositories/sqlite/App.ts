@@ -1,11 +1,14 @@
 import { type SQL, and, asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
     type APILanguageCode,
     Attempt,
     type AttemptStatus,
     type LanguageCode,
+    type ProjectDB,
+    type SteamChartsAPI,
+    type SteamAuthenticatedAPI,
+    type SteamStoreAPI,
     achievementsMeta,
     achievementsStats,
     apps,
@@ -16,9 +19,6 @@ import {
 } from "../..";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, type SteamAppRaw } from "../../models";
-import { SteamChartsAPIClient } from "../api/steamcharts/client";
-import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
-import { SteamStoreAPIClient } from "../api/store/client";
 import {
     type ComposableQueryOptions,
     type ComposableQueryResult,
@@ -45,9 +45,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private requiredAppsSubquery?: SQL;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private db: ProjectDB,
+        private steamApi: SteamAuthenticatedAPI,
+        private steamChartsApi: SteamChartsAPI,
+        private steamStoreApi: SteamStoreAPI,
     ) {}
 
     /**
@@ -635,7 +636,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const fetchAppData = async (id: number) => {
             const [appDetails, achievementMeta, achievementStats] = await Promise.all([
                 // Language dependent queries
-                SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
+                this.steamStoreApi
+                    .getAppDetails(id, { l: lang })
+                    .then((res) => Object.values(res)[0]?.data || null),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
                     console.warn(`Achievement meta fetch failed for app ${id}:`, err);
                     // For complete API failures, return null to indicate failure
@@ -808,12 +811,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
         if (this.requiredAppsSubquery) {
             // Use provided subquery from cross-repository dependency to avoid parameter explosion
+            const requiredApps = sql`(${this.requiredAppsSubquery}) as required_apps`;
             appDetailsRows = await this.db
                 .select({
                     id: apps.id,
                     data: apps.data,
                 })
-                .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+                .from(requiredApps)
                 .innerJoin(apps, eq(sql`required_apps.app_id`, apps.id))
                 .where(
                     and(
@@ -833,10 +837,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     data: apps.data,
                 })
                 .from(apps)
-                .innerJoin(apps, eq(apps.id, inArray(apps.id, appIds)))
                 .where(
                     and(
                         eq(apps.lang, lang),
+                        inArray(apps.id, appIds),
                         notExists(
                             this.db
                                 .select({ app_id: estimatedPlayers.app_id })
@@ -871,8 +875,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
             getFetchManager().reset({ maxFetches: 200 });
             const playerCountData = await Attempt.all([
-                SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
-                SteamChartsAPIClient.getAppChartData(appId),
+                this.steamStoreApi.getAppReviews(appId, { num_per_page: "0" }),
+                this.steamChartsApi.getAppChartData(appId),
             ]);
 
             const playerCount = await playerCountData.chainAsync(async (data) => {
@@ -882,7 +886,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     return Attempt.fail<number>(new Error(`Missing review or chart data for app ${appId}`));
 
                 // Sometimes chart data is null, so we'll just return null
-                if (appPlayerCount === null) return Attempt.ok(null);
+                if (appPlayerCount === null || !appReviews) return Attempt.ok(null);
 
                 const estimate = await estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
@@ -932,15 +936,16 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 export class AppRepository implements Repository<SteamApp, AppSortFilters, AppSortMethod> {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private sqlite: ProjectDB,
+        private steamApi: SteamAuthenticatedAPI,
+        private steamChartsApi: SteamChartsAPI,
+        private steamStoreApi: SteamStoreAPI,
     ) {}
 
     /**
      * Create a new composable query builder
      */
     compose(): AppQueryComposer {
-        return new AppQueryComposer(this.sqlite, this.steamApi);
+        return new AppQueryComposer(this.sqlite, this.steamApi, this.steamChartsApi, this.steamStoreApi);
     }
 }

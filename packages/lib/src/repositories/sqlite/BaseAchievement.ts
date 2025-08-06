@@ -1,7 +1,6 @@
 import { type SQL, and, eq, inArray, lte, or, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
-import { type LanguageCode, apps, getLanguageByCode } from "../..";
+import { type LanguageCode, type ProjectDB, apps, getLanguageByCode } from "../..";
 import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer } from "../composable";
 import { achievementsMeta, achievementsStats } from "./schema";
 import { searchTerms } from "./utils";
@@ -23,10 +22,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
     // biome-ignore lint/suspicious/noExplicitAny: I don't think there's a way to type this properly
     protected ctes: WithSubqueryWithSelection<Record<string, any>, string>[] = [];
 
-    constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        protected db: DrizzleD1Database<any>,
-    ) {}
+    constructor(protected db: ProjectDB) {}
 
     /**
      * Set the language for this query

@@ -1,9 +1,9 @@
 import type { SQL } from "drizzle-orm";
 import { asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     Attempt,
     type AttemptStatus,
+    type ProjectDB,
     type SteamAuthenticatedAPIClient,
     getFetchManager,
     ownedGames,
@@ -32,8 +32,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
     private requiredUserSubquery: SQL | undefined;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
+        private db: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
     ) {}
 
@@ -345,8 +344,7 @@ export class UserRepository
         ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
 {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
+        private sqlite: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
     ) {}
 

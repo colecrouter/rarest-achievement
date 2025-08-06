@@ -1,7 +1,5 @@
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { APILanguageCode } from "../../index";
+import { SteamChartsAPIClient, SteamStoreAPIClient, type ProjectDB } from "../../index";
 import type { LanguageCode } from "../../lang";
-import { getLanguageByCode } from "../../lang";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import { createQueryResult } from "../composable";
 import { RepositoryResult } from "../repository";
@@ -18,9 +16,8 @@ export class VaultService {
     private userAchRepo: UserAchievementRepository;
     private friendRepo: FriendsRepository;
 
-    // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-    constructor(sqlite: DrizzleD1Database<any>, steamApi: SteamAuthenticatedAPIClient) {
-        this.appRepo = new AppRepository(sqlite, steamApi);
+    constructor(sqlite: ProjectDB, steamApi: SteamAuthenticatedAPIClient) {
+        this.appRepo = new AppRepository(sqlite, steamApi, SteamChartsAPIClient, SteamStoreAPIClient);
         this.appAchRepo = new AppAchievementRepository(sqlite, this.appRepo);
         this.userRepo = new UserRepository(sqlite, steamApi);
         this.friendRepo = new FriendsRepository(sqlite, steamApi, this.userRepo);

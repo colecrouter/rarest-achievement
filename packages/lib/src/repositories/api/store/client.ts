@@ -7,7 +7,7 @@ export interface SteamStoreAPI {
     getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
         app: number,
         options?: Omit<GetAppDetailsQuery<T>, "appids">,
-    ): Promise<GetAppDetailsResponse<T> | null>;
+    ): Promise<GetAppDetailsResponse<T>>;
     getAppReviews(app: number, options?: Omit<GetAppReviewsQuery, "json">): Promise<GetAppReviewsResponse | null>;
     searchApps(query: string): Promise<SearchAppsResponse>;
 }

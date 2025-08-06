@@ -1,6 +1,6 @@
-import { type SQL, and, asc, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { type SQL, and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import {
+    type ProjectDB,
     achievementsStats,
     apps,
     estimatedPlayers,
@@ -28,8 +28,7 @@ import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { achievementsMeta } from "./schema";
-import { safeInsert, searchTerms } from "./utils";
-import type { generateTimingId } from "../../utils/timing";
+import { safeInsert } from "./utils";
 
 /**
  * UserAchievement Repository - Pure SQL Composition Architecture
@@ -106,8 +105,7 @@ class UserAchievementQueryComposer
     private unlockedFilter?: boolean;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        db: DrizzleD1Database<any>,
+        db: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
@@ -1071,8 +1069,7 @@ export class UserAchievementRepository
         ComposableRepository<SteamUserAchievement, UserAchievementSortMethod, UserAchievementQueryComposer>
 {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
+        private sqlite: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,

@@ -2,6 +2,7 @@ export * from "../lang";
 export * from "./api/steamcommunity/client";
 export * from "./api/steamcommunity/repo";
 export * from "./api/steampowered/client";
+export * from "./api/steamcharts/client";
 export * from "./api/store/client";
 export * from "./api/youtube/repo";
 export * from "./api/translate/client";

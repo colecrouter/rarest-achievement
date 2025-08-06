@@ -1,6 +1,5 @@
 import { type SQL, and, asc, desc, eq, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { type LanguageCode, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
+import { type LanguageCode, type ProjectDB, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
 import {
@@ -26,8 +25,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     private requiresEnglishFallback = false;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        db: DrizzleD1Database<any>,
+        db: ProjectDB,
         private appRepository: AppRepository,
     ) {
         super(db);
@@ -292,8 +290,7 @@ export class AppAchievementRepository
         ComposableRepository<SteamAppAchievement, AppAchievementSortMethod, AppAchievementQueryComposer>
 {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
+        private sqlite: ProjectDB,
         private appRepository: AppRepository,
     ) {}
 

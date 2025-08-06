@@ -592,7 +592,7 @@ describe("Attempt", () => {
                 const result = await Attempt.all(promises);
 
                 assert.strictEqual(result.status, AttemptStatus.Partial);
-                assert.deepStrictEqual(result.data, ["success", "another success"]);
+                assert.deepStrictEqual(result.data, ["success", undefined, "another success"]);
                 assert.strictEqual(result.error, error);
             });
 
@@ -603,7 +603,7 @@ describe("Attempt", () => {
                 const result = await Attempt.all(promises);
 
                 assert.strictEqual(result.status, AttemptStatus.Partial);
-                assert.deepStrictEqual(result.data, []);
+                assert.deepStrictEqual(result.data, [undefined, undefined]);
                 assert.strictEqual(result.error, error1); // First error
             });
 
@@ -851,11 +851,11 @@ describe("Attempt", () => {
             const aggregated = await Attempt.all(sources);
 
             assert.strictEqual(aggregated.status, AttemptStatus.Partial);
-            assert.deepStrictEqual(aggregated.data, ["source1", "source3"]);
+            assert.deepStrictEqual(aggregated.data, ["source1", undefined, "source3", undefined]);
             assert.ok(aggregated.error?.message.includes("source2 failed"));
 
             // Can still use partial data
-            assert.deepStrictEqual(aggregated.data, ["source1", "source3"]);
+            assert.deepStrictEqual(aggregated.data, ["source1", undefined, "source3", undefined]);
         });
     });
 });

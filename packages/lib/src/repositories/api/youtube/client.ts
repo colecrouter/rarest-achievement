@@ -1,8 +1,16 @@
-import type { SteamAppAchievement, SteamUserAchievement } from "@models";
 import type { LanguageCode } from "../../../lang";
+import type { SteamAppAchievement, SteamUserAchievement } from "../../../models";
 import type { ISearchResponse } from "./types/ISearchResponse";
 
-export class YouTubeClient {
+export interface YouTubeAPI {
+    fetchVideos(
+        achievement: SteamAppAchievement | SteamUserAchievement,
+        lang: LanguageCode,
+        maxResults: number,
+    ): Promise<ISearchResponse>;
+}
+
+export class YouTubeClient implements YouTubeAPI {
     #apiKey: string;
 
     constructor(apiKey: string) {

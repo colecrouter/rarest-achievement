@@ -4,7 +4,7 @@ import {
     Attempt,
     type AttemptStatus,
     type ProjectDB,
-    type SteamAuthenticatedAPIClient,
+    type SteamAuthenticatedAPI,
     getFetchManager,
     ownedGames,
     users,
@@ -33,7 +33,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 
     constructor(
         private db: ProjectDB,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private steamApi: SteamAuthenticatedAPI,
     ) {}
 
     /**
@@ -345,7 +345,7 @@ export class UserRepository
 {
     constructor(
         private sqlite: ProjectDB,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private steamApi: SteamAuthenticatedAPI,
     ) {}
 
     /**

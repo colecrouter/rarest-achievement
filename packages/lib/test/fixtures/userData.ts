@@ -1,4 +1,5 @@
 import type { SteamUserRaw } from "../../src/models";
+import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 
 /**
  * Create user data fixture for testing
@@ -23,6 +24,22 @@ export function makeUserData(steamid: string): SteamUserRaw {
         locstatecode: "CA",
         loccityid: 123456,
     } as SteamUserRaw;
+}
+
+/**
+ * Build a properly typed GetPlayerSummariesResponse for a set of steamids.
+ * Optionally override specific fields per user via a map keyed by steamid.
+ */
+export function makePlayerSummariesResponse(
+    steamids: string[],
+    overrides?: Record<string, Partial<GetPlayerSummariesResponse["response"]["players"][number]>>,
+): GetPlayerSummariesResponse {
+    const players: GetPlayerSummariesResponse["response"]["players"] = steamids.map((id) => {
+        const base = makeUserData(id) as unknown as GetPlayerSummariesResponse["response"]["players"][number];
+        const extra = overrides?.[id] ?? {};
+        return { ...base, ...extra };
+    });
+    return { response: { players } };
 }
 
 // Common user fixtures

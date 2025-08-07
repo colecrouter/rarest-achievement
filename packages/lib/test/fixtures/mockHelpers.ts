@@ -8,6 +8,8 @@ import type { APILanguageCode } from "../../src/lang";
 import type { GetSchemaForGameResponse } from "../../src/repositories/api/steampowered/schemaForGame";
 import type { GetAppDetailsResponse } from "../../src/repositories/api/store/appdetails";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
+import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
+import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 
 // Global mock instances for convenience
 let authMock: MockSteamAuthenticatedAPIClient | null = null;
@@ -50,7 +52,6 @@ export function setMockResponse(endpoint: string, appid: number, lang: string, r
     switch (endpoint) {
         case "getAppDetails": {
             if (!storeMock) throw new Error("Store mock not initialized. Call setMockInstances first.");
-            // Convert simple fixture to proper API response format
             const appResponse = response as { appid: number; name: string };
             const apiResponse: GetAppDetailsResponse = {
                 [appid]: {
@@ -58,7 +59,6 @@ export function setMockResponse(endpoint: string, appid: number, lang: string, r
                     data: {
                         steam_appid: appResponse.appid,
                         name: appResponse.name,
-                        // Add minimal required fields
                         type: "game",
                         required_age: 0,
                         is_free: false,
@@ -91,16 +91,39 @@ export function setMockResponse(endpoint: string, appid: number, lang: string, r
             storeMock.setAppDetails(appid, apiResponse);
             break;
         }
-
         case "getSchemaForGame": {
             if (!authMock) throw new Error("Auth mock not initialized. Call setMockInstances first.");
             authMock.setSchemaForGame({ appid, l: apiLang }, response as GetSchemaForGameResponse);
             break;
         }
-
         default:
             throw new Error(`Unknown endpoint: ${endpoint}`);
     }
+}
+
+/**
+ * Set mock player summaries for given steamids using the global auth mock
+ */
+export function setMockPlayerSummaries(steamids: string[], response: GetPlayerSummariesResponse): void;
+export function setMockPlayerSummaries(steamids: string[], response: GetPlayerSummariesResponse): void {
+    if (!authMock) throw new Error("Auth mock not initialized. Call setMockInstances first.");
+    authMock.setPlayerSummaries(steamids, response);
+}
+
+/**
+ * Set mock owned games using the global auth mock
+ */
+export function setMockOwnedGames(
+    options: GetOwnedGamesQuery<boolean>,
+    response: GetOwnedGamesResponse<boolean> | null,
+): void;
+export function setMockOwnedGames(
+    options: GetOwnedGamesQuery<boolean>,
+    response: GetOwnedGamesResponse<boolean> | null,
+): void {
+    if (!authMock) throw new Error("Auth mock not initialized. Call setMockInstances first.");
+    // The mock stores JSON.stringify(options) as key, so we can pass the object directly.
+    authMock.setOwnedGames(options, response);
 }
 
 /**

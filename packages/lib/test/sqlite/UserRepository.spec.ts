@@ -5,12 +5,11 @@ import { beforeEach, describe, test } from "node:test";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { users, ownedGames } from "../../src/repositories/sqlite/schema.js";
 import { makeUserData } from "../fixtures/userData";
-import { makePlayerSummariesResponse } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
 import { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
-import { setMockOwnedGames, setMockPlayerSummaries } from "../fixtures/mockHelpers";
 import { UserRepository } from "../../src/repositories/sqlite/User";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
+import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 
 describe("UserRepository – SQLite (in‑memory)", () => {
     let db: ProjectDB;
@@ -32,35 +31,53 @@ describe("UserRepository – SQLite (in‑memory)", () => {
 
     test("basic fetch inserts missing users via API", async () => {
         // No users in DB – mock API will return data for two users
-        // Arrange auth mock via helpers
-        setMockPlayerSummaries(
-            ["123", "456"],
-            makePlayerSummariesResponse(["123", "456"], {
-                "123": { personaname: "Alice" },
-                "456": { personaname: "Bob" },
-            }),
-        );
+        const ps: GetPlayerSummariesResponse = {
+            response: {
+                players: [makeUserData("123"), makeUserData("456")],
+            },
+        };
+        authMock.setPlayerSummaries(["123", "456"], ps);
 
-        // Minimal owned games stubs
-        setMockOwnedGames(
-            { steamid: "123", include_appinfo: false },
-            {
-                response: { game_count: 1, games: [{ appid: 1, playtime_forever: 0 }] },
-            },
-        );
-        setMockOwnedGames(
-            { steamid: "456", include_appinfo: false },
-            {
-                response: { game_count: 0, games: [] },
-            },
-        );
+        // Minimal owned games stubs aligned with repository's call signature
+        const q123: GetOwnedGamesQuery<false> = { steamid: "123", include_played_free_games: true };
+        const r123: GetOwnedGamesResponse<false> = {
+            response: { game_count: 1, games: [{ appid: 1, playtime_forever: 0 }] },
+        };
+        authMock.setOwnedGames(q123, r123);
+
+        const q456: GetOwnedGamesQuery<false> = { steamid: "456", include_played_free_games: true };
+        const r456: GetOwnedGamesResponse<false> = {
+            response: { game_count: 0, games: [] },
+        };
+        authMock.setOwnedGames(q456, r456);
 
         const repo = new UserRepository(db, authMock);
         const result = await repo.compose().withUserIds(["123", "456"]).build();
 
         assert.strictEqual(result.data.length, 2, "Should return two users");
-        const ids = result.data.map((u: { id: string }) => u.id).sort();
+        const ids = result.data.map((u) => u.id).sort();
         assert.deepStrictEqual(ids, ["123", "456"]);
+    });
+
+    test("returns cached users without API", async () => {
+        // Seed users directly without setting any API mocks
+        await db.insert(users).values({
+            id: "777",
+            data: makeUserData("777"),
+            updated_at: new Date(),
+        });
+        await db.insert(users).values({
+            id: "888",
+            data: makeUserData("888"),
+            updated_at: new Date(),
+        });
+
+        const repo = new UserRepository(db, authMock);
+        const result = await repo.compose().withUserIds(["777", "888"]).build();
+
+        assert.strictEqual(result.data.length, 2, "Should return cached users without API");
+        const ids = result.data.map((u) => u.id).sort();
+        assert.deepStrictEqual(ids, ["777", "888"]);
     });
 
     test("filter by explicit user IDs", async () => {
@@ -118,9 +135,9 @@ describe("UserRepository – SQLite (in‑memory)", () => {
 
     test("error handling – API failure returns empty result", async () => {
         // Do not set player summaries for "999" so Attempt will capture the error and return empty results
-        const q999: GetOwnedGamesQuery<false> = { steamid: "999", include_appinfo: false };
+        const q999: GetOwnedGamesQuery<false> = { steamid: "999", include_played_free_games: true };
         const r999: GetOwnedGamesResponse<false> | null = null;
-        setMockOwnedGames(q999, r999);
+        authMock.setOwnedGames(q999, r999);
 
         const repo = new UserRepository(db, authMock);
         const result = await repo.compose().withUserIds(["999"]).build();

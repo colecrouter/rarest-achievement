@@ -137,23 +137,30 @@ class UserAchievementQueryComposer
     private applySorting(query: any, options: ComposableQueryOptions<UserAchievementSortMethod>): any {
         if (!options.sort) return query;
 
-        const sortDirection = options.sort.direction === "desc" ? desc : asc;
-
         switch (options.sort.method) {
-            case "rarity_pct":
-                return query.orderBy(sortDirection(achievementsStats.percent));
-            case "rarity_score":
+            case "rarity_pct": {
+                const dir = options.sort.direction === "desc" ? desc : asc;
+                return query.orderBy(dir(achievementsStats.percent));
+            }
+            case "rarity_score": {
+                const dir = options.sort.direction === "desc" ? desc : asc;
+                const score = sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`;
+                // Always push NULLs to the end regardless of sort direction
                 return query.orderBy(
-                    sortDirection(
+                    asc(
                         sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
                     ),
-                    sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
+                    dir(score),
                 );
-            case "unlocked_at":
+            }
+            case "unlocked_at": {
+                const dir = options.sort.direction === "desc" ? desc : asc;
+                // Always push NULLs to the end regardless of sort direction
                 return query.orderBy(
-                    sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
-                    sortDirection(userAchievements.unlocked_at),
+                    asc(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
+                    dir(userAchievements.unlocked_at),
                 );
+            }
             default:
                 return query;
         }
@@ -908,12 +915,39 @@ class UserAchievementQueryComposer
                         .onConflictDoUpdate({
                             target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
                             set: {
-                                unlocked_at: userAchievements.unlocked_at,
+                                unlocked_at: sql`excluded.unlocked_at`,
                                 updated_at: new Date(),
                             },
                         }),
             );
             console.log("✅ Successfully inserted/updated achievement data");
+            // 🔧 Optional minimal instrumentation to verify inserts/updates landed
+            try {
+                const userIdSet = new Set<string>();
+                const appIdSet = new Set<number>();
+                for (const d of achievementDataToInsert) {
+                    if (!d) continue;
+                    userIdSet.add(d.user_id);
+                    appIdSet.add(d.app_id);
+                }
+                const processedUserIds = Array.from(userIdSet);
+                const processedAppIds = Array.from(appIdSet);
+                if (processedUserIds.length > 0 && processedAppIds.length > 0) {
+                    const countResult = await this.db
+                        .select({ count: sql<number>`count(*)` })
+                        .from(userAchievements)
+                        .where(
+                            and(
+                                inArray(userAchievements.user_id, processedUserIds),
+                                inArray(userAchievements.app_id, processedAppIds),
+                            ),
+                        );
+                    const postCount = countResult[0]?.count ?? 0;
+                    console.log(`🔧 Post-insert count=${postCount}`);
+                }
+            } catch {
+                // keep instrumentation non-fatal and quiet on errors
+            }
         }
 
         // Return appropriate result based on whether we encountered errors

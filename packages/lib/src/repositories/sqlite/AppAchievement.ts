@@ -1,4 +1,4 @@
-import { type SQL, and, asc, desc, eq, sql } from "drizzle-orm";
+import { type SQL, and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { type LanguageCode, type ProjectDB, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
@@ -44,6 +44,8 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
      * Filter achievements by app IDs from a subquery (avoids parameter explosion)
      */
     withRequiredAppSubquery(appIdsSubquery: SQL): this {
+        // Store for downstream consumers and add to WHERE conditions
+        this.withRequiredEntitySubquery("apps", appIdsSubquery);
         this.addEntitySubqueryCondition("apps", appIdsSubquery);
         return this;
     }
@@ -72,16 +74,25 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
      * Ensure all required data exists in the database
      */
     private async ensureDataExists(): Promise<ComposableQueryResult<SteamApp>> {
-        if (this.appIds.size === 0) return createQueryResult([], 0, null);
+        // Determine scope: explicit app IDs or a subquery built from current filters
+        const hasExplicitAppIds = this.appIds.size > 0;
+        const requiredAppsSubquery =
+            this.getRequiredEntitySubquery("apps") ??
+            (hasExplicitAppIds ? undefined : this.buildAppsSubqueryForCurrentFilters());
 
-        // Ensure app data exists by using the app repository
-        return await this.appRepository
-            .compose()
-            .withLanguage(this.lang)
-            .withAppIds(this.appIds)
-            .build({
-                sort: { method: "id", direction: "asc" },
-            });
+        const composer = this.appRepository.compose().withLanguage(this.lang);
+
+        if (hasExplicitAppIds) {
+            composer.withAppIds(this.appIds);
+        } else if (requiredAppsSubquery) {
+            composer.withRequiredEntitySubquery("apps", requiredAppsSubquery);
+        } else {
+            return createQueryResult([], 0, null);
+        }
+
+        return await composer.build({
+            sort: { method: "id", direction: "asc" },
+        });
     }
 
     /**
@@ -115,7 +126,13 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
                     eq(achievementsMeta.lang, lang),
                 ),
             )
-            .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
+            .innerJoin(
+                estimatedPlayers,
+                and(
+                    eq(achievementsStats.app_id, estimatedPlayers.app_id),
+                    isNotNull(estimatedPlayers.estimated_players),
+                ),
+            )
             .$dynamic();
 
         // Apply where conditions
@@ -129,7 +146,18 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
         }
 
         // Apply sorting and pagination
-        query = query.orderBy(sortDir(sortMethod));
+        const sort = options.sort ?? { method: "rarity_pct", direction: "asc" as const };
+        if (sort.method === "rarity_score") {
+            // Force deterministic DESC/ASC by transforming the expression and always using ASC
+            const scoreExpr =
+                sort.direction === "desc"
+                    ? sql`-1 * ${estimatedPlayers.estimated_players} * ${achievementsStats.percent}`
+                    : sql`${estimatedPlayers.estimated_players} * ${achievementsStats.percent}`;
+            query = query.orderBy(asc(scoreExpr));
+        } else {
+            const pct = achievementsStats.percent;
+            query = query.orderBy(sort.direction === "desc" ? desc(pct) : asc(pct));
+        }
 
         if (options.limit !== undefined) {
             query = query.limit(options.limit);
@@ -214,18 +242,32 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
      * Get app data for the achievements
      */
     private async getAppData() {
-        if (this.appIds.size === 0) return [];
+        // If explicit app IDs were provided, fetch by IDs.
+        if (this.appIds.size > 0) {
+            const appResult = await this.appRepository
+                .compose()
+                .withLanguage(this.lang)
+                .withAppIds(Array.from(this.appIds))
+                .build({
+                    limit: 1000,
+                    sort: { method: "id", direction: "asc" },
+                });
+            return appResult.data || [];
+        }
 
-        const appResult = await this.appRepository
+        // Otherwise, derive required apps from current filters (search, rarity, subqueries)
+        const subquery = this.getRequiredEntitySubquery("apps") ?? this.buildAppsSubqueryForCurrentFilters();
+        if (!subquery) return [];
+
+        const bySub = await this.appRepository
             .compose()
             .withLanguage(this.lang)
-            .withAppIds(Array.from(this.appIds))
+            .withRequiredEntitySubquery("apps", subquery)
             .build({
                 limit: 1000,
                 sort: { method: "id", direction: "asc" },
             });
-
-        return appResult.data || [];
+        return bySub.data || [];
     }
 
     /**
@@ -255,7 +297,13 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
                     eq(achievementsMeta.lang, "english"), // Always English for fallback
                 ),
             )
-            .innerJoin(estimatedPlayers, eq(achievementsStats.app_id, estimatedPlayers.app_id))
+            .innerJoin(
+                estimatedPlayers,
+                and(
+                    eq(achievementsStats.app_id, estimatedPlayers.app_id),
+                    isNotNull(estimatedPlayers.estimated_players),
+                ),
+            )
             .$dynamic();
 
         // Apply the same where conditions as the main query
@@ -271,6 +319,29 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     }
 
     /**
+     * Build a subquery that selects the app IDs required by the current filters/CTEs.
+     */
+    private buildAppsSubqueryForCurrentFilters(): SQL | undefined {
+        // Base: select distinct app IDs from achievements stats
+        let query = this.db
+            .with(...this.ctes)
+            .selectDistinct({
+                app_id: achievementsStats.app_id,
+            })
+            .from(achievementsStats)
+            .$dynamic();
+
+        // Apply the same standard conditions
+        const allConditions = this.buildStandardWhereConditions();
+        const definedConditions = allConditions.filter((c): c is SQL => c !== undefined);
+        if (definedConditions.length > 0) {
+            query = query.where(and(...definedConditions));
+        }
+
+        return query.getSQL();
+    }
+
+    /**
      * Get the appropriate sort method SQL
      */
     private getSortMethod(method: AppAchievementSortMethod) {
@@ -278,7 +349,8 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
             case "rarity_pct":
                 return achievementsStats.percent;
             case "rarity_score":
-                return sql`CASE WHEN ${estimatedPlayers.estimated_players} IS NULL OR ${achievementsStats.percent} IS NULL THEN 1 ELSE 0 END, ${estimatedPlayers.estimated_players} * (${achievementsStats.percent} / 100)`;
+                // Note: multi-column ordering handled in executeMainQuery; keep placeholder
+                return sql`${estimatedPlayers.estimated_players} * (${achievementsStats.percent} / 100)`;
             default:
                 return achievementsStats.percent;
         }

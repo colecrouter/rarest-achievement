@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { sql } from "drizzle-orm";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsMeta, achievementsStats, apps, ownedGames, users } from "../../src/repositories/sqlite/schema.js";
 import {
@@ -241,5 +242,85 @@ describe("AppRepository - SQLite (in-memory)", () => {
             .withAppIds(ids) // Explicit scope required
             .build({ sort: { method: "id", direction: "asc" }, limit: 2 });
         assert.ok(true, "pagination and sorting execute without throwing");
+    });
+});
+
+describe("Upsert regression - App repository", () => {
+    let db: ProjectDB;
+
+    beforeEach(async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+    });
+
+    test("app metadata upsert uses EXCLUDED fields", async () => {
+        const appId = 71001;
+        const lang = "english" as const;
+
+        const t0 = new Date(Date.now() - 60_000);
+        const initial = { ...makeAppData(appId, "Old Name"), header_image: "https://example.com/old.jpg" };
+        await db.insert(apps).values({ id: appId, lang, data: initial, updated_at: t0 });
+
+        const updated = { ...initial, name: "New Name", header_image: "https://example.com/new.jpg" };
+        await db
+            .insert(apps)
+            .values({ id: appId, lang, data: updated })
+            .onConflictDoUpdate({
+                target: [apps.id, apps.lang],
+                set: {
+                    data: sql`excluded.data`,
+                    updated_at: new Date(),
+                },
+            });
+
+        const rows = await db
+            .select({ id: apps.id, lang: apps.lang, data: apps.data, updated_at: apps.updated_at })
+            .from(apps);
+        const row = rows.find((r) => r.id === appId && r.lang === lang);
+        if (!row) throw new Error("app row should exist after upsert");
+        const data = row.data as { name?: string; header_image?: string };
+        assert.strictEqual(data.name, "New Name", "name should be overwritten by EXCLUDED.data");
+        assert.strictEqual(
+            data.header_image,
+            "https://example.com/new.jpg",
+            "header_image should be overwritten by EXCLUDED.data",
+        );
+        assert.ok(row.updated_at > t0, "updated_at should be refreshed on conflict");
+    });
+
+    test("achievement stats upsert uses EXCLUDED fields", async () => {
+        const appId = 72001;
+        const achId = "ACH_UPSERT_STATS";
+
+        const t0 = new Date(Date.now() - 60_000);
+        await db.insert(achievementsStats).values({ app_id: appId, ach_id: achId, percent: 10, updated_at: t0 });
+
+        await db
+            .insert(achievementsStats)
+            .values({ app_id: appId, ach_id: achId, percent: 25 })
+            .onConflictDoUpdate({
+                target: [achievementsStats.app_id, achievementsStats.ach_id],
+                set: {
+                    percent: sql`excluded.percent`,
+                    updated_at: new Date(),
+                },
+            });
+
+        const rows = await db
+            .select({
+                app_id: achievementsStats.app_id,
+                ach_id: achievementsStats.ach_id,
+                percent: achievementsStats.percent,
+                updated_at: achievementsStats.updated_at,
+            })
+            .from(achievementsStats);
+        const row = rows.find((r) => r.app_id === appId && r.ach_id === achId);
+        if (!row) throw new Error("stats row should exist after upsert");
+        assert.strictEqual(row.percent, 25, "percent should be overwritten by EXCLUDED.percent");
+        assert.ok(row.updated_at > t0, "updated_at should be refreshed on conflict");
     });
 });

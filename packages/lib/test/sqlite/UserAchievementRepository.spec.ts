@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 
 import type { GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
@@ -913,5 +913,54 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
             assert.strictEqual(item.id, "EX1");
             assert.ok(item.unlocked instanceof Date);
         });
+    });
+
+    test("updates unlocked_at on conflict using EXCLUDED value", async () => {
+        const userId = "u-upsert-excluded";
+        const appId = 95001;
+        const achId = "UX1";
+
+        // Arrange
+        await insertUser(db, { id: userId, data: makeUserData(userId) });
+        await seedMetaByCode(db, appId, "en", [{ ach: achId, display: "UX One" }]);
+        await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: achId, unlocked_at: null });
+
+        // Act: Upsert same PK with a non-null timestamp using EXCLUDED value
+        // Use second-precision to avoid millisecond differences in SQLite integer timestamp mode
+        const ts = new Date(Math.floor(Date.now() / 1000) * 1000);
+        await db
+            .insert(userAchievements)
+            .values({
+                user_id: userId,
+                app_id: appId,
+                ach_id: achId,
+                unlocked_at: ts,
+                updated_at: new Date(),
+            })
+            .onConflictDoUpdate({
+                target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
+                set: {
+                    unlocked_at: sql`excluded.unlocked_at`,
+                    updated_at: new Date(),
+                },
+            });
+
+        // Assert
+        const rows = await db
+            .select({
+                unlocked_at: userAchievements.unlocked_at,
+            })
+            .from(userAchievements)
+            .where(
+                and(
+                    eq(userAchievements.user_id, userId),
+                    eq(userAchievements.app_id, appId),
+                    eq(userAchievements.ach_id, achId),
+                ),
+            );
+        assert.strictEqual(rows.length, 1, "row should exist");
+        const stored = rows[0]?.unlocked_at;
+        assert.ok(stored instanceof Date, "unlocked_at should be a Date");
+        assert.strictEqual(stored?.getTime(), ts.getTime());
     });
 });

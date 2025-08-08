@@ -330,3 +330,66 @@ describe("FriendsRepository - SQLite (in-memory)", () => {
         assert.strictEqual(dbPairs.length, count, "All friend relationships inserted without duplication");
     });
 });
+
+test("friend edge upsert is idempotent (no duplicates)", async () => {
+    const sqlite = new Database(":memory:");
+    sqlite.exec("PRAGMA case_sensitive_like = ON;");
+    sqlite.exec("PRAGMA journal_mode = WAL;");
+    sqlite.exec("PRAGMA synchronous = NORMAL;");
+    await runMigrations(sqlite);
+    // Foreign keys disabled in this suite's setup pattern; keep consistent
+    sqlite.exec("PRAGMA foreign_keys = OFF;");
+    const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+    const userId = "upsert-main";
+    const friendId = "upsert-friend";
+
+    // Seed initial row with controlled timestamps
+    const t0 = new Date(Date.now() - 60_000);
+    await db.insert(friendsTable).values({
+        user_id: userId,
+        friend_id: friendId,
+        friend_since: t0,
+        updated_at: t0,
+    });
+
+    // Attempt to "upsert" the same PK with later timestamps.
+    // FriendsRepository uses onConflictDoNothing(), so duplicates should not be created
+    // and updated_at should NOT change.
+    const t1 = new Date();
+    await db
+        .insert(friendsTable)
+        .values({
+            user_id: userId,
+            friend_id: friendId,
+            friend_since: t1,
+            updated_at: t1,
+        })
+        .onConflictDoNothing();
+
+    const rows = await db
+        .select({
+            user_id: friendsTable.user_id,
+            friend_id: friendsTable.friend_id,
+            friend_since: friendsTable.friend_since,
+            updated_at: friendsTable.updated_at,
+        })
+        .from(friendsTable)
+        .where(eq(friendsTable.user_id, userId));
+
+    assert.strictEqual(rows.length, 1, "duplicate insert must not create multiple rows");
+    const row = rows[0];
+    if (!row) throw new Error("expected one friendship row after upsert attempt");
+    assert.strictEqual(row.friend_id, friendId);
+    // Since conflict-do-nothing is used, original values should remain unchanged (compare at second precision)
+    assert.strictEqual(
+        Math.floor(row.friend_since.getTime() / 1000),
+        Math.floor(t0.getTime() / 1000),
+        "friend_since should remain unchanged on conflict",
+    );
+    assert.strictEqual(
+        Math.floor(row.updated_at.getTime() / 1000),
+        Math.floor(t0.getTime() / 1000),
+        "updated_at should remain unchanged on conflict with do-nothing",
+    );
+});

@@ -195,7 +195,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
                     .onConflictDoUpdate({
                         target: users.id,
                         set: {
-                            data: users.data,
+                            data: sql`excluded.data`,
                             updated_at: new Date(),
                         },
                     }),
@@ -225,9 +225,9 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
                         .onConflictDoUpdate({
                             target: [ownedGames.user_id, ownedGames.app_id],
                             set: {
-                                last_played_at: ownedGames.last_played_at,
-                                playtime_2w_minutes: ownedGames.playtime_2w_minutes,
-                                playtime_total_minutes: ownedGames.playtime_total_minutes,
+                                last_played_at: sql`excluded.last_played_at`,
+                                playtime_2w_minutes: sql`excluded.playtime_last_two_weeks`,
+                                playtime_total_minutes: sql`excluded.playtime_total`,
                             },
                         }),
             ),

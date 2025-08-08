@@ -166,7 +166,11 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
      */
     protected addEntitySubqueryCondition(entityType: string, subquery: SQL): void {
         if (entityType === "apps") {
-            this.whereConditions.push(inArray(achievementsStats.app_id, subquery));
+            // Use EXISTS with a raw SQL subquery to avoid driver limitations on IN (...subquery)
+            // and to support callers that pass precompiled SQL via getSQL()
+            this.whereConditions.push(
+                sql`EXISTS (SELECT 1 FROM (${subquery}) AS required_apps WHERE required_apps.app_id = ${achievementsStats.app_id})`,
+            );
         }
         // Could be extended for other entity types in the future
     }

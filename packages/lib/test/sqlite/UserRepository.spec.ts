@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { and, eq, sql } from "drizzle-orm";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
@@ -149,5 +150,94 @@ describe("UserRepository - SQLite (in-memory)", () => {
 
         // ensure no exception is thrown and result is empty
         assert.strictEqual(result.data.length, 0);
+    });
+
+    test("users upsert uses EXCLUDED.data", async () => {
+        // Arrange: seed initial user
+        const userId = "ux-1";
+        const original = makeUserData(userId);
+        await db.insert(users).values({
+            id: userId,
+            data: original,
+            updated_at: new Date(),
+        });
+
+        // Act: upsert with modified payload; set uses excluded.data
+        const modified = { ...original, personaname: "Changed Persona" };
+        await db
+            .insert(users)
+            .values({
+                id: userId,
+                data: modified,
+                updated_at: new Date(),
+            })
+            .onConflictDoUpdate({
+                target: users.id,
+                set: {
+                    data: sql`excluded.data`,
+                    updated_at: new Date(),
+                },
+            });
+
+        // Assert: stored row reflects modified.personaname
+        const rows = await db.select({ data: users.data }).from(users).where(eq(users.id, userId));
+        const stored = rows[0]?.data;
+        assert.ok(stored, "user row should exist");
+        assert.strictEqual(stored.personaname, "Changed Persona");
+    });
+
+    test("owned games upsert uses EXCLUDED fields", async () => {
+        // Arrange: FK requires user to exist
+        const userId = "og-user";
+        await db.insert(users).values({
+            id: userId,
+            data: makeUserData(userId),
+            updated_at: new Date(),
+        });
+
+        const appId = 424242;
+        await db.insert(ownedGames).values({
+            user_id: userId,
+            app_id: appId,
+            playtime_total_minutes: 10,
+            playtime_2w_minutes: 1,
+            last_played_at: null,
+        });
+
+        // Act: upsert same PK with different totals; set uses excluded.*
+        await db
+            .insert(ownedGames)
+            .values({
+                user_id: userId,
+                app_id: appId,
+                playtime_total_minutes: 20,
+                playtime_2w_minutes: 2,
+                last_played_at: new Date(0),
+            })
+            .onConflictDoUpdate({
+                target: [ownedGames.user_id, ownedGames.app_id],
+                set: {
+                    playtime_total_minutes: sql`excluded.playtime_total`,
+                    playtime_2w_minutes: sql`excluded.playtime_last_two_weeks`,
+                    last_played_at: sql`excluded.last_played_at`,
+                },
+            });
+
+        // Assert: final values are from EXCLUDED row
+        const rows = await db
+            .select({
+                total: ownedGames.playtime_total_minutes,
+                twoW: ownedGames.playtime_2w_minutes,
+                last: ownedGames.last_played_at,
+            })
+            .from(ownedGames)
+            .where(and(eq(ownedGames.user_id, userId), eq(ownedGames.app_id, appId)));
+        assert.strictEqual(rows.length, 1);
+        const row = rows[0];
+        assert.ok(row, "owned game row should exist");
+        assert.strictEqual(row.total, 20);
+        assert.strictEqual(row.twoW, 2);
+        assert.ok(row.last instanceof Date);
+        assert.strictEqual(row.last.getTime(), 0);
     });
 });

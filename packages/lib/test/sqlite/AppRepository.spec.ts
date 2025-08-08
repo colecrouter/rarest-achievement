@@ -177,7 +177,12 @@ describe("AppRepository - SQLite (in-memory)", () => {
         await insertApp(db, { id: 1001, lang: "english", data: makeAppData(1001, "Portal 2") });
         await insertApp(db, { id: 1002, lang: "english", data: makeAppData(1002, "Half-Life 2") });
 
-        const result = await repo.compose().withLanguage("en").withSearch("portal").build();
+        const result = await repo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([1001, 1002]) // Explicit scope required
+            .withSearch("portal")
+            .build();
 
         assert.strictEqual(result.data.length, 1, "Should return 1 app matching 'portal'");
         assert.strictEqual(result.data[0]?.name, "Portal 2", "Should return Portal 2");
@@ -206,7 +211,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
             last_played_at: null,
         });
 
-        await repo.compose().withLanguage("en").withOwnedByUsers(["user-1"]).build();
+        await repo.compose().withLanguage("en").withAppIds([3001]).withOwnedByUsers(["user-1"]).build();
         assert.ok(true, "withOwnedByUsers executes without throwing");
     });
 
@@ -217,19 +222,23 @@ describe("AppRepository - SQLite (in-memory)", () => {
             .insert(achievementsStats)
             .values({ app_id: 4001, ach_id: "ACH_X", percent: 10, updated_at: new Date() });
 
-        await repo.compose().withLanguage("en").withAchievements().build();
+        await repo.compose().withLanguage("en").withAppIds([4001]).withAchievements().build();
         assert.ok(true, "withAchievements executes without throwing");
     });
 
     test("pagination and sorting do not throw", async () => {
         const { repo } = ctx;
+        const ids: number[] = [];
         for (let i = 0; i < 5; i++) {
-            await insertApp(db, { id: 5000 + i, lang: "english", data: makeAppData(5000 + i, `App ${i}`) });
+            const id = 5000 + i;
+            ids.push(id);
+            await insertApp(db, { id, lang: "english", data: makeAppData(id, `App ${i}`) });
         }
 
         await repo
             .compose()
             .withLanguage("en")
+            .withAppIds(ids) // Explicit scope required
             .build({ sort: { method: "id", direction: "asc" }, limit: 2 });
         assert.ok(true, "pagination and sorting execute without throwing");
     });

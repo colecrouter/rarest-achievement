@@ -140,6 +140,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      * Build and execute the composed query with error propagation
      */
     async build(options: ComposableQueryOptions<AppSortMethod> = {}): Promise<ComposableQueryResult<SteamApp>> {
+        // Enforce explicit scope: either app IDs or a required-apps subquery must be provided
+        if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined) {
+            throw new Error(
+                "AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...).",
+            );
+        }
+
         // First ensure all required data exists (this may accumulate errors)
         const ensureDataResult = await this.ensureDataExists();
         if (ensureDataResult.error) console.warn("Failed to ensure all data exists:", ensureDataResult.error);

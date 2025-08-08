@@ -1,20 +1,20 @@
-import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
-import type { MockSteamStoreAPIClient } from "../mocks/steamStore";
-import { MockSteamChartsAPIClient } from "../mocks/steamCharts";
-import { MockSteamAuthenticatedAPIClient as MockAuthClass } from "../mocks/steamAuthenticated";
-import { MockSteamStoreAPIClient as MockStoreClass } from "../mocks/steamStore";
-import { AppRepository } from "../../src/repositories/sqlite/App";
-import { FriendsRepository } from "../../src/repositories/sqlite/Friends";
-import { UserRepository } from "../../src/repositories/sqlite/User";
-import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
-import { UserAchievementRepository } from "../../src/repositories/sqlite/UserAchievement";
 import type { APILanguageCode } from "../../src/lang";
+import type { SteamAuthenticatedAPIClient } from "../../src/repositories/api/steampowered/client";
+import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
+import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { GetSchemaForGameResponse } from "../../src/repositories/api/steampowered/schemaForGame";
 import type { GetAppDetailsResponse } from "../../src/repositories/api/store/appdetails";
+import { AppRepository } from "../../src/repositories/sqlite/App";
+import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
+import { FriendsRepository } from "../../src/repositories/sqlite/Friends";
+import { UserRepository } from "../../src/repositories/sqlite/User";
+import { UserAchievementRepository } from "../../src/repositories/sqlite/UserAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
-import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
-import type { SteamAuthenticatedAPIClient } from "../../src/repositories/api/steampowered/client";
+import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
+import { MockSteamAuthenticatedAPIClient as MockAuthClass } from "../mocks/steamAuthenticated";
+import { MockSteamChartsAPIClient } from "../mocks/steamCharts";
+import type { MockSteamStoreAPIClient } from "../mocks/steamStore";
+import { MockSteamStoreAPIClient as MockStoreClass } from "../mocks/steamStore";
 
 // Global mock instances for convenience
 let authMock: MockSteamAuthenticatedAPIClient | null = null;
@@ -193,6 +193,41 @@ export function createFriendsRepository(db: ProjectDB, auth?: MockSteamAuthentic
     // Cast mock to the concrete client type expected by FriendsRepository's constructor
     const steamClient = authMockInstance as unknown as SteamAuthenticatedAPIClient;
     return new FriendsRepository(db, steamClient, userRepository);
+}
+
+/**
+ * Helper creators that return repos pre-wired with fresh local mocks
+ */
+export function makeAppRepoWithMocks(db: ProjectDB) {
+    const auth = new MockAuthClass();
+    const charts = new MockSteamChartsAPIClient();
+    const store = new MockStoreClass();
+    const repo = new AppRepository(db, auth as unknown as SteamAuthenticatedAPIClient, charts, store);
+    return { repo, auth, charts, store };
+}
+
+export function makeUserAchievementRepoWithMocks(db: ProjectDB) {
+    const auth = new MockAuthClass();
+    const charts = new MockSteamChartsAPIClient();
+    const store = new MockStoreClass();
+    const repo = createUserAchievementRepository(db, auth, charts, store);
+    return { repo, auth, charts, store };
+}
+
+export function makeFriendsRepoWithMocks(db: ProjectDB) {
+    const auth = new MockAuthClass();
+    const userRepository = new UserRepository(db, auth as unknown as SteamAuthenticatedAPIClient);
+    const repo = new FriendsRepository(db, auth as unknown as SteamAuthenticatedAPIClient, userRepository);
+    return { repo, auth };
+}
+
+/**
+ * Create a UserRepository with a fresh local auth mock
+ */
+export function makeUserRepoWithMocks(db: ProjectDB) {
+    const auth = new MockAuthClass();
+    const repo = new UserRepository(db, auth as unknown as SteamAuthenticatedAPIClient);
+    return { repo, auth };
 }
 
 /**

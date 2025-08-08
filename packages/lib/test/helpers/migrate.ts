@@ -1,6 +1,6 @@
-import type BetterSqlite3 from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
+import type BetterSqlite3 from "better-sqlite3";
 
 // __dirname is not defined in ESM; emulate it
 const __filename = new URL(import.meta.url).pathname;

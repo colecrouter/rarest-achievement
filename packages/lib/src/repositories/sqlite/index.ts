@@ -1,4 +1,4 @@
-import { SteamChartsAPIClient, SteamStoreAPIClient, type ProjectDB } from "../../index";
+import { type ProjectDB, SteamChartsAPIClient, SteamStoreAPIClient } from "../../index";
 import type { LanguageCode } from "../../lang";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import { createQueryResult } from "../composable";

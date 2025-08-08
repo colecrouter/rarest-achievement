@@ -1,9 +1,9 @@
 // Centralized fixture for SteamCommunityAPI
 
-import type { SteamCommunityAPI } from "../../src/repositories/api/steamcommunity/client";
-import type { SteamAppAchievement, SteamUserAchievement } from "../../src/models";
-import type { Article, User } from "../../src/repositories/api/steamcommunity/types";
 import type { APILanguageCode } from "../../src/lang";
+import type { SteamAppAchievement, SteamUserAchievement } from "../../src/models";
+import type { SteamCommunityAPI } from "../../src/repositories/api/steamcommunity/client";
+import type { Article, User } from "../../src/repositories/api/steamcommunity/types";
 
 export class MockSteamCommunityAPIClient implements SteamCommunityAPI {
     // internal stores

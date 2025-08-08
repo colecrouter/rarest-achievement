@@ -1,7 +1,8 @@
+import { type APILanguageCode, type LanguageCode, getLanguageByCode } from "../../src/lang";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema";
-import { insertAchievementMeta, insertApp } from "./dbHelpers";
 import { makeAppData } from "./appData";
+import { insertAchievementMeta, insertApp } from "./dbHelpers";
 
 /**
  * Seed an app row (EN) and an estimated players row for convenience in achievement tests.
@@ -30,12 +31,12 @@ export async function seedStats(db: ProjectDB, appId: number, items: Array<{ ach
 }
 
 /**
- * Seed achievement metadata for an app in a specific language.
+ * Seed achievement metadata for an app in a specific API language.
  */
 export async function seedMeta(
     db: ProjectDB,
     appId: number,
-    lang: "english" | "french",
+    lang: APILanguageCode,
     items: Array<{
         ach: string;
         display: string;
@@ -59,4 +60,28 @@ export async function seedMeta(
             lang,
         });
     }
+}
+
+/**
+ * Wrapper: insert app using store language code (e.g., 'en', 'fr').
+ * Maps to API language code for DB storage.
+ */
+export async function insertAppByCode(db: ProjectDB, params: { id: number; langCode: LanguageCode; name: string }) {
+    const entry = getLanguageByCode(params.langCode);
+    if (!entry) throw new Error(`Unknown language code: ${params.langCode}`);
+    await insertApp(db, { id: params.id, lang: entry.apiCode, data: makeAppData(params.id, params.name) });
+}
+
+/**
+ * Wrapper: seed meta using store language code (e.g., 'en', 'fr').
+ */
+export async function seedMetaByCode(
+    db: ProjectDB,
+    appId: number,
+    langCode: LanguageCode,
+    items: Parameters<typeof seedMeta>[3],
+) {
+    const entry = getLanguageByCode(langCode);
+    if (!entry) throw new Error(`Unknown language code: ${langCode}`);
+    await seedMeta(db, appId, entry.apiCode, items);
 }

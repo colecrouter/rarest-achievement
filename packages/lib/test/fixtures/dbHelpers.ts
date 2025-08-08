@@ -1,14 +1,14 @@
+import type { APILanguageCode } from "../../src/lang";
+import type { SteamAppRaw, SteamUserRaw } from "../../src/models";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
     achievementsMeta,
     apps,
     friends,
     ownedGames,
-    users,
     userAchievements,
+    users,
 } from "../../src/repositories/sqlite/schema";
-import type { SteamAppRaw, SteamUserRaw } from "../../src/models";
-import type { APILanguageCode } from "../../src/lang";
 
 /**
  * Insert an app record into the database

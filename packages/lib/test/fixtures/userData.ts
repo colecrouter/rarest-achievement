@@ -1,6 +1,6 @@
 import type { SteamUserRaw } from "../../src/models";
-import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { GetFriendsListResponse } from "../../src/repositories/api/steampowered/friends";
+import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 
 /**
  * Create user data fixture for testing

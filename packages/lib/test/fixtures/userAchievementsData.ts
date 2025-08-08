@@ -1,6 +1,6 @@
-import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import type { GetPlayerAchievementsResponse } from "../../src/repositories/api/steampowered/playerAchievement";
 import type { GetFriendsListResponse } from "../../src/repositories/api/steampowered/friends";
+import type { GetPlayerAchievementsResponse } from "../../src/repositories/api/steampowered/playerAchievement";
+import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { insertUserAchievement } from "./dbHelpers";
 
 /**

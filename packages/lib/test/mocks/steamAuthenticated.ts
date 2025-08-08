@@ -1,33 +1,33 @@
 // Centralized fixtures and minimal mock client for SteamAuthenticatedAPI
 
+import type { APILanguageCode } from "../../src/lang";
 import type { SteamAuthenticatedAPI } from "../../src/repositories/api/steampowered/client";
 import type { GetFriendsListQuery, GetFriendsListResponse } from "../../src/repositories/api/steampowered/friends";
-import type { APILanguageCode } from "../../src/lang";
 import type {
     GetGlobalAchievementPercentagesForAppQuery,
     GetGlobalAchievementPercentagesForAppResponse,
 } from "../../src/repositories/api/steampowered/globalAchevement";
+import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type {
     GetPlayerAchievementsQuery,
     GetPlayerAchievementsResponse,
 } from "../../src/repositories/api/steampowered/playerAchievement";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type {
-    GetUserStatsForGameQuery,
-    GetUserStatsForGameResponse,
-} from "../../src/repositories/api/steampowered/stats";
-import type {
     GetSchemaForGameQuery,
     GetSchemaForGameResponse,
 } from "../../src/repositories/api/steampowered/schemaForGame";
-import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
+import type {
+    GetUserStatsForGameQuery,
+    GetUserStatsForGameResponse,
+} from "../../src/repositories/api/steampowered/stats";
 
 export class MockSteamAuthenticatedAPIClient implements SteamAuthenticatedAPI {
     // internal stores for fixture responses
     private friendsList = new Map<string, GetFriendsListResponse>();
     private globalAchievements = new Map<number, GetGlobalAchievementPercentagesForAppResponse | null>();
     private playerAchievements = new Map<string, unknown>();
-    private playerSummaries = new Map<string, GetPlayerSummariesResponse>();
+    private playerSummaries = new Map<string, GetPlayerSummariesResponse["response"]["players"][number]>();
     private userStats = new Map<string, GetUserStatsForGameResponse | null>();
     private schemaForGame = new Map<string, GetSchemaForGameResponse | null>();
     private ownedGames = new Map<string, unknown>();
@@ -81,13 +81,24 @@ export class MockSteamAuthenticatedAPIClient implements SteamAuthenticatedAPI {
      * Set the response for getPlayerSummaries for given steamids
      */
     setPlayerSummaries(steamids: string[], response: GetPlayerSummariesResponse) {
-        this.playerSummaries.set(steamids.join(","), response);
+        // Index by individual id to support any ordering/batching in requests
+        for (const player of response.response.players) {
+            this.playerSummaries.set(player.steamid, player);
+        }
     }
     async getPlayerSummaries(steamids: string[]): Promise<GetPlayerSummariesResponse> {
-        const key = steamids.join(",");
-        const result = this.playerSummaries.get(key);
-        if (!result) throw new Error(`No mock playerSummaries for steamids: ${key}`);
-        return result;
+        // Build response from per-id index to tolerate different orders/chunking
+        const players: GetPlayerSummariesResponse["response"]["players"] = [];
+        const missing: string[] = [];
+        for (const id of steamids) {
+            const p = this.playerSummaries.get(id);
+            if (p) players.push(p);
+            else missing.push(id);
+        }
+        if (missing.length > 0) {
+            throw new Error(`No mock playerSummaries for steamids: ${missing.join(",")}`);
+        }
+        return { response: { players } };
     }
 
     /**

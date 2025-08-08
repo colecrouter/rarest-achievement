@@ -1,7 +1,7 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsMeta, achievementsStats, apps, ownedGames, users } from "../../src/repositories/sqlite/schema.js";
 import {
@@ -12,116 +12,63 @@ import {
     makeAchievementSchema,
     makeAppData,
 } from "../fixtures/appData";
-import { insertAchievementMeta, insertApp, truncateAll } from "../fixtures/dbHelpers";
-import { createAppRepository, setMockInstances, setMockResponse } from "../fixtures/mockHelpers";
+import { insertAchievementMeta, insertApp } from "../fixtures/dbHelpers";
+import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
-import { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
-import { MockSteamChartsAPIClient } from "../mocks/steamCharts";
-import { MockSteamStoreAPIClient } from "../mocks/steamStore";
 
-// Migrations helper ensures our in-memory DB has the proper schema each test
-let db: ProjectDB;
-let authMock: MockSteamAuthenticatedAPIClient;
-let storeMock: MockSteamStoreAPIClient;
-let chartsMock: MockSteamChartsAPIClient;
+describe("AppRepository - SQLite (in-memory)", () => {
+    let db: ProjectDB;
+    let ctx: ReturnType<typeof makeAppRepoWithMocks>;
 
-describe("AppRepository – SQLite (in-memory)", () => {
     beforeEach(async () => {
-        // Fresh in-memory DB per test case
         const sqlite = new Database(":memory:");
 
-        // Configure SQLite to behave more like D1
-        sqlite.exec("PRAGMA foreign_keys = OFF;");
         sqlite.exec("PRAGMA case_sensitive_like = ON;");
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
 
-        // Run DDL against raw sqlite BEFORE creating drizzle instance
-        // so all tables/indices exist for the lifetime of this test DB.
-
         await runMigrations(sqlite);
+        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
 
-        db = drizzle(sqlite, { logger: true }) as unknown as ProjectDB;
-
-        // Initialize mock instances
-        authMock = new MockSteamAuthenticatedAPIClient();
-        storeMock = new MockSteamStoreAPIClient();
-        chartsMock = new MockSteamChartsAPIClient();
-
-        // Set up the mock instances for the helper functions
-        setMockInstances(authMock, storeMock);
+        // Fresh per-test repo + mocks
+        ctx = makeAppRepoWithMocks(db);
     });
 
     test("fetches and upserts an English-only app", async () => {
-        // Arrange mocks using the centralized helper
-        setMockResponse("getAppDetails", fixtureAppEn.appid, "english", fixtureAppEn);
-        setMockResponse("getSchemaForGame", fixtureAppEn.appid, "english", makeAchievementSchema("Test Game", []));
+        const { repo, auth, store } = ctx;
+        const appResp = {
+            [fixtureAppEn.appid]: { success: true as const, data: makeAppData(fixtureAppEn.appid, fixtureAppEn.name) },
+        };
+        store.setAppDetails(fixtureAppEn.appid, appResp);
+        auth.setSchemaForGame({ appid: fixtureAppEn.appid, l: "english" }, makeAchievementSchema("Test Game", []));
 
-        const repo = createAppRepository(db, authMock, chartsMock, storeMock);
+        await repo.compose().withLanguage("en").withAppIds(fixtureAppEn.appid).build();
 
-        // Act and capture detailed error
-        try {
-            await repo.compose().withLanguage("en").withAppIds(fixtureAppEn.appid).build();
-        } catch (error) {
-            console.log("Full error object:", error);
-            if (error instanceof Error) {
-                console.log("Error message:", error.message);
-                console.log("Error stack:", error.stack);
-            }
-            if (error && typeof error === "object" && "code" in error) {
-                console.log("Error code:", error.code);
-            }
-            throw error; // Re-throw so test fails with full info
-        }
-
-        // Assert app row inserted if schema/table wiring is active
-        try {
-            const rows = await db
-                .select({
-                    id: apps.id,
-                    lang: apps.lang,
-                    data: apps.data,
-                })
-                .from(apps);
-
-            const appRows = (rows as Array<{ id: number; lang: string; data: unknown }>).filter(
-                (r) => r.id === fixtureAppEn.appid && r.lang === "english",
-            );
-            assert.strictEqual(appRows.length, 1, "App row should be inserted");
-            const first = appRows[0] as { id: number; lang: string; data: unknown };
-            const name = (first.data as { name?: string } | null | undefined)?.name;
-            assert.strictEqual(name, fixtureAppEn.name);
-        } catch {
-            // If tables are not yet created, skip strict assertion to keep scaffold compiling.
-            // Follow-up will add schema DDL/migration to enable strict checks.
-        }
+        // Assert app row inserted
+        const rows = await db.select({ id: apps.id, lang: apps.lang, data: apps.data }).from(apps);
+        const appRows = rows.filter((r) => r.id === fixtureAppEn.appid && r.lang === "english");
+        assert.strictEqual(appRows.length, 1, "App row should be inserted");
+        const first = appRows[0];
+        assert.ok(first, "Expected at least one app row");
+        const { name } = first.data as { name?: string };
+        assert.strictEqual(name, fixtureAppEn.name);
 
         // Assert no achievements meta for empty schema
-        try {
-            const metaAll = await db
-                .select({
-                    app_id: achievementsMeta.app_id,
-                    ach_id: achievementsMeta.ach_id,
-                    lang: achievementsMeta.lang,
-                })
-                .from(achievementsMeta);
-            const metaRows = (metaAll as Array<{ app_id: number; ach_id: string; lang: string }>).filter(
-                (r) => r.app_id === fixtureAppEn.appid,
-            );
-            assert.strictEqual(metaRows.length, 0, "No achievement meta rows for empty schema");
-        } catch {
-            // Table may not be present yet in this scaffold
-        }
+        const metaAll = await db
+            .select({
+                app_id: achievementsMeta.app_id,
+                ach_id: achievementsMeta.ach_id,
+                lang: achievementsMeta.lang,
+            })
+            .from(achievementsMeta);
+        const metaRows = metaAll.filter((r) => r.app_id === fixtureAppEn.appid);
+        assert.strictEqual(metaRows.length, 0, "No achievement meta rows for empty schema");
     });
 
-    test("French localisation identical to English – only English meta stored", async () => {
-        // Reset tables if possible
-        try {
-            await truncateAll(db);
-        } catch {}
+    test("French localization identical to English – only English meta stored", async () => {
+        const { repo, auth, store } = ctx;
 
-        // Seed EN app + EN meta
         await insertApp(db, {
             id: fixtureAppEn.appid,
             lang: "english",
@@ -139,41 +86,32 @@ describe("AppRepository – SQLite (in-memory)", () => {
             lang: "english",
         });
 
-        // Mock FR identical achievements (empty result, will use EN from DB)
-        setMockResponse("getAppDetails", fixtureAppEn.appid, "french", fixtureAppFr);
-        setMockResponse("getSchemaForGame", fixtureAppEn.appid, "french", makeAchievementSchema("Test Game", []));
+        const frResp = {
+            [fixtureAppFr.appid]: { success: true as const, data: makeAppData(fixtureAppFr.appid, fixtureAppFr.name) },
+        };
+        store.setAppDetails(fixtureAppFr.appid, frResp);
+        auth.setSchemaForGame({ appid: fixtureAppEn.appid, l: "french" }, makeAchievementSchema("Test Game", []));
 
-        const repo = createAppRepository(db);
         await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
 
         // Verify only EN meta remains
-        try {
-            const metaAll = await db
-                .select({
-                    app_id: achievementsMeta.app_id,
-                    ach_id: achievementsMeta.ach_id,
-                    lang: achievementsMeta.lang,
-                })
-                .from(achievementsMeta);
-            const metaRows = (metaAll as Array<{ app_id: number; ach_id: string; lang: string }>).filter(
-                (r) => r.app_id === fixtureAppEn.appid,
-            );
-            assert.strictEqual(metaRows.length, 1, "Only English meta should be stored");
-            const first = metaRows[0];
-            assert.ok(first, "Expected at least one meta row");
-            assert.strictEqual(first.lang, "english");
-        } catch {
-            // Table presence not guaranteed in scaffold
-        }
+        const metaAll = await db
+            .select({
+                app_id: achievementsMeta.app_id,
+                ach_id: achievementsMeta.ach_id,
+                lang: achievementsMeta.lang,
+            })
+            .from(achievementsMeta);
+        const metaRows = metaAll.filter((r) => r.app_id === fixtureAppEn.appid);
+        assert.strictEqual(metaRows.length, 1, "Only English meta should be stored");
+        const first = metaRows[0];
+        assert.ok(first, "Expected at least one meta row");
+        assert.strictEqual(first.lang, "english");
     });
 
-    test("French localisation differs – both languages stored", async () => {
-        // Reset tables if possible
-        try {
-            await truncateAll(db);
-        } catch {}
+    test("French localization differs – both languages stored", async () => {
+        const { repo, auth, store } = ctx;
 
-        // Seed EN app + EN meta
         await insertApp(db, {
             id: fixtureAppEn.appid,
             lang: "english",
@@ -191,77 +129,54 @@ describe("AppRepository – SQLite (in-memory)", () => {
             lang: "english",
         });
 
-        // Mock FR differing description
-        setMockResponse("getAppDetails", fixtureAppEn.appid, "french", fixtureAppFr);
-        setMockResponse(
-            "getSchemaForGame",
-            fixtureAppEn.appid,
-            "french",
+        const frResp = {
+            [fixtureAppFr.appid]: { success: true as const, data: makeAppData(fixtureAppFr.appid, fixtureAppFr.name) },
+        };
+        store.setAppDetails(fixtureAppFr.appid, frResp);
+        auth.setSchemaForGame(
+            { appid: fixtureAppEn.appid, l: "french" },
             makeAchievementSchema("Test Game", [{ ...basicAchievement, description: "Desc FR" }]),
         );
 
-        const repo = createAppRepository(db);
         await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
 
-        test("app with no achievements still returns the app row", async () => {
-            // Mock EN app no achievements
-            setMockResponse("getAppDetails", fixtureAppEn.appid, "english", fixtureAppEn);
-            setMockResponse("getSchemaForGame", fixtureAppEn.appid, "english", makeAchievementSchema("Test Game", []));
+        // Verify both EN and FR meta rows exist for ACH1
+        const metaAll2 = await db
+            .select({ app_id: achievementsMeta.app_id, ach_id: achievementsMeta.ach_id, lang: achievementsMeta.lang })
+            .from(achievementsMeta);
+        const forApp = metaAll2.filter((r) => r.app_id === fixtureAppEn.appid && r.ach_id === basicAchievementEn.name);
+        const langs = new Set(forApp.map((r) => r.lang));
+        assert.strictEqual(forApp.length, 2, "Both EN and FR meta should be stored");
+        assert.deepStrictEqual(langs, new Set(["english", "french"]));
 
-            const repo = createAppRepository(db);
-            const result = await repo.compose().withLanguage("en").withAppIds(fixtureAppEn.appid).build();
+        // Also verify selection behavior by language
+        const frResult = await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
+        assert.strictEqual(frResult.data.length >= 1, true);
 
-            assert.strictEqual(result.data.length, 1, "Should return 1 app");
-            assert.strictEqual(result.data[0]?.id, fixtureAppEn.appid, "App ID should match");
-        });
-
-        test("withSearch filters by app name using searchTerms()", async () => {
-            // Seed apps
-            await insertApp(db, {
-                id: 1001,
-                lang: "english",
-                data: makeAppData(1001, "Portal 2"),
-            });
-            await insertApp(db, {
-                id: 1002,
-                lang: "english",
-                data: makeAppData(1002, "Half-Life 2"),
-            });
-
-            const repo = createAppRepository(db);
-            const result = await repo.compose().withLanguage("en").withSearch("portal").build();
-
-            assert.strictEqual(result.data.length, 1, "Should return 1 app matching 'portal'");
-            assert.strictEqual(result.data[0]?.name, "Portal 2", "Should return Portal 2");
-        });
+        const enResult = await repo.compose().withLanguage("en").withAppIds(fixtureAppEn.appid).build();
+        assert.strictEqual(enResult.data.length >= 1, true);
     });
 
     test("app with no achievements still returns the app row", async () => {
-        // Mock EN app no achievements
-        setMockResponse("getAppDetails", fixtureAppEn.appid, "english", fixtureAppEn);
-        setMockResponse("getSchemaForGame", fixtureAppEn.appid, "english", makeAchievementSchema("Test Game", []));
+        const { repo, auth, store } = ctx;
+        const enResp = {
+            [fixtureAppEn.appid]: { success: true as const, data: makeAppData(fixtureAppEn.appid, fixtureAppEn.name) },
+        };
+        store.setAppDetails(fixtureAppEn.appid, enResp);
+        auth.setSchemaForGame({ appid: fixtureAppEn.appid, l: "english" }, makeAchievementSchema("Test Game", []));
 
-        const repo = createAppRepository(db);
         const result = await repo.compose().withLanguage("en").withAppIds(fixtureAppEn.appid).build();
 
         assert.strictEqual(result.data.length, 1, "Should return 1 app");
         assert.strictEqual(result.data[0]?.id, fixtureAppEn.appid, "App ID should match");
     });
 
-    test("withSearch filters by app name using searchTerms()", async () => {
+    test("withSearch matches app name using searchTerms()", async () => {
+        const { repo } = ctx;
         // Seed apps
-        await insertApp(db, {
-            id: 1001,
-            lang: "english",
-            data: makeAppData(1001, "Portal 2"),
-        });
-        await insertApp(db, {
-            id: 1002,
-            lang: "english",
-            data: makeAppData(1002, "Half-Life 2"),
-        });
+        await insertApp(db, { id: 1001, lang: "english", data: makeAppData(1001, "Portal 2") });
+        await insertApp(db, { id: 1002, lang: "english", data: makeAppData(1002, "Half-Life 2") });
 
-        const repo = createAppRepository(db);
         const result = await repo.compose().withLanguage("en").withSearch("portal").build();
 
         assert.strictEqual(result.data.length, 1, "Should return 1 app matching 'portal'");
@@ -269,40 +184,20 @@ describe("AppRepository – SQLite (in-memory)", () => {
     });
 
     test("withAppIds limits selection to provided IDs (smoke)", async () => {
-        await insertApp(db, {
-            id: 2001,
-            lang: "english",
-            data: makeAppData(2001, "App A"),
-        });
-        await insertApp(db, {
-            id: 2002,
-            lang: "english",
-            data: makeAppData(2002, "App B"),
-        });
+        const { repo } = ctx;
+        await insertApp(db, { id: 2001, lang: "english", data: makeAppData(2001, "App A") });
+        await insertApp(db, { id: 2002, lang: "english", data: makeAppData(2002, "App B") });
 
-        const repo = createAppRepository(db);
-        await repo.compose().withLanguage("en").withAppIds([2001]).build();
+        const res = await repo.compose().withLanguage("en").withAppIds([2001]).build();
 
-        // Sanity: both are present in DB; build executed without throw for provided IDs filter.
-        const ids = (await db.select({ id: apps.id, lang: apps.lang }).from(apps))
-            .filter((r) => r.lang === "english")
-            .map((r) => r.id)
-            .sort();
-        assert.deepEqual(ids, [2001, 2002]);
+        assert.deepStrictEqual(res.data.map((a) => a.id).sort(), [2001]);
     });
 
     test("withOwnedByUsers composes subquery (smoke)", async () => {
+        const { repo } = ctx;
         // Seed minimal user and ownership
-        await db.insert(users).values({
-            id: "user-1",
-            data: makeUserData("user-1"),
-            updated_at: new Date(),
-        });
-        await insertApp(db, {
-            id: 3001,
-            lang: "english",
-            data: makeAppData(3001, "Owned App"),
-        });
+        await db.insert(users).values({ id: "user-1", data: makeUserData("user-1"), updated_at: new Date() });
+        await insertApp(db, { id: 3001, lang: "english", data: makeAppData(3001, "Owned App") });
         await db.insert(ownedGames).values({
             user_id: "user-1",
             app_id: 3001,
@@ -311,43 +206,31 @@ describe("AppRepository – SQLite (in-memory)", () => {
             last_played_at: null,
         });
 
-        const repo = createAppRepository(db);
         await repo.compose().withLanguage("en").withOwnedByUsers(["user-1"]).build();
         assert.ok(true, "withOwnedByUsers executes without throwing");
     });
 
     test("withAchievements filters apps that have achievement stats (smoke)", async () => {
-        await insertApp(db, {
-            id: 4001,
-            lang: "english",
-            data: makeAppData(4001, "Has Achievements"),
-        });
-        await db.insert(achievementsStats).values({
-            app_id: 4001,
-            ach_id: "ACH_X",
-            percent: 10,
-            updated_at: new Date(),
-        });
+        const { repo } = ctx;
+        await insertApp(db, { id: 4001, lang: "english", data: makeAppData(4001, "Has Achievements") });
+        await db
+            .insert(achievementsStats)
+            .values({ app_id: 4001, ach_id: "ACH_X", percent: 10, updated_at: new Date() });
 
-        const repo = createAppRepository(db);
         await repo.compose().withLanguage("en").withAchievements().build();
         assert.ok(true, "withAchievements executes without throwing");
     });
 
     test("pagination and sorting do not throw", async () => {
+        const { repo } = ctx;
         for (let i = 0; i < 5; i++) {
-            await insertApp(db, {
-                id: 5000 + i,
-                lang: "english",
-                data: makeAppData(5000 + i, `App ${i}`),
-            });
+            await insertApp(db, { id: 5000 + i, lang: "english", data: makeAppData(5000 + i, `App ${i}`) });
         }
 
-        const repo = createAppRepository(db);
         await repo
             .compose()
             .withLanguage("en")
-            .build({ sort: { method: "id", direction: "asc" }, limit: 2, cursor: 1 });
+            .build({ sort: { method: "id", direction: "asc" }, limit: 2 });
         assert.ok(true, "pagination and sorting execute without throwing");
     });
 });

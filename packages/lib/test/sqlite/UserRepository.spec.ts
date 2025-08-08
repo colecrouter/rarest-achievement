@@ -1,35 +1,40 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
-import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { users, ownedGames } from "../../src/repositories/sqlite/schema.js";
-import { makeUserData } from "../fixtures/userData";
-import { runMigrations } from "../helpers/migrate";
-import { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
-import { UserRepository } from "../../src/repositories/sqlite/User";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
+import type { ProjectDB } from "../../src/repositories/sqlite/schema";
+import { ownedGames, users } from "../../src/repositories/sqlite/schema.js";
+import { makeUserRepoWithMocks } from "../fixtures/mockHelpers";
+import { makeUserData } from "../fixtures/userData";
+import { runMigrations } from "../helpers/migrate";
+import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 
-describe("UserRepository – SQLite (in‑memory)", () => {
+describe("UserRepository - SQLite (in-memory)", () => {
     let db: ProjectDB;
     let authMock: MockSteamAuthenticatedAPIClient;
 
     beforeEach(async () => {
-        // Fresh in‑memory DB per test case
+        // Fresh in-memory DB per test case
         const sqlite = new Database(":memory:");
-        sqlite.exec("PRAGMA foreign_keys = OFF;");
+        // Align sqlite behavior
         sqlite.exec("PRAGMA case_sensitive_like = ON;");
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
 
         await runMigrations(sqlite);
-        db = drizzle(sqlite, { logger: true }) as unknown as ProjectDB;
-
-        authMock = new MockSteamAuthenticatedAPIClient();
+        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
     });
 
+    function getRepo() {
+        const { repo, auth } = makeUserRepoWithMocks(db);
+        authMock = auth;
+        return repo;
+    }
+
     test("basic fetch inserts missing users via API", async () => {
+        const repo = getRepo();
         // No users in DB – mock API will return data for two users
         const ps: GetPlayerSummariesResponse = {
             response: {
@@ -51,7 +56,6 @@ describe("UserRepository – SQLite (in‑memory)", () => {
         };
         authMock.setOwnedGames(q456, r456);
 
-        const repo = new UserRepository(db, authMock);
         const result = await repo.compose().withUserIds(["123", "456"]).build();
 
         assert.strictEqual(result.data.length, 2, "Should return two users");
@@ -72,7 +76,7 @@ describe("UserRepository – SQLite (in‑memory)", () => {
             updated_at: new Date(),
         });
 
-        const repo = new UserRepository(db, authMock);
+        const repo = getRepo();
         const result = await repo.compose().withUserIds(["777", "888"]).build();
 
         assert.strictEqual(result.data.length, 2, "Should return cached users without API");
@@ -99,7 +103,7 @@ describe("UserRepository – SQLite (in‑memory)", () => {
             last_played_at: null,
         });
 
-        const repo = new UserRepository(db, authMock);
+        const repo = getRepo();
         const result = await repo.compose().withUserIds(["111"]).build();
 
         assert.strictEqual(result.data.length, 1, "Only one user should be returned");
@@ -124,7 +128,8 @@ describe("UserRepository – SQLite (in‑memory)", () => {
             updated_at: new Date(),
         });
 
-        const repo = new UserRepository(db, authMock);
+        const repo = getRepo();
+        // Intentionally using non-zero cursor to validate offset behavior in this test
         const result = await repo.compose().build({ limit: 2, cursor: 1 });
 
         // With limit 2 and offset 1 we expect users 2 and 3
@@ -134,12 +139,12 @@ describe("UserRepository – SQLite (in‑memory)", () => {
     });
 
     test("error handling – API failure returns empty result", async () => {
+        const repo = getRepo();
         // Do not set player summaries for "999" so Attempt will capture the error and return empty results
         const q999: GetOwnedGamesQuery<false> = { steamid: "999", include_played_free_games: true };
         const r999: GetOwnedGamesResponse<false> | null = null;
         authMock.setOwnedGames(q999, r999);
 
-        const repo = new UserRepository(db, authMock);
         const result = await repo.compose().withUserIds(["999"]).build();
 
         // ensure no exception is thrown and result is empty

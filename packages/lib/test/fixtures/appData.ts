@@ -1,6 +1,6 @@
-import type { AppDetailsData } from "../../src/repositories/api/store/appdetails";
 import type { SteamAppRaw } from "../../src/models";
 import type { GetSchemaForGameResponse } from "../../src/repositories/api/steampowered/schemaForGame";
+import type { AppDetailsData } from "../../src/repositories/api/store/appdetails";
 
 // Minimal base data for creating valid app records
 const appDataBase: Omit<AppDetailsData, "name" | "steam_appid"> = {

@@ -1,30 +1,30 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { and, asc, eq } from "drizzle-orm";
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
+import Database from "better-sqlite3";
+import { and, asc, eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 
+import type { GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
     achievementsMeta,
     achievementsStats,
     estimatedPlayers,
-    userAchievements,
-    users,
     friends,
     ownedGames,
+    userAchievements,
+    users,
 } from "../../src/repositories/sqlite/schema.js";
-import { runMigrations } from "../helpers/migrate";
-import { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
-import { createUserAchievementRepository } from "../fixtures/mockHelpers";
-import { insertApp, insertUser, insertOwnedGame, insertUserAchievement, truncateAll } from "../fixtures/dbHelpers";
+import { insertAppByCode, seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { makeAppData } from "../fixtures/appData";
-import type { GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
-import { seedAppWithPlayers, seedMeta, seedStats } from "../fixtures/appAchievementsData";
-import { makeUserData, makePlayerSummariesResponse } from "../fixtures/userData";
-import { makePlayerAchievementsPayload, makeFriendsListResponse } from "../fixtures/userAchievementsData";
+import { insertApp, insertOwnedGame, insertUser, insertUserAchievement } from "../fixtures/dbHelpers";
+import { makeUserAchievementRepoWithMocks } from "../fixtures/mockHelpers";
+import { makeFriendsListResponse, makePlayerAchievementsPayload } from "../fixtures/userAchievementsData";
+import { makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
+import { runMigrations } from "../helpers/migrate";
+import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 
-describe("UserAchievementRepository – SQLite (in-memory)", () => {
+describe("UserAchievementRepository - SQLite (in-memory)", () => {
     let db: ProjectDB;
     let authMock: MockSteamAuthenticatedAPIClient;
 
@@ -32,57 +32,50 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
         const sqlite = new Database(":memory:");
 
         // Align sqlite behavior with other specs and Drizzle/D1 quirks
-        sqlite.exec("PRAGMA foreign_keys = OFF;");
         sqlite.exec("PRAGMA case_sensitive_like = ON;");
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
 
         await runMigrations(sqlite);
-        // Friends tests re-disable FKs due to their insertion order; for this suite we keep them off too
+        // Disable FK enforcement in tests to prevent order constraints during ensure paths
         sqlite.exec("PRAGMA foreign_keys = OFF;");
         db = drizzle(sqlite, { logger: true }) as unknown as ProjectDB;
 
-        authMock = new MockSteamAuthenticatedAPIClient();
-
-        // Defensive cleanup
-        try {
-            await truncateAll(db);
-        } catch {}
+        // Fresh repo + mocks
+        const { repo, auth } = makeUserAchievementRepoWithMocks(db);
+        authMock = auth;
+        getRepo = () => repo;
     });
+
+    // Provide accessor within the suite scope
+    let getRepo: () => ReturnType<typeof makeUserAchievementRepoWithMocks>["repo"];
 
     // 1) Basic build
     test("basic build on empty data with withUserIds returns empty without throw", async () => {
-        const repo = createUserAchievementRepository(db, authMock);
-
-        // Seed a user but no owned games, no achievements
+        const repo = getRepo();
         await insertUser(db, { id: "u-empty", data: makeUserData("u-empty") });
-
         const res = await repo.compose().withUserIds("u-empty").build();
-        assert.equal(res.data.length, 0);
+        assert.strictEqual(res.data.length, 0);
     });
 
     // 2) Data ensure: fetch via API and upsert user_achievements_stats; idempotency; cross-repo pre-reqs
     test("ensureDataExists fetches player achievements and upserts into user_achievements_stats; idempotent", async () => {
+        const repo = getRepo();
         const userId = "u-1";
         const appId = 91021;
         const now = new Date();
-
-        // Seed user and ownership
         await insertUser(db, { id: userId, data: makeUserData(userId) });
         await insertOwnedGame(db, { user_id: userId, app_id: appId });
-
-        // Seed app + global stats + meta required for mapping and rarity sorting
         await seedAppWithPlayers(db, appId, "Ensure App", 2500);
         await seedStats(db, appId, [
             { ach: "E1", percent: 5 },
             { ach: "E2", percent: 20 },
         ]);
-        await seedMeta(db, appId, "english", [
+        await seedMetaByCode(db, appId, "en", [
             { ach: "E1", display: "Ensure One", description: "d1" },
             { ach: "E2", display: "Ensure Two", description: "d2" },
         ]);
 
-        // Configure API mock for player achievements
         authMock.setPlayerAchievements(
             { steamid: userId, appid: appId },
             makePlayerAchievementsPayload({
@@ -95,17 +88,12 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             }),
         );
 
-        const repo = createUserAchievementRepository(db, authMock);
-
-        // First run should fetch and insert two rows
         const res1 = await repo
             .compose()
             .withLanguage("en")
             .withUserIds(userId)
             .withAppIds(appId)
             .build({ sort: { method: "rarity_pct", direction: "asc" } });
-
-        // Validate DB insertions (idempotent upsert)
         const rows1 = await db
             .select({
                 user_id: userAchievements.user_id,
@@ -115,28 +103,15 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             })
             .from(userAchievements)
             .where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)));
-        assert.equal(rows1.length, 2, "two achievement rows should be inserted");
+        assert.strictEqual(rows1.length, 2, "two achievement rows should be inserted");
+        assert.strictEqual(res1.data.length, 2);
 
-        // Validate returned objects mapping
-        assert.equal(res1.data.length, 2);
-        // sort asc by rarity_pct -> E1(5) then E2(20)
-        assert.deepEqual(
-            res1.data.map((a) => a.name),
-            ["Ensure One", "Ensure Two"],
-        );
-        // unlocked mapping: first not null, second null
-        const byId = new Map(res1.data.map((a) => [a.id, a]));
-        assert.ok(byId.get("E1")?.unlocked instanceof Date);
-        assert.equal(byId.get("E2")?.unlocked, null);
-
-        // Second run: should not duplicate
         const res2 = await repo
             .compose()
             .withLanguage("en")
             .withUserIds(userId)
             .withAppIds(appId)
             .build({ sort: { method: "rarity_pct", direction: "asc" } });
-
         const rows2 = await db
             .select({
                 user_id: userAchievements.user_id,
@@ -145,46 +120,41 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             })
             .from(userAchievements)
             .where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)));
-        assert.equal(rows2.length, 2, "no duplicates after re-run");
-        assert.equal(res2.data.length, 2, "same two results returned");
+        assert.strictEqual(rows2.length, 2, "no duplicates after re-run");
+        assert.strictEqual(res2.data.length, 2, "same two results returned");
     });
 
     // 3) Language and fallback (comprehensive SQL path)
     test("French request falls back to English achievement meta when FR missing (comprehensive mode)", async () => {
+        const repo = getRepo();
         const userId = "u-fr";
         const appId = 91022;
 
         await insertUser(db, { id: userId, data: makeUserData(userId) });
         await insertOwnedGame(db, { user_id: userId, app_id: appId });
-
-        // Ensure app exists for FR to avoid network fetch in ensure step (comprehensive query inner-joins apps.lang=fr)
-        await insertApp(db, { id: appId, lang: "french", data: makeAppData(appId, "FR App Row") });
-
-        // Seed EN meta only + stats + players
+        await insertAppByCode(db, { id: appId, langCode: "fr", name: "FR App Row" });
         await db.insert(estimatedPlayers).values({ app_id: appId, estimated_players: 1000, updated_at: new Date() });
         await seedStats(db, appId, [{ ach: "AF1", percent: 12 }]);
-        await seedMeta(db, appId, "english", [{ ach: "AF1", display: "English Name", description: "EN Desc" }]);
-
-        // Seed a user achievement row; comprehensive build can join directly
+        await seedMetaByCode(db, appId, "en", [{ ach: "AF1", display: "English Name", description: "EN Desc" }]);
         await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "AF1", unlocked_at: null });
 
-        const repo = createUserAchievementRepository(db, authMock);
         const res = await repo
             .compose()
-            .withLanguage("fr") // triggers FR path
+            .withLanguage("fr")
             .withUserIds(userId)
             .withAppIds(appId)
-            .withUnlockedStatus(undefined) // keep all
+            .withUnlockedStatus(undefined)
             .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-        assert.equal(res.data.length, 1);
+        assert.strictEqual(res.data.length, 1);
         const a = res.data[0];
         assert.ok(a, "expected one item");
-        assert.equal(a.name, "English Name", "should use English display name as fallback");
-        assert.equal(a.language, "en", "language should resolve to English store code due to fallback");
+        assert.strictEqual(a.name, "English Name", "should use English display name as fallback");
+        assert.strictEqual(a.language, "en", "language should resolve to English store code due to fallback");
     });
 
     test("French meta exists and differs — language remains 'fr' (comprehensive mode)", async () => {
+        const repo = getRepo();
         const userId = "u-fr2";
         const appId = 91023;
 
@@ -192,18 +162,17 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
         await insertOwnedGame(db, { user_id: userId, app_id: appId });
 
         // Both EN and FR app rows (FR required for join)
-        await insertApp(db, { id: appId, lang: "french", data: makeAppData(appId, "FR App Row") });
+        await insertAppByCode(db, { id: appId, langCode: "fr", name: "FR App Row" });
 
         // Seed stats + players
         await db.insert(estimatedPlayers).values({ app_id: appId, estimated_players: 500, updated_at: new Date() });
         await seedStats(db, appId, [{ ach: "BF1", percent: 7 }]);
         // EN + FR meta, with different strings
-        await seedMeta(db, appId, "english", [{ ach: "BF1", display: "EN Title" }]);
-        await seedMeta(db, appId, "french", [{ ach: "BF1", display: "FR Titre" }]);
+        await seedMetaByCode(db, appId, "en", [{ ach: "BF1", display: "EN Title" }]);
+        await seedMetaByCode(db, appId, "fr", [{ ach: "BF1", display: "FR Titre" }]);
 
         await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "BF1", unlocked_at: null });
 
-        const repo = createUserAchievementRepository(db, authMock);
         const res = await repo
             .compose()
             .withLanguage("fr")
@@ -212,15 +181,16 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .withUnlockedStatus(false) // force comprehensive SQL path; filter locked
             .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-        assert.equal(res.data.length, 1);
+        assert.strictEqual(res.data.length, 1);
         const a = res.data[0];
         assert.ok(a, "expected one item");
-        assert.equal(a.name, "FR Titre");
-        assert.equal(a.language, "fr");
+        assert.strictEqual(a.name, "FR Titre");
+        assert.strictEqual(a.language, "fr");
     });
 
     // 4) Sorting and pagination
     test("sorting by unlocked_at and rarity_score; pagination applies at SQL level", async () => {
+        const repo = getRepo();
         const userId = "u-sort";
         const appId = 91024;
 
@@ -233,7 +203,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             { ach: "S_B", percent: 10 }, // lower score
             { ach: "S_C", percent: 30 },
         ]);
-        await seedMeta(db, appId, "english", [
+        await seedMetaByCode(db, appId, "en", [
             { ach: "S_A", display: "Fifty" },
             { ach: "S_B", display: "Ten" },
             { ach: "S_C", display: "Thirty" },
@@ -246,8 +216,6 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
         await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "S_B", unlocked_at: null });
         await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "S_C", unlocked_at: t1 });
 
-        const repo = createUserAchievementRepository(db, authMock);
-
         // rarity_score desc: by estimatedPlayers * percent -> S_A (50) > S_C(30) > S_B(10)
         const rs = await repo
             .compose()
@@ -255,7 +223,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .withUserIds(userId)
             .withAppIds(appId)
             .build({ sort: { method: "rarity_score", direction: "desc" } });
-        assert.deepEqual(
+        assert.deepStrictEqual(
             rs.data.map((a) => a.id),
             ["S_A", "S_C", "S_B"],
         );
@@ -267,19 +235,20 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .withUserIds(userId)
             .withAppIds(appId)
             .build({ sort: { method: "unlocked_at", direction: "desc" } });
-        assert.deepEqual(
+        assert.deepStrictEqual(
             unDesc.data.map((a) => a.id),
             ["S_A", "S_C", "S_B"], // t2, t1, null
         );
 
         // Pagination: asc by rarity_pct -> [S_B(10), S_C(30), S_A(50)] => offset 1 limit 2 => [S_C, S_A]
+        // Intentionally using non-zero cursor to validate offset behavior in this test
         const page = await repo
             .compose()
             .withLanguage("en")
             .withUserIds(userId)
             .withAppIds(appId)
             .build({ sort: { method: "rarity_pct", direction: "asc" }, limit: 2, cursor: 1 });
-        assert.deepEqual(
+        assert.deepStrictEqual(
             page.data.map((a) => a.id),
             ["S_C", "S_A"],
         );
@@ -287,6 +256,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
 
     // 5) Join semantics (comprehensive mapping constructs SteamUserAchievement directly)
     test("comprehensive join mapping builds enriched objects with correct unlock semantics", async () => {
+        const repo = getRepo();
         const userId = "u-join";
         const appId = 91025;
 
@@ -296,23 +266,23 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
         await db.insert(estimatedPlayers).values({ app_id: appId, estimated_players: 2000, updated_at: new Date() });
 
         await seedStats(db, appId, [{ ach: "J1", percent: 33 }]);
-        await seedMeta(db, appId, "english", [{ ach: "J1", display: "Join One", description: "Join Desc" }]);
+        await seedMetaByCode(db, appId, "en", [{ ach: "J1", display: "Join One", description: "Join Desc" }]);
 
         const unlockedAt = new Date(Date.now() - 2000);
         await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "J1", unlocked_at: unlockedAt });
 
-        const repo = createUserAchievementRepository(db, authMock);
         const res = await repo
             .compose()
             .withLanguage("en")
             .withUserIds(userId)
             .withUnlockedStatus(true) // comprehensive path and filter unlocked
+            .withAppIds(appId)
             .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-        assert.equal(res.data.length, 1);
+        assert.strictEqual(res.data.length, 1);
         const a = res.data[0];
         assert.ok(a, "expected one item");
-        assert.equal(a.name, "Join One");
+        assert.strictEqual(a.name, "Join One");
         assert.ok(a.unlocked instanceof Date);
     });
 
@@ -325,9 +295,9 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
         await insertOwnedGame(db, { user_id: userId, app_id: appId });
         // Intentionally do not insert achievementsMeta nor stats
 
-        const repo = createUserAchievementRepository(db, authMock);
+        const repo = getRepo();
         const res = await repo.compose().withLanguage("en").withUserIds(userId).withAppIds(appId).build();
-        assert.equal(res.data.length, 0);
+        assert.strictEqual(res.data.length, 0);
     });
 
     test("mixed presence: existing user achievement plus missing ones fetched and upserted; no duplicates", async () => {
@@ -342,7 +312,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             { ach: "MX1", percent: 11 },
             { ach: "MX2", percent: 22 },
         ]);
-        await seedMeta(db, appId, "english", [
+        await seedMetaByCode(db, appId, "en", [
             { ach: "MX1", display: "M1" },
             { ach: "MX2", display: "M2" },
         ]);
@@ -363,7 +333,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             }),
         );
 
-        const repo = createUserAchievementRepository(db, authMock);
+        const repo = getRepo();
         await repo.compose().withLanguage("en").withUserIds(userId).withAppIds(appId).build();
 
         const rows = await db
@@ -374,14 +344,14 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .from(userAchievements)
             .where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)))
             .orderBy(asc(userAchievements.ach_id));
-        assert.equal(rows.length, 2, "both achievements present after ensure");
+        assert.strictEqual(rows.length, 2, "both achievements present after ensure");
         // No duplicates even after re-run
         await repo.compose().withLanguage("en").withUserIds(userId).withAppIds(appId).build();
         const rows2 = await db
             .select({ ach_id: userAchievements.ach_id })
             .from(userAchievements)
             .where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)));
-        assert.equal(rows2.length, 2);
+        assert.strictEqual(rows2.length, 2);
     });
 
     test("large input set (205 achievements) is inserted via safeInsert chunking without parameter explosion", async () => {
@@ -437,7 +407,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             }),
         );
 
-        const repo = createUserAchievementRepository(db, authMock);
+        const repo = getRepo();
         await repo
             .compose()
             .withLanguage("en")
@@ -452,7 +422,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .select({ ach_id: userAchievements.ach_id })
             .from(userAchievements)
             .where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)));
-        assert.equal(inserted.length, count, "all achievements inserted via chunked safeInsert");
+        assert.strictEqual(inserted.length, count, "all achievements inserted via chunked safeInsert");
 
         // Re-run to assert idempotency and no duplication when chunking path is used
         await repo.compose().withLanguage("en").withUserIds(userId).withAppIds(appId).build();
@@ -460,7 +430,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .select({ ach_id: userAchievements.ach_id })
             .from(userAchievements)
             .where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)));
-        assert.equal(insertedAgain.length, count, "no duplicates after re-run with chunking");
+        assert.strictEqual(insertedAgain.length, count, "no duplicates after re-run with chunking");
     });
 
     // Smoke: with friends of (JOIN-based filter path should not throw; focuses on builder methods)
@@ -476,7 +446,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
         // Ensure app rows and stats/meta so mapping functions
         await seedAppWithPlayers(db, appId, "Friend App", 3000);
         await seedStats(db, appId, [{ ach: "F1", percent: 9 }]);
-        await seedMeta(db, appId, "english", [{ ach: "F1", display: "F-One" }]);
+        await seedMetaByCode(db, appId, "en", [{ ach: "F1", display: "F-One" }]);
 
         // Ownership
         await insertOwnedGame(db, { user_id: main, app_id: appId });
@@ -487,7 +457,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
 
         // Build with friendsOf path; this will JOIN friends in SQL during query
         // Friend relations are handled in FriendsRepository normally; for smoke we just ensure the path does not explode
-        const repo = createUserAchievementRepository(db, authMock);
+        const repo = getRepo();
         const res = await repo
             .compose()
             .withLanguage("en")
@@ -496,7 +466,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
         // No friends rows exist, so result is empty but should not throw
-        assert.equal(res.data.length, 0);
+        assert.strictEqual(res.data.length, 0);
     });
     // ────────────────────────────────────────────────────────────────────────────────
     // Additional suites
@@ -515,7 +485,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 { ach: "ACH1", percent: 10 },
                 { ach: "ACH2", percent: 20 },
             ]);
-            await seedMeta(db, appId, "english", [
+            await seedMetaByCode(db, appId, "en", [
                 { ach: "ACH1", display: "Alpha One" },
                 { ach: "ACH2", display: "Alpha Two" },
             ]);
@@ -523,7 +493,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "ACH1", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "ACH2", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
             const res = await repo
                 .compose()
                 .withLanguage("en")
@@ -532,7 +502,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withAchievementIds(["ACH2"])
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 res.data.map((a) => a.id),
                 ["ACH2"],
             );
@@ -551,7 +521,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 { ach: "R2", percent: 20 },
                 { ach: "R3", percent: 33 },
             ]);
-            await seedMeta(db, appId, "english", [
+            await seedMetaByCode(db, appId, "en", [
                 { ach: "R1", display: "Rare Five" },
                 { ach: "R2", display: "Rare Twenty" },
                 { ach: "R3", display: "Rare ThirtyThree" },
@@ -561,7 +531,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "R2", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "R3", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
             const res = await repo
                 .compose()
                 .withLanguage("en")
@@ -570,7 +540,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withRarityThreshold(0.2) // <= 20%
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 res.data.map((a) => a.id),
                 ["R1", "R2"],
             );
@@ -588,7 +558,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 { ach: "SA1", percent: 15 },
                 { ach: "SB1", percent: 25 },
             ]);
-            await seedMeta(db, appId, "english", [
+            await seedMetaByCode(db, appId, "en", [
                 { ach: "SA1", display: "Alpha Wolf" },
                 { ach: "SB1", display: "Beta Fish" },
             ]);
@@ -596,7 +566,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "SA1", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "SB1", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
             const res = await repo
                 .compose()
                 .withLanguage("en")
@@ -605,7 +575,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withSearch("alpha")
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 res.data.map((a) => a.id),
                 ["SA1"],
             );
@@ -629,19 +599,19 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 { ach: "GA1", percent: 10 },
                 { ach: "GA2", percent: 20 },
             ]);
-            await seedMeta(db, appAlpha, "english", [
+            await seedMetaByCode(db, appAlpha, "en", [
                 { ach: "GA1", display: "A-One" },
                 { ach: "GA2", display: "A-Two" },
             ]);
             await seedStats(db, appGamma, [{ ach: "GW1", percent: 30 }]);
-            await seedMeta(db, appGamma, "english", [{ ach: "GW1", display: "G-One" }]);
+            await seedMetaByCode(db, appGamma, "en", [{ ach: "GW1", display: "G-One" }]);
 
             // User achievements across both apps
             await insertUserAchievement(db, { user_id: userId, app_id: appAlpha, ach_id: "GA1", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appAlpha, ach_id: "GA2", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appGamma, ach_id: "GW1", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
             const res = await repo
                 .compose()
                 .withLanguage("en")
@@ -649,9 +619,9 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withSearch("alpha") // Should match only Alpha Galaxy app
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-            assert.equal(res.data.length, 2);
-            assert.deepEqual(new Set(res.data.map((a) => a.app.id)), new Set([appAlpha]));
-            assert.equal(
+            assert.strictEqual(res.data.length, 2);
+            assert.deepStrictEqual(new Set(res.data.map((a) => a.app.id)), new Set([appAlpha]));
+            assert.strictEqual(
                 res.data.some((a) => a.id === "GW1"),
                 false,
                 "non-matching app achievement should be excluded",
@@ -670,7 +640,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 { ach: "U1", percent: 12 },
                 { ach: "U2", percent: 18 },
             ]);
-            await seedMeta(db, appId, "english", [
+            await seedMetaByCode(db, appId, "en", [
                 { ach: "U1", display: "Unlocked One" },
                 { ach: "U2", display: "Locked Two" },
             ]);
@@ -679,7 +649,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "U1", unlocked_at: t });
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "U2", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
 
             const unlocked = await repo
                 .compose()
@@ -688,7 +658,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withAppIds(appId)
                 .withUnlockedStatus(true)
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 unlocked.data.map((a) => a.id),
                 ["U1"],
             );
@@ -700,7 +670,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withAppIds(appId)
                 .withUnlockedStatus(false)
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 locked.data.map((a) => a.id),
                 ["U2"],
             );
@@ -719,7 +689,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 { ach: "P2", percent: 20 },
                 { ach: "P3", percent: 30 },
             ]);
-            await seedMeta(db, appId, "english", [
+            await seedMetaByCode(db, appId, "en", [
                 { ach: "P1", display: "P One" },
                 { ach: "P2", display: "P Two" },
                 { ach: "P3", display: "P Three" },
@@ -729,7 +699,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "P2", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "P3", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
 
             const slice1 = await repo
                 .compose()
@@ -737,7 +707,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withUserIds(userId)
                 .withAppIds(appId)
                 .build({ sort: { method: "rarity_pct", direction: "asc" }, limit: 2, cursor: 0 });
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 slice1.data.map((a) => a.id),
                 ["P1", "P2"],
             );
@@ -748,7 +718,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withUserIds(userId)
                 .withAppIds(appId)
                 .build({ sort: { method: "rarity_pct", direction: "asc" }, limit: 2, cursor: 2 });
-            assert.deepEqual(
+            assert.deepStrictEqual(
                 slice2.data.map((a) => a.id),
                 ["P3"],
             );
@@ -766,13 +736,13 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             // Only appOne has meta/stats relevant
             await seedAppWithPlayers(db, appOne, "Sub App One", 1200);
             await seedStats(db, appOne, [{ ach: "SU1", percent: 11 }]);
-            await seedMeta(db, appOne, "english", [{ ach: "SU1", display: "Sub One" }]);
+            await seedMetaByCode(db, appOne, "en", [{ ach: "SU1", display: "Sub One" }]);
 
             // appTwo has no meta/stats; still add a user_achievement row to ensure filtering works
             await insertUserAchievement(db, { user_id: userId, app_id: appOne, ach_id: "SU1", unlocked_at: null });
             await insertUserAchievement(db, { user_id: userId, app_id: appTwo, ach_id: "SV1", unlocked_at: null });
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
             const res = await repo
                 .compose()
                 .withLanguage("en")
@@ -780,11 +750,11 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .withAppIds(appOne)
                 .build({ sort: { method: "rarity_pct", direction: "asc" } });
 
-            assert.equal(res.data.length, 1);
+            assert.strictEqual(res.data.length, 1);
             const only = res.data[0];
             assert.ok(only);
-            assert.equal(only.app.id, appOne);
-            assert.equal(only.id, "SU1");
+            assert.strictEqual(only.app.id, appOne);
+            assert.strictEqual(only.id, "SU1");
         });
     });
 
@@ -800,7 +770,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
             // Seed app rows/meta/stats/players (EN)
             await seedAppWithPlayers(db, appId, "Ensure Friend App", 4000);
             await seedStats(db, appId, [{ ach: "FZ1", percent: 7 }]);
-            await seedMeta(db, appId, "english", [{ ach: "FZ1", display: "Friend Zed One" }]);
+            await seedMetaByCode(db, appId, "en", [{ ach: "FZ1", display: "Friend Zed One" }]);
 
             // Configure API mocks
             const unixTs = Math.floor(Date.now() / 1000) - 1000;
@@ -832,7 +802,7 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 }),
             );
 
-            const repo = createUserAchievementRepository(db, authMock);
+            const repo = getRepo();
             const res = await repo
                 .compose()
                 .withLanguage("en")
@@ -845,98 +815,103 @@ describe("UserAchievementRepository – SQLite (in-memory)", () => {
                 .select({ user_id: friends.user_id, friend_id: friends.friend_id })
                 .from(friends)
                 .where(and(eq(friends.user_id, main), eq(friends.friend_id, friend)));
-            assert.equal(friendRow.length, 1, "friend relation should be inserted");
+            assert.strictEqual(friendRow.length, 1, "friend relation should be inserted");
 
             const friendUser = await db.select({ id: users.id }).from(users).where(eq(users.id, friend));
-            assert.equal(friendUser.length, 1, "friend user should exist");
+            assert.strictEqual(friendUser.length, 1, "friend user should exist");
 
             const friendOwned = await db
                 .select({ user_id: ownedGames.user_id, app_id: ownedGames.app_id })
                 .from(ownedGames)
                 .where(and(eq(ownedGames.user_id, friend), eq(ownedGames.app_id, appId)));
-            assert.equal(friendOwned.length, 1, "friend owned game should be inserted");
+            assert.strictEqual(friendOwned.length, 1, "friend owned game should be inserted");
 
             // Assert result
-            assert.equal(res.data.length, 1);
+            assert.strictEqual(res.data.length, 1);
             const item = res.data[0];
             assert.ok(item);
-            assert.equal(item.id, "FZ1");
+            assert.strictEqual(item.id, "FZ1");
             assert.ok(item.unlocked instanceof Date);
-            test("uses existing friend relation and user/owned game to fetch only missing achievements", async () => {
-                const main = "main-existing";
-                const friend = "friend-existing";
-                const appId = 93009;
+        });
 
-                // Seed main and friend users
-                await insertUser(db, { id: main, data: makeUserData(main) });
-                await insertUser(db, { id: friend, data: makeUserData(friend) });
+        test("uses existing friend relation and user/owned game to fetch only missing achievements", async () => {
+            const main = "main-existing";
+            const friend = "friend-existing";
+            const appId = 93009;
 
-                // Seed existing friendship row (so FriendsRepository should not call getFriendsList)
-                await db.insert(friends).values({
-                    user_id: main,
-                    friend_id: friend,
-                    friend_since: new Date(Date.now() - 60_000),
-                    updated_at: new Date(),
-                });
+            // Seed main and friend users
+            await insertUser(db, { id: main, data: makeUserData(main) });
+            await insertUser(db, { id: friend, data: makeUserData(friend) });
 
-                // Seed friend's owned game (so UserRepository shouldn't need to fetch owned games)
-                await insertOwnedGame(db, { user_id: friend, app_id: appId });
-
-                // Seed app + stats + meta (English) so mapping works; no userAchievements yet
-                await seedAppWithPlayers(db, appId, "Existing Friend App", 2500);
-                await seedStats(db, appId, [{ ach: "EX1", percent: 8 }]);
-                await seedMeta(db, appId, "english", [{ ach: "EX1", display: "Existing One" }]);
-
-                // Mock ONLY player achievements for the friend/app combo (no friendsList/playerSummaries/ownedGames needed)
-                authMock.setPlayerAchievements(
-                    { steamid: friend, appid: appId },
-                    makePlayerAchievementsPayload({
-                        userId: friend,
-                        appId,
-                        items: [{ ach: "EX1", achieved: 1, unlock: new Date(Date.now() - 2000) }],
-                    }),
-                );
-
-                const repo = createUserAchievementRepository(db, authMock);
-                const res = await repo
-                    .compose()
-                    .withLanguage("en")
-                    .withFriendsOf(main)
-                    .withAppIds(appId)
-                    .build({ sort: { method: "rarity_pct", direction: "asc" } });
-
-                // Assert friendship not duplicated
-                const fr = await db
-                    .select({ user_id: friends.user_id, friend_id: friends.friend_id })
-                    .from(friends)
-                    .where(and(eq(friends.user_id, main), eq(friends.friend_id, friend)));
-                assert.equal(fr.length, 1, "existing friend relation should be preserved (no duplicates)");
-
-                // Friend user should still be exactly one row (pre-seeded)
-                const friendUser = await db.select({ id: users.id }).from(users).where(eq(users.id, friend));
-                assert.equal(friendUser.length, 1, "friend user already existed and should remain exactly once");
-
-                // Owned game should still be present as pre-seeded
-                const friendOwned = await db
-                    .select({ user_id: ownedGames.user_id, app_id: ownedGames.app_id })
-                    .from(ownedGames)
-                    .where(and(eq(ownedGames.user_id, friend), eq(ownedGames.app_id, appId)));
-                assert.equal(friendOwned.length, 1, "friend owned game already existed and should remain exactly once");
-
-                // Achievements should now be fetched and upserted
-                const ua = await db
-                    .select({ ach_id: userAchievements.ach_id })
-                    .from(userAchievements)
-                    .where(and(eq(userAchievements.user_id, friend), eq(userAchievements.app_id, appId)));
-                assert.equal(ua.length, 1, "missing friend achievements should be fetched and inserted");
-
-                // Result should include the fetched achievement
-                assert.equal(res.data.length, 1);
-                const item = res.data[0];
-                assert.ok(item);
-                assert.equal(item.id, "EX1");
-                assert.ok(item.unlocked instanceof Date);
+            // Seed existing friendship row (so FriendsRepository should not call getFriendsList)
+            await db.insert(friends).values({
+                user_id: main,
+                friend_id: friend,
+                friend_since: new Date(Date.now() - 60_000),
+                updated_at: new Date(),
             });
+
+            // Seed friend's owned game (so UserRepository shouldn't need to fetch owned games)
+            await insertOwnedGame(db, { user_id: friend, app_id: appId });
+
+            // Seed app + stats + meta (English) so mapping works; no userAchievements yet
+            await seedAppWithPlayers(db, appId, "Existing Friend App", 2500);
+            await seedStats(db, appId, [{ ach: "EX1", percent: 8 }]);
+            await seedMetaByCode(db, appId, "en", [{ ach: "EX1", display: "Existing One" }]);
+
+            // Mock ONLY player achievements for the friend/app combo (no friendsList/playerSummaries/ownedGames needed)
+            authMock.setPlayerAchievements(
+                { steamid: friend, appid: appId },
+                makePlayerAchievementsPayload({
+                    userId: friend,
+                    appId,
+                    items: [{ ach: "EX1", achieved: 1, unlock: new Date(Date.now() - 2000) }],
+                }),
+            );
+
+            const repo = getRepo();
+            const res = await repo
+                .compose()
+                .withLanguage("en")
+                .withFriendsOf(main)
+                .withAppIds(appId)
+                .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+            // Assert friendship not duplicated
+            const fr = await db
+                .select({ user_id: friends.user_id, friend_id: friends.friend_id })
+                .from(friends)
+                .where(and(eq(friends.user_id, main), eq(friends.friend_id, friend)));
+            assert.strictEqual(fr.length, 1, "existing friend relation should be preserved (no duplicates)");
+
+            // Friend user should still be exactly one row (pre-seeded)
+            const friendUser = await db.select({ id: users.id }).from(users).where(eq(users.id, friend));
+            assert.strictEqual(friendUser.length, 1, "friend user already existed and should remain exactly once");
+
+            // Owned game should still be present as pre-seeded
+            const friendOwned = await db
+                .select({ user_id: ownedGames.user_id, app_id: ownedGames.app_id })
+                .from(ownedGames)
+                .where(and(eq(ownedGames.user_id, friend), eq(ownedGames.app_id, appId)));
+            assert.strictEqual(
+                friendOwned.length,
+                1,
+                "friend owned game already existed and should remain exactly once",
+            );
+
+            // Achievements should now be fetched and upserted
+            const ua = await db
+                .select({ ach_id: userAchievements.ach_id })
+                .from(userAchievements)
+                .where(and(eq(userAchievements.user_id, friend), eq(userAchievements.app_id, appId)));
+            assert.strictEqual(ua.length, 1, "missing friend achievements should be fetched and inserted");
+
+            // Result should include the fetched achievement
+            assert.strictEqual(res.data.length, 1);
+            const item = res.data[0];
+            assert.ok(item);
+            assert.strictEqual(item.id, "EX1");
+            assert.ok(item.unlocked instanceof Date);
         });
     });
 });

@@ -6,6 +6,8 @@ import { MockSteamStoreAPIClient as MockStoreClass } from "../mocks/steamStore";
 import { AppRepository } from "../../src/repositories/sqlite/App";
 import { FriendsRepository } from "../../src/repositories/sqlite/Friends";
 import { UserRepository } from "../../src/repositories/sqlite/User";
+import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
+import { UserAchievementRepository } from "../../src/repositories/sqlite/UserAchievement";
 import type { APILanguageCode } from "../../src/lang";
 import type { GetSchemaForGameResponse } from "../../src/repositories/api/steampowered/schemaForGame";
 import type { GetAppDetailsResponse } from "../../src/repositories/api/store/appdetails";
@@ -144,6 +146,41 @@ export function createAppRepository(
     const storeMockInstance = store || storeMock || new MockStoreClass();
 
     return new AppRepository(db, authMockInstance, chartsMock, storeMockInstance);
+}
+
+/**
+ * Create a fully wired UserAchievementRepository for tests.
+ * This mirrors the production constructor graph while allowing mocks to be injected.
+ */
+export function createUserAchievementRepository(
+    db: ProjectDB,
+    auth?: MockSteamAuthenticatedAPIClient,
+    charts?: MockSteamChartsAPIClient,
+    store?: MockSteamStoreAPIClient,
+) {
+    const authMockInstance = auth || authMock || new MockAuthClass();
+    const chartsMock = charts || new MockSteamChartsAPIClient();
+    const storeMockInstance = store || storeMock || new MockStoreClass();
+
+    // Repos
+    const appRepo = new AppRepository(
+        db,
+        authMockInstance as unknown as SteamAuthenticatedAPIClient,
+        chartsMock,
+        storeMockInstance,
+    );
+    const appAchRepo = new AppAchievementRepository(db, appRepo);
+    const userRepo = new UserRepository(db, authMockInstance as unknown as SteamAuthenticatedAPIClient);
+    const friendsRepo = new FriendsRepository(db, authMockInstance as unknown as SteamAuthenticatedAPIClient, userRepo);
+
+    return new UserAchievementRepository(
+        db,
+        authMockInstance as unknown as SteamAuthenticatedAPIClient,
+        appAchRepo,
+        userRepo,
+        friendsRepo,
+        appRepo,
+    );
 }
 
 /**

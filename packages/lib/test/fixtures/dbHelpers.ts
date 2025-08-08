@@ -1,6 +1,13 @@
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { achievementsMeta, apps, friends, ownedGames } from "../../src/repositories/sqlite/schema";
-import type { SteamAppRaw } from "../../src/models";
+import {
+    achievementsMeta,
+    apps,
+    friends,
+    ownedGames,
+    users,
+    userAchievements,
+} from "../../src/repositories/sqlite/schema";
+import type { SteamAppRaw, SteamUserRaw } from "../../src/models";
 import type { APILanguageCode } from "../../src/lang";
 
 /**
@@ -13,6 +20,17 @@ export async function insertApp(
     await db.insert(apps).values({
         id,
         lang,
+        data,
+        updated_at: new Date(),
+    });
+}
+
+/**
+ * Insert a user record into the database
+ */
+export async function insertUser(db: ProjectDB, { id, data }: { id: string; data: SteamUserRaw }) {
+    await db.insert(users).values({
+        id,
         data,
         updated_at: new Date(),
     });
@@ -120,5 +138,31 @@ export async function insertOwnedGame(
         playtime_2w_minutes: playtime_2w_minutes ?? null,
         playtime_total_minutes: playtime_total_minutes ?? null,
         last_played_at: last_played_at ?? null,
+    });
+}
+
+/**
+ * Insert a user achievement row
+ */
+export async function insertUserAchievement(
+    db: ProjectDB,
+    {
+        user_id,
+        app_id,
+        ach_id,
+        unlocked_at,
+    }: {
+        user_id: string;
+        app_id: number;
+        ach_id: string;
+        unlocked_at?: Date | null;
+    },
+) {
+    await db.insert(userAchievements).values({
+        user_id,
+        app_id,
+        ach_id,
+        unlocked_at: unlocked_at ?? null,
+        updated_at: new Date(),
     });
 }

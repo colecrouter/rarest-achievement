@@ -4,12 +4,15 @@ import { MockSteamChartsAPIClient } from "../mocks/steamCharts";
 import { MockSteamAuthenticatedAPIClient as MockAuthClass } from "../mocks/steamAuthenticated";
 import { MockSteamStoreAPIClient as MockStoreClass } from "../mocks/steamStore";
 import { AppRepository } from "../../src/repositories/sqlite/App";
+import { FriendsRepository } from "../../src/repositories/sqlite/Friends";
+import { UserRepository } from "../../src/repositories/sqlite/User";
 import type { APILanguageCode } from "../../src/lang";
 import type { GetSchemaForGameResponse } from "../../src/repositories/api/steampowered/schemaForGame";
 import type { GetAppDetailsResponse } from "../../src/repositories/api/store/appdetails";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
+import type { SteamAuthenticatedAPIClient } from "../../src/repositories/api/steampowered/client";
 
 // Global mock instances for convenience
 let authMock: MockSteamAuthenticatedAPIClient | null = null;
@@ -37,16 +40,16 @@ export function clearMocks() {
 export function setMockResponse(
     endpoint: "getAppDetails",
     appid: number,
-    lang: string,
+    lang: APILanguageCode,
     response: { appid: number; name: string },
 ): void;
 export function setMockResponse(
     endpoint: "getSchemaForGame",
     appid: number,
-    lang: string,
+    lang: APILanguageCode,
     response: GetSchemaForGameResponse,
 ): void;
-export function setMockResponse(endpoint: string, appid: number, lang: string, response: unknown) {
+export function setMockResponse(endpoint: string, appid: number, lang: APILanguageCode, response: unknown) {
     const apiLang = mapTestLangToAPILang(lang);
 
     switch (endpoint) {
@@ -141,6 +144,18 @@ export function createAppRepository(
     const storeMockInstance = store || storeMock || new MockStoreClass();
 
     return new AppRepository(db, authMockInstance, chartsMock, storeMockInstance);
+}
+
+/**
+ * Create a FriendsRepository wired with a real UserRepository.
+ * Useful for tests that need to ensure friend users via cross-repo subquery path.
+ */
+export function createFriendsRepository(db: ProjectDB, auth?: MockSteamAuthenticatedAPIClient) {
+    const authMockInstance = auth || authMock || new MockAuthClass();
+    const userRepository = new UserRepository(db, authMockInstance);
+    // Cast mock to the concrete client type expected by FriendsRepository's constructor
+    const steamClient = authMockInstance as unknown as SteamAuthenticatedAPIClient;
+    return new FriendsRepository(db, steamClient, userRepository);
 }
 
 /**

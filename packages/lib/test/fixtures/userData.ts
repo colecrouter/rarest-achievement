@@ -1,5 +1,6 @@
 import type { SteamUserRaw } from "../../src/models";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
+import type { GetFriendsListResponse } from "../../src/repositories/api/steampowered/friends";
 
 /**
  * Create user data fixture for testing
@@ -45,3 +46,30 @@ export function makePlayerSummariesResponse(
 // Common user fixtures
 export const testUser1 = { steamid: "user-1", name: "Test User 1" };
 export const testUser2 = { steamid: "user-2", name: "Test User 2" };
+
+/**
+ * Build a GetFriendsListResponse for a user with provided friend IDs.
+ * friend_since defaults to now - index seconds unless provided.
+ */
+export function makeFriendsListResponse(
+    userId: string,
+    friendIds: string[],
+    since?: number | Date,
+): GetFriendsListResponse {
+    const base =
+        since instanceof Date
+            ? Math.floor(since.getTime() / 1000)
+            : typeof since === "number"
+              ? since
+              : Math.floor(Date.now() / 1000);
+
+    return {
+        friendslist: {
+            friends: friendIds.map((fid, i) => ({
+                steamid: fid,
+                relationship: "friend",
+                friend_since: base - i, // small variation for deterministic sorting
+            })),
+        },
+    };
+}

@@ -1,5 +1,5 @@
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { achievementsMeta, apps } from "../../src/repositories/sqlite/schema";
+import { achievementsMeta, apps, friends, ownedGames } from "../../src/repositories/sqlite/schema";
 import type { SteamAppRaw } from "../../src/models";
 import type { APILanguageCode } from "../../src/lang";
 
@@ -70,4 +70,55 @@ export async function truncateAll(db: ProjectDB) {
         // Ignore errors if tables don't exist yet
         console.warn("Error truncating tables:", error);
     }
+}
+
+/**
+ * Insert a friendship row
+ */
+export async function insertFriend(
+    db: ProjectDB,
+    {
+        user_id,
+        friend_id,
+        friend_since,
+    }: {
+        user_id: string;
+        friend_id: string;
+        friend_since: Date;
+    },
+) {
+    await db.insert(friends).values({
+        user_id,
+        friend_id,
+        friend_since,
+        updated_at: new Date(),
+    });
+}
+
+/**
+ * Insert an owned game row
+ */
+export async function insertOwnedGame(
+    db: ProjectDB,
+    {
+        user_id,
+        app_id,
+        playtime_2w_minutes,
+        playtime_total_minutes,
+        last_played_at,
+    }: {
+        user_id: string;
+        app_id: number;
+        playtime_2w_minutes?: number | null;
+        playtime_total_minutes?: number | null;
+        last_played_at?: Date | null;
+    },
+) {
+    await db.insert(ownedGames).values({
+        user_id,
+        app_id,
+        playtime_2w_minutes: playtime_2w_minutes ?? null,
+        playtime_total_minutes: playtime_total_minutes ?? null,
+        last_played_at: last_played_at ?? null,
+    });
 }

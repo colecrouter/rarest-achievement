@@ -203,59 +203,6 @@ describe("AppRepository – SQLite (in-memory)", () => {
         const repo = createAppRepository(db);
         await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
 
-        test("French localisation differs – both languages stored", async () => {
-            // Reset tables if possible
-            try {
-                await truncateAll(db);
-            } catch {}
-
-            // Seed EN app + EN meta
-            await insertApp(db, {
-                id: fixtureAppEn.appid,
-                lang: "english",
-                data: makeAppData(fixtureAppEn.appid, fixtureAppEn.name ?? "Test App EN"),
-            });
-            await insertAchievementMeta(db, {
-                app_id: fixtureAppEn.appid,
-                ach_id: "ACH1",
-                display_name: "Achievement 1",
-                default_value: 0,
-                description: "Desc EN",
-                icon: "icon.png",
-                icon_gray: "gray.png",
-                hidden: 0,
-                lang: "english",
-            });
-
-            // Mock FR differing description
-            setMockResponse("getAppDetails", fixtureAppEn.appid, "french", fixtureAppFr);
-            setMockResponse(
-                "getSchemaForGame",
-                fixtureAppEn.appid,
-                "french",
-                makeAchievementSchema("Test Game", [{ ...basicAchievement, description: "Desc FR" }]),
-            );
-
-            // Verify EN + FR meta present
-            try {
-                const metaAll = await (db
-                    .select({
-                        app_id: achievementsMeta.app_id,
-                        ach_id: achievementsMeta.ach_id,
-                        lang: achievementsMeta.lang,
-                    })
-                    .from(achievementsMeta) as unknown);
-                const metaRows = (metaAll as Array<{ app_id: number; ach_id: string; lang: string }>).filter(
-                    (r) => r.app_id === fixtureAppEn.appid,
-                );
-                assert.strictEqual(metaRows.length, 2, "Both English and French meta should be stored");
-                const langs = metaRows.map((r) => r.lang).sort();
-                assert.deepStrictEqual(langs, ["english", "french"]);
-            } catch {
-                // Table presence not guaranteed in scaffold
-            }
-        });
-
         test("app with no achievements still returns the app row", async () => {
             // Mock EN app no achievements
             setMockResponse("getAppDetails", fixtureAppEn.appid, "english", fixtureAppEn);

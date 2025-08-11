@@ -889,11 +889,21 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             const playerCount = await playerCountData.chainAsync(async (data) => {
                 const [appReviews, appPlayerCount] = data;
 
-                if (appReviews === undefined || appPlayerCount === undefined)
+                // Only tolerate missing player count data by inserting a null estimate.
+                if (appPlayerCount === undefined) {
+                    return Attempt.ok(null);
+                }
+
+                // If reviews are missing or null, propagate an error (do not silently continue).
+                if (appReviews == null) {
                     return Attempt.fail<number>(new Error(`Missing review or chart data for app ${appId}`));
+                }
 
                 // Sometimes chart data is null, so we'll just return null
-                if (appPlayerCount === null || !appReviews) return Attempt.ok(null);
+                if (appPlayerCount === null) return Attempt.ok(null);
+
+                // Narrow reviews to non-null after guards above
+                const reviews = appReviews as NonNullable<typeof appReviews>;
 
                 const estimate = await estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
@@ -902,8 +912,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                         .filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
                         .reduce((acc, curr) => Math.max(acc, curr[1]), 0),
                     release_date_numeric: new Date(appDetails.release_date?.date ?? 0).getTime() / 1000,
-                    review_score: appReviews.query_summary.review_score,
-                    total_reviews: appReviews.query_summary.total_reviews,
+                    review_score: reviews.query_summary.review_score,
+                    total_reviews: reviews.query_summary.total_reviews,
                     is_free: appDetails.is_free ? 1 : 0,
                     price: appDetails.price_overview?.final ?? 0,
                 });

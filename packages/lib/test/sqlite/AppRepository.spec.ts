@@ -4,7 +4,14 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { achievementsMeta, achievementsStats, apps, ownedGames, users } from "../../src/repositories/sqlite/schema.js";
+import {
+    achievementsMeta,
+    achievementsStats,
+    apps,
+    estimatedPlayers,
+    ownedGames,
+    users,
+} from "../../src/repositories/sqlite/schema.js";
 import {
     basicAchievement,
     basicAchievementEn,
@@ -242,6 +249,44 @@ describe("AppRepository - SQLite (in-memory)", () => {
             .withAppIds(ids) // Explicit scope required
             .build({ sort: { method: "id", direction: "asc" }, limit: 2 });
         assert.ok(true, "pagination and sorting execute without throwing");
+    });
+
+    test("does not throw when player estimates are unavailable (stores null estimate)", async () => {
+        const { repo, store, charts } = ctx;
+        const appId = 81001;
+
+        // Seed an English app row so estimation logic runs against it
+        await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "No Charts App") });
+
+        // Provide minimal reviews summary; charts data is unavailable (null)
+        store.setAppReviews(appId, {
+            success: 1,
+            cursor: "",
+            reviews: [],
+            query_summary: {
+                num_reviews: 0,
+                review_score: 0,
+                review_score_desc: "None",
+                total_positive: 0,
+                total_negative: 0,
+                total_reviews: 0,
+            },
+        });
+        charts.setAppChartData(appId, null);
+
+        // Build should not throw; estimatedPlayers should be null
+        const result = await repo.compose().withLanguage("en").withAppIds(appId).build();
+        assert.strictEqual(result.data.length, 1, "Should return 1 app");
+        assert.strictEqual(result.data[0]?.id, appId, "App ID should match");
+        assert.strictEqual(result.data[0]?.estimatedPlayers, null, "Estimated players should be null when unavailable");
+
+        // Verify an estimated_players row exists with null value
+        const rows = await db
+            .select({ app_id: estimatedPlayers.app_id, est: estimatedPlayers.estimated_players })
+            .from(estimatedPlayers);
+        const ep = rows.find((r) => r.app_id === appId);
+        assert.ok(ep, "Estimated players row should be inserted");
+        assert.strictEqual(ep?.est, null, "Estimated players value should be null");
     });
 });
 

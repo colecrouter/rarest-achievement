@@ -689,8 +689,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             return (
                 d !== undefined && // fetchAppData didn't completely fail
                 d.achievementStats !== undefined && // stats processing didn't fail (empty array is fine)
-                d.achievementMeta !== undefined && // meta processing didn't fail (empty arrays are fine)
-                d.achievementMeta !== null // meta fetch didn't completely fail
+                d.achievementMeta !== undefined // meta processing didn't fail (empty arrays are fine)
             );
         });
 

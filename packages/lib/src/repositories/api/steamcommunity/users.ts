@@ -114,7 +114,7 @@ export async function searchSteamCommunityUsers(text: string, page = 1) {
     if (!ajaxResponse.ok) {
         throw new Error(`Failed to fetch search results: ${ajaxResponse.statusText}`);
     }
-    const result = await ajaxResponse.json();
+    const result = await ajaxResponse.json<{ success: boolean; html: string }>();
     if (!result.success) {
         throw new Error("Search result unsuccessful");
     }

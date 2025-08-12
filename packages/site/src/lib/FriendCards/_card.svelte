@@ -32,7 +32,7 @@
     let owned = $derived(
         allAchievements
             .find((a) => a instanceof SteamUserAchievement)
-            ?.user.ownedApps?.find(
+            ?.user?.ownedApps?.find(
                 (g) => g.id === targetAchievement?.app.id,
             ) ?? {
             playtime: 0,

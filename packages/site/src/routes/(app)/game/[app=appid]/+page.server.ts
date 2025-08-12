@@ -33,22 +33,36 @@ export const load = async ({ parent, locals }) => {
 
         const filteredPrivateOrBot = result.map((d) =>
             d
-                .filter(
-                    (d) =>
-                        d.user.lastLoggedIn &&
-                        d.user.lastLoggedIn >= oneMonthAgo &&
-                        d.user.created &&
-                        d.user.created < oneYearAgo &&
-                        !d.user.private,
-                )
-                .sort(
-                    (a, b) =>
-                        // Sort by last logged in first
-                        (b.user.lastLoggedIn ?? new Date(0)).getTime() - (a.user.lastLoggedIn ?? new Date(0)).getTime(),
-                ),
+                .filter((item) => {
+                    const u = item.user;
+                    // If there is no user attached (fallback from non-owner view), include the item.
+                    if (!u) return true;
+                    return (
+                        u.lastLoggedIn &&
+                        u.lastLoggedIn >= oneMonthAgo &&
+                        u.created &&
+                        u.created < oneYearAgo &&
+                        !u.private
+                    );
+                })
+                .sort((a, b) => {
+                    // Sort by last logged in first (safe when user may be undefined)
+                    const aLast = a.user?.lastLoggedIn ?? new Date(0);
+                    const bLast = b.user?.lastLoggedIn ?? new Date(0);
+                    return bLast.getTime() - aLast.getTime();
+                }),
         );
 
-        const grouped = Map.groupBy(filteredPrivateOrBot.data, (u) => u.user.id);
+        // Group only items that have an associated user (skip fallback/global items)
+        // Use a type guard so TypeScript understands user is present after filtering.
+        const usersWith = filteredPrivateOrBot.data.filter(
+            (
+                u,
+            ): u is (typeof filteredPrivateOrBot.data)[number] & {
+                user: NonNullable<(typeof filteredPrivateOrBot.data)[number]["user"]>;
+            } => !!u.user,
+        );
+        const grouped = Map.groupBy(usersWith, (u) => u.user.id);
         const usersWhoHaventPlayed = new Set(
             grouped
                 .entries()
@@ -59,7 +73,8 @@ export const load = async ({ parent, locals }) => {
         );
 
         return filteredPrivateOrBot.map((achievements) =>
-            achievements.filter((a) => !usersWhoHaventPlayed.has(a.user.id)),
+            // Keep items without a user (fallback) and exclude users who haven't played
+            achievements.filter((a) => !(a.user && usersWhoHaventPlayed.has(a.user.id))),
         );
     })();
 

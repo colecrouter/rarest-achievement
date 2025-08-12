@@ -15,7 +15,7 @@ export const load = async ({ parent, url, locals, platform }) => {
     const { app, loggedIn, achievement } = data;
     if (!platform) throw new Error("No platform found");
 
-    const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE);
+    const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE, locals.steamCommunityClient);
     const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE, platform.env.AI);
 
     const gameAchievements = await locals.vault.appAchievements
@@ -43,19 +43,24 @@ export const load = async ({ parent, url, locals, platform }) => {
 
         const filteredPrivateOrBot = result.map((d) =>
             d
-                .filter(
-                    (d) =>
-                        d.user.lastLoggedIn &&
-                        d.user.lastLoggedIn >= oneMonthAgo &&
-                        d.user.created &&
-                        d.user.created < oneYearAgo &&
-                        !d.user.private,
-                )
-                .sort(
-                    (a, b) =>
-                        // Sort by last logged in first
-                        (b.user.lastLoggedIn ?? new Date(0)).getTime() - (a.user.lastLoggedIn ?? new Date(0)).getTime(),
-                ),
+                .filter((item) => {
+                    const u = item.user;
+                    // If there is no user attached (fallback from non-owner view), include the item.
+                    if (!u) return true;
+                    return (
+                        u.lastLoggedIn &&
+                        u.lastLoggedIn >= oneMonthAgo &&
+                        u.created &&
+                        u.created < oneYearAgo &&
+                        !u.private
+                    );
+                })
+                .sort((a, b) => {
+                    // Sort by last logged in first (safe when user may be undefined)
+                    const aLast = a.user?.lastLoggedIn ?? new Date(0);
+                    const bLast = b.user?.lastLoggedIn ?? new Date(0);
+                    return bLast.getTime() - aLast.getTime();
+                }),
         );
 
         return filteredPrivateOrBot;

@@ -252,6 +252,63 @@ class UserAchievementQueryComposer
             ? this.executeWithComprehensiveSQL(options)
             : this.executeDirectQuery(options));
 
+        // If we got no results but the caller requested a specific app (e.g. viewing a single game page),
+        // fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
+        // non-owners still see the app's achievements (mirrors anonymous behavior).
+        if (resultsAttempt.hasData() && resultsAttempt.data.length === 0 && this.appIds.size > 0) {
+            try {
+                const appIds = Array.from(this.appIds);
+                // Fetch app achievements
+                const appAchResult = await this.appAchievementRepository
+                    .compose()
+                    .withLanguage(this.lang)
+                    .withAppIds(appIds)
+                    .build();
+
+                const finalData: SteamUserAchievement[] = [];
+                if (appAchResult.hasData()) {
+                    // Determine a primary user to attach (if available). Prefer explicit userIds, otherwise use friendsOfUserId.
+                    let primaryUserId: string | undefined;
+                    if (this.userIds.size > 0) primaryUserId = Array.from(this.userIds)[0];
+                    else if (this.friendsOfUserId) primaryUserId = this.friendsOfUserId;
+
+                    // Fetch user object if we have an ID to attach
+                    let userObj = null;
+                    if (primaryUserId) {
+                        const userRes = await this.userRepository.compose().withUserIds([primaryUserId]).build();
+                        if (userRes.hasData() && userRes.data.length > 0) {
+                            userObj = userRes.data[0];
+                        }
+                    }
+
+                    for (const appAch of appAchResult.data) {
+                        // Build a SteamUserAchievement with userStats=null (user hasn't unlocked anything)
+                        finalData.push(
+                            new SteamUserAchievement({
+                                app: appAch.app,
+                                meta: appAch.serialize().meta,
+                                globalStats: appAch.serialize().globalStats,
+                                lang: appAch.serialize().lang,
+                                user: userObj ?? undefined,
+                                userStats: null,
+                            }),
+                        );
+                    }
+                }
+
+                const combinedError = resultsAttempt.error || (appAchResult?.error ?? null);
+                return new ComposableQueryResult(finalData, (options.cursor || 0) + finalData.length, combinedError);
+            } catch (fallbackError) {
+                // If fallback fails, just fall back to the original (empty) result with the original error
+                console.warn("UserAchievement fallback to AppAchievement failed:", fallbackError);
+                return new ComposableQueryResult(
+                    resultsAttempt.hasData() ? resultsAttempt.data : [],
+                    (options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
+                    resultsAttempt.error,
+                );
+            }
+        }
+
         return new ComposableQueryResult(
             resultsAttempt.hasData() ? resultsAttempt.data : [],
             (options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
@@ -582,6 +639,7 @@ class UserAchievementQueryComposer
         }
 
         console.log("🚀 Executing comprehensive SQL query with all JOINs");
+
         const rows = await query;
 
         // Step 3: Build results directly from comprehensive query results

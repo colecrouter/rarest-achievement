@@ -11,7 +11,21 @@ import type { GetPlayerSummariesResponse } from "./playerSummary";
 import type { GetSchemaForGameQuery, GetSchemaForGameResponse } from "./schemaForGame";
 import type { GetUserStatsForGameQuery, GetUserStatsForGameResponse } from "./stats";
 
-export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient {
+export interface SteamAuthenticatedAPI {
+    getFriendsList(options: GetFriendsListQuery): Promise<GetFriendsListResponse>;
+    getGlobalAchievementPercentagesForApp(
+        options: GetGlobalAchievementPercentagesForAppQuery,
+    ): Promise<GetGlobalAchievementPercentagesForAppResponse | null>;
+    getPlayerAchievements<T extends APILanguageCode | undefined>(
+        options: GetPlayerAchievementsQuery<T>,
+    ): Promise<GetPlayerAchievementsResponse<T> | null>;
+    getPlayerSummaries(steamids: string[]): Promise<GetPlayerSummariesResponse>;
+    getUserStatsForGame(options: GetUserStatsForGameQuery): Promise<GetUserStatsForGameResponse | null>;
+    getSchemaForGame(options: GetSchemaForGameQuery): Promise<GetSchemaForGameResponse | null>;
+    getOwnedGames<T extends boolean = false>(options: GetOwnedGamesQuery<T>): Promise<GetOwnedGamesResponse<T> | null>;
+}
+
+export class SteamAuthenticatedAPIClient extends BaseSteamAPIClient implements SteamAuthenticatedAPI {
     #key: string;
 
     constructor(key: string) {

@@ -4,7 +4,13 @@ import type { ISupportedLanguagesResponse } from "./types/ISupportedLanguagesRes
 import type { ITranslateRequest } from "./types/ITranslateRequest";
 import type { ITranslateResponse } from "./types/ITranslateResponse";
 
-export class TranslateClient {
+export interface TranslateAPI {
+    translateText(req: ITranslateRequest): Promise<ITranslateResponse>;
+    detectLanguage(req: IDetectLanguageRequest): Promise<IDetectLanguageResponse>;
+    getSupportedLanguages(): Promise<ISupportedLanguagesResponse>;
+}
+
+export class TranslateClient implements TranslateAPI {
     #apiKey: string;
 
     constructor(apiKey: string) {

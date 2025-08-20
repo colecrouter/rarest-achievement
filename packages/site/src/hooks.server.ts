@@ -4,6 +4,7 @@ import { paraglideMiddleware } from "$lib/paraglide/server";
 import {
     FetchManager,
     SteamAuthenticatedAPIClient,
+    SteamCommunityAPIClient,
     SteamStoreAPIClient,
     TranslateClient,
     VaultService,
@@ -33,7 +34,8 @@ const authHandle: Handle = async ({ event, resolve }) => {
     setFetchManager(fetchManager);
 
     event.locals.steamClient = new SteamAuthenticatedAPIClient(STEAM_API_KEY);
-    event.locals.steamStoreClient = new SteamStoreAPIClient();
+    event.locals.steamStoreClient = SteamStoreAPIClient;
+    event.locals.steamCommunityClient = SteamCommunityAPIClient;
 
     // Set up the Steam cache database
     if (!event.platform) throw new Error("Platform not found");

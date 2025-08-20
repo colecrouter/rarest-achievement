@@ -1,7 +1,6 @@
-import { type SQL, and, eq, inArray, lte, or, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
-import { type LanguageCode, apps, getLanguageByCode } from "../..";
+import { type SQL, and, asc, desc, eq, gt, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import type { SQLiteColumn, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
+import { type LanguageCode, type ProjectDB, apps, getLanguageByCode } from "../..";
 import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer } from "../composable";
 import { achievementsMeta, achievementsStats } from "./schema";
 import { searchTerms } from "./utils";
@@ -23,10 +22,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
     // biome-ignore lint/suspicious/noExplicitAny: I don't think there's a way to type this properly
     protected ctes: WithSubqueryWithSelection<Record<string, any>, string>[] = [];
 
-    constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        protected db: DrizzleD1Database<any>,
-    ) {}
+    constructor(protected db: ProjectDB) {}
 
     /**
      * Set the language for this query
@@ -85,18 +81,9 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
         );
 
         this.ctes.push(rareAchievementsCTE);
-        // Add WHERE conditions to filter by the CTE results
+        // Add EXISTS condition to match on the (app_id, ach_id) pair
         this.whereConditions.push(
-            inArray(
-                achievementsStats.app_id,
-                this.db.select({ app_id: rareAchievementsCTE.app_id }).from(rareAchievementsCTE),
-            ),
-        );
-        this.whereConditions.push(
-            inArray(
-                achievementsStats.ach_id,
-                this.db.select({ ach_id: rareAchievementsCTE.ach_id }).from(rareAchievementsCTE),
-            ),
+            sql`EXISTS (SELECT 1 FROM (${rareAchievementsCTE}) AS rare WHERE rare.app_id = ${this.getAppIdColumn()} AND rare.ach_id = ${this.getAchievementIdColumn()})`,
         );
 
         return this;
@@ -132,16 +119,10 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 
         this.ctes.push(searchableAchievementsCTE);
 
-        // Add WHERE condition to filter by the CTE results using subquery builders
-        const matchingAppIdsQuery = this.db
-            .select({ app_id: searchableAchievementsCTE.app_id })
-            .from(searchableAchievementsCTE);
-        const matchingAchIdsQuery = this.db
-            .select({ ach_id: searchableAchievementsCTE.ach_id })
-            .from(searchableAchievementsCTE);
-
-        this.whereConditions.push(inArray(achievementsStats.app_id, matchingAppIdsQuery));
-        this.whereConditions.push(inArray(achievementsStats.ach_id, matchingAchIdsQuery));
+        // Add EXISTS condition to filter by the CTE (match on the (app_id, ach_id) pair)
+        this.whereConditions.push(
+            sql`EXISTS (SELECT 1 FROM (${searchableAchievementsCTE}) AS s WHERE s.app_id = ${this.getAppIdColumn()} AND s.ach_id = ${this.getAchievementIdColumn()})`,
+        );
 
         return this;
     }
@@ -170,21 +151,23 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
      */
     protected addEntitySubqueryCondition(entityType: string, subquery: SQL): void {
         if (entityType === "apps") {
-            this.whereConditions.push(inArray(achievementsStats.app_id, subquery));
+            // Use EXISTS with a raw SQL subquery to avoid driver limitations on IN (...subquery)
+            // and to support callers that pass precompiled SQL via getSQL()
+            this.whereConditions.push(
+                sql`EXISTS (SELECT 1 FROM (${subquery}) AS required_apps WHERE required_apps.app_id = ${this.getAppIdColumn()})`,
+            );
         }
         // Could be extended for other entity types in the future
     }
 
-    /**
-     * Filter entities by subquery (avoids parameter explosion)
-     * This is a generic method that can be used for different entity types
-     * @deprecated Use addEntitySubqueryCondition instead
-     */
-    protected withEntitySubquery(entityType: string, subquery: SQL, whereConditions: SQL[]): void {
-        if (entityType === "apps") {
-            whereConditions.push(inArray(achievementsStats.app_id, subquery));
-        }
-        // Could be extended for other entity types in the future
+    // Column providers for table-agnostic filtering logic
+    // Subclasses can override these to point at their own tables/columns
+    protected getAppIdColumn(): SQLiteColumn {
+        return achievementsStats.app_id;
+    }
+
+    protected getAchievementIdColumn(): SQLiteColumn {
+        return achievementsStats.ach_id;
     }
 
     /**
@@ -202,7 +185,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
      * Subclasses can override this to use different table columns
      */
     protected createAppIdsCondition(appIds: number[]): SQL {
-        return inArray(achievementsStats.app_id, appIds);
+        return inArray(this.getAppIdColumn(), appIds);
     }
 
     /**
@@ -210,7 +193,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
      * Subclasses can override this to use different table columns
      */
     protected createAchievementIdsCondition(achIds: string[]): SQL {
-        return inArray(achievementsStats.ach_id, achIds);
+        return inArray(this.getAchievementIdColumn(), achIds);
     }
 
     /**
@@ -231,6 +214,93 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
         }
 
         return conditions;
+    }
+
+    /**
+     * Collect standard conditions plus any additional ones, filtering out undefined entries.
+     */
+    protected collectWhereConditions(...extra: Array<SQL | undefined>): SQL[] {
+        const base = this.buildStandardWhereConditions();
+        const extras = extra.filter((c): c is SQL => c !== undefined);
+        return [...base, ...extras];
+    }
+
+    /**
+     * Base table used for building required apps subqueries. Subclasses can override
+     * when their filtering originates from a different table (e.g., user achievements).
+     */
+    // biome-ignore lint/suspicious/noExplicitAny: Drizzle Table generics aren't easily expressed here
+    protected getAppSourceTable(): any {
+        return achievementsStats;
+    }
+
+    /**
+     * Build a subquery that selects the app IDs required by the current filters/CTEs.
+     * Subclasses can override for custom logic; default uses the base table and standard filters.
+     */
+    protected getAppIdExpr(): SQL {
+        return sql`${this.getAppIdColumn()}`;
+    }
+
+    protected buildAppsSubqueryForCurrentFilters(): SQL | undefined {
+        let query = this.db
+            .with(...this.ctes)
+            .selectDistinct({
+                app_id: this.getAppIdExpr(),
+            })
+            .from(this.getAppSourceTable())
+            .$dynamic();
+
+        const allConditions = this.buildStandardWhereConditions();
+        const definedConditions = allConditions.filter((c): c is SQL => c !== undefined);
+        if (definedConditions.length > 0) {
+            query = query.where(and(...definedConditions));
+        }
+
+        return query.getSQL();
+    }
+
+    /**
+     * Shared helper: detect player-driven rarity sort in a type-agnostic way.
+     * Subclasses can use this to decide whether to require estimated players.
+     */
+    protected isRarityScoreSort(sort?: ComposableQueryOptions<TSortMethod>["sort"]): boolean {
+        return String(sort?.method) === "rarity_score";
+    }
+
+    /**
+     * Build common ORDER BY (and optional WHERE) pieces for rarity sorting.
+     * - rarity_pct: simple percent ASC/DESC
+     * - rarity_score: push NULLs to the end then order by (percent * estimated_players)
+     * Returns the SQL fragments for orderBy and any where conditions to add.
+     */
+    protected buildRaritySortPieces(
+        sort: ComposableQueryOptions<TSortMethod>["sort"] | undefined,
+        percentColumn: SQLiteColumn,
+        estimatedPlayersColumn: SQLiteColumn,
+    ): { orderBy: SQL[]; where: SQL[] } {
+        const fallback = { orderBy: [], where: [] } as { orderBy: SQL[]; where: SQL[] };
+        if (!sort) return fallback;
+
+        if (String(sort.method) === "rarity_pct") {
+            const dir = sort.direction === "desc" ? desc : asc;
+            return { orderBy: [dir(percentColumn)], where: [] };
+        }
+
+        if (String(sort.method) === "rarity_score") {
+            const dir = sort.direction === "desc" ? desc : asc;
+            const nullsLast = asc(
+                sql`CASE WHEN ${percentColumn} IS NULL OR ${estimatedPlayersColumn} IS NULL THEN 1 ELSE 0 END`,
+            );
+            const score = dir(sql`${percentColumn} * ${estimatedPlayersColumn}`);
+            return {
+                orderBy: [nullsLast, score],
+                // Ensure rows have a valid (positive) estimated player count when sorting by player-driven score
+                where: [isNotNull(estimatedPlayersColumn), gt(estimatedPlayersColumn, 0)],
+            };
+        }
+
+        return fallback;
     }
 
     /**

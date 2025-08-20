@@ -14,7 +14,7 @@ export type SteamUserAchievementRawStats = NonNullable<
 
 export class SteamUserAchievement extends SteamAppAchievement {
     #userStats: SteamUserAchievementRawStats | null;
-    #user: SteamUser;
+    #user?: SteamUser;
 
     constructor({
         app,
@@ -28,7 +28,7 @@ export class SteamUserAchievement extends SteamAppAchievement {
         meta: SteamAchievementRawMeta;
         globalStats: SteamAchievementRawGlobalStats;
         lang: APILanguageCode;
-        user: SteamUser;
+        user?: SteamUser;
         userStats: SteamUserAchievementRawStats | null;
     }) {
         super({ app, meta, globalStats, lang });

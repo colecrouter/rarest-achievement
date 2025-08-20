@@ -82,20 +82,22 @@
                         {:else}
                             <div class={grid}>
                                 {#each grouped as [friend, allAchievements]}
-                                    {@const userHasUnlocked =
-                                        allAchievements.find(
-                                            (ach) =>
-                                                ach.id ===
-                                                    targetAchievement?.id &&
-                                                ach.unlocked,
-                                        )}
-                                    {#if hideLocked && !userHasUnlocked}{:else}
-                                        <FriendCard
-                                            {allAchievements}
-                                            {targetAchievement}
-                                            {friend}
-                                            {secondary}
-                                        />
+                                    {#if friend}
+                                        {@const userHasUnlocked =
+                                            allAchievements.find(
+                                                (ach) =>
+                                                    ach.id ===
+                                                        targetAchievement?.id &&
+                                                    ach.unlocked,
+                                            )}
+                                        {#if hideLocked && !userHasUnlocked}{:else}
+                                            <FriendCard
+                                                {allAchievements}
+                                                {targetAchievement}
+                                                {friend}
+                                                {secondary}
+                                            />
+                                        {/if}
                                     {/if}
                                 {/each}
                             </div>

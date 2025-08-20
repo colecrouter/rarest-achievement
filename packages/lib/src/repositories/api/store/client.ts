@@ -3,12 +3,21 @@ import type { AppDetailsData, GetAppDetailsQuery, GetAppDetailsResponse } from "
 import type { GetAppReviewsQuery, GetAppReviewsResponse } from "./appreviews";
 import type { SearchAppsResponse } from "./searchapps";
 
-export class SteamStoreAPIClient extends BaseSteamAPIClient {
+export interface SteamStoreAPI {
+    getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
+        app: number,
+        options?: Omit<GetAppDetailsQuery<T>, "appids">,
+    ): Promise<GetAppDetailsResponse<T>>;
+    getAppReviews(app: number, options?: Omit<GetAppReviewsQuery, "json">): Promise<GetAppReviewsResponse | null>;
+    searchApps(query: string): Promise<SearchAppsResponse>;
+}
+
+class SteamStoreAPIClient extends BaseSteamAPIClient implements SteamStoreAPI {
     /**
      * Success: 200 - {success: true, data: {...}}
      * Failure: 200 - {success: false}
      */
-    static async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
+    async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
         app: number,
         options?: Omit<GetAppDetailsQuery<T>, "appids">,
     ) {
@@ -24,7 +33,7 @@ export class SteamStoreAPIClient extends BaseSteamAPIClient {
      * Success: 200 - {success: 1, query_summary: {...}}
      * Failure: 200 - {success: 1; query_summary: {...}}
      */
-    static async getAppReviews(app: number, options?: Omit<GetAppReviewsQuery, "json">) {
+    async getAppReviews(app: number, options?: Omit<GetAppReviewsQuery, "json">) {
         const url = new URL(`https://store.steampowered.com/appreviews/${app}`);
         if (options) {
             SteamStoreAPIClient.applyOptions(url, options);
@@ -36,8 +45,12 @@ export class SteamStoreAPIClient extends BaseSteamAPIClient {
     /**
      * Always returns 200 - []
      */
-    static async searchApps(query: string): Promise<SearchAppsResponse> {
+    async searchApps(query: string): Promise<SearchAppsResponse> {
         const url = new URL(`https://steamcommunity.com/actions/SearchApps/${encodeURIComponent(query)}`);
         return SteamStoreAPIClient.fetchJSON<SearchAppsResponse, false>(url, false);
     }
 }
+
+const client = new SteamStoreAPIClient();
+
+export { client as SteamStoreAPIClient };

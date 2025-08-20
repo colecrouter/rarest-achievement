@@ -1,6 +1,5 @@
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { Attempt, friends, ownedGames, users } from "../..";
+import { Attempt, type ProjectDB, friends, ownedGames, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
@@ -25,8 +24,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
     private userIds = new Set<string>();
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
+        private db: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
         private userRepository: UserRepository,
     ) {}
@@ -317,8 +315,7 @@ export class FriendsRepository
         ComposableRepository<SteamFriendUser, FriendsSortMethod, FriendsQueryComposer>
 {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
+        private sqlite: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
         private userRepository: UserRepository,
     ) {}

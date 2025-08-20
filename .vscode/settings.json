@@ -11,5 +11,26 @@
     },
     "[json]": {
         "editor.defaultFormatter": "biomejs.biome"
-    }
+    },
+    "nodejs-testing.extensions": [
+        {
+            "extensions": [
+                "mjs",
+                "cjs",
+                "js"
+            ],
+            "parameters": []
+        },
+        {
+            "extensions": [
+                "mts",
+                "cts",
+                "ts"
+            ],
+            "parameters": [
+                "--import",
+                "tsx"
+            ]
+        }
+    ]
 }

@@ -1,10 +1,10 @@
 import type { SQL } from "drizzle-orm";
 import { asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     Attempt,
     type AttemptStatus,
-    type SteamAuthenticatedAPIClient,
+    type ProjectDB,
+    type SteamAuthenticatedAPI,
     getFetchManager,
     ownedGames,
     users,
@@ -32,9 +32,8 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
     private requiredUserSubquery: SQL | undefined;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private db: ProjectDB,
+        private steamApi: SteamAuthenticatedAPI,
     ) {}
 
     /**
@@ -196,7 +195,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
                     .onConflictDoUpdate({
                         target: users.id,
                         set: {
-                            data: users.data,
+                            data: sql`excluded.data`,
                             updated_at: new Date(),
                         },
                     }),
@@ -226,9 +225,9 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
                         .onConflictDoUpdate({
                             target: [ownedGames.user_id, ownedGames.app_id],
                             set: {
-                                last_played_at: ownedGames.last_played_at,
-                                playtime_2w_minutes: ownedGames.playtime_2w_minutes,
-                                playtime_total_minutes: ownedGames.playtime_total_minutes,
+                                last_played_at: sql`excluded.last_played_at`,
+                                playtime_2w_minutes: sql`excluded.playtime_last_two_weeks`,
+                                playtime_total_minutes: sql`excluded.playtime_total`,
                             },
                         }),
             ),
@@ -345,9 +344,8 @@ export class UserRepository
         ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
 {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private sqlite: ProjectDB,
+        private steamApi: SteamAuthenticatedAPI,
     ) {}
 
     /**

@@ -2,6 +2,8 @@
 import type {
     ProjectDB,
     SteamAuthenticatedAPIClient,
+    SteamCommunityAPI,
+    SteamStoreAPI,
     SteamStoreAPIClient,
     SteamUser,
     TranslateClient,
@@ -14,9 +16,10 @@ declare global {
         // interface Error {}
         interface Locals {
             translateClient: TranslateClient;
-            steamClient: SteamAuthenticatedAPIClient;
-            steamStoreClient: SteamStoreAPIClient;
+            steamClient: SteamAuthenticatedAPI;
+            steamStoreClient: SteamStoreAPI;
             steamUser: SteamUser | null;
+            steamCommunityClient: SteamCommunityAPI;
             steamCacheDB: ProjectDB;
             miscCache: KVNamespace;
             vault: VaultService;

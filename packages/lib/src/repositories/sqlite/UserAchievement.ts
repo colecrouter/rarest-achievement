@@ -1,6 +1,6 @@
-import { type SQL, and, asc, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
+import { type SQL, and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import {
+    type ProjectDB,
     achievementsStats,
     apps,
     estimatedPlayers,
@@ -28,8 +28,7 @@ import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { achievementsMeta } from "./schema";
-import { safeInsert, searchTerms } from "./utils";
-import type { generateTimingId } from "../../utils/timing";
+import { safeInsert } from "./utils";
 
 /**
  * UserAchievement Repository - Pure SQL Composition Architecture
@@ -106,8 +105,7 @@ class UserAchievementQueryComposer
     private unlockedFilter?: boolean;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        db: DrizzleD1Database<any>,
+        db: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,
@@ -139,26 +137,22 @@ class UserAchievementQueryComposer
     private applySorting(query: any, options: ComposableQueryOptions<UserAchievementSortMethod>): any {
         if (!options.sort) return query;
 
-        const sortDirection = options.sort.direction === "desc" ? desc : asc;
-
-        switch (options.sort.method) {
-            case "rarity_pct":
-                return query.orderBy(sortDirection(achievementsStats.percent));
-            case "rarity_score":
-                return query.orderBy(
-                    sortDirection(
-                        sql`CASE WHEN ${achievementsStats.percent} IS NULL OR ${estimatedPlayers.estimated_players} IS NULL THEN 1 ELSE 0 END`,
-                    ),
-                    sortDirection(sql`${achievementsStats.percent} * ${estimatedPlayers.estimated_players}`),
-                );
-            case "unlocked_at":
-                return query.orderBy(
-                    sortDirection(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
-                    sortDirection(userAchievements.unlocked_at),
-                );
-            default:
-                return query;
+        if (options.sort.method === "unlocked_at") {
+            const dir = options.sort.direction === "desc" ? desc : asc;
+            return query.orderBy(
+                asc(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
+                dir(userAchievements.unlocked_at),
+            );
         }
+
+        // Delegate rarity sorts to base helper
+        const { orderBy } = this.buildRaritySortPieces(
+            options.sort,
+            achievementsStats.percent,
+            estimatedPlayers.estimated_players,
+        );
+        if (orderBy.length > 0) return query.orderBy(...orderBy);
+        return query;
     }
 
     /**
@@ -247,6 +241,63 @@ class UserAchievementQueryComposer
             ? this.executeWithComprehensiveSQL(options)
             : this.executeDirectQuery(options));
 
+        // If we got no results but the caller requested a specific app (e.g. viewing a single game page),
+        // fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
+        // non-owners still see the app's achievements (mirrors anonymous behavior).
+        if (resultsAttempt.hasData() && resultsAttempt.data.length === 0 && this.appIds.size > 0) {
+            try {
+                const appIds = Array.from(this.appIds);
+                // Fetch app achievements
+                const appAchResult = await this.appAchievementRepository
+                    .compose()
+                    .withLanguage(this.lang)
+                    .withAppIds(appIds)
+                    .build();
+
+                const finalData: SteamUserAchievement[] = [];
+                if (appAchResult.hasData()) {
+                    // Determine a primary user to attach (if available). Prefer explicit userIds, otherwise use friendsOfUserId.
+                    let primaryUserId: string | undefined;
+                    if (this.userIds.size > 0) primaryUserId = Array.from(this.userIds)[0];
+                    else if (this.friendsOfUserId) primaryUserId = this.friendsOfUserId;
+
+                    // Fetch user object if we have an ID to attach
+                    let userObj = null;
+                    if (primaryUserId) {
+                        const userRes = await this.userRepository.compose().withUserIds([primaryUserId]).build();
+                        if (userRes.hasData() && userRes.data.length > 0) {
+                            userObj = userRes.data[0];
+                        }
+                    }
+
+                    for (const appAch of appAchResult.data) {
+                        // Build a SteamUserAchievement with userStats=null (user hasn't unlocked anything)
+                        finalData.push(
+                            new SteamUserAchievement({
+                                app: appAch.app,
+                                meta: appAch.serialize().meta,
+                                globalStats: appAch.serialize().globalStats,
+                                lang: appAch.serialize().lang,
+                                user: userObj ?? undefined,
+                                userStats: null,
+                            }),
+                        );
+                    }
+                }
+
+                const combinedError = resultsAttempt.error || (appAchResult?.error ?? null);
+                return new ComposableQueryResult(finalData, (options.cursor || 0) + finalData.length, combinedError);
+            } catch (fallbackError) {
+                // If fallback fails, just fall back to the original (empty) result with the original error
+                console.warn("UserAchievement fallback to AppAchievement failed:", fallbackError);
+                return new ComposableQueryResult(
+                    resultsAttempt.hasData() ? resultsAttempt.data : [],
+                    (options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
+                    resultsAttempt.error,
+                );
+            }
+        }
+
         return new ComposableQueryResult(
             resultsAttempt.hasData() ? resultsAttempt.data : [],
             (options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
@@ -300,6 +351,7 @@ class UserAchievementQueryComposer
 
         // Step 2: Build and execute the main SQL query using Drizzle's proper JOIN syntax
         let query = this.db
+            .with(...this.ctes)
             .select({
                 user_id: userAchievements.user_id,
                 app_id: userAchievements.app_id,
@@ -325,47 +377,17 @@ class UserAchievementQueryComposer
             .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
             .$dynamic();
 
-        // Add CTEs if any exist
-        if (this.ctes.length > 0) {
-            query = this.db
-                .with(...this.ctes)
-                .select({
-                    user_id: userAchievements.user_id,
-                    app_id: userAchievements.app_id,
-                    ach_id: userAchievements.ach_id,
-                    unlocked_at: userAchievements.unlocked_at,
-                    rarity_pct: achievementsStats.percent,
-                })
-                .from(userAchievements)
-                // JOIN to ensure user owns the game (avoids parameter explosion)
-                .innerJoin(
-                    ownedGames,
-                    and(
-                        eq(userAchievements.user_id, ownedGames.user_id),
-                        eq(userAchievements.app_id, ownedGames.app_id),
-                    ),
-                )
-                // LEFT JOIN for rarity data
-                .leftJoin(
-                    achievementsStats,
-                    and(
-                        eq(userAchievements.app_id, achievementsStats.app_id),
-                        eq(userAchievements.ach_id, achievementsStats.ach_id),
-                    ),
-                )
-                // LEFT JOIN for estimated players (for rarity score calculation)
-                .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
-                .$dynamic();
+        // Apply user filter and rarity/search filters collected via base helpers
+        const sortPieces = this.buildRaritySortPieces(
+            options.sort,
+            achievementsStats.percent,
+            estimatedPlayers.estimated_players,
+        );
+        const allConditions = this.collectWhereConditions(...userFilterConditions, ...sortPieces.where);
+
+        if (allConditions.length > 0) {
+            query = query.where(and(...allConditions));
         }
-
-        // Apply user filter (safe - these are top-level parameters)
-        const whereConditions: Array<SQL | undefined> = [...userFilterConditions];
-
-        // Note: Search filter is now handled via CTE in BaseAchievementQueryComposer
-        // No need for manual JOINs here anymore
-
-        // Add all pre-built WHERE conditions (app IDs, achievement IDs, unlocked status, rarity)
-        whereConditions.push(...this.buildStandardWhereConditions());
 
         // Apply friends filter using JOIN (avoids parameter explosion)
         if (this.friendsOfUserId) {
@@ -374,9 +396,6 @@ class UserAchievementQueryComposer
                 and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, this.friendsOfUserId)),
             );
         }
-
-        // Apply all WHERE conditions
-        query = query.where(and(...whereConditions));
 
         // Apply sorting
         query = this.applySorting(query, options);
@@ -429,6 +448,7 @@ class UserAchievementQueryComposer
         const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
 
         let query = this.db
+            .with(...this.ctes)
             .select({
                 user_id: userAchievements.user_id,
                 app_id: userAchievements.app_id,
@@ -484,74 +504,13 @@ class UserAchievementQueryComposer
             .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
             .$dynamic();
 
-        // Add CTEs if any exist
-        if (this.ctes.length > 0) {
-            query = this.db
-                .with(...this.ctes)
-                .select({
-                    user_id: userAchievements.user_id,
-                    app_id: userAchievements.app_id,
-                    ach_id: userAchievements.ach_id,
-                    unlocked_at: userAchievements.unlocked_at,
-                    rarity_pct: achievementsStats.percent,
-                    // Achievement metadata from achievements_meta
-                    display_name: achievementsMeta.display_name,
-                    description: achievementsMeta.description,
-                    default_value: achievementsMeta.default_value,
-                    hidden: achievementsMeta.hidden,
-                    icon: achievementsMeta.icon,
-                    icon_gray: achievementsMeta.icon_gray,
-                    // Also select the actual language used (for fallback detection)
-                    achievement_lang: achievementsMeta.lang,
-                    // App data (JSON field)
-                    app_data: apps.data,
-                    app_lang: apps.lang,
-                    estimated_players: estimatedPlayers.estimated_players,
-                })
-                .from(userAchievements)
-                // JOIN to ensure user owns the game (handles "all owned games" case)
-                .innerJoin(
-                    ownedGames,
-                    and(
-                        eq(userAchievements.user_id, ownedGames.user_id),
-                        eq(userAchievements.app_id, ownedGames.app_id),
-                    ),
-                )
-                // JOIN for achievement metadata with fallback logic (requested language -> English)
-                .innerJoin(
-                    achievementsMeta,
-                    and(
-                        eq(userAchievements.app_id, achievementsMeta.app_id),
-                        eq(userAchievements.ach_id, achievementsMeta.ach_id),
-                        // Fallback logic: try requested language first, then English
-                        sql`${achievementsMeta.lang} = (
-                                SELECT COALESCE(
-                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
-                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
-                                )
-                            )`,
-                    ),
-                )
-                // JOIN for app data
-                .innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)))
-                // LEFT JOIN for rarity data
-                .leftJoin(
-                    achievementsStats,
-                    and(
-                        eq(userAchievements.app_id, achievementsStats.app_id),
-                        eq(userAchievements.ach_id, achievementsStats.ach_id),
-                    ),
-                )
-                // LEFT JOIN for estimated players (for rarity score calculation)
-                .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
-                .$dynamic();
-        }
-
-        // Build WHERE conditions (only safe, top-level parameters)
-        const whereConditions: Array<SQL | undefined> = [...userFilterConditions];
-
-        // Add all pre-built WHERE conditions (app IDs, achievement IDs, unlocked status, rarity, search)
-        whereConditions.push(...this.buildStandardWhereConditions());
+        // Build WHERE conditions using shared collectors (safe params + base filters + rarity/search)
+        const sortPieces2 = this.buildRaritySortPieces(
+            options.sort,
+            achievementsStats.percent,
+            estimatedPlayers.estimated_players,
+        );
+        const whereConditions: SQL[] = this.collectWhereConditions(...userFilterConditions, ...sortPieces2.where);
 
         // Apply friends filter using JOIN (if not already applied)
         if (this.friendsOfUserId) {
@@ -560,7 +519,6 @@ class UserAchievementQueryComposer
                 and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, this.friendsOfUserId)),
             );
         }
-
         // Apply all WHERE conditions
         query = query.where(and(...whereConditions));
 
@@ -577,6 +535,7 @@ class UserAchievementQueryComposer
         }
 
         console.log("🚀 Executing comprehensive SQL query with all JOINs");
+
         const rows = await query;
 
         // Step 3: Build results directly from comprehensive query results
@@ -910,12 +869,39 @@ class UserAchievementQueryComposer
                         .onConflictDoUpdate({
                             target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
                             set: {
-                                unlocked_at: userAchievements.unlocked_at,
+                                unlocked_at: sql`excluded.unlocked_at`,
                                 updated_at: new Date(),
                             },
                         }),
             );
             console.log("✅ Successfully inserted/updated achievement data");
+            // 🔧 Optional minimal instrumentation to verify inserts/updates landed
+            try {
+                const userIdSet = new Set<string>();
+                const appIdSet = new Set<number>();
+                for (const d of achievementDataToInsert) {
+                    if (!d) continue;
+                    userIdSet.add(d.user_id);
+                    appIdSet.add(d.app_id);
+                }
+                const processedUserIds = Array.from(userIdSet);
+                const processedAppIds = Array.from(appIdSet);
+                if (processedUserIds.length > 0 && processedAppIds.length > 0) {
+                    const countResult = await this.db
+                        .select({ count: sql<number>`count(*)` })
+                        .from(userAchievements)
+                        .where(
+                            and(
+                                inArray(userAchievements.user_id, processedUserIds),
+                                inArray(userAchievements.app_id, processedAppIds),
+                            ),
+                        );
+                    const postCount = countResult[0]?.count ?? 0;
+                    console.log(`🔧 Post-insert count=${postCount}`);
+                }
+            } catch {
+                // keep instrumentation non-fatal and quiet on errors
+            }
         }
 
         // Return appropriate result based on whether we encountered errors
@@ -1071,8 +1057,7 @@ export class UserAchievementRepository
         ComposableRepository<SteamUserAchievement, UserAchievementSortMethod, UserAchievementQueryComposer>
 {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
+        private sqlite: ProjectDB,
         private steamApi: SteamAuthenticatedAPIClient,
         private appAchievementRepository: AppAchievementRepository,
         private userRepository: UserRepository,

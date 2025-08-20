@@ -1,7 +1,7 @@
 import { type AnyTable, type Column, type InferSelectModel, and, getTableColumns, getTableName } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { type Query, type SQL, sql } from "drizzle-orm/sql";
 import type { SQLiteInsert, SQLiteInsertBase, SQLiteTable, TableConfig } from "drizzle-orm/sqlite-core";
+import type { ProjectDB } from "../..";
 
 const SQL_PARAM_LIMIT = 100; // Maximum number of parameters a single SQLite query can handle
 
@@ -45,7 +45,7 @@ function chunkByLimit<T>(items: T[], build: (chunk: T[]) => { toSQL: () => Query
  * @param build   a function that, given a chunk of input items, returns a SQLiteInsert builder
  */
 export async function safeInsert<T extends SQLiteTable, Input>(
-    db: DrizzleD1Database,
+    db: ProjectDB,
     values: Input[],
     build: (chunk: Input[]) => SQLiteInsertBase<T, "async", object>,
 ) {
@@ -63,15 +63,33 @@ export async function safeInsert<T extends SQLiteTable, Input>(
     // Break builders into smaller chunks to avoid overwhelming dev environment
     const builderChunks = chunkArray(builders, FETCH_LIMIT);
 
-    const allResults = [];
+    const allResults: unknown[] = [];
+
+    const hasBatch = typeof (db as unknown as { batch?: unknown }).batch === "function";
+
     for (const builderChunk of builderChunks) {
-        const results = await db.batch(
-            builderChunk as unknown as [SQLiteInsert<T, "async">, ...SQLiteInsert<T, "async">[]],
-        );
-        allResults.push(...results);
+        if (hasBatch) {
+            // Use D1/driver-provided batch when available
+            const results = await (
+                db as unknown as {
+                    batch: (
+                        statements: [SQLiteInsert<T, "async">, ...SQLiteInsert<T, "async">[]],
+                    ) => Promise<unknown[]>;
+                }
+            ).batch(builderChunk as unknown as [SQLiteInsert<T, "async">, ...SQLiteInsert<T, "async">[]]);
+            allResults.push(...results);
+        } else {
+            // Fallback: execute each insert sequentially for environments like better-sqlite3
+            for (const stmt of builderChunk) {
+                // Each builder is an insert query; execute it via its run method
+                // eslint-disable-next-line no-await-in-loop
+                const res = await (stmt as unknown as { run: () => Promise<unknown> }).run();
+                allResults.push(res);
+            }
+        }
     }
 
-    return allResults;
+    return allResults as unknown[];
 }
 
 export function searchTerms(column: Column | SQL, search: string): SQL {

@@ -1,11 +1,14 @@
 import { type SQL, and, asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
     type APILanguageCode,
     Attempt,
     type AttemptStatus,
     type LanguageCode,
+    type ProjectDB,
+    type SteamAuthenticatedAPI,
+    type SteamChartsAPI,
+    type SteamStoreAPI,
     achievementsMeta,
     achievementsStats,
     apps,
@@ -16,9 +19,6 @@ import {
 } from "../..";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, type SteamAppRaw } from "../../models";
-import { SteamChartsAPIClient } from "../api/steamcharts/client";
-import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
-import { SteamStoreAPIClient } from "../api/store/client";
 import {
     type ComposableQueryOptions,
     type ComposableQueryResult,
@@ -45,9 +45,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private requiredAppsSubquery?: SQL;
 
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private db: DrizzleD1Database<any>,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private db: ProjectDB,
+        private steamApi: SteamAuthenticatedAPI,
+        private steamChartsApi: SteamChartsAPI,
+        private steamStoreApi: SteamStoreAPI,
     ) {}
 
     /**
@@ -139,6 +140,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      * Build and execute the composed query with error propagation
      */
     async build(options: ComposableQueryOptions<AppSortMethod> = {}): Promise<ComposableQueryResult<SteamApp>> {
+        // Enforce explicit scope: either app IDs or a required-apps subquery must be provided
+        if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined) {
+            throw new Error(
+                "AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...).",
+            );
+        }
+
         // First ensure all required data exists (this may accumulate errors)
         const ensureDataResult = await this.ensureDataExists();
         if (ensureDataResult.error) console.warn("Failed to ensure all data exists:", ensureDataResult.error);
@@ -635,7 +643,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const fetchAppData = async (id: number) => {
             const [appDetails, achievementMeta, achievementStats] = await Promise.all([
                 // Language dependent queries
-                SteamStoreAPIClient.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
+                this.steamStoreApi
+                    .getAppDetails(id, { l: lang })
+                    .then((res) => Object.values(res)[0]?.data || null),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
                     console.warn(`Achievement meta fetch failed for app ${id}:`, err);
                     // For complete API failures, return null to indicate failure
@@ -679,8 +689,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             return (
                 d !== undefined && // fetchAppData didn't completely fail
                 d.achievementStats !== undefined && // stats processing didn't fail (empty array is fine)
-                d.achievementMeta !== undefined && // meta processing didn't fail (empty arrays are fine)
-                d.achievementMeta !== null // meta fetch didn't completely fail
+                d.achievementMeta !== undefined // meta processing didn't fail (empty arrays are fine)
             );
         });
 
@@ -808,12 +817,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
         if (this.requiredAppsSubquery) {
             // Use provided subquery from cross-repository dependency to avoid parameter explosion
+            const requiredApps = sql`(${this.requiredAppsSubquery}) as required_apps`;
             appDetailsRows = await this.db
                 .select({
                     id: apps.id,
                     data: apps.data,
                 })
-                .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+                .from(requiredApps)
                 .innerJoin(apps, eq(sql`required_apps.app_id`, apps.id))
                 .where(
                     and(
@@ -833,10 +843,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     data: apps.data,
                 })
                 .from(apps)
-                .innerJoin(apps, eq(apps.id, inArray(apps.id, appIds)))
                 .where(
                     and(
                         eq(apps.lang, lang),
+                        inArray(apps.id, appIds),
                         notExists(
                             this.db
                                 .select({ app_id: estimatedPlayers.app_id })
@@ -871,18 +881,28 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
             getFetchManager().reset({ maxFetches: 200 });
             const playerCountData = await Attempt.all([
-                SteamStoreAPIClient.getAppReviews(appId, { num_per_page: "0" }),
-                SteamChartsAPIClient.getAppChartData(appId),
+                this.steamStoreApi.getAppReviews(appId, { num_per_page: "0" }),
+                this.steamChartsApi.getAppChartData(appId),
             ]);
 
             const playerCount = await playerCountData.chainAsync(async (data) => {
                 const [appReviews, appPlayerCount] = data;
 
-                if (appReviews === undefined || appPlayerCount === undefined)
+                // Only tolerate missing player count data by inserting a null estimate.
+                if (appPlayerCount === undefined) {
+                    return Attempt.ok(null);
+                }
+
+                // If reviews are missing or null, propagate an error (do not silently continue).
+                if (appReviews == null) {
                     return Attempt.fail<number>(new Error(`Missing review or chart data for app ${appId}`));
+                }
 
                 // Sometimes chart data is null, so we'll just return null
                 if (appPlayerCount === null) return Attempt.ok(null);
+
+                // Narrow reviews to non-null after guards above
+                const reviews = appReviews as NonNullable<typeof appReviews>;
 
                 const estimate = await estimatePlayerCount({
                     all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
@@ -891,8 +911,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                         .filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
                         .reduce((acc, curr) => Math.max(acc, curr[1]), 0),
                     release_date_numeric: new Date(appDetails.release_date?.date ?? 0).getTime() / 1000,
-                    review_score: appReviews.query_summary.review_score,
-                    total_reviews: appReviews.query_summary.total_reviews,
+                    review_score: reviews.query_summary.review_score,
+                    total_reviews: reviews.query_summary.total_reviews,
                     is_free: appDetails.is_free ? 1 : 0,
                     price: appDetails.price_overview?.final ?? 0,
                 });
@@ -932,15 +952,16 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 export class AppRepository implements Repository<SteamApp, AppSortFilters, AppSortMethod> {
     constructor(
-        // biome-ignore lint/suspicious/noExplicitAny: can't be unknown
-        private sqlite: DrizzleD1Database<any>,
-        private steamApi: SteamAuthenticatedAPIClient,
+        private sqlite: ProjectDB,
+        private steamApi: SteamAuthenticatedAPI,
+        private steamChartsApi: SteamChartsAPI,
+        private steamStoreApi: SteamStoreAPI,
     ) {}
 
     /**
      * Create a new composable query builder
      */
     compose(): AppQueryComposer {
-        return new AppQueryComposer(this.sqlite, this.steamApi);
+        return new AppQueryComposer(this.sqlite, this.steamApi, this.steamChartsApi, this.steamStoreApi);
     }
 }

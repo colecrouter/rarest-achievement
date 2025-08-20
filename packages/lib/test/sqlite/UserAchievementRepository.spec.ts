@@ -505,6 +505,62 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
     // ────────────────────────────────────────────────────────────────────────────────
 
     describe("builder methods", () => {
+        test("rarity_score sort omits achievements without estimated players", async () => {
+            const userId = "u-rscore-filter";
+            const appWithPlayers = 97001;
+            const appNoPlayers = 97002;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appWithPlayers });
+            await insertOwnedGame(db, { user_id: userId, app_id: appNoPlayers });
+
+            // App rows
+            await insertApp(db, {
+                id: appWithPlayers,
+                lang: "english",
+                data: makeAppData(appWithPlayers, "Has Players"),
+            });
+            await insertApp(db, { id: appNoPlayers, lang: "english", data: makeAppData(appNoPlayers, "No Players") });
+
+            // Estimated players only for the first app
+            await db
+                .insert(estimatedPlayers)
+                .values({ app_id: appWithPlayers, estimated_players: 2000, updated_at: new Date() });
+
+            // Stats + meta for both apps
+            await seedStats(db, appWithPlayers, [{ ach: "RZ1", percent: 10 }]);
+            await seedMetaByCode(db, appWithPlayers, "en", [{ ach: "RZ1", display: "RS-One" }]);
+            await seedStats(db, appNoPlayers, [{ ach: "RZ2", percent: 20 }]);
+            await seedMetaByCode(db, appNoPlayers, "en", [{ ach: "RZ2", display: "RS-Two" }]);
+
+            // User achievements for both
+            await insertUserAchievement(db, {
+                user_id: userId,
+                app_id: appWithPlayers,
+                ach_id: "RZ1",
+                unlocked_at: null,
+            });
+            await insertUserAchievement(db, {
+                user_id: userId,
+                app_id: appNoPlayers,
+                ach_id: "RZ2",
+                unlocked_at: null,
+            });
+
+            const repo = getRepo();
+            const res = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .build({ sort: { method: "rarity_score", direction: "desc" } });
+
+            // Only the app with estimated players should be present
+            assert.strictEqual(res.data.length, 1);
+            const only = res.data[0];
+            assert.ok(only);
+            assert.strictEqual(only.app.id, appWithPlayers);
+            assert.strictEqual(only.id, "RZ1");
+        });
         test("withAchievementIds filters to specified achievements", async () => {
             const userId = "u-b1";
             const appId = 93001;
@@ -538,6 +594,59 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
                 res.data.map((a) => a.id),
                 ["ACH2"],
             );
+        });
+
+        test("rarity_score excludes zero/negative estimated players", async () => {
+            const userId = "u-rscore-negative";
+            const appPositive = 97101;
+            const appZero = 97102;
+            const appNegative = 97103;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appPositive });
+            await insertOwnedGame(db, { user_id: userId, app_id: appZero });
+            await insertOwnedGame(db, { user_id: userId, app_id: appNegative });
+
+            // App rows
+            await insertApp(db, { id: appPositive, lang: "english", data: makeAppData(appPositive, "Pos") });
+            await insertApp(db, { id: appZero, lang: "english", data: makeAppData(appZero, "Zero") });
+            await insertApp(db, { id: appNegative, lang: "english", data: makeAppData(appNegative, "Neg") });
+
+            // Estimated players: positive, zero, negative
+            await db
+                .insert(estimatedPlayers)
+                .values({ app_id: appPositive, estimated_players: 1500, updated_at: new Date() });
+            await db.insert(estimatedPlayers).values({ app_id: appZero, estimated_players: 0, updated_at: new Date() });
+            await db
+                .insert(estimatedPlayers)
+                .values({ app_id: appNegative, estimated_players: -1, updated_at: new Date() });
+
+            // Stats + meta for all
+            await seedStats(db, appPositive, [{ ach: "P1", percent: 10 }]);
+            await seedMetaByCode(db, appPositive, "en", [{ ach: "P1", display: "Pos One" }]);
+            await seedStats(db, appZero, [{ ach: "Z1", percent: 20 }]);
+            await seedMetaByCode(db, appZero, "en", [{ ach: "Z1", display: "Zero One" }]);
+            await seedStats(db, appNegative, [{ ach: "N1", percent: 30 }]);
+            await seedMetaByCode(db, appNegative, "en", [{ ach: "N1", display: "Neg One" }]);
+
+            // User achievements
+            await insertUserAchievement(db, { user_id: userId, app_id: appPositive, ach_id: "P1", unlocked_at: null });
+            await insertUserAchievement(db, { user_id: userId, app_id: appZero, ach_id: "Z1", unlocked_at: null });
+            await insertUserAchievement(db, { user_id: userId, app_id: appNegative, ach_id: "N1", unlocked_at: null });
+
+            const repo = getRepo();
+            const res = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .build({ sort: { method: "rarity_score", direction: "desc" } });
+
+            // Only the app with positive estimated players should be present
+            assert.strictEqual(res.data.length, 1);
+            const only = res.data[0];
+            assert.ok(only);
+            assert.strictEqual(only.app.id, appPositive);
+            assert.strictEqual(only.id, "P1");
         });
 
         test("withRarityThreshold filters by max rarity percent", async () => {

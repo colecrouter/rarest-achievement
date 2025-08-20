@@ -5,8 +5,11 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
 
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { achievementsMeta } from "../../src/repositories/sqlite/schema.js";
+import { achievementsMeta, achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
 import { runMigrations } from "../helpers/migrate";
+import { makeAchievementSchema, basicAchievement, makeAppData } from "../fixtures/appData";
+import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
+import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 
 describe("AppAchievementRepository - upsert regression (sqlite)", () => {
     let db: ProjectDB;
@@ -87,5 +90,84 @@ describe("AppAchievementRepository - upsert regression (sqlite)", () => {
         assert.strictEqual(row.icon, "new.png");
         assert.strictEqual(row.icon_gray, "new-gray.png");
         assert.strictEqual(row.hidden, 1);
+    });
+
+    test("rarity_score sort omits achievements for apps without estimated players", async () => {
+        // Set up App and AppAchievement repos with mocks
+        const { repo: appRepo, auth, store } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+
+        const appA = 88011;
+        const appB = 88012;
+
+        // Provide app details and schema so AppRepository can upsert app + meta
+        store.setAppDetails(appA, { [appA]: { success: true as const, data: makeAppData(appA, "A") } });
+        store.setAppDetails(appB, { [appB]: { success: true as const, data: makeAppData(appB, "B") } });
+        auth.setSchemaForGame({ appid: appA, l: "english" }, makeAchievementSchema("A", [basicAchievement]));
+        auth.setSchemaForGame({ appid: appB, l: "english" }, makeAchievementSchema("B", [basicAchievement]));
+
+        // Build via AppRepository to ensure app + meta rows exist
+        await appRepo.compose().withLanguage("en").withAppIds([appA, appB]).build();
+
+        // Stats for both apps
+        await db
+            .insert(achievementsStats)
+            .values({ app_id: appA, ach_id: basicAchievement.name, percent: 10, updated_at: new Date() });
+        await db
+            .insert(achievementsStats)
+            .values({ app_id: appB, ach_id: basicAchievement.name, percent: 20, updated_at: new Date() });
+
+        // Estimated players only for appA
+        await db.insert(estimatedPlayers).values({ app_id: appA, estimated_players: 1000, updated_at: new Date() });
+
+        const res = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appA, appB])
+            .build({ sort: { method: "rarity_score", direction: "desc" } });
+
+        assert.strictEqual(res.data.length, 1);
+        assert.strictEqual(res.data[0]?.app.id, appA);
+    });
+
+    test("rarity_score excludes zero/negative estimated players (AppAchievement)", async () => {
+        const { repo: appRepo, auth, store } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+
+        const appPos = 88021;
+        const appZero = 88022;
+        const appNeg = 88023;
+
+        // Provide app details and schema so AppRepository can upsert app + meta
+        for (const id of [appPos, appZero, appNeg]) {
+            store.setAppDetails(id, { [id]: { success: true as const, data: makeAppData(id, String(id)) } });
+            auth.setSchemaForGame({ appid: id, l: "english" }, makeAchievementSchema(String(id), [basicAchievement]));
+        }
+
+        // Build via AppRepository to ensure app + meta rows exist
+        await appRepo.compose().withLanguage("en").withAppIds([appPos, appZero, appNeg]).build();
+
+        // Stats for all apps
+        for (const id of [appPos, appZero, appNeg]) {
+            await db
+                .insert(achievementsStats)
+                .values({ app_id: id, ach_id: basicAchievement.name, percent: 10, updated_at: new Date() });
+        }
+
+        // Estimated players: positive, zero, negative
+        await db.insert(estimatedPlayers).values({ app_id: appPos, estimated_players: 1000, updated_at: new Date() });
+        await db.insert(estimatedPlayers).values({ app_id: appZero, estimated_players: 0, updated_at: new Date() });
+        await db.insert(estimatedPlayers).values({ app_id: appNeg, estimated_players: -5, updated_at: new Date() });
+
+        const res = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appPos, appZero, appNeg])
+            .build({ sort: { method: "rarity_score", direction: "desc" } });
+
+        // Only positive should remain
+        if (!res.data) throw new Error("expected data");
+        assert.strictEqual(res.data.length, 1);
+        assert.strictEqual(res.data[0]?.app.id, appPos);
     });
 });

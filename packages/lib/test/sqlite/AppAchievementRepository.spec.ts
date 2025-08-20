@@ -1,15 +1,15 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 
+import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsMeta, achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
-import { runMigrations } from "../helpers/migrate";
-import { makeAchievementSchema, basicAchievement, makeAppData } from "../fixtures/appData";
+import { basicAchievement, makeAchievementSchema, makeAppData } from "../fixtures/appData";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
-import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
+import { runMigrations } from "../helpers/migrate";
 
 describe("AppAchievementRepository - upsert regression (sqlite)", () => {
     let db: ProjectDB;

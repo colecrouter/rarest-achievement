@@ -3,6 +3,7 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { AttemptStatus } from "../../src/error";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
     achievementsMeta,
@@ -24,7 +25,6 @@ import { insertAchievementMeta, insertApp } from "../fixtures/dbHelpers";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
-import { AttemptStatus } from "../../src/error";
 
 describe("AppRepository - SQLite (in-memory)", () => {
     let db: ProjectDB;

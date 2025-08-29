@@ -10,11 +10,11 @@ import type { GetPlayerSummariesResponse } from "../../src/repositories/api/stea
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { friends as friendsTable, users as usersTable } from "../../src/repositories/sqlite/schema.js";
 
+import { AttemptStatus } from "../../src/error";
 import { insertFriend, insertOwnedGame } from "../fixtures/dbHelpers";
 import { makeFriendsRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeFriendsListResponse, makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
-import { AttemptStatus } from "../../src/error";
 
 describe("FriendsRepository - SQLite (in-memory)", () => {
     let db: ProjectDB;
@@ -394,7 +394,6 @@ test("friend edge upsert is idempotent (no duplicates)", async () => {
         "updated_at should remain unchanged on conflict with do-nothing",
     );
 });
-
 
 import { describe as describe_count_friends, test as test_count_friends } from "node:test";
 

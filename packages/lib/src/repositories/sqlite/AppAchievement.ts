@@ -1,5 +1,6 @@
 import { type SQL, and, eq, sql } from "drizzle-orm";
 import { type LanguageCode, type ProjectDB, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
+import { Attempt, type AttemptStatus } from "../../error";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
 import {
@@ -13,7 +14,6 @@ import type { AppRepository } from "./App";
 import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import { achievementsMeta } from "./schema";
 import { getTableAliasedColumns } from "./utils";
-import { Attempt, type AttemptStatus } from "../../error";
 
 export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 

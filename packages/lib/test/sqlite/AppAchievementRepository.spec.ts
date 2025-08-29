@@ -8,9 +8,9 @@ import { AttemptStatus } from "../../src/error";
 import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsMeta, achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
+import { seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { basicAchievement, makeAchievementSchema, makeAppData } from "../fixtures/appData";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
-import { seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { runMigrations } from "../helpers/migrate";
 
 describe("AppAchievementRepository - upsert regression (sqlite)", () => {

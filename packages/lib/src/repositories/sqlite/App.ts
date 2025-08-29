@@ -276,7 +276,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                 })
                 .from(apps)
                 .$dynamic();
- 
+
             const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
             if (allConditions.length > 0) {
                 query = query.where(and(...allConditions));
@@ -293,7 +293,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             return Attempt.fail<number>(err as Error);
         }
     }
- 
+
     /**
      * Ensure all required data exists in the database
      * Uses subqueries when available to avoid parameter explosion

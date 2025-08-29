@@ -96,7 +96,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
             return Attempt.fail<number>(err as Error);
         }
     }
- 
+
     /**
      * Ensure friend data exists in the database, fetching from API if needed
      */

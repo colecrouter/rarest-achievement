@@ -3,6 +3,7 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { AttemptStatus } from "../../src/error";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
@@ -11,7 +12,6 @@ import { makeUserRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
 import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
-import { AttemptStatus } from "../../src/error";
 
 describe("UserRepository - SQLite (in-memory)", () => {
     let db: ProjectDB;
@@ -242,7 +242,6 @@ describe("UserRepository - SQLite (in-memory)", () => {
         assert.strictEqual(row.last.getTime(), 0);
     });
 });
-
 
 // Count() parity and error propagation tests for UserRepository
 import { describe as describe_count_user, test as test_count_user } from "node:test";

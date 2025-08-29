@@ -149,7 +149,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
             return Attempt.fail<number>(err as Error);
         }
     }
- 
+
     /**
      * Ensure user data exists in the database, fetching from API if needed
      */

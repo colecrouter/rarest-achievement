@@ -3,12 +3,14 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { AttemptStatus } from "../../src/error";
 
 import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsMeta, achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
 import { basicAchievement, makeAchievementSchema, makeAppData } from "../fixtures/appData";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
+import { seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { runMigrations } from "../helpers/migrate";
 
 describe("AppAchievementRepository - upsert regression (sqlite)", () => {
@@ -169,5 +171,133 @@ describe("AppAchievementRepository - upsert regression (sqlite)", () => {
         if (!res.data) throw new Error("expected data");
         assert.strictEqual(res.data.length, 1);
         assert.strictEqual(res.data[0]?.app.id, appPos);
+    });
+});
+
+describe("AppAchievementRepository - count()", () => {
+    let db: ProjectDB;
+
+    beforeEach(async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        db = drizzle(sqlite, { logger: true }) as unknown as ProjectDB;
+    });
+
+    test("count equals build().data.length with appIds and language", async () => {
+        const { repo: appRepo } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+
+        const appId = 99001;
+        await seedAppWithPlayers(db, appId, "Count App", 1234);
+        await seedStats(db, appId, [
+            { ach: "C1", percent: 10 },
+            { ach: "C2", percent: 20 },
+        ]);
+        await seedMetaByCode(db, appId, "en", [
+            { ach: "C1", display: "Alpha One" },
+            { ach: "C2", display: "Beta Two" },
+        ]);
+
+        const built = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appId])
+            .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+        const cntAttempt = await appAchRepo.compose().withLanguage("en").withAppIds([appId]).count();
+
+        assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(typeof cntAttempt.data, "number");
+        assert.strictEqual(cntAttempt.data, built.data.length);
+    });
+
+    test("count equals build().data.length with withRarityThreshold", async () => {
+        const { repo: appRepo } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+
+        const appId = 99002;
+        await seedAppWithPlayers(db, appId, "Rarity App", 2000);
+        await seedStats(db, appId, [
+            { ach: "R1", percent: 5 },
+            { ach: "R2", percent: 20 },
+            { ach: "R3", percent: 33 },
+        ]);
+        await seedMetaByCode(db, appId, "en", [
+            { ach: "R1", display: "Rare One" },
+            { ach: "R2", display: "Rare Two" },
+            { ach: "R3", display: "Rare Three" },
+        ]);
+
+        const built = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appId])
+            .withRarityThreshold(0.2) // <= 20%
+            .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+        const cntAttempt = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appId])
+            .withRarityThreshold(0.2)
+            .count();
+
+        assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(cntAttempt.data, built.data.length);
+    });
+
+    test("count equals build().data.length with withSearch", async () => {
+        const { repo: appRepo } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+
+        const appId = 99003;
+        await seedAppWithPlayers(db, appId, "Search App", 1800);
+        await seedStats(db, appId, [
+            { ach: "SA1", percent: 15 },
+            { ach: "SB1", percent: 25 },
+        ]);
+        await seedMetaByCode(db, appId, "en", [
+            { ach: "SA1", display: "Alpha Wolf" },
+            { ach: "SB1", display: "Beta Fish" },
+        ]);
+
+        const built = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appId])
+            .withSearch("alpha")
+            .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+        const cntAttempt = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appId])
+            .withSearch("alpha")
+            .count();
+
+        assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(cntAttempt.data, built.data.length);
+    });
+
+    test("count returns Attempt failure on SQL error", async () => {
+        const { repo: appRepo } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+
+        // biome-ignore lint/suspicious/noExplicitAny: Test intentionally uses monkey-patching to simulate a SQL error
+        const composer: any = appAchRepo.compose().withLanguage("en");
+        const originalWith = composer.db.with;
+        try {
+            composer.db.with = () => {
+                throw new Error("forced-sql-error");
+            };
+            const attempt = await composer.count();
+            assert.strictEqual(attempt.status, AttemptStatus.Failure);
+            assert.ok(attempt.error instanceof Error);
+        } finally {
+            composer.db.with = originalWith;
+        }
     });
 });

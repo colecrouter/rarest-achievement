@@ -1,4 +1,4 @@
-import { type SQL, and, eq } from "drizzle-orm";
+import { type SQL, and, eq, sql } from "drizzle-orm";
 import { type LanguageCode, type ProjectDB, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
@@ -13,6 +13,7 @@ import type { AppRepository } from "./App";
 import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import { achievementsMeta } from "./schema";
 import { getTableAliasedColumns } from "./utils";
+import { Attempt, type AttemptStatus } from "../../error";
 
 export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 
@@ -69,6 +70,50 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
         return createQueryResult(results, options.cursor, ensureResult.error);
     }
 
+    /**
+     * COUNT-only execution path matching current filters.
+     * Preserves dual-storage semantics by ensuring app data exists prior to counting.
+     * Reuses identical CTEs and WHERE stack as build(), but avoids ORDER BY/LIMIT and hydration.
+     */
+    async count(): Promise<Attempt<number, AttemptStatus>> {
+        // Preserve dual-storage semantics; capture ensure error but continue to COUNT
+        let ensureError: Error | null = null;
+        try {
+            const ensure = await this.ensureDataExists();
+            ensureError = ensure.error;
+        } catch (e) {
+            // If ensure throws (e.g., DB layer failure), capture and still attempt COUNT
+            ensureError = e as Error;
+        }
+
+        try {
+            // COUNT distinct (app_id, ach_id) from achievementsStats with identical filter stack.
+            // Avoid joins that could multiply rows. Leverage CTEs/EXISTS previously added by withRarityThreshold/withSearch/etc.
+            let query = this.db
+                .with(...this.ctes)
+                .select({
+                    count: sql<number>`count(distinct ${achievementsStats.app_id} || ':' || ${achievementsStats.ach_id})`,
+                })
+                .from(achievementsStats)
+                .$dynamic();
+
+            const allConditions = this.collectWhereConditions();
+            if (allConditions.length > 0) {
+                query = query.where(and(...allConditions));
+            }
+
+            const rows = await query;
+            const count = rows[0]?.count ?? 0;
+
+            // If the ensure step had an error but COUNT succeeded, propagate Partial
+            if (ensureError) {
+                return Attempt.partial(count, ensureError);
+            }
+            return Attempt.ok(count);
+        } catch (err) {
+            return Attempt.fail(err as Error);
+        }
+    }
     /**
      * Ensure all required data exists in the database
      */

@@ -1,6 +1,7 @@
 import { type SQL, and, asc, desc, eq, gt, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import type { SQLiteColumn, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import { type LanguageCode, type ProjectDB, apps, getLanguageByCode } from "../..";
+import type { Attempt, AttemptStatus } from "../../error";
 import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer } from "../composable";
 import { achievementsMeta, achievementsStats } from "./schema";
 import { searchTerms } from "./utils";
@@ -302,6 +303,12 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 
         return fallback;
     }
+
+    /**
+     * COUNT-only execution path.
+     * Abstract: subclasses must implement to support COUNT.
+     */
+    abstract count(): Promise<Attempt<number, AttemptStatus>>;
 
     /**
      * Abstract method that subclasses must implement

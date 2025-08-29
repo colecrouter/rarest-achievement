@@ -14,6 +14,7 @@ import { insertFriend, insertOwnedGame } from "../fixtures/dbHelpers";
 import { makeFriendsRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeFriendsListResponse, makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
+import { AttemptStatus } from "../../src/error";
 
 describe("FriendsRepository - SQLite (in-memory)", () => {
     let db: ProjectDB;
@@ -392,4 +393,85 @@ test("friend edge upsert is idempotent (no duplicates)", async () => {
         Math.floor(t0.getTime() / 1000),
         "updated_at should remain unchanged on conflict with do-nothing",
     );
+});
+
+
+import { describe as describe_count_friends, test as test_count_friends } from "node:test";
+
+describe_count_friends("FriendsRepository.count()", () => {
+    test_count_friends("parity: withUserIds equals build length for seeded friendships", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        const { repo } = makeFriendsRepoWithMocks(db);
+
+        const main = "main-count";
+        const fids = ["fc1", "fc2", "fc3"];
+
+        // Seed users and friendships directly
+        for (const id of [main, ...fids]) {
+            await db.insert(usersTable).values({ id, data: makeUserData(id), updated_at: new Date() });
+        }
+        const now = new Date();
+        for (const [i, fid] of fids.entries()) {
+            await insertFriend(db, {
+                user_id: main,
+                friend_id: fid,
+                friend_since: new Date(now.getTime() - (i + 1) * 1000),
+            });
+        }
+
+        const buildRes = await repo.compose().withUserIds(main).build();
+        const countAttempt = await repo.compose().withUserIds(main).count();
+
+        assert.strictEqual(countAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(countAttempt.data, buildRes.data.length);
+    });
+
+    test_count_friends("empty scope: no userIds -> count returns Ok(0)", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        const { repo } = makeFriendsRepoWithMocks(db);
+
+        const attempt = await repo.compose().count();
+        assert.strictEqual(attempt.status, AttemptStatus.Ok);
+        assert.strictEqual(attempt.data, 0);
+    });
+
+    test_count_friends("error propagation: COUNT failure => AttemptStatus.Failure", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        const { repo } = makeFriendsRepoWithMocks(db);
+
+        const main = "boom-main";
+        const fid = "boom-friend";
+
+        await db.insert(usersTable).values({ id: main, data: makeUserData(main), updated_at: new Date() });
+        await db.insert(usersTable).values({ id: fid, data: makeUserData(fid), updated_at: new Date() });
+        await insertFriend(db, { user_id: main, friend_id: fid, friend_since: new Date() });
+
+        const composer = repo.compose().withUserIds(main);
+
+        // Drop table to force COUNT failure
+        sqlite.exec("DROP TABLE friends;");
+
+        const attempt = await composer.count();
+
+        assert.strictEqual(attempt.status, AttemptStatus.Failure);
+        assert.ok(attempt.error);
+    });
 });

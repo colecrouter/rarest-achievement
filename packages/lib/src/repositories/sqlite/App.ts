@@ -235,6 +235,66 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     }
 
     /**
+     * Execute a COUNT(*) over the logical result set produced by the current composition.
+     * - Preserves ensure-before-read semantics (runs ensureDataExists first)
+     * - Reuses the same CTEs and where conditions as build()
+     * - Ignores sorting/pagination and hydration; COUNT DISTINCT apps.id only
+     * - Enforces explicit scope guard identical to build()
+     */
+    async count(): Promise<Attempt<number, AttemptStatus>> {
+        // Enforce explicit scope: either app IDs or a required-apps subquery must be provided
+        try {
+            if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined) {
+                throw new Error(
+                    "AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...).",
+                );
+            }
+        } catch (err) {
+            return Attempt.fail<number>(err as Error);
+        }
+
+        // Ensure data first; capture any error but proceed to COUNT
+        let ensureError: Error | null = null;
+        try {
+            const ensureRes = await this.ensureDataExists();
+            ensureError = ensureRes.error;
+        } catch (err) {
+            // DB ensure failure should not prevent us from attempting COUNT; record as partial if COUNT succeeds
+            ensureError = err as Error;
+        }
+
+        try {
+            // Start base COUNT query
+            const lang = getLanguageByCode(this.lang)?.apiCode || "english";
+
+            // If we have CTEs, apply them to the query
+            const withCTE = this.ctes.length > 0 ? this.db.with(...this.ctes) : this.db;
+
+            let query = withCTE
+                .select({
+                    cnt: sql<number>`count(distinct ${apps.id})`,
+                })
+                .from(apps)
+                .$dynamic();
+ 
+            const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
+            if (allConditions.length > 0) {
+                query = query.where(and(...allConditions));
+            }
+
+            const rows = await query;
+            const count = rows[0]?.cnt ?? 0;
+
+            if (ensureError) {
+                return Attempt.partial(count, ensureError);
+            }
+            return Attempt.ok(count);
+        } catch (err) {
+            return Attempt.fail<number>(err as Error);
+        }
+    }
+ 
+    /**
      * Ensure all required data exists in the database
      * Uses subqueries when available to avoid parameter explosion
      */

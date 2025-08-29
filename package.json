@@ -21,6 +21,9 @@
         "prepare": "node python/xgboost_model/setup-venv.js",
         "postinstall": "patch-package || echo 'No patches to apply'"
     },
+    "dependencies": {
+        "drizzle-orm": "0.42.0"
+    },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@cloudflare/workers-types": "^4.20250613.0",
@@ -30,6 +33,7 @@
         "patch-package": "^8.0.0"
     },
     "overrides": {
+        "drizzle-orm": "0.42.0",
         "esm-env": "npm:esm-env-runtime@^0.1.1",
         "wrangler": "^4.7.2"
     },

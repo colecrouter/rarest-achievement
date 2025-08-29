@@ -6,7 +6,7 @@ compatibility_date = "2025-04-18"
 enabled = true
 
 [triggers]
-crons = ["0 0 * * *"]
+crons = ["0 */2 * * *", "15 3 * * *", "45 4 * * 1"]
 
 # Smart Placement
 # placement = { mode = "smart" }

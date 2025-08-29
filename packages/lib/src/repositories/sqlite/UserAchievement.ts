@@ -304,6 +304,109 @@ class UserAchievementQueryComposer
             resultsAttempt.error,
         );
     }
+    /**
+     * COUNT-only execution path matching current filters.
+     * Preserves dual-storage semantics by ensuring data exists prior to counting.
+     * Reuses identical CTEs and WHERE stack as build(), but avoids ORDER BY/LIMIT and wide selects.
+     */
+    async count(): Promise<Attempt<number, AttemptStatus>> {
+        // Ensure we have a user scope; otherwise nothing to count
+        if (this.userIds.size === 0 && !this.friendsOfUserId) {
+            return Attempt.ok(0);
+        }
+
+        // Ensure dual-storage semantics (fetch + upsert required data) before counting.
+        // Preserve any ensure error as a Partial Attempt if the count succeeds.
+        let ensureResult: Attempt<void, AttemptStatus>;
+        try {
+            ensureResult = await this.ensureUserDataExists();
+        } catch (e) {
+            // In case ensure throws (it normally returns Attempt), capture as failure but still attempt count
+            ensureResult = Attempt.fail(e as Error);
+        }
+
+        try {
+            // Build user filter conditions (same as build paths)
+            const userFilterConditions = [];
+            if (!this.friendsOfUserId && this.userIds.size > 0) {
+                const userIdsArray = Array.from(this.userIds) as string[];
+                userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
+            }
+
+            const useComprehensive = this.shouldUseComprehensiveSQL();
+            const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
+
+            // Build COUNT query with identical joins/filters; avoid ORDER BY/LIMIT and hydration
+            let query = this.db
+                .with(...this.ctes)
+                .select({
+                    count: sql<number>`count(distinct ${userAchievements.user_id} || ':' || ${userAchievements.app_id} || ':' || ${userAchievements.ach_id})`,
+                })
+                .from(userAchievements)
+                // Enforce "owned" semantics identical to build()
+                .innerJoin(
+                    ownedGames,
+                    and(
+                        eq(userAchievements.user_id, ownedGames.user_id),
+                        eq(userAchievements.app_id, ownedGames.app_id),
+                    ),
+                )
+                // Provide achievementsStats so rarity/search CTE EXISTS correlate to these columns (same as build)
+                .leftJoin(
+                    achievementsStats,
+                    and(
+                        eq(userAchievements.app_id, achievementsStats.app_id),
+                        eq(userAchievements.ach_id, achievementsStats.ach_id),
+                    ),
+                )
+                .$dynamic();
+
+            if (useComprehensive) {
+                // Join achievements_meta with language fallback logic (keeps identical semantics to build)
+                query = query
+                    .innerJoin(
+                        achievementsMeta,
+                        and(
+                            eq(userAchievements.app_id, achievementsMeta.app_id),
+                            eq(userAchievements.ach_id, achievementsMeta.ach_id),
+                            sql`${achievementsMeta.lang} = (
+                                SELECT COALESCE(
+                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
+                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
+                                )
+                            )`,
+                        ),
+                    )
+                    // Join apps to mirror the comprehensive build composition
+                    .innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)));
+            }
+
+            // Friends-of filter via JOIN (same as build() paths)
+            if (this.friendsOfUserId) {
+                const friendsOf = this.friendsOfUserId as string;
+                query = query.innerJoin(
+                    friends,
+                    and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, friendsOf)),
+                );
+            }
+
+            // Collect all standard and extra conditions (appIds, achIds, unlocked, rarity/search CTE EXISTS, etc.)
+            const allConditions = this.collectWhereConditions(...userFilterConditions);
+            if (allConditions.length > 0) {
+                query = query.where(and(...allConditions));
+            }
+
+            const rows = await query;
+            const count = rows[0]?.count ?? 0;
+
+            if (ensureResult.error) {
+                return Attempt.partial(count, ensureResult.error);
+            }
+            return Attempt.ok(count);
+        } catch (err) {
+            return Attempt.fail(err as Error);
+        }
+    }
 
     /**
      * Determine if we should use the comprehensive SQL approach

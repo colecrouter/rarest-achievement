@@ -3,6 +3,7 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { AttemptStatus } from "../../src/error";
 
 import type { GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
@@ -1103,5 +1104,224 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
         const stored = rows[0]?.unlocked_at;
         assert.ok(stored instanceof Date, "unlocked_at should be a Date");
         assert.strictEqual(stored?.getTime(), ts.getTime());
+    });
+    describe("count()", () => {
+        test("count equals build().data.length for unlocked only", async () => {
+            const repo = getRepo();
+            const userId = "u-count-1";
+            const appId = 98101;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appId });
+            await seedAppWithPlayers(db, appId, "Count App 1", 1000);
+            await seedStats(db, appId, [
+                { ach: "CU1", percent: 10 },
+                { ach: "CU2", percent: 20 },
+            ]);
+            await seedMetaByCode(db, appId, "en", [
+                { ach: "CU1", display: "Count U1" },
+                { ach: "CU2", display: "Count U2" },
+            ]);
+
+            const t = new Date(Date.now() - 1000);
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "CU1", unlocked_at: t });
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "CU2", unlocked_at: null });
+
+            const built = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+            const cntAttempt = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .count();
+
+            assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+            assert.strictEqual(typeof cntAttempt.data, "number");
+            assert.strictEqual(cntAttempt.data, built.data.length);
+        });
+
+        test("count equals build().data.length for unlocked + rarity threshold", async () => {
+            const repo = getRepo();
+            const userId = "u-count-2";
+            const appId = 98102;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appId });
+            await seedAppWithPlayers(db, appId, "Count App 2", 2000);
+            await seedStats(db, appId, [
+                { ach: "CR1", percent: 5 },
+                { ach: "CR2", percent: 20 },
+                { ach: "CR3", percent: 33 },
+            ]);
+            await seedMetaByCode(db, appId, "en", [
+                { ach: "CR1", display: "Rare Five" },
+                { ach: "CR2", display: "Rare Twenty" },
+                { ach: "CR3", display: "Rare ThirtyThree" },
+            ]);
+
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "CR1", unlocked_at: new Date() });
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "CR2", unlocked_at: null });
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "CR3", unlocked_at: new Date() });
+
+            const built = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .withRarityThreshold(0.2)
+                .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+            const cntAttempt = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .withRarityThreshold(0.2)
+                .count();
+
+            assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+            assert.strictEqual(typeof cntAttempt.data, "number");
+            assert.strictEqual(cntAttempt.data, built.data.length);
+        });
+
+        test("count equals build().data.length for unlocked + rarity threshold + search", async () => {
+            const repo = getRepo();
+            const userId = "u-count-3";
+            const appId = 98103;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appId });
+            await seedAppWithPlayers(db, appId, "Searchable App", 1800);
+            await seedStats(db, appId, [
+                { ach: "SA1", percent: 15 },
+                { ach: "SB1", percent: 8 },
+            ]);
+            await seedMetaByCode(db, appId, "en", [
+                { ach: "SA1", display: "Alpha Wolf" },
+                { ach: "SB1", display: "Beta Fish" },
+            ]);
+
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "SA1", unlocked_at: new Date() });
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "SB1", unlocked_at: null });
+
+            const built = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .withRarityThreshold(0.2)
+                .withSearch("alpha")
+                .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+            const cntAttempt = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .withRarityThreshold(0.2)
+                .withSearch("alpha")
+                .count();
+
+            assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+            assert.strictEqual(typeof cntAttempt.data, "number");
+            assert.strictEqual(cntAttempt.data, built.data.length);
+        });
+
+        test("count equals build().data.length with language set and fallback path", async () => {
+            const repo = getRepo();
+            const userId = "u-count-fr";
+            const appId = 98104;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appId });
+            await insertAppByCode(db, { id: appId, langCode: "fr", name: "FR App Row" });
+            await db.insert(estimatedPlayers).values({ app_id: appId, estimated_players: 900, updated_at: new Date() });
+            await seedStats(db, appId, [{ ach: "CF1", percent: 12 }]);
+            await seedMetaByCode(db, appId, "en", [{ ach: "CF1", display: "English Meta" }]);
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "CF1", unlocked_at: new Date() });
+
+            const built = await repo
+                .compose()
+                .withLanguage("fr")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+            const cntAttempt = await repo
+                .compose()
+                .withLanguage("fr")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .count();
+
+            assert.strictEqual(cntAttempt.status, AttemptStatus.Ok);
+            assert.strictEqual(typeof cntAttempt.data, "number");
+            assert.strictEqual(cntAttempt.data, built.data.length);
+        });
+
+        test("count() does not hydrate models (returns a plain number)", async () => {
+            const repo = getRepo();
+            const userId = "u-count-plain";
+            const appId = 98105;
+
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+            await insertOwnedGame(db, { user_id: userId, app_id: appId });
+            await seedAppWithPlayers(db, appId, "Plain Count App", 777);
+            await seedStats(db, appId, [{ ach: "PX1", percent: 11 }]);
+            await seedMetaByCode(db, appId, "en", [{ ach: "PX1", display: "P1" }]);
+            await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "PX1", unlocked_at: new Date() });
+
+            const attempt = await repo
+                .compose()
+                .withLanguage("en")
+                .withUserIds(userId)
+                .withAppIds(appId)
+                .withUnlockedStatus(true)
+                .count();
+
+            assert.strictEqual(attempt.status, AttemptStatus.Ok);
+            assert.strictEqual(typeof attempt.data, "number");
+        });
+
+        test("count returns Attempt failure on SQL error", async () => {
+            const repo = getRepo();
+            const userId = "u-count-error";
+            // minimal prerequisite so composer has a user scope
+            await insertUser(db, { id: userId, data: makeUserData(userId) });
+
+            // Bypass TS protected access for testing error path
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            const composer: any = repo.compose().withLanguage("en").withUserIds(userId);
+
+            // Monkey-patch the drizzle client's `with` method to force an error during COUNT
+            const originalWith = composer.db.with;
+            try {
+                composer.db.with = () => {
+                    throw new Error("forced-sql-error");
+                };
+                const attempt = await composer.count();
+
+                // Should propagate as a Failure Attempt with an Error instance
+                assert.strictEqual(attempt.status, AttemptStatus.Failure);
+                assert.ok(attempt.error instanceof Error);
+            } finally {
+                // Restore patched method to avoid side effects
+                composer.db.with = originalWith;
+            }
+        });
     });
 });

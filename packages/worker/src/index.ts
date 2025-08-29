@@ -1,6 +1,6 @@
 import { type ProjectDB, SteamAuthenticatedAPIClient, VaultService, type schema } from "@project/lib";
 import { drizzle } from "drizzle-orm/d1";
-import { deleteStaleUsers, refreshStaleApps } from "./cleanup";
+import { getJobsForCron } from "./jobs";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -16,12 +16,22 @@ import { deleteStaleUsers, refreshStaleApps } from "./cleanup";
  */
 
 export default {
-    scheduled: async (scheduledTime, env, ctx) => {
+    scheduled: async (event, env, ctx) => {
         const db = drizzle<typeof schema>(env.DB) as unknown as ProjectDB; // TODO: Fix this type
         const service = new VaultService(db, new SteamAuthenticatedAPIClient(env.STEAM_API_KEY));
+        const now = new Date();
 
-        await refreshStaleApps(db, service, 100);
+        const cron = event.cron;
+        const targets = getJobsForCron(cron);
 
-        await deleteStaleUsers(db);
+        if (targets.length === 0) return;
+
+        for (const job of targets) {
+            try {
+                await job.run({ db, service, now, ctx });
+            } catch (err) {
+                console.error(`[scheduled] job=${job.id} error=${(err as Error).message}`);
+            }
+        }
     },
 } satisfies ExportedHandler<Env>;

@@ -47,6 +47,12 @@ export interface QueryComposer<TResult, TSortMethod extends string> {
      * Build and execute the composed query, returning results with error propagation
      */
     build(options?: ComposableQueryOptions<TSortMethod>): Promise<ComposableQueryResult<TResult>>;
+
+    /**
+     * Execute an identical filter stack as build(), but return a COUNT only.
+     * Implementations must preserve dual-storage semantics (ensure data before counting).
+     */
+    count(): Promise<Attempt<number, AttemptStatus>>;
 }
 
 /**

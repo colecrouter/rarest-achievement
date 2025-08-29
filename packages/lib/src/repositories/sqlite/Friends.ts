@@ -1,5 +1,5 @@
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { Attempt, type ProjectDB, friends, ownedGames, users } from "../..";
+import { Attempt, type AttemptStatus, type ProjectDB, friends, ownedGames, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
@@ -58,6 +58,43 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
         const results = await this.executeMainQuery(options);
 
         return createQueryResult(results, options.cursor);
+    }
+
+    /**
+     * Execute a COUNT over the logical result set of friends for the specified userIds.
+     * - Ensures data before read (calls ensureDataExists)
+     * - Returns COUNT(DISTINCT friends.friend_id) for friends.user_id IN (ids)
+     * - If no userIds were provided, returns Ok(0) to mirror build()'s empty result
+     * - No ORDER BY/LIMIT/OFFSET
+     */
+    async count(): Promise<Attempt<number, AttemptStatus>> {
+        // Empty scope: mirror build() which returns an empty list
+        if (this.userIds.size === 0) {
+            return Attempt.ok(0);
+        }
+
+        // Ensure-before-read; capture error but proceed to COUNT
+        let ensureError: Error | null = null;
+        try {
+            await this.ensureDataExists();
+        } catch (err) {
+            ensureError = err as Error;
+        }
+
+        try {
+            const ids = Array.from(this.userIds);
+            const rows = await this.db
+                .select({
+                    cnt: sql<number>`count(distinct ${friends.friend_id})`,
+                })
+                .from(friends)
+                .where(inArray(friends.user_id, ids));
+
+            const cnt = rows[0]?.cnt ?? 0;
+            return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
+        } catch (err) {
+            return Attempt.fail<number>(err as Error);
+        }
     }
 
     /**

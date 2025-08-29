@@ -3,6 +3,7 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { AttemptStatus } from "../../src/error";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
@@ -239,5 +240,117 @@ describe("UserRepository - SQLite (in-memory)", () => {
         assert.strictEqual(row.twoW, 2);
         assert.ok(row.last instanceof Date);
         assert.strictEqual(row.last.getTime(), 0);
+    });
+});
+
+// Count() parity and error propagation tests for UserRepository
+import { describe as describe_count_user, test as test_count_user } from "node:test";
+
+describe_count_user("UserRepository.count()", () => {
+    test_count_user("parity: withUserIds equals build length", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        // Seed two users
+        await db.insert(users).values({ id: "111", data: makeUserData("111"), updated_at: new Date() });
+        await db.insert(users).values({ id: "222", data: makeUserData("222"), updated_at: new Date() });
+
+        const { repo } = makeUserRepoWithMocks(db);
+
+        const builderForBuild = repo.compose().withUserIds(["111", "222"]);
+        const builderForCount = repo.compose().withUserIds(["111", "222"]);
+
+        const buildRes = await builderForBuild.build();
+        const countAttempt = await builderForCount.count();
+
+        assert.strictEqual(countAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(countAttempt.data, buildRes.data.length);
+    });
+
+    test_count_user("parity: no filter counts all users (matches build length without limit)", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        // Seed three users
+        await db.insert(users).values({ id: "u1", data: makeUserData("u1"), updated_at: new Date() });
+        await db.insert(users).values({ id: "u2", data: makeUserData("u2"), updated_at: new Date() });
+        await db.insert(users).values({ id: "u3", data: makeUserData("u3"), updated_at: new Date() });
+
+        const { repo } = makeUserRepoWithMocks(db);
+
+        const buildRes = await repo.compose().build(); // no limit/cursor provided
+        const countAttempt = await repo.compose().count();
+
+        assert.strictEqual(countAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(countAttempt.data, buildRes.data.length);
+    });
+
+    test_count_user("parity: required subquery combined with withUserIds", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        // Seed a superset of users
+        await db.insert(users).values({ id: "su1", data: makeUserData("su1"), updated_at: new Date() });
+        await db.insert(users).values({ id: "su2", data: makeUserData("su2"), updated_at: new Date() });
+        await db.insert(users).values({ id: "suX", data: makeUserData("suX"), updated_at: new Date() });
+
+        const { repo } = makeUserRepoWithMocks(db);
+
+        // Subquery that yields the required user ids
+        const requiredUsersSubquery = sql`
+            SELECT 'su1' AS user_id
+            UNION
+            SELECT 'su2' AS user_id
+        `;
+
+        const builderForBuild = repo
+            .compose()
+            .withRequiredEntitySubquery("user", requiredUsersSubquery)
+            .withUserIds(["su1", "su2"]);
+        const builderForCount = repo
+            .compose()
+            .withRequiredEntitySubquery("user", requiredUsersSubquery)
+            .withUserIds(["su1", "su2"]);
+
+        const buildRes = await builderForBuild.build();
+        const countAttempt = await builderForCount.count();
+
+        assert.strictEqual(countAttempt.status, AttemptStatus.Ok);
+        assert.strictEqual(countAttempt.data, buildRes.data.length);
+    });
+
+    test_count_user("error propagation: COUNT failure => AttemptStatus.Failure", async () => {
+        const sqlite = new Database(":memory:");
+        sqlite.exec("PRAGMA case_sensitive_like = ON;");
+        sqlite.exec("PRAGMA journal_mode = WAL;");
+        sqlite.exec("PRAGMA synchronous = NORMAL;");
+        await runMigrations(sqlite);
+        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+
+        // Seed a user
+        await db.insert(users).values({ id: "boom", data: makeUserData("boom"), updated_at: new Date() });
+
+        const { repo } = makeUserRepoWithMocks(db);
+        const composer = repo.compose().withUserIds(["boom"]);
+
+        // Force failure for COUNT by dropping the users table
+        sqlite.exec("DROP TABLE users;");
+
+        const attempt = await composer.count();
+
+        assert.strictEqual(attempt.status, AttemptStatus.Failure);
+        assert.ok(attempt.error);
     });
 });

@@ -88,6 +88,69 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
     }
 
     /**
+     * Execute a COUNT over the logical result set produced by the current composition.
+     * - Ensures data before read (calls ensureDataExists)
+     * - Reuses the same filters as build(): withUserIds(); additionally, if a required-user subquery
+     *   was provided, counts DISTINCT users present in that subquery intersected with existing users.
+     * - No ordering or pagination; COUNT only.
+     */
+    async count(): Promise<Attempt<number, AttemptStatus>> {
+        // Ensure-before-read: capture error but attempt COUNT regardless
+        let ensureError: Error | null = null;
+        try {
+            const ensureRes = await this.ensureDataExists();
+            ensureError = ensureRes.error;
+        } catch (err) {
+            ensureError = err as Error;
+        }
+
+        try {
+            // If a required user subquery is specified, count distinct users in that subquery that exist in users
+            if (this.requiredUserSubquery) {
+                const requiredUsers = sql`(${this.requiredUserSubquery}) AS required_users`;
+
+                // SELECT COUNT(DISTINCT users.id)
+                // FROM (subquery) AS required_users
+                // INNER JOIN users ON users.id = required_users.user_id
+                // [AND users.id IN (...)] if withUserIds() was also provided
+                let q = this.db
+                    .select({
+                        cnt: sql<number>`count(distinct ${users.id})`,
+                    })
+                    .from(requiredUsers)
+                    .innerJoin(users, eq(users.id, sql`required_users.user_id`))
+                    .$dynamic();
+
+                if (this.userIds.size > 0) {
+                    q = q.where(inArray(users.id, Array.from(this.userIds)));
+                }
+
+                const rows = await q;
+                const cnt = rows[0]?.cnt ?? 0;
+                return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
+            }
+
+            // Otherwise, base count from users with optional explicit ID filter
+            let q = this.db
+                .select({
+                    cnt: sql<number>`count(distinct ${users.id})`,
+                })
+                .from(users)
+                .$dynamic();
+
+            if (this.userIds.size > 0) {
+                q = q.where(inArray(users.id, Array.from(this.userIds)));
+            }
+
+            const rows = await q;
+            const cnt = rows[0]?.cnt ?? 0;
+            return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
+        } catch (err) {
+            return Attempt.fail<number>(err as Error);
+        }
+    }
+
+    /**
      * Ensure user data exists in the database, fetching from API if needed
      */
     async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {

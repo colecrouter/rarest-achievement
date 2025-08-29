@@ -1,6 +1,5 @@
 import { AchievementURLParameterParser } from "$lib/SortManager/AchievementSortManager.js";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { userScores, AttemptStatus } from "@project/lib";
 
 export const load = async ({ url, locals, parent }) => {
     // Need to load the locale synchronously
@@ -28,38 +27,6 @@ export const load = async ({ url, locals, parent }) => {
 
         return achievementsForUserQuery.build({ limit: 30, sort: config });
     })();
-
-    // TODO: refactor score calculation
-    // TODO once migrated to workers from pages, move this into a ctx.waitUntil
-    achievements.then(() =>
-        locals.vault.userAchievements
-            .compose()
-            .withUserIds(user.id)
-            .withUnlockedStatus(true)
-            .withRarityThreshold(0.1)
-            .withLanguage(locale)
-            .count()
-            .then((attempt) => {
-                if (attempt.status === AttemptStatus.Ok && typeof attempt.data === "number") {
-                    const rareCount = attempt.data;
-                    return locals.steamCacheDB
-                        .insert(userScores)
-                        .values({
-                            rare_count: rareCount,
-                            user_id: user.id,
-                        })
-                        .onConflictDoUpdate({
-                            target: userScores.user_id,
-                            set: {
-                                rare_count: rareCount,
-                                updated_at: new Date(),
-                            },
-                        });
-                }
-                // Skip upsert on error/partial to avoid persisting incomplete data
-                return;
-            }),
-    );
 
     return {
         achievements,

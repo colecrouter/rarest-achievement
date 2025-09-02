@@ -29,6 +29,10 @@ import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
 import { achievementsMeta } from "./schema";
 import { safeInsert } from "./utils";
+import type { EnsurePolicy } from "./ensurePolicy";
+import { defaultUnlockedAtEnsurePolicy, defaultEnsurePolicy } from "./ensurePolicy";
+
+const DEBUG_COUNTERS = false as const;
 
 /**
  * UserAchievement Repository - Pure SQL Composition Architecture
@@ -103,6 +107,7 @@ class UserAchievementQueryComposer
     private userIds: Set<string> = new Set();
     private friendsOfUserId?: string;
     private unlockedFilter?: boolean;
+    private ensurePolicy: EnsurePolicy = defaultEnsurePolicy();
 
     constructor(
         db: ProjectDB,
@@ -224,6 +229,39 @@ class UserAchievementQueryComposer
     }
 
     /**
+     * Get candidate app_ids from owned_games for a user ordered by last_played_at DESC.
+     * Recommendation: add an index on (user_id, last_played_at DESC) in a separate migration for performance.
+     */
+    private async getCandidateAppsFromOwnedGames(userId: string, window: number): Promise<number[]> {
+        const rows = await this.db
+            .select({ app_id: ownedGames.app_id })
+            .from(ownedGames)
+            .where(eq(ownedGames.user_id, userId))
+            .orderBy(desc(ownedGames.last_played_at), asc(ownedGames.app_id))
+            .limit(window);
+        return rows.map((r) => r.app_id);
+    }
+
+    /**
+     * Aggregate across multiple users: pick distinct app_ids ordered by max(last_played_at)
+     * across the provided users. Bounded by window to keep the candidate set small.
+     */
+    private async getCandidateAppsFromOwnedGamesForUsers(userIds: string[], window: number): Promise<number[]> {
+        if (userIds.length === 0) return [];
+        const rows = await this.db
+            .select({
+                app_id: ownedGames.app_id,
+                last: sql`max(${ownedGames.last_played_at})`.as("last"),
+            })
+            .from(ownedGames)
+            .where(inArray(ownedGames.user_id, userIds))
+            .groupBy(ownedGames.app_id)
+            .orderBy(desc(sql`last`), asc(ownedGames.app_id))
+            .limit(window);
+        return rows.map((r) => r.app_id);
+    }
+
+    /**
      * Build and execute the composed query
      */
     async build(
@@ -234,12 +272,18 @@ class UserAchievementQueryComposer
             return createQueryResult([], options.cursor || 0);
         }
 
-        // Determine processing mode based on filters
-        const shouldUseComprehensiveSQL = this.shouldUseComprehensiveSQL();
-
-        const resultsAttempt = await (shouldUseComprehensiveSQL
-            ? this.executeWithComprehensiveSQL(options)
-            : this.executeDirectQuery(options));
+        // Determine processing mode based on filters or unlocked_at policy
+        let resultsAttempt: Attempt<SteamUserAchievement[], AttemptStatus>;
+        if (options.sort && options.sort.method === "unlocked_at" && this.searchTerm === undefined) {
+            // Attach EnsurePolicy automatically for unlocked_at; direct-first + scoped ensure
+            this.ensurePolicy = defaultUnlockedAtEnsurePolicy();
+            resultsAttempt = await this.executeUnlockedAtScopedFlow(options);
+        } else {
+            const shouldUseComprehensiveSQL = this.shouldUseComprehensiveSQL();
+            resultsAttempt = await (shouldUseComprehensiveSQL
+                ? this.executeWithComprehensiveSQL(options)
+                : this.executeDirectQuery(options));
+        }
 
         // If we got no results but the caller requested a specific app (e.g. viewing a single game page),
         // fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
@@ -517,6 +561,118 @@ class UserAchievementQueryComposer
         // Step 3: Build final results
         const buildResult = await this.buildResultsFromRows(userAchievementRows);
         return ensureResult.and(buildResult);
+    }
+
+    /**
+     * Execute unlocked_at direct-first + scoped ensure flow.
+     *
+     * Why: When sorting by unlocked_at, the page often needs only a handful of apps immediately.
+     * We run a DB-limited select first to render quickly, then we ensure only the likely-needed apps.
+     * Candidate apps are sourced from owned_games ordered by last_played_at DESC (recently played first).
+     *
+     * Caps and streaming:
+     * - Ensuring is bounded by EnsurePolicy.caps (apps/time) and streams rows in micro-batches
+     *   via ensureUserAchievementDataExists(policy, orderedCandidates).
+     * - Micro-batching yields between flushes to keep the fetch limiter responsive.
+     * - Partial backfill is allowed; never throw due to caps/time budget.
+     */
+    private async executeUnlockedAtScopedFlow(
+        options: ComposableQueryOptions<UserAchievementSortMethod>,
+    ): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
+        const policy = this.ensurePolicy?.mode === "unlocked_at" ? this.ensurePolicy : defaultUnlockedAtEnsurePolicy();
+
+        // Build direct query WITHOUT ensuring first (prefer direct-first render)
+        const userFilterConditions: SQL[] = [];
+        if (this.friendsOfUserId) {
+            // Join will be applied below
+        } else if (this.userIds.size > 0) {
+            const userIdsArray = Array.from(this.userIds);
+            userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
+        } else {
+            return Attempt.ok([]);
+        }
+
+        let query = this.db
+            .with(...this.ctes)
+            .select({
+                user_id: userAchievements.user_id,
+                app_id: userAchievements.app_id,
+                ach_id: userAchievements.ach_id,
+                unlocked_at: userAchievements.unlocked_at,
+                rarity_pct: achievementsStats.percent,
+            })
+            .from(userAchievements)
+            .innerJoin(
+                ownedGames,
+                and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
+            )
+            .leftJoin(
+                achievementsStats,
+                and(
+                    eq(userAchievements.app_id, achievementsStats.app_id),
+                    eq(userAchievements.ach_id, achievementsStats.ach_id),
+                ),
+            )
+            .leftJoin(estimatedPlayers, eq(userAchievements.app_id, estimatedPlayers.app_id))
+            .$dynamic();
+
+        const sortPieces = this.buildRaritySortPieces(
+            options.sort,
+            achievementsStats.percent,
+            estimatedPlayers.estimated_players,
+        );
+        const allConditions = this.collectWhereConditions(...userFilterConditions, ...sortPieces.where);
+        if (allConditions.length > 0) {
+            query = query.where(and(...allConditions));
+        }
+
+        if (this.friendsOfUserId) {
+            query = query.innerJoin(
+                friends,
+                and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, this.friendsOfUserId)),
+            );
+        }
+
+        query = this.applySorting(query, options);
+        if (options.limit) query = query.limit(options.limit);
+        if (options.cursor) query = query.offset(options.cursor);
+
+        const pageRows = await query;
+
+        // Build results from the current DB snapshot
+        const pageResultAttempt = await this.buildResultsFromRows(pageRows);
+
+        // Candidate sourcing from owned_games by recency; intersect with apps on this page first
+        let orderedCandidates: number[] = [];
+        try {
+            const pageAppIds = Array.from(new Set(pageRows.map((r) => r.app_id)));
+            let candidateBase: number[] = [];
+            if (this.userIds.size > 0) {
+                const ids = Array.from(this.userIds);
+                candidateBase = await this.getCandidateAppsFromOwnedGamesForUsers(ids, policy.candidateWindowFromOwned);
+            } else if (this.friendsOfUserId) {
+                // Scope by the requesting user's recent play history to stay bounded
+                candidateBase = await this.getCandidateAppsFromOwnedGames(
+                    this.friendsOfUserId,
+                    policy.candidateWindowFromOwned,
+                );
+            }
+
+            const pageSet = new Set(pageAppIds);
+            const intersection = candidateBase.filter((a) => pageSet.has(a));
+            const remaining = candidateBase.filter((a) => !pageSet.has(a));
+            orderedCandidates = [...intersection, ...remaining];
+        } catch {
+            orderedCandidates = [];
+        }
+
+        // Scoped ensure with streaming micro-batches under caps/time budget; never throw due to caps
+        const ensureAttempt = await this.ensureUserAchievementDataExists(policy, orderedCandidates);
+
+        // Return the page we already have; include any ensure error as partial
+        const data = pageResultAttempt.hasData() ? pageResultAttempt.data : [];
+        const err = pageResultAttempt.error || ensureAttempt.error || null;
+        return Attempt.from(data, err);
     }
 
     /**
@@ -810,10 +966,155 @@ class UserAchievementQueryComposer
     }
 
     /**
-     * Fetch and upsert user achievement data for their owned games
-     * This is the missing piece - we need to populate the user_achievements table
+     * Fetch and upsert user achievement data for their owned games.
+     * Streaming micro-batches variant when EnsurePolicy.mode === "unlocked_at":
+     * - Small outer concurrency (FIFO per app), rely on global fetch limiter for HTTP concurrency.
+     * - Insert rows in slices of caps.maxRowsPerFlush and yield between flushes to avoid starving the event loop.
+     * - Enforce caps on apps/time; always return gracefully with partial backfill allowed.
+     *
+     * This interacts with the global fetch limiter by keeping DB write bursts small so network fetches across
+     * other ensure loops are not delayed. The limiter deals with total fetch count; we focus on burst size and pacing.
      */
-    private async ensureUserAchievementDataExists(): Promise<Attempt<void, AttemptStatus>> {
+    private async ensureUserAchievementDataExists(
+        policy?: EnsurePolicy,
+        scopedAppIds?: number[],
+    ): Promise<Attempt<void, AttemptStatus>> {
+        if (policy?.mode === "unlocked_at") {
+            const start = Date.now();
+            const perFlush = policy.caps.maxRowsPerFlush;
+            const maxApps = policy.caps.maxAppsPerRequest;
+            const budgetMs = policy.caps.timeBudgetMs;
+
+            let processedApps = 0;
+            let processedRows = 0;
+            let capped = false;
+            let firstError: Error | null = null;
+
+            // Resolve target users
+            let targetUserIds: string[] = [];
+            if (this.friendsOfUserId) {
+                const rows = await this.db
+                    .select({ uid: friends.friend_id })
+                    .from(friends)
+                    .where(eq(friends.user_id, this.friendsOfUserId))
+                    .limit(1000);
+                targetUserIds = rows.map((r) => r.uid);
+            } else if (this.userIds.size > 0) {
+                targetUserIds = Array.from(this.userIds);
+            } else {
+                return Attempt.ok(undefined);
+            }
+            if (targetUserIds.length === 0) return Attempt.ok(undefined);
+
+            // Candidate set (ordered)
+            let candidates: number[] =
+                scopedAppIds && scopedAppIds.length > 0
+                    ? Array.from(new Set(scopedAppIds))
+                    : await this.getCandidateAppsFromOwnedGamesForUsers(targetUserIds, policy.candidateWindowFromOwned);
+            if (candidates.length > maxApps) candidates = candidates.slice(0, maxApps);
+
+            const maybeYield = async () => {
+                // Yield to allow the fetch limiter to interleave other tasks
+                await Promise.resolve();
+            };
+
+            // Iterate candidates with a cooperative stop flag; avoid labeled breaks to satisfy linter
+            let shouldStop = false;
+            for (const appId of candidates) {
+                if (Date.now() - start > budgetMs) {
+                    capped = true;
+                    break;
+                }
+
+                for (const userId of targetUserIds) {
+                    try {
+                        const achievements = await this.steamApi.getPlayerAchievements({
+                            steamid: userId,
+                            appid: appId,
+                        });
+
+                        const list: Array<{
+                            user_id: string;
+                            app_id: number;
+                            ach_id: string;
+                            unlocked_at: Date | null;
+                        }> = [];
+
+                        if (achievements?.playerstats?.achievements) {
+                            for (const ach of achievements.playerstats.achievements) {
+                                list.push({
+                                    user_id: userId,
+                                    app_id: Number(appId),
+                                    ach_id: ach.apiname,
+                                    unlocked_at:
+                                        ach.achieved && ach.unlocktime > 0 ? new Date(ach.unlocktime * 1000) : null,
+                                });
+                            }
+                        }
+
+                        for (let i = 0; i < list.length; i += perFlush) {
+                            const batch = list.slice(i, i + perFlush);
+                            if (batch.length === 0) continue;
+
+                            await safeInsert(this.db, batch, (chunk) =>
+                                this.db
+                                    .insert(userAchievements)
+                                    .values(
+                                        chunk.map((data) => ({
+                                            user_id: data.user_id,
+                                            app_id: data.app_id,
+                                            ach_id: data.ach_id,
+                                            unlocked_at: data.unlocked_at,
+                                            updated_at: new Date(),
+                                        })),
+                                    )
+                                    .onConflictDoUpdate({
+                                        target: [
+                                            userAchievements.user_id,
+                                            userAchievements.app_id,
+                                            userAchievements.ach_id,
+                                        ],
+                                        set: {
+                                            unlocked_at: sql`excluded.unlocked_at`,
+                                            updated_at: new Date(),
+                                        },
+                                    }),
+                            );
+                            processedRows += batch.length;
+                            await maybeYield();
+                        }
+                    } catch (err) {
+                        if (!firstError) firstError = err as Error;
+                    }
+
+                    if (Date.now() - start > budgetMs) {
+                        capped = true;
+                        shouldStop = true;
+                        break;
+                    }
+                }
+
+                if (shouldStop) break;
+
+                processedApps++;
+                if (processedApps >= maxApps) {
+                    capped = true;
+                    break;
+                }
+                await maybeYield();
+            }
+
+            if (DEBUG_COUNTERS) {
+                const elapsedMs = Date.now() - start;
+                console.log(
+                    `[UA.ensure] processedApps=${processedApps} processedRows=${processedRows} elapsedMs=${elapsedMs} capped=${capped}`,
+                );
+            }
+
+            return Attempt.from(undefined, firstError);
+        }
+
+        // Legacy path (rarity_pct/search or default flows): keep existing behavior
         // Build base query that will be used for both owned games and missing data queries
         let baseQuery = this.db
             .selectDistinct({
@@ -917,17 +1218,19 @@ class UserAchievementQueryComposer
 
         console.log(`🚀 Need to fetch achievement data for ${missingData.length} user-game combinations`);
 
-        const fetchUserAchievements = async (row: {
-            user_id: string;
-            app_id: number;
-        }) => {
+        const fetchUserAchievements = async (row: { user_id: string; app_id: number }) => {
             const { user_id, app_id } = row;
             const achievements = await this.steamApi.getPlayerAchievements({
                 steamid: user_id,
                 appid: app_id,
             });
 
-            const achievementList = [];
+            const achievementList: Array<{
+                user_id: string;
+                app_id: number;
+                ach_id: string;
+                unlocked_at: Date | null;
+            }> = [];
 
             if (achievements?.playerstats?.achievements) {
                 for (const ach of achievements.playerstats.achievements) {
@@ -1031,6 +1334,7 @@ class UserAchievementQueryComposer
             .compose()
             .withLanguage(this.lang)
             .withRequiredEntitySubquery("apps", requiredAppsSubquery)
+            .withUnlockedAtMode(this.ensurePolicy?.mode === "unlocked_at")
             .build();
 
         if (appDataResult.error) {

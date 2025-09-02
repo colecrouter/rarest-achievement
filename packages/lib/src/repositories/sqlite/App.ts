@@ -28,6 +28,8 @@ import {
 import type { Repository } from "../repository";
 import { safeInsert, searchTerms } from "./utils";
 
+const DEBUG_COUNTERS = false as const;
+
 type AppSortMethod = "id";
 
 export interface AppSortFilters {
@@ -43,6 +45,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private searchTerm?: string; /// TODO
     // Store required apps subquery for cross-repository dependencies
     private requiredAppsSubquery?: SQL;
+    /** When true, prefer small FIFO and micro-batch inserts to minimize memory (used by unlocked_at ensure path) */
+    private unlockedAtMode = false;
 
     constructor(
         private db: ProjectDB,
@@ -133,6 +137,15 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             // Store the raw SQL subquery for use in queries
             this.requiredAppsSubquery = subquery;
         }
+        return this;
+    }
+
+    /**
+     * Toggle unlocked_at mode. When enabled, ensure paths avoid flatten-then-insert and
+     * stream per-app inserts in micro-batches to keep memory bounded.
+     */
+    withUnlockedAtMode(enabled: boolean): this {
+        this.unlockedAtMode = !!enabled;
         return this;
     }
 
@@ -686,33 +699,28 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     }
 
     /**
-     * Fetch and upsert comprehensive app data including achievements metadata and stats
+     * Fetch and upsert comprehensive app data including achievements metadata and stats.
+     * When unlockedAtMode is enabled, avoid flatten-then-insert accumulation:
+     * - Process appIds sequentially (FIFO 1), keep per-app Promise.all for subresources.
+     * - After each app fetch, map records and safeInsert immediately in small batches.
+     * - Yield between per-app inserts to allow the global fetch limiter to interleave work.
+     * This keeps memory bounded and reduces burstiness across all insert paths.
      */
     private async fetchAndUpsertApps(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
         if (appIds.length === 0) return Attempt.ok(undefined);
 
-        console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
-
-        // Sequential processing: one Promise.all per app
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
-        // App data fetch helper
-        // It's *really* important to do this app by app, rather than endpoint by endpoint,
-        // because if we fail before hitting the last endpoint, we will have zero results.
-        // By doing it this way, we are always guaranteed to have at least some results.
+        // App data fetch helper (per app)
         const fetchAppData = async (id: number) => {
             const [appDetails, achievementMeta, achievementStats] = await Promise.all([
-                // Language dependent queries
                 this.steamStoreApi
                     .getAppDetails(id, { l: lang })
                     .then((res) => Object.values(res)[0]?.data || null),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
                     console.warn(`Achievement meta fetch failed for app ${id}:`, err);
-                    // For complete API failures, return null to indicate failure
-                    // This will cause the entire app to be skipped
                     return null;
                 }),
-                // Always fetch stats - handle "no achievements" case gracefully
                 this.steamApi
                     .getGlobalAchievementPercentagesForApp({ gameid: id })
                     .then((statsResponse) => {
@@ -723,12 +731,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                                 percent: ach.percent,
                             }));
                         }
-                        return []; // Empty array is valid for games with no achievements
+                        return [];
                     })
                     .catch((err) => {
                         console.warn(`Achievement stats fetch failed for app ${id}:`, err);
-                        // For apps with no achievements, Steam API might return errors (404, 400, etc.)
-                        // Return empty array to indicate "no achievements" rather than "API failure"
                         return [];
                     }),
             ]);
@@ -741,127 +747,217 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             };
         };
 
-        const attempt = await Attempt.all(appIds.map((id) => fetchAppData(id)));
-        // Skip entire row only if the app details fetch completely failed
-        // Note: achievementStats/achievementMeta can be empty arrays for games with no achievements (valid)
-        // We now handle "no achievements" gracefully by returning empty arrays instead of undefined
-        const validData = attempt.data.filter((d) => {
-            return (
-                d !== undefined && // fetchAppData didn't completely fail
-                d.achievementStats !== undefined && // stats processing didn't fail (empty array is fine)
-                d.achievementMeta !== undefined // meta processing didn't fail (empty arrays are fine)
-            );
-        });
+        if (!this.unlockedAtMode) {
+            // Original behavior (accumulate then insert). Benefit from global FETCH_LIMIT=5 already.
+            console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
+            const attempt = await Attempt.all(appIds.map((id) => fetchAppData(id)));
 
-        // Insert all successfully fetched data (database operation - let it throw)
-        if (validData.length > 0) {
-            // Data insertion logic:
-            // - appData: Always insert French app record (prevents re-fetching French achievements)
-            // - achievementStatsData: Always English (stats are language-agnostic)
-            // - achievementMetaData: English only when identical, or both when different
-            const appData = validData
-                .filter((data) => data !== undefined)
-                .map((data) => ({
-                    lang: lang,
-                    id: data.appId,
-                    data: data.appDetails,
-                }));
+            const validData = attempt.data.filter((d) => d !== undefined && d.achievementStats !== undefined && d.achievementMeta !== undefined);
 
-            // Count apps with/without achievements for logging
-            const appsWithAchievements = validData.filter(
-                (data) => data?.achievementStats && data.achievementStats.length > 0,
-            ).length;
-            const appsWithoutAchievements = validData.length - appsWithAchievements;
+            if (validData.length > 0) {
+                const appData = validData
+                    .filter((data) => data !== undefined)
+                    .map((data) => ({
+                        lang: lang,
+                        id: data.appId,
+                        data: data.appDetails,
+                    }));
 
-            console.log(
-                `📊 Apps being processed: ${appsWithAchievements} with achievements, ${appsWithoutAchievements} without achievements`,
-            );
+                const appsWithAchievements = validData.filter(
+                    (data) => data?.achievementStats && data.achievementStats.length > 0,
+                ).length;
+                const appsWithoutAchievements = validData.length - appsWithAchievements;
 
-            const achievementStatsData = validData
-                .flatMap((data) => data?.achievementStats)
-                .filter((s) => s !== undefined);
-            const achievementMetaData = validData
-                .flatMap((data) => {
-                    const results = [];
-                    const achievementMeta = data?.achievementMeta;
+                console.log(
+                    `📊 Apps being processed: ${appsWithAchievements} with achievements, ${appsWithoutAchievements} without achievements`,
+                );
 
-                    if (!achievementMeta || achievementMeta === null) return [];
+                const achievementStatsData = validData.flatMap((data) => data?.achievementStats).filter((s) => s !== undefined);
+                const achievementMetaData = validData
+                    .flatMap((data) => {
+                        const results: Array<{
+                            app_id: number;
+                            ach_id: string;
+                            display_name: string;
+                            default_value: number;
+                            description?: string;
+                            icon: string;
+                            icon_gray: string;
+                            hidden: number;
+                            lang: APILanguageCode;
+                        }> = [];
+                        const meta = data?.achievementMeta;
+                        if (!meta || meta === null) return [];
 
-                    // Add the requested language achievements
-                    console.log(
-                        `🔤 Adding ${achievementMeta.requested.length} achievements for app ${data.appId} with requested language: ${lang}`,
+                        // Requested language
+                        results.push(
+                            ...meta.requested.map((m) => ({
+                                ...m,
+                                lang,
+                            })),
+                        );
+
+                        // Also English if applicable
+                        if (lang !== "english" && meta.english && !meta.wasEnglishFromDb) {
+                            results.push(
+                                ...meta.english.map((m) => ({
+                                    ...m,
+                                    lang: "english" as const,
+                                })),
+                            );
+                        }
+                        return results;
+                    })
+                    .filter((m) => m !== undefined);
+
+                await safeInsert(this.db, appData, (chunk) =>
+                    this.db
+                        .insert(apps)
+                        .values(chunk)
+                        .onConflictDoUpdate({
+                            target: [apps.id, apps.lang],
+                            set: { data: sql`excluded.data`, updated_at: new Date() },
+                        }),
+                );
+                await safeInsert(this.db, achievementStatsData, (chunk) =>
+                    this.db
+                        .insert(achievementsStats)
+                        .values(chunk)
+                        .onConflictDoUpdate({
+                            target: [achievementsStats.app_id, achievementsStats.ach_id],
+                            set: { percent: sql`excluded.percent`, updated_at: new Date() },
+                        }),
+                );
+                await safeInsert(this.db, achievementMetaData, (chunk) =>
+                    this.db
+                        .insert(achievementsMeta)
+                        .values(chunk)
+                        .onConflictDoUpdate({
+                            target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
+                            set: {
+                                display_name: sql`excluded.display_name`,
+                                default_value: sql`excluded.default_value`,
+                                description: sql`excluded.description`,
+                                icon: sql`excluded.icon`,
+                                icon_gray: sql`excluded.icon_gray`,
+                                hidden: sql`excluded.hidden`,
+                            },
+                        }),
+                );
+            }
+
+            return attempt.map(() => undefined);
+        }
+
+        // Streaming micro-batch variant for unlockedAtMode
+        console.log(`🚀 [unlocked_at] Streaming fetch for ${appIds.length} apps (FIFO)`);
+        let processedApps = 0;
+        let processedRows = 0;
+        let firstError: Error | null = null;
+        const start = Date.now();
+
+        for (const id of appIds) {
+            try {
+                const data = await fetchAppData(id);
+                // app record
+                const appData = [
+                    {
+                        lang,
+                        id: data.appId,
+                        data: data.appDetails,
+                    },
+                ];
+                await safeInsert(this.db, appData, (chunk) =>
+                    this.db
+                        .insert(apps)
+                        .values(chunk)
+                        .onConflictDoUpdate({
+                            target: [apps.id, apps.lang],
+                            set: { data: sql`excluded.data`, updated_at: new Date() },
+                        }),
+                );
+
+                // stats (language-agnostic)
+                const stats = (data.achievementStats || []).filter((s) => s !== undefined);
+                if (stats.length > 0) {
+                    await safeInsert(this.db, stats, (chunk) =>
+                        this.db
+                            .insert(achievementsStats)
+                            .values(chunk)
+                            .onConflictDoUpdate({
+                                target: [achievementsStats.app_id, achievementsStats.ach_id],
+                                set: { percent: sql`excluded.percent`, updated_at: new Date() },
+                            }),
                     );
-                    results.push(
-                        ...achievementMeta.requested.map((meta) => ({
-                            ...meta,
+                    processedRows += stats.length;
+                }
+
+                // meta
+                const metas: Array<{
+                    app_id: number;
+                    ach_id: string;
+                    display_name: string;
+                    default_value: number;
+                    description?: string;
+                    icon: string;
+                    icon_gray: string;
+                    hidden: number;
+                    lang: APILanguageCode;
+                }> = [];
+                const meta = data.achievementMeta;
+                if (meta && meta !== null) {
+                    metas.push(
+                        ...meta.requested.map((m) => ({
+                            ...m,
                             lang,
                         })),
                     );
-
-                    // If we have English data from API (not from DB), also insert English records
-                    if (lang !== "english" && achievementMeta.english && !achievementMeta.wasEnglishFromDb) {
-                        console.log(
-                            `🔤 Adding ${achievementMeta.english.length} English fallback achievements for app ${data.appId}`,
-                        );
-                        results.push(
-                            ...achievementMeta.english.map((meta) => ({
-                                ...meta,
+                    if (lang !== "english" && meta.english && !meta.wasEnglishFromDb) {
+                        metas.push(
+                            ...meta.english.map((m) => ({
+                                ...m,
                                 lang: "english" as const,
                             })),
                         );
                     }
+                }
+                if (metas.length > 0) {
+                    await safeInsert(this.db, metas, (chunk) =>
+                        this.db
+                            .insert(achievementsMeta)
+                            .values(chunk)
+                            .onConflictDoUpdate({
+                                target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
+                                set: {
+                                    display_name: sql`excluded.display_name`,
+                                    default_value: sql`excluded.default_value`,
+                                    description: sql`excluded.description`,
+                                    icon: sql`excluded.icon`,
+                                    icon_gray: sql`excluded.icon_gray`,
+                                    hidden: sql`excluded.hidden`,
+                                },
+                            }),
+                    );
+                    processedRows += metas.length;
+                }
 
-                    return results;
-                })
-                .filter((m) => m !== undefined);
+                processedApps++;
+            } catch (err) {
+                if (!firstError) firstError = err as Error;
+            }
 
-            // Insert app details (this sets updated_at, indicating comprehensive fetch was attempted)
-            await safeInsert(this.db, appData, (chunk) =>
-                this.db
-                    .insert(apps)
-                    .values(chunk)
-                    .onConflictDoUpdate({
-                        target: [apps.id, apps.lang],
-                        set: {
-                            data: sql`excluded.data`,
-                            updated_at: new Date(),
-                        },
-                    }),
-            );
-            // Insert achievement stats
-            await safeInsert(this.db, achievementStatsData, (chunk) =>
-                this.db
-                    .insert(achievementsStats)
-                    .values(chunk)
-                    .onConflictDoUpdate({
-                        target: [achievementsStats.app_id, achievementsStats.ach_id],
-                        set: {
-                            percent: sql`excluded.percent`,
-                            updated_at: new Date(),
-                        },
-                    }),
-            );
-            // Insert achievement metadata
-            await safeInsert(this.db, achievementMetaData, (chunk) =>
-                this.db
-                    .insert(achievementsMeta)
-                    .values(chunk)
-                    .onConflictDoUpdate({
-                        target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
-                        set: {
-                            display_name: sql`excluded.display_name`,
-                            default_value: sql`excluded.default_value`,
-                            description: sql`excluded.description`,
-                            icon: sql`excluded.icon`,
-                            icon_gray: sql`excluded.icon_gray`,
-                            hidden: sql`excluded.hidden`,
-                        },
-                    }),
+            // Yield between apps so the global fetch limiter can schedule other work
+            await Promise.resolve();
+        }
+
+        if (DEBUG_COUNTERS) {
+            const elapsedMs = Date.now() - start;
+            console.log(
+                `[App.ensure] processedApps=${processedApps} processedRows=${processedRows} elapsedMs=${elapsedMs} unlockedAtMode=${this.unlockedAtMode}`,
             );
         }
 
-        // Return our request attempt without any data (not needed)
-        return attempt.map(() => undefined);
+        return Attempt.from(undefined, firstError);
     }
 
     /**

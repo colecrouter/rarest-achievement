@@ -5,7 +5,9 @@ import type { ProjectDB } from "../..";
 
 const SQL_PARAM_LIMIT = 100; // Maximum number of parameters a single SQLite query can handle
 
-const FETCH_LIMIT = 10;
+// Global DB builder burst size. Default 5 to keep bursts small and memory profile consistent across all insert paths.
+// Global DB builder burst size. Hardcoded to 5 to keep bursts small and memory profile consistent across all insert paths.
+const FETCH_LIMIT = 5;
 
 /**
  * Split an array into chunks of at most `size` items.

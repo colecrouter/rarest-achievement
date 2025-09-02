@@ -18,7 +18,7 @@ export async function refreshRareCount(ctx: CronCtx) {
         .leftJoin(userScores, eq(userScores.user_id, users.id))
         .where(or(isNull(userScores.updated_at), lt(userScores.updated_at, threshold)))
         // Order NULL first, then oldest first
-        .orderBy(asc(sql`COALESCE(${userScores.updated_at}, ${new Date(0)})`))
+        .orderBy(asc(sql`COALESCE(${userScores.updated_at}, ${0})`))
         .limit(1);
 
     const userId = candidates[0]?.userId;

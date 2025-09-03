@@ -3,10 +3,10 @@ import { asc, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import {
 	Attempt,
 	type AttemptStatus,
-	type ProjectDB,
-	type SteamAuthenticatedAPI,
 	getFetchManager,
 	ownedGames,
+	type ProjectDB,
+	type SteamAuthenticatedAPI,
 	users,
 } from "../..";
 import { SteamUser, type SteamUserRaw } from "../../models";
@@ -15,17 +15,13 @@ import {
 	type ComposableQueryOptions,
 	type ComposableQueryResult,
 	type ComposableRepository,
-	type SubqueryConsumer,
 	createQueryResult,
+	type SubqueryConsumer,
 } from "../composable";
 import type { Repository } from "../repository";
 import { safeInsert } from "./utils";
 
 type UserSortMethod = "id";
-
-interface UserSortFilters {
-	id: string;
-}
 
 class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	private userIds = new Set<string>();
@@ -423,9 +419,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 }
 
 export class UserRepository
-	implements
-		Repository<SteamUser, UserSortFilters, UserSortMethod>,
-		ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
+	implements Repository<SteamUser, UserSortMethod>, ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
 {
 	constructor(
 		private sqlite: ProjectDB,

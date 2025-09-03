@@ -1,10 +1,9 @@
+import { error } from "@sveltejs/kit";
 import type { Breadcrumb } from "$lib/breadcrumbs";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import { getLanguageByCode } from "@project/lib";
-import { error } from "@sveltejs/kit";
 
 export const load = async ({ params, locals }) => {
-	const appId = Number.parseInt(params.app);
+	const appId = Number.parseInt(params.app, 10);
 
 	// Convert locale to API language code
 	const locale = getLocale();

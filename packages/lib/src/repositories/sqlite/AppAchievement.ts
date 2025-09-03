@@ -1,5 +1,5 @@
-import { type SQL, and, eq, sql } from "drizzle-orm";
-import { type LanguageCode, type ProjectDB, achievementsStats, estimatedPlayers, getLanguageByCode } from "../..";
+import { and, eq, type SQL, sql } from "drizzle-orm";
+import { achievementsStats, estimatedPlayers, getLanguageByCode, type LanguageCode, type ProjectDB } from "../..";
 import { Attempt, type AttemptStatus } from "../../error";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
@@ -17,10 +17,7 @@ import { getTableAliasedColumns } from "./utils";
 
 export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 
-export interface AppAchievementFilters {
-	appId: number;
-	achId?: string;
-}
+// Legacy AppAchievementFilters removed: repository interface no longer carries filter generic
 
 class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppAchievement, AppAchievementSortMethod> {
 	private requiresEnglishFallback = false;
@@ -354,7 +351,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 }
 export class AppAchievementRepository
 	implements
-		Repository<SteamAppAchievement, AppAchievementFilters, AppAchievementSortMethod>,
+		Repository<SteamAppAchievement, AppAchievementSortMethod>,
 		ComposableRepository<SteamAppAchievement, AppAchievementSortMethod, AppAchievementQueryComposer>
 {
 	constructor(

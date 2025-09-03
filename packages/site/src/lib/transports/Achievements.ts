@@ -41,7 +41,7 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 		// Return record where value is ConstructorParams<T> MINUS the first element (the app)
 		const a = [...apps.entries()].map(([app, achievements]) => {
 			const params = achievements.map((a) => {
-				const { app, ...rest } = a.serialize();
+				const { app: _, ...rest } = a.serialize();
 				return rest as Omit<Params<T>[0], "app">;
 			});
 
@@ -52,7 +52,7 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 	}
 
 	public decodeAppAchievements(value: ReturnType<typeof this.encode>) {
-		const apps = new Array<SteamAppAchievement>();
+		const apps: SteamAppAchievement[] = [];
 
 		for (const [appParams, achievements] of value) {
 			if (!appParams) continue;
@@ -67,7 +67,7 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 	}
 
 	public decodeUserAchievements(value: ReturnType<AchievementArrayContext<SteamUserAchievement>["encode"]>) {
-		const apps = new Array<SteamUserAchievement>();
+		const apps: SteamUserAchievement[] = [];
 
 		for (const [appParams, achievements] of value) {
 			const app = new SteamApp(appParams);

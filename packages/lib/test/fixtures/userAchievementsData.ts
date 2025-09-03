@@ -30,7 +30,6 @@ export function makePlayerAchievementsPayload(opts: {
  * friend_since accepts Date or seconds (number) and is normalized to seconds.
  */
 export function makeFriendsListResponse(
-	userId: string,
 	friends: Array<{ steamid: string; friend_since: Date | number }>,
 ): GetFriendsListResponse {
 	const toSeconds = (v: Date | number) => (typeof v === "number" ? Math.floor(v) : Math.floor(v.getTime() / 1000));

@@ -99,7 +99,7 @@ html {
 }
 
 @media print {
-    * {
+    :root {
         @apply text-gray-900;
     }
 }

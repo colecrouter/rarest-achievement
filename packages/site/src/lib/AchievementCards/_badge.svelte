@@ -5,8 +5,9 @@
         maximumFractionDigits: 0,
     });
 
-    // @ts-ignore https://github.com/microsoft/TypeScript/issues/60608
     // Format Dates like "1d"
+    // biome-ignore lint/suspicious/noTsIgnore: Whatever, man
+    // @ts-ignore https://github.com/microsoft/TypeScript/issues/60608
     const dateFormat = new Intl.DurationFormat(getLocale(), {
         style: getLocale() === "ja" ? "short" : "narrow", // "narrow" for ja falls back to "Xd" format, so use "short" instead
     });

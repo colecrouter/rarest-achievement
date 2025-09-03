@@ -30,7 +30,7 @@ function predictTree(tree: Tree, features: Features, featureNames: Array<keyof F
 
 		// Look up the value from our input.
 		const value = features[featureName];
-		let intermediateNode: number | undefined = undefined;
+		let intermediateNode: number | undefined;
 		if (value === undefined) {
 			// If the feature is missing, one could inspect tree.default_left[node].
 			// For our example we choose to always go to the left child.

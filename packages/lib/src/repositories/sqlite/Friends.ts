@@ -1,5 +1,5 @@
 import { asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
-import { Attempt, type AttemptStatus, type ProjectDB, friends, ownedGames, users } from "../..";
+import { Attempt, type AttemptStatus, friends, ownedGames, type ProjectDB, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
@@ -7,18 +7,14 @@ import {
 	type ComposableQueryOptions,
 	type ComposableQueryResult,
 	type ComposableRepository,
-	type QueryComposer,
 	createQueryResult,
+	type QueryComposer,
 } from "../composable";
 import type { Repository } from "../repository";
 import type { UserRepository } from "./User";
 import { safeInsert } from "./utils";
 
 type FriendsSortMethod = "id" | "friend_since";
-
-interface FriendsSortFilters {
-	id: string;
-}
 
 class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSortMethod> {
 	private userIds = new Set<string>();
@@ -218,17 +214,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
 		const ids = Array.from(this.userIds);
 
-		// Get friends data first - consumer-controlled user IDs, so inArray is safe
-		const friendUsers = await this.db
-			.selectDistinct({
-				id: friends.user_id,
-				friend_id: friends.friend_id,
-			})
-			.from(friends)
-			.where(inArray(friends.user_id, ids));
-
-		// Get users for friends
-		const friendsToFetch = new Set(friendUsers.map((f) => f.friend_id));
+		// Get users for friends via subquery (avoids parameter explosion & intermediate arrays)
 		const sortMethod =
 			options.sort?.method === "friend_since" ? sql`${friends.friend_since}` : sql`${friends.friend_id}`;
 		const sortDirection = options.sort?.direction !== "desc" ? desc : asc;
@@ -364,7 +350,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
 export class FriendsRepository
 	implements
-		Repository<SteamFriendUser, FriendsSortFilters, FriendsSortMethod>,
+		Repository<SteamFriendUser, FriendsSortMethod>,
 		ComposableRepository<SteamFriendUser, FriendsSortMethod, FriendsQueryComposer>
 {
 	constructor(

@@ -1,16 +1,16 @@
-import { type SQL, and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, type SQL, sql } from "drizzle-orm";
 import {
-	type ProjectDB,
 	achievementsStats,
 	apps,
 	estimatedPlayers,
 	friends,
 	getLanguageByCode,
 	ownedGames,
+	type ProjectDB,
 	userAchievements,
 } from "../..";
 import { Attempt, type AttemptStatus } from "../../error";
-import type { APILanguageCode, LanguageCode } from "../../lang";
+import type { APILanguageCode } from "../../lang";
 import { SteamApp, type SteamAppAchievement, type SteamFriendUser, SteamUserAchievement } from "../../models";
 import type { SteamAppRaw } from "../../models/SteamApp";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
@@ -18,18 +18,18 @@ import {
 	type ComposableQueryOptions,
 	ComposableQueryResult,
 	type ComposableRepository,
-	type SubqueryProvider,
 	createQueryResult,
+	type SubqueryProvider,
 } from "../composable";
-import type { Repository, RepositoryParams, RepositorySort } from "../repository";
+import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
 import type { AppAchievementRepository } from "./AppAchievement";
 import { BaseAchievementQueryComposer } from "./BaseAchievement";
-import type { FriendsRepository } from "./Friends";
-import type { UserRepository } from "./User";
 import type { EnsurePolicy } from "./ensurePolicy";
 import { defaultEnsurePolicy, defaultUnlockedAtEnsurePolicy } from "./ensurePolicy";
+import type { FriendsRepository } from "./Friends";
 import { achievementsMeta } from "./schema";
+import type { UserRepository } from "./User";
 import { safeInsert } from "./utils";
 
 const DEBUG_COUNTERS = false as const;
@@ -73,28 +73,7 @@ const DEBUG_COUNTERS = false as const;
 
 export type UserAchievementSortMethod = "rarity_pct" | "rarity_score" | "unlocked_at";
 
-export interface UserAchievementFilters {
-	appId?: number;
-	achId?: string;
-	userId: string;
-}
-
-export interface UserAchievementRepositoryParams<SortMethod extends UserAchievementSortMethod>
-	extends RepositoryParams<UserAchievementFilters, SortMethod> {
-	filters: {
-		appId?: number[];
-		achId?: string[];
-		userId: string[];
-	};
-	sort: RepositorySort<SortMethod>;
-	/** Number offset for pagination; null for first page */
-	cursor?: number;
-	limit?: number;
-	search?: string;
-	/** true/false = unlocked/locked achievements, undefined = all */
-	unlocked?: boolean;
-	lang: LanguageCode;
-}
+// Legacy filter param interfaces removed: composable query API supersedes generic filter typing
 
 /**
  * Composable query builder for user achievements
@@ -809,7 +788,7 @@ class UserAchievementQueryComposer
 		const rows = await query;
 
 		// Step 3: Build results directly from comprehensive query results
-		return this.buildResultsFromComprehensiveRows(rows);
+		return ensureResult.and(await this.buildResultsFromComprehensiveRows(rows));
 	}
 
 	/**
@@ -1418,14 +1397,12 @@ class UserAchievementQueryComposer
 
 			// Combine results
 			const allAppAchievements: SteamAppAchievement[] = [];
-			let hasError = false;
 			let firstError: Error | null = null;
 
 			for (const result of chunkResults) {
 				if (result.hasData()) {
 					allAppAchievements.push(...result.data);
 				} else if (!firstError) {
-					hasError = true;
 					firstError = new Error("Failed to fetch app achievements chunk");
 				}
 			}
@@ -1487,7 +1464,7 @@ class UserAchievementQueryComposer
 
 export class UserAchievementRepository
 	implements
-		Repository<SteamUserAchievement, UserAchievementFilters, UserAchievementSortMethod>,
+		Repository<SteamUserAchievement, UserAchievementSortMethod>,
 		ComposableRepository<SteamUserAchievement, UserAchievementSortMethod, UserAchievementQueryComposer>
 {
 	constructor(

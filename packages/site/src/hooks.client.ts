@@ -1,6 +1,6 @@
-import { dev } from "$app/environment";
 import { setBypassCdnEnabled } from "@project/lib";
 import * as Sentry from "@sentry/sveltekit";
+import { dev } from "$app/environment";
 
 // If you don't want to use Session Replay, remove the `Replay` integration,
 // `replaysSessionSampleRate` and `replaysOnErrorSampleRate` options.

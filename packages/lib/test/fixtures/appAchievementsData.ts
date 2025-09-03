@@ -1,4 +1,4 @@
-import { type APILanguageCode, type LanguageCode, getLanguageByCode } from "../../src/lang";
+import { type APILanguageCode, getLanguageByCode, type LanguageCode } from "../../src/lang";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema";
 import { makeAppData } from "./appData";

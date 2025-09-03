@@ -1,20 +1,20 @@
-import { dev } from "$app/environment";
-import { GOOGLE_API_KEY, STEAM_API_KEY } from "$env/static/private";
-import { paraglideMiddleware } from "$lib/paraglide/server";
 import {
 	FetchManager,
+	getFetchManager,
 	SteamAuthenticatedAPIClient,
 	SteamCommunityAPIClient,
 	SteamStoreAPIClient,
-	TranslateClient,
-	VaultService,
-	getFetchManager,
 	setBypassCdnEnabled,
 	setFetchManager,
+	TranslateClient,
+	VaultService,
 } from "@project/lib";
 import type { Handle, HandleFetch } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
+import { dev } from "$app/environment";
+import { GOOGLE_API_KEY, STEAM_API_KEY } from "$env/static/private";
+import { paraglideMiddleware } from "$lib/paraglide/server";
 import { Limiter } from "./lib/limiter";
 
 // creating a handle to use the paraglide middleware

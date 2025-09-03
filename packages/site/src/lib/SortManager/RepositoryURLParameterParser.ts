@@ -2,13 +2,10 @@ import type { Repository, SortDirection } from "@project/lib";
 import type { RepositoryBasedSortConfig } from "./RepositorySortManager.svelte";
 
 // Base constraints matching the Repository interface
-type BaseFilters = Record<string, string | number | undefined>;
 type BaseSortMethods = string;
 
-// Extract types from repository classes using conditional types
-type ExtractRepositorySortMethods<T> = T extends Repository<unknown, BaseFilters, infer SortMethods>
-	? SortMethods
-	: never;
+// Extract sort methods from repository (new signature has only Data + SortMethods)
+type ExtractRepositorySortMethods<T> = T extends Repository<unknown, infer SortMethods> ? SortMethods : never;
 
 /**
  * Abstract base class for safely parsing URL parameters into repository-specific sort configuration.
@@ -35,9 +32,7 @@ type ExtractRepositorySortMethods<T> = T extends Repository<unknown, BaseFilters
  * const config = parser.parseFromURL(new URL(window.location.href));
  * ```
  */
-export abstract class RepositoryURLParameterParser<
-	TRepository extends Repository<unknown, BaseFilters, BaseSortMethods>,
-> {
+export abstract class RepositoryURLParameterParser<TRepository extends Repository<unknown, BaseSortMethods>> {
 	protected readonly defaults: RepositoryBasedSortConfig<TRepository>;
 
 	private readonly paramNames = {

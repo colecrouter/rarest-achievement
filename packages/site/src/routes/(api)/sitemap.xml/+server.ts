@@ -1,6 +1,6 @@
-import { locales, localizeUrl } from "$lib/paraglide/runtime";
 import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
 import { asc, desc, eq, sql } from "drizzle-orm";
+import { locales, localizeUrl } from "$lib/paraglide/runtime";
 
 const _xmlEscapeMap: Record<string, string> = {
 	"&": "&amp;",

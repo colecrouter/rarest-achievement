@@ -1,14 +1,9 @@
-import { type SQL, and, asc, desc, eq, gte, inArray, notExists, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, notExists, or, type SQL, sql } from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
 	type APILanguageCode,
 	Attempt,
 	type AttemptStatus,
-	type LanguageCode,
-	type ProjectDB,
-	type SteamAuthenticatedAPI,
-	type SteamChartsAPI,
-	type SteamStoreAPI,
 	achievementsMeta,
 	achievementsStats,
 	apps,
@@ -16,15 +11,20 @@ import {
 	friends,
 	getFetchManager,
 	getLanguageByCode,
+	type LanguageCode,
 	ownedGames,
+	type ProjectDB,
+	type SteamAuthenticatedAPI,
+	type SteamChartsAPI,
+	type SteamStoreAPI,
 } from "../..";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, type SteamAppRaw } from "../../models";
 import {
 	type ComposableQueryOptions,
 	type ComposableQueryResult,
-	type SubqueryConsumer,
 	createQueryResult,
+	type SubqueryConsumer,
 } from "../composable";
 import type { Repository } from "../repository";
 import { safeInsert, searchTerms } from "./utils";
@@ -32,10 +32,6 @@ import { safeInsert, searchTerms } from "./utils";
 const DEBUG_COUNTERS = false as const;
 
 type AppSortMethod = "id";
-
-export interface AppSortFilters {
-	id: number;
-}
 
 class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	private appIds: Set<number> = new Set();
@@ -159,8 +155,28 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 */
 	withSearch(search: string): this {
 		this.searchTerm = search;
-		const searchCondition = searchTerms(sql`json_extract(${apps.data}, '$.name')`, search);
-		this.whereConditions.push(searchCondition);
+
+		// Search across several textual fields. Each searchTerms() enforces that all terms appear
+		// in that specific column; we OR the columns together so a match in any field qualifies.
+		// Fields chosen:
+		// - name
+		// - short_description
+		// - developers (array -> JSON text search is acceptable; substring match still works)
+		// - publishers (array)
+		const nameExpr = sql`json_extract(${apps.data}, '$.name')`;
+		const descExpr = sql`json_extract(${apps.data}, '$.short_description')`;
+		const devExpr = sql`json_extract(${apps.data}, '$.developers')`;
+		const pubExpr = sql`json_extract(${apps.data}, '$.publishers')`;
+
+		// OR across each column; each searchTerms() ensures all tokens appear in that column
+		const clauses = [
+			searchTerms(nameExpr, search),
+			searchTerms(descExpr, search),
+			searchTerms(devExpr, search),
+			searchTerms(pubExpr, search),
+		] as const;
+		const condition = or(...clauses) ?? sql`1=1`;
+		this.whereConditions.push(condition);
 		return this;
 	}
 
@@ -198,7 +214,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 */
 	async build(options: ComposableQueryOptions<AppSortMethod> = {}): Promise<ComposableQueryResult<SteamApp>> {
 		// Enforce explicit scope: either app IDs or a required-apps subquery must be provided
-		if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined) {
+		// Allow search-only queries (no explicit scope IDs or subquery) when a search term is provided.
+		if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined && !this.searchTerm) {
 			throw new Error(
 				"AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...).",
 			);
@@ -301,9 +318,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	async count(): Promise<Attempt<number, AttemptStatus>> {
 		// Enforce explicit scope: either app IDs or a required-apps subquery must be provided
 		try {
-			if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined) {
+			if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined && !this.searchTerm) {
 				throw new Error(
-					"AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...).",
+					"AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...) or withSearch(...).",
 				);
 			}
 		} catch (err) {
@@ -1204,7 +1221,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	}
 }
 
-export class AppRepository implements Repository<SteamApp, AppSortFilters, AppSortMethod> {
+export class AppRepository implements Repository<SteamApp, AppSortMethod> {
 	constructor(
 		private sqlite: ProjectDB,
 		private steamApi: SteamAuthenticatedAPI,

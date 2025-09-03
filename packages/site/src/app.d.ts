@@ -1,10 +1,8 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 import type {
 	ProjectDB,
-	SteamAuthenticatedAPIClient,
 	SteamCommunityAPI,
 	SteamStoreAPI,
-	SteamStoreAPIClient,
 	SteamUser,
 	TranslateClient,
 	VaultService,

@@ -4,7 +4,7 @@
  * Format: {"appid:achievementName": "translated description"}
  */
 
-import { TranslateRepository, getLanguageByCode } from "@project/lib";
+import { getLanguageByCode, TranslateRepository } from "@project/lib";
 import { error, json } from "@sveltejs/kit";
 
 export const POST = async ({ locals, platform, request }) => {

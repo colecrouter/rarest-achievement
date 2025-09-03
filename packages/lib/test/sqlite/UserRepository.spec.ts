@@ -43,7 +43,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
 				players: [makeUserData("123"), makeUserData("456")],
 			},
 		};
-		authMock.setPlayerSummaries(["123", "456"], ps);
+		authMock.setPlayerSummaries(ps);
 
 		// Minimal owned games stubs aligned with repository's call signature
 		const q123: GetOwnedGamesQuery<false> = { steamid: "123", include_played_free_games: true };
@@ -255,7 +255,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
 		const baseNew = makeUserData(staleId);
 		const newData = { ...baseNew, personaname: "New Name" } as typeof baseNew;
 		const ps: GetPlayerSummariesResponse = { response: { players: [newData] } };
-		authMock.setPlayerSummaries([staleId], ps);
+		authMock.setPlayerSummaries(ps);
 		const ownedQ: GetOwnedGamesQuery<false> = { steamid: staleId, include_played_free_games: true };
 		const ownedR: GetOwnedGamesResponse<false> = { response: { game_count: 0, games: [] } };
 		authMock.setOwnedGames(ownedQ, ownedR);

@@ -3,14 +3,12 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { asc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-
+import { AttemptStatus } from "../../src/error";
 import type { GetFriendsListQuery, GetFriendsListResponse } from "../../src/repositories/api/steampowered/friends";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { friends as friendsTable, users as usersTable } from "../../src/repositories/sqlite/schema.js";
-
-import { AttemptStatus } from "../../src/error";
 import { insertFriend, insertOwnedGame } from "../fixtures/dbHelpers";
 import { makeFriendsRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeFriendsListResponse, makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
@@ -57,12 +55,12 @@ describe("FriendsRepository - SQLite (in-memory)", () => {
 
 	function setPlayerSummariesForUsers(userIds: string[]) {
 		const ps: GetPlayerSummariesResponse = makePlayerSummariesResponse(userIds, {});
-		authMock.setPlayerSummaries(userIds, ps);
+		authMock.setPlayerSummaries(ps);
 	}
 
 	function setFriendsList(userId: string, friendIds: string[], since?: number | Date) {
 		const q: GetFriendsListQuery = { steamid: userId, relationship: "friend" };
-		const r: GetFriendsListResponse = makeFriendsListResponse(userId, friendIds, since);
+		const r: GetFriendsListResponse = makeFriendsListResponse(friendIds, since);
 		authMock.setFriendsList(q, r);
 	}
 

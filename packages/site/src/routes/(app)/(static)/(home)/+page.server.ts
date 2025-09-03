@@ -1,21 +1,19 @@
-import { type Locale, getLocale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
 import {
 	type APILanguageCode,
-	type SteamAchievementRawGlobalStats,
-	type SteamAchievementRawMeta,
-	SteamApp,
-	SteamAppAchievement,
-	type SteamID,
 	achievementsMeta,
 	achievementsStats,
 	apps,
 	getLanguageByCode,
 	resolveSteamID,
+	SteamApp,
+	SteamAppAchievement,
+	type SteamID,
 	userAchievements,
 	userScores,
 } from "@project/lib";
 import { fail, redirect } from "@sveltejs/kit";
-import { and, count, countDistinct, eq, inArray, isNotNull, lte, sql, sum } from "drizzle-orm";
+import { and, count, countDistinct, eq, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import { getLocale, type Locale, localizeHref, localizeUrl } from "$lib/paraglide/runtime.js";
 
 export const actions = {
 	search: async ({ request }) => {

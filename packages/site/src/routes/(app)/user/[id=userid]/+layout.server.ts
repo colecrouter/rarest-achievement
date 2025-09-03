@@ -1,5 +1,5 @@
-import type { Breadcrumb } from "$lib/breadcrumbs.js";
 import { error } from "@sveltejs/kit";
+import type { Breadcrumb } from "$lib/breadcrumbs.js";
 import { getLocale } from "../../../../lib/paraglide/runtime.js";
 
 export const load = async ({ params, locals }) => {

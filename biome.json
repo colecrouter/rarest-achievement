@@ -30,6 +30,11 @@
 					"correctness": { "noUnusedVariables": "off", "noUnusedImports": "off" },
 					"style": { "useConst": "off", "useImportType": "off" }
 				}
+			},
+			"assist": {
+				"actions": {
+					"source": { "organizeImports": "off" }
+				}
 			}
 		},
 		{

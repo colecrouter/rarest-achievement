@@ -196,12 +196,7 @@ export class VaultService {
 	/**
 	 * Get users by IDs with their owned games - composable approach
 	 */
-	async getUsersWithOwnedGames(params: {
-		userIds: string[];
-		limit?: number;
-		cursor?: number;
-		lang: LanguageCode;
-	}) {
+	async getUsersWithOwnedGames(params: { userIds: string[]; limit?: number; cursor?: number; lang: LanguageCode }) {
 		console.log(`👤 Getting users: ${params.userIds.join(", ")}`);
 
 		const results = await this.users

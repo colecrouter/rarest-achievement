@@ -7,9 +7,9 @@ import type { Article } from "./types";
 
 type Element = Parameters<NonNullable<(typeof HTMLRewriter.prototype.elementHandlers)[number][1]["element"]>>[0];
 type TextChunk = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["text"]>>[0];
-type DocType = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["doctype"]>>[0];
-type Comment = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["comments"]>>[0];
-type EndTag = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["end"]>>[0];
+// type DocType = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["doctype"]>>[0];
+// type Comment = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["comments"]>>[0];
+// type EndTag = Parameters<NonNullable<(typeof HTMLRewriter.prototype.documentHandlers)[number]["end"]>>[0];
 
 // Shared context for handlers
 interface ScrapeContext {
@@ -29,7 +29,7 @@ class TitleHandler {
 		this.context = context;
 		this.buffer = "";
 	}
-	element(element: Element) {
+	element() {
 		// Nothing on element start
 	}
 	text(textChunk: TextChunk) {
@@ -49,7 +49,7 @@ class AuthorHandler {
 		this.context = context;
 		this.buffer = "";
 	}
-	element(element: Element) {}
+	element() {}
 	text(textChunk: TextChunk) {
 		this.buffer += textChunk.text;
 		if (textChunk.lastInTextNode) {
@@ -67,7 +67,7 @@ class DescriptionHandler {
 		this.context = context;
 		this.buffer = "";
 	}
-	element(element: Element) {}
+	element() {}
 	text(textChunk: TextChunk) {
 		this.buffer += textChunk.text;
 		if (textChunk.lastInTextNode) {

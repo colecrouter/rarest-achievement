@@ -1,4 +1,4 @@
-import { type ProjectDB, SteamAuthenticatedAPIClient, VaultService, type schema } from "@project/lib";
+import { type ProjectDB, SteamAuthenticatedAPIClient, type schema, VaultService } from "@project/lib";
 import { drizzle } from "drizzle-orm/d1";
 import { getJobsForCron } from "./jobs";
 

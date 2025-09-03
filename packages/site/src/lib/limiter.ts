@@ -8,7 +8,7 @@
  */
 export class Limiter {
 	private active = 0;
-	private waiting = new Array<() => void>();
+	private waiting: Array<() => void> = [];
 
 	constructor(private readonly limit: number) {}
 

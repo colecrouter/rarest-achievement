@@ -1,12 +1,6 @@
+import { Attempt, SteamCommunityRepo, YouTubeRepository } from "@project/lib";
 import { GOOGLE_API_KEY } from "$env/static/private";
 import { getLocale } from "$lib/paraglide/runtime.js";
-import {
-	Attempt,
-	type SteamAppAchievement,
-	SteamCommunityRepo,
-	type SteamOwnedGame,
-	YouTubeRepository,
-} from "@project/lib";
 
 export const load = async ({ parent, url, locals, platform }) => {
 	const locale = getLocale();
@@ -69,7 +63,7 @@ export const load = async ({ parent, url, locals, platform }) => {
 	const articles = (async () => {
 		if (url.searchParams.get("tab") !== "articles") return null;
 
-		const { data: articles, error: err1 } = await steamComRepo.searchGuides(achievement, locale);
+		const { data: articles, error: err1 } = await steamComRepo.searchGuides(achievement);
 		const { data: videos, error: err2 } = await youtubeRepo.searchGuides(achievement, locale);
 
 		return Attempt.from(

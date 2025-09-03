@@ -1,12 +1,8 @@
 // Centralized fixtures and minimal type helpers for AppRepository tests
 
 import type { SteamStoreAPI } from "../../src";
-import type {
-	AppDetailsData,
-	GetAppDetailsQuery,
-	GetAppDetailsResponse,
-} from "../../src/repositories/api/store/appdetails";
-import type { GetAppReviewsQuery, GetAppReviewsResponse } from "../../src/repositories/api/store/appreviews";
+import type { AppDetailsData, GetAppDetailsResponse } from "../../src/repositories/api/store/appdetails";
+import type { GetAppReviewsResponse } from "../../src/repositories/api/store/appreviews";
 import type { SearchAppsResponse } from "../../src/repositories/api/store/searchapps";
 
 export class MockSteamStoreAPIClient implements SteamStoreAPI {
@@ -24,7 +20,6 @@ export class MockSteamStoreAPIClient implements SteamStoreAPI {
 
 	async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
 		app: number,
-		options?: Omit<GetAppDetailsQuery<T>, "appids">,
 	): Promise<GetAppDetailsResponse<T>> {
 		return this.appDetails.get(app) as GetAppDetailsResponse<T>;
 	}
@@ -36,10 +31,7 @@ export class MockSteamStoreAPIClient implements SteamStoreAPI {
 		this.appReviews.set(app, response);
 	}
 
-	async getAppReviews(
-		app: number,
-		options?: Omit<GetAppReviewsQuery, "json">,
-	): Promise<GetAppReviewsResponse | null> {
+	async getAppReviews(app: number): Promise<GetAppReviewsResponse | null> {
 		return this.appReviews.get(app) || null;
 	}
 

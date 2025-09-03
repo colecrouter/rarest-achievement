@@ -1,19 +1,16 @@
-import { page } from "$app/state";
 import type { Repository, RepositorySort, SortDirection } from "@project/lib";
+import { page } from "$app/state";
 import type { SortManager } from "./SortManager";
 
 // Base constraints matching the Repository interface
-type BaseFilters = Record<string, string | number | undefined>;
 type BaseSortMethods = string;
 
-// Extract types from repository classes using conditional types
-type ExtractRepositoryData<T> = T extends Repository<infer Data, BaseFilters, BaseSortMethods> ? Data : never;
-type ExtractRepositorySortMethods<T> = T extends Repository<unknown, BaseFilters, infer SortMethods>
-	? SortMethods
-	: never;
+// Extract types from repository classes using conditional types (new 2-generic Repository<Data, SortMethods>)
+type ExtractRepositoryData<T> = T extends Repository<infer Data, BaseSortMethods> ? Data : never;
+type ExtractRepositorySortMethods<T> = T extends Repository<unknown, infer SortMethods> ? SortMethods : never;
 
 export abstract class RepositoryClientSortManager<
-	TRepository extends Repository<unknown, object, string>,
+	TRepository extends Repository<unknown, string>,
 	TData = ExtractRepositoryData<TRepository>,
 > implements SortManager<TData>
 {
@@ -33,7 +30,7 @@ export abstract class RepositoryClientSortManager<
 }
 
 export abstract class RepositoryServerSortManager<
-	TRepository extends Repository<unknown, BaseFilters, BaseSortMethods>,
+	TRepository extends Repository<unknown, BaseSortMethods>,
 	TData = ExtractRepositoryData<TRepository>,
 > implements SortManager<TData>
 {
@@ -85,7 +82,7 @@ export abstract class RepositoryServerSortManager<
 
 // Base sort manager config that works with any repository
 export interface RepositoryBasedSortConfig<
-	TRepository extends Repository<unknown, BaseFilters, BaseSortMethods>,
+	TRepository extends Repository<unknown, BaseSortMethods>,
 	TSortMethods = ExtractRepositorySortMethods<TRepository>,
 > {
 	search?: string;

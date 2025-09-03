@@ -1,5 +1,5 @@
 import { Attempt, AttemptStatus } from "../error";
-import type { APILanguageCode, LanguageCode } from "../lang";
+import type { APILanguageCode } from "../lang";
 import type { QueryComposer } from "./composable";
 
 export type SortDirection = "asc" | "desc";
@@ -8,22 +8,6 @@ export interface RepositorySort<Method extends string, Direction = SortDirection
 	method: Method;
 	direction: Direction;
 	search?: string;
-}
-
-export interface RepositoryParams<
-	Filters extends { [Key in keyof Filters]?: string | number },
-	SortMethod extends string,
-> {
-	filters: {
-		/* Fish out undefined, so it doesn't become (string | undefined)[] */
-		[Key in keyof Filters]: NonNullable<Filters[Key]>[];
-	};
-	sort: RepositorySort<SortMethod>;
-	/** Number offset for pagination; null for first page */
-	cursor?: number;
-	limit?: number;
-	search?: string;
-	lang: LanguageCode;
 }
 
 export class RepositoryResult<T> extends Attempt<T[], AttemptStatus.Partial | AttemptStatus.Ok> {
@@ -36,11 +20,7 @@ export class RepositoryResult<T> extends Attempt<T[], AttemptStatus.Partial | At
 	}
 }
 
-export interface Repository<
-	Data,
-	Filters extends { [Key in keyof Filters]?: string | number },
-	SortMethods extends string,
-> {
+export interface Repository<Data, SortMethods extends string> {
 	/**
 	 * Create a new composable query builder for this repository.
 	 *

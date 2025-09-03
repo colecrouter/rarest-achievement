@@ -51,11 +51,7 @@ export const testUser2 = { steamid: "user-2", name: "Test User 2" };
  * Build a GetFriendsListResponse for a user with provided friend IDs.
  * friend_since defaults to now - index seconds unless provided.
  */
-export function makeFriendsListResponse(
-	userId: string,
-	friendIds: string[],
-	since?: number | Date,
-): GetFriendsListResponse {
+export function makeFriendsListResponse(friendIds: string[], since?: number | Date): GetFriendsListResponse {
 	const base =
 		since instanceof Date
 			? Math.floor(since.getTime() / 1000)

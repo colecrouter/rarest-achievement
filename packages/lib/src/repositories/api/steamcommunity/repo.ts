@@ -1,11 +1,11 @@
 import {
 	Attempt,
+	getLanguageByCode,
 	type SteamAppAchievement,
 	type SteamCommunityAPI,
 	type SteamUserAchievement,
-	getLanguageByCode,
 } from "../../..";
-import type { APILanguageCode, LanguageCode } from "../../../lang";
+import type { APILanguageCode } from "../../../lang";
 import type { Article, User } from "./types";
 
 export class SteamCommunityRepo {
@@ -14,7 +14,8 @@ export class SteamCommunityRepo {
 		private api: SteamCommunityAPI,
 	) {}
 
-	async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
+	async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement) {
+		// Non-english searching seems very inconsistent for now
 		const lang = getLanguageByCode("en")?.apiCode as APILanguageCode;
 
 		const cacheKey = `steamcommunity:${achievement.app.id}:${achievement.id}:${lang}`;

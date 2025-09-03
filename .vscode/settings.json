@@ -1,36 +1,28 @@
 {
-    "[svelte]": {
-        "editor.defaultFormatter": "svelte.svelte-vscode"
-    },
-    "[javascript]": {
-        "editor.defaultFormatter": "biomejs.biome",
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "typescript.preferences.importModuleSpecifier": "relative",
-    },
-    "[json]": {
-        "editor.defaultFormatter": "biomejs.biome"
-    },
-    "nodejs-testing.extensions": [
-        {
-            "extensions": [
-                "mjs",
-                "cjs",
-                "js"
-            ],
-            "parameters": []
-        },
-        {
-            "extensions": [
-                "mts",
-                "cts",
-                "ts"
-            ],
-            "parameters": [
-                "--import",
-                "tsx"
-            ]
-        }
-    ]
+	"[svelte]": {
+		"editor.defaultFormatter": "svelte.svelte-vscode"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome",
+		"typescript.preferences.importModuleSpecifier": "relative"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"nodejs-testing.extensions": [
+		{
+			"extensions": ["mjs", "cjs", "js"],
+			"parameters": []
+		},
+		{
+			"extensions": ["mts", "cts", "ts"],
+			"parameters": ["--import", "tsx"]
+		}
+	]
 }

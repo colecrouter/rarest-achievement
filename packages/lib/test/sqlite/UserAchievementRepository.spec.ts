@@ -77,7 +77,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 		const updatedSummary = makePlayerSummariesResponse([userId], {
 			[userId]: { personaname: "Refetched Persona" },
 		});
-		authMock.setPlayerSummaries([userId], updatedSummary);
+		authMock.setPlayerSummaries(updatedSummary);
 		// Mock owned games response for ensure path
 		const ownedResp: GetOwnedGamesResponse<false> = {
 			response: { game_count: 1, games: [{ appid: appId, playtime_forever: 0 }] },
@@ -516,7 +516,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 
 		await insertUser(db, { id: main, data: makeUserData(main) });
 		// Ensure friends API returns an empty list for this smoke test so the behavior is deterministic
-		authMock.setFriendsList({ steamid: main, relationship: "friend" }, makeFriendsListResponse(main, []));
+		authMock.setFriendsList({ steamid: main, relationship: "friend" }, makeFriendsListResponse([]));
 		await insertUser(db, { id: f1, data: makeUserData(f1) });
 
 		// Ensure app rows and stats/meta so mapping functions
@@ -959,10 +959,10 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 
 			// Configure API mocks
 			const unixTs = Math.floor(Date.now() / 1000) - 1000;
-			const friendsResponse = makeFriendsListResponse(main, [{ steamid: friend, friend_since: unixTs }]);
+			const friendsResponse = makeFriendsListResponse([{ steamid: friend, friend_since: unixTs }]);
 			authMock.setFriendsList({ steamid: main, relationship: "friend" }, friendsResponse);
 
-			authMock.setPlayerSummaries([friend], makePlayerSummariesResponse([friend]));
+			authMock.setPlayerSummaries(makePlayerSummariesResponse([friend]));
 
 			const ownedResponse: GetOwnedGamesResponse<true> = {
 				response: {
@@ -1347,7 +1347,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			await insertUser(db, { id: userId, data: makeUserData(userId) });
 
 			// Bypass TS protected access for testing error path
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// biome-ignore lint/suspicious/noExplicitAny: allow access to `db` method
 			const composer: any = repo.compose().withLanguage("en").withUserIds(userId);
 
 			// Monkey-patch the drizzle client's `with` method to force an error during COUNT

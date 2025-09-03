@@ -80,7 +80,7 @@ export class MockSteamAuthenticatedAPIClient implements SteamAuthenticatedAPI {
 	/**
 	 * Set the response for getPlayerSummaries for given steamids
 	 */
-	setPlayerSummaries(steamids: string[], response: GetPlayerSummariesResponse) {
+	setPlayerSummaries(response: GetPlayerSummariesResponse) {
 		// Index by individual id to support any ordering/batching in requests
 		for (const player of response.response.players) {
 			this.playerSummaries.set(player.steamid, player);

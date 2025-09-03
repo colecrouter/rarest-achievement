@@ -1,5 +1,5 @@
-import { AchievementURLParameterParser } from "$lib/SortManager/AchievementSortManager.js";
 import { getLocale } from "$lib/paraglide/runtime.js";
+import { AchievementURLParameterParser } from "$lib/SortManager/AchievementSortManager.js";
 
 export const load = async ({ url, locals, parent }) => {
 	// Need to load the locale synchronously

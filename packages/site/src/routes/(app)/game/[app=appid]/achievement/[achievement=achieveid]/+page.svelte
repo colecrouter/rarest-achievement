@@ -1,20 +1,4 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
-    import { base } from "$app/paths";
-    import { page } from "$app/state";
-    import AchievementCards from "$lib/AchievementCards";
-    import FriendCards from "$lib/FriendCards";
-    import IndexError from "$lib/IndexError.svelte";
-    import Transition from "$lib/Transition.svelte";
-    import TransitionWrapper from "$lib/TransitionWrapper.svelte";
-    import TranslationToggle from "$lib/TranslationToggle.svelte";
-    import { m } from "$lib/paraglide/messages.js";
-    import {
-        deLocalizeUrl,
-        getLocale,
-        localizeHref,
-    } from "$lib/paraglide/runtime";
-    import { getRarity, localizedRarity } from "$lib/rarity";
     import BookOpenText from "@lucide/svelte/icons/book-open-text";
     import NotebookText from "@lucide/svelte/icons/notebook-text";
     import Share from "@lucide/svelte/icons/share";
@@ -22,6 +6,22 @@
     import { Tooltip } from "@skeletonlabs/skeleton-svelte";
     import Chart from "chart.js/auto";
     import Colors from "tailwindcss/colors";
+    import { goto } from "$app/navigation";
+    import { base } from "$app/paths";
+    import { page } from "$app/state";
+    import AchievementCards from "$lib/AchievementCards";
+    import FriendCards from "$lib/FriendCards";
+    import IndexError from "$lib/IndexError.svelte";
+    import { m } from "$lib/paraglide/messages.js";
+    import {
+        deLocalizeUrl,
+        getLocale,
+        localizeHref,
+    } from "$lib/paraglide/runtime";
+    import { getRarity, localizedRarity } from "$lib/rarity";
+    import Transition from "$lib/Transition.svelte";
+    import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+    import TranslationToggle from "$lib/TranslationToggle.svelte";
     import Breadcrumbs from "../../../../Breadcrumbs.svelte";
 
     let { data } = $props();
@@ -132,7 +132,7 @@
                         { keepFocus: true },
                     );
                 },
-                onHover(event, elements, chart) {
+                onHover(_, elements, chart) {
                     // Reset
                     chart.canvas.style.cursor = "default";
 

@@ -7,9 +7,9 @@ import type { GetAppDetailsResponse } from "../../src/repositories/api/store/app
 import { AppRepository } from "../../src/repositories/sqlite/App";
 import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import { FriendsRepository } from "../../src/repositories/sqlite/Friends";
+import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { UserRepository } from "../../src/repositories/sqlite/User";
 import { UserAchievementRepository } from "../../src/repositories/sqlite/UserAchievement";
-import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 import { MockSteamAuthenticatedAPIClient as MockAuthClass } from "../mocks/steamAuthenticated";
 import { MockSteamChartsAPIClient } from "../mocks/steamCharts";
@@ -109,10 +109,10 @@ export function setMockResponse(endpoint: string, appid: number, lang: APILangua
 /**
  * Set mock player summaries for given steamids using the global auth mock
  */
-export function setMockPlayerSummaries(steamids: string[], response: GetPlayerSummariesResponse): void;
-export function setMockPlayerSummaries(steamids: string[], response: GetPlayerSummariesResponse): void {
+export function setMockPlayerSummaries(response: GetPlayerSummariesResponse): void;
+export function setMockPlayerSummaries(response: GetPlayerSummariesResponse): void {
 	if (!authMock) throw new Error("Auth mock not initialized. Call setMockInstances first.");
-	authMock.setPlayerSummaries(steamids, response);
+	authMock.setPlayerSummaries(response);
 }
 
 /**

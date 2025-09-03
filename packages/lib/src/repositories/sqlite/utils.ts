@@ -1,11 +1,11 @@
 import {
 	type AnyColumn,
 	type AnyTable,
-	type Column,
-	type InferSelectModel,
 	and,
+	type Column,
 	getTableColumns,
 	getTableName,
+	type InferSelectModel,
 } from "drizzle-orm";
 import { type Query, type SQL, sql } from "drizzle-orm/sql";
 import type { SQLiteInsert, SQLiteInsertBase, SQLiteTable, TableConfig } from "drizzle-orm/sqlite-core";

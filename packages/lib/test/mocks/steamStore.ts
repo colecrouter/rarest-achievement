@@ -2,57 +2,57 @@
 
 import type { SteamStoreAPI } from "../../src";
 import type {
-    AppDetailsData,
-    GetAppDetailsQuery,
-    GetAppDetailsResponse,
+	AppDetailsData,
+	GetAppDetailsQuery,
+	GetAppDetailsResponse,
 } from "../../src/repositories/api/store/appdetails";
 import type { GetAppReviewsQuery, GetAppReviewsResponse } from "../../src/repositories/api/store/appreviews";
 import type { SearchAppsResponse } from "../../src/repositories/api/store/searchapps";
 
 export class MockSteamStoreAPIClient implements SteamStoreAPI {
-    // internal stores for fixture responses
-    private appDetails = new Map<number, GetAppDetailsResponse>();
-    private appReviews = new Map<number, GetAppReviewsResponse>();
-    private searchResults = new Map<string, SearchAppsResponse>();
+	// internal stores for fixture responses
+	private appDetails = new Map<number, GetAppDetailsResponse>();
+	private appReviews = new Map<number, GetAppReviewsResponse>();
+	private searchResults = new Map<string, SearchAppsResponse>();
 
-    /**
-     * Sets the response for getAppDetails for a given app id
-     */
-    setAppDetails(app: number, response: GetAppDetailsResponse) {
-        this.appDetails.set(app, response as GetAppDetailsResponse);
-    }
+	/**
+	 * Sets the response for getAppDetails for a given app id
+	 */
+	setAppDetails(app: number, response: GetAppDetailsResponse) {
+		this.appDetails.set(app, response as GetAppDetailsResponse);
+	}
 
-    async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
-        app: number,
-        options?: Omit<GetAppDetailsQuery<T>, "appids">,
-    ): Promise<GetAppDetailsResponse<T>> {
-        return this.appDetails.get(app) as GetAppDetailsResponse<T>;
-    }
+	async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
+		app: number,
+		options?: Omit<GetAppDetailsQuery<T>, "appids">,
+	): Promise<GetAppDetailsResponse<T>> {
+		return this.appDetails.get(app) as GetAppDetailsResponse<T>;
+	}
 
-    /**
-     * Sets the response for getAppReviews for a given app id
-     */
-    setAppReviews(app: number, response: GetAppReviewsResponse) {
-        this.appReviews.set(app, response);
-    }
+	/**
+	 * Sets the response for getAppReviews for a given app id
+	 */
+	setAppReviews(app: number, response: GetAppReviewsResponse) {
+		this.appReviews.set(app, response);
+	}
 
-    async getAppReviews(
-        app: number,
-        options?: Omit<GetAppReviewsQuery, "json">,
-    ): Promise<GetAppReviewsResponse | null> {
-        return this.appReviews.get(app) || null;
-    }
+	async getAppReviews(
+		app: number,
+		options?: Omit<GetAppReviewsQuery, "json">,
+	): Promise<GetAppReviewsResponse | null> {
+		return this.appReviews.get(app) || null;
+	}
 
-    /**
-     * Sets the response for searchApps for a given query
-     */
-    setSearchApps(query: string, response: SearchAppsResponse) {
-        this.searchResults.set(query, response);
-    }
+	/**
+	 * Sets the response for searchApps for a given query
+	 */
+	setSearchApps(query: string, response: SearchAppsResponse) {
+		this.searchResults.set(query, response);
+	}
 
-    async searchApps(query: string): Promise<SearchAppsResponse> {
-        return this.searchResults.get(query) || [];
-    }
+	async searchApps(query: string): Promise<SearchAppsResponse> {
+		return this.searchResults.get(query) || [];
+	}
 }
 
 // // Shared base used to craft valid AppDetailsData rows

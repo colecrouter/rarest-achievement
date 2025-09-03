@@ -1,40 +1,40 @@
 {
-    "name": "@project/lib",
-    "version": "1.0.0",
-    "private": true,
-    "main": "index.js",
-    "types": "index.d.ts",
-    "type": "module",
-    "exports": {
-        ".": "./src/index.js",
-        "./models": "./src/models/index.js",
-        "./search": "./src/search/index.js",
-        "./repositories": "./src/steam/repositories/index.js"
-    },
-    "scripts": {
-        "build:python": "node ../../python/xgboost_model/run-training.js",
-        "build": "npm run build:python",
-        "watch:python": "watch \"npm run build:python\" ../../python/xgboost_model/input",
-        "dev": "npm-run-all --parallel watch:*",
-        "db:push": "drizzle-kit push",
-        "db:studio": "drizzle-kit studio",
-        "db:migration": "drizzle-kit generate",
-        "test": "tsx --test \"**/*.spec.ts\""
-    },
-    "devDependencies": {
-        "drizzle-kit": "^0.30.6",
-        "drizzle-orm": "0.42.0",
-        "htmlrewriter": "^0.0.12",
-        "node-resolve-ts": "^1.0.2",
-        "npm-run-all": "^4.1.5",
-        "tsx": "^4.19.4",
-        "typescript": "^5.8.3",
-        "watch": "^1.0.2"
-    },
-    "peerDependencies": {
-        "drizzle-orm": "0.42.0"
-    },
-    "dependencies": {
-        "date-fns": "^4.1.0"
-    }
+	"name": "@project/lib",
+	"version": "1.0.0",
+	"private": true,
+	"main": "index.js",
+	"types": "index.d.ts",
+	"type": "module",
+	"exports": {
+		".": "./src/index.js",
+		"./models": "./src/models/index.js",
+		"./search": "./src/search/index.js",
+		"./repositories": "./src/steam/repositories/index.js"
+	},
+	"scripts": {
+		"build:python": "node ../../python/xgboost_model/run-training.js",
+		"build": "npm run build:python",
+		"watch:python": "watch \"npm run build:python\" ../../python/xgboost_model/input",
+		"dev": "npm-run-all --parallel watch:*",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio",
+		"db:migration": "drizzle-kit generate",
+		"test": "tsx --test \"**/*.spec.ts\""
+	},
+	"devDependencies": {
+		"drizzle-kit": "^0.30.6",
+		"drizzle-orm": "0.42.0",
+		"htmlrewriter": "^0.0.12",
+		"node-resolve-ts": "^1.0.2",
+		"npm-run-all": "^4.1.5",
+		"tsx": "^4.19.4",
+		"typescript": "^5.8.3",
+		"watch": "^1.0.2"
+	},
+	"peerDependencies": {
+		"drizzle-orm": "0.42.0"
+	},
+	"dependencies": {
+		"date-fns": "^4.1.0"
+	}
 }

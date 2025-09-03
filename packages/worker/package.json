@@ -1,26 +1,26 @@
 {
-    "name": "@project/worker",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "deploy": "wrangler deploy",
-        "dev": "wrangler dev",
-        "build": "npm run build -w @project/lib",
-        "start": "wrangler dev",
-        "test": "vitest run",
-        "cf-typegen": "wrangler types",
-        "check": "tsc --noEmit --skipLibCheck --pretty",
-        "postinstall": "npm run cf-typegen",
-        "db:migrate": "wrangler d1 migrations apply steam-data"
-    },
-    "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "^0.7.5",
-        "@project/lib": "^1.0.0",
-        "drizzle-orm": "0.42.0",
-        "typescript": "^5.5.2",
-        "wrangler": "^4.12.0"
-    },
-    "peerDependencies": {
-        "drizzle-orm": "0.42.0"
-    }
+	"name": "@project/worker",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"build": "npm run build -w @project/lib",
+		"start": "wrangler dev",
+		"test": "vitest run",
+		"cf-typegen": "wrangler types",
+		"check": "tsc --noEmit --skipLibCheck --pretty",
+		"postinstall": "npm run cf-typegen",
+		"db:migrate": "wrangler d1 migrations apply steam-data"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.7.5",
+		"@project/lib": "^1.0.0",
+		"drizzle-orm": "0.42.0",
+		"typescript": "^5.5.2",
+		"wrangler": "^4.12.0"
+	},
+	"peerDependencies": {
+		"drizzle-orm": "0.42.0"
+	}
 }

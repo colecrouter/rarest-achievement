@@ -17,98 +17,98 @@ A simple JSON array of booleans, corresponding to the videos in the order suppli
 `;
 
 export class YouTubeRepository {
-    #client: YouTubeClient;
-    #cache: KVNamespace;
-    #ai: Ai;
+	#client: YouTubeClient;
+	#cache: KVNamespace;
+	#ai: Ai;
 
-    constructor(apiKey: string, cache: KVNamespace, ai: Ai) {
-        this.#client = new YouTubeClient(apiKey);
-        this.#cache = cache;
-        this.#ai = ai;
-    }
+	constructor(apiKey: string, cache: KVNamespace, ai: Ai) {
+		this.#client = new YouTubeClient(apiKey);
+		this.#cache = cache;
+		this.#ai = ai;
+	}
 
-    async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
-        const cacheKey = `youtube:${achievement.app.id}:${achievement.id}:${locale}`;
-        const cached = await this.#cache.get(cacheKey);
-        if (cached) {
-            const { data, error } = JSON.parse(cached) as {
-                data: YouTubeGuide[];
-                error: string | null;
-            };
-            return Attempt.from(data, error ? new Error(error) : null);
-        }
+	async searchGuides(achievement: SteamAppAchievement | SteamUserAchievement, locale: LanguageCode) {
+		const cacheKey = `youtube:${achievement.app.id}:${achievement.id}:${locale}`;
+		const cached = await this.#cache.get(cacheKey);
+		if (cached) {
+			const { data, error } = JSON.parse(cached) as {
+				data: YouTubeGuide[];
+				error: string | null;
+			};
+			return Attempt.from(data, error ? new Error(error) : null);
+		}
 
-        const guides = await Attempt.try(async () => {
-            const guides = await this.#client.fetchVideos(achievement, locale, 5);
-            const data = guides.items.map((item) => ({
-                title: unescapeHTML(item.snippet.title),
-                channel: unescapeHTML(item.snippet.channelTitle),
-                description: unescapeHTML(item.snippet.description),
-                publishedAt: item.snippet.publishedAt,
-                videoId: item.id.kind === "youtube#video" ? item.id.videoId : "",
-            })) satisfies YouTubeGuide[];
+		const guides = await Attempt.try(async () => {
+			const guides = await this.#client.fetchVideos(achievement, locale, 5);
+			const data = guides.items.map((item) => ({
+				title: unescapeHTML(item.snippet.title),
+				channel: unescapeHTML(item.snippet.channelTitle),
+				description: unescapeHTML(item.snippet.description),
+				publishedAt: item.snippet.publishedAt,
+				videoId: item.id.kind === "youtube#video" ? item.id.videoId : "",
+			})) satisfies YouTubeGuide[];
 
-            // Use AI to filter results
-            const source = {
-                app: achievement.app.name,
-                achievement: achievement.name,
-            };
-            const searchResults = data.map((item) => ({
-                title: item.title,
-            }));
-            const messages = [
-                {
-                    role: "system",
-                    content: proompt,
-                },
-                {
-                    role: "user",
-                    content: `Source:\n\`\`\`${JSON.stringify(source)}\`\`\`\n\nSearch results:\n\`\`\`${JSON.stringify(searchResults)}\`\`\``,
-                },
-            ] satisfies RoleScopedChatInput[];
+			// Use AI to filter results
+			const source = {
+				app: achievement.app.name,
+				achievement: achievement.name,
+			};
+			const searchResults = data.map((item) => ({
+				title: item.title,
+			}));
+			const messages = [
+				{
+					role: "system",
+					content: proompt,
+				},
+				{
+					role: "user",
+					content: `Source:\n\`\`\`${JSON.stringify(source)}\`\`\`\n\nSearch results:\n\`\`\`${JSON.stringify(searchResults)}\`\`\``,
+				},
+			] satisfies RoleScopedChatInput[];
 
-            console.time("AI relevance determination");
+			console.time("AI relevance determination");
 
-            // Use the AI to determine relevance
-            const { response: aiResponse } = await this.#ai.run("@cf/google/gemma-3-12b-it", {
-                messages,
-                guided_json: {
-                    type: "array",
-                    items: {
-                        type: "boolean",
-                    },
-                },
-            });
+			// Use the AI to determine relevance
+			const { response: aiResponse } = await this.#ai.run("@cf/google/gemma-3-12b-it", {
+				messages,
+				guided_json: {
+					type: "array",
+					items: {
+						type: "boolean",
+					},
+				},
+			});
 
-            console.timeEnd("AI relevance determination");
+			console.timeEnd("AI relevance determination");
 
-            const relevance = JSON.parse(aiResponse) as unknown;
+			const relevance = JSON.parse(aiResponse) as unknown;
 
-            // Validate the AI response
-            if (
-                !Array.isArray(relevance) ||
-                !relevance.every((item) => typeof item === "boolean") ||
-                relevance.length !== data.length
-            ) {
-                throw new Error("AI response is not a valid boolean array");
-            }
+			// Validate the AI response
+			if (
+				!Array.isArray(relevance) ||
+				!relevance.every((item) => typeof item === "boolean") ||
+				relevance.length !== data.length
+			) {
+				throw new Error("AI response is not a valid boolean array");
+			}
 
-            // Filter
-            return data.filter((_, index) => relevance[index]);
-        });
+			// Filter
+			return data.filter((_, index) => relevance[index]);
+		});
 
-        await this.#cache.put(cacheKey, JSON.stringify({ data: guides.data, error: guides.error?.message }), {
-            expirationTtl: 60 * 60 * 24,
-        }); // Cache for 24 hours
+		await this.#cache.put(cacheKey, JSON.stringify({ data: guides.data, error: guides.error?.message }), {
+			expirationTtl: 60 * 60 * 24,
+		}); // Cache for 24 hours
 
-        return guides;
-    }
+		return guides;
+	}
 }
 
 export interface YouTubeGuide {
-    title: string;
-    channel: string;
-    description: string;
-    publishedAt: string;
-    videoId: string;
+	title: string;
+	channel: string;
+	description: string;
+	publishedAt: string;
+	videoId: string;
 }

@@ -1,4 +1,4 @@
 export interface IDetectLanguageRequest {
-    /** Text to detect */
-    q: string[];
+	/** Text to detect */
+	q: string[];
 }

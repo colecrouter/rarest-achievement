@@ -8,21 +8,21 @@ import { insertUserAchievement } from "./dbHelpers";
  * Mirrors the shape returned by Steam's GetPlayerAchievements.
  */
 export function makePlayerAchievementsPayload(opts: {
-    userId: string;
-    appId: number;
-    items: Array<{ ach: string; achieved?: 0 | 1; unlock?: Date | null }>;
+	userId: string;
+	appId: number;
+	items: Array<{ ach: string; achieved?: 0 | 1; unlock?: Date | null }>;
 }): GetPlayerAchievementsResponse<undefined> {
-    return {
-        playerstats: {
-            steamID: opts.userId,
-            gameName: `App ${opts.appId}`,
-            achievements: opts.items.map((i) => ({
-                apiname: i.ach,
-                achieved: i.achieved ?? 0,
-                unlocktime: i.unlock ? Math.floor(i.unlock.getTime() / 1000) : 0,
-            })),
-        },
-    } as GetPlayerAchievementsResponse<undefined>;
+	return {
+		playerstats: {
+			steamID: opts.userId,
+			gameName: `App ${opts.appId}`,
+			achievements: opts.items.map((i) => ({
+				apiname: i.ach,
+				achieved: i.achieved ?? 0,
+				unlocktime: i.unlock ? Math.floor(i.unlock.getTime() / 1000) : 0,
+			})),
+		},
+	} as GetPlayerAchievementsResponse<undefined>;
 }
 
 /**
@@ -30,37 +30,37 @@ export function makePlayerAchievementsPayload(opts: {
  * friend_since accepts Date or seconds (number) and is normalized to seconds.
  */
 export function makeFriendsListResponse(
-    userId: string,
-    friends: Array<{ steamid: string; friend_since: Date | number }>,
+	userId: string,
+	friends: Array<{ steamid: string; friend_since: Date | number }>,
 ): GetFriendsListResponse {
-    const toSeconds = (v: Date | number) => (typeof v === "number" ? Math.floor(v) : Math.floor(v.getTime() / 1000));
+	const toSeconds = (v: Date | number) => (typeof v === "number" ? Math.floor(v) : Math.floor(v.getTime() / 1000));
 
-    return {
-        friendslist: {
-            friends: friends.map((f) => ({
-                steamid: f.steamid,
-                relationship: "friend",
-                friend_since: toSeconds(f.friend_since),
-            })),
-        },
-    };
+	return {
+		friendslist: {
+			friends: friends.map((f) => ({
+				steamid: f.steamid,
+				relationship: "friend",
+				friend_since: toSeconds(f.friend_since),
+			})),
+		},
+	};
 }
 
 /**
  * Convenience seeding for multiple user achievement rows.
  */
 export async function seedUserAchievements(
-    db: ProjectDB,
-    userId: string,
-    appId: number,
-    items: Array<{ ach: string; unlocked?: Date | null }>,
+	db: ProjectDB,
+	userId: string,
+	appId: number,
+	items: Array<{ ach: string; unlocked?: Date | null }>,
 ) {
-    for (const it of items) {
-        await insertUserAchievement(db, {
-            user_id: userId,
-            app_id: appId,
-            ach_id: it.ach,
-            unlocked_at: it.unlocked ?? null,
-        });
-    }
+	for (const it of items) {
+		await insertUserAchievement(db, {
+			user_id: userId,
+			app_id: appId,
+			ach_id: it.ach,
+			unlocked_at: it.unlocked ?? null,
+		});
+	}
 }

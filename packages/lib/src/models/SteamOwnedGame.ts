@@ -1,27 +1,27 @@
 import type { OwnedGame } from "../repositories/api/steampowered/owned";
 
 export class SteamOwnedGame {
-    #owned: OwnedGame<false>;
+	#owned: OwnedGame<false>;
 
-    constructor({ owned }: { owned: OwnedGame<false> }) {
-        this.#owned = owned;
-    }
+	constructor({ owned }: { owned: OwnedGame<false> }) {
+		this.#owned = owned;
+	}
 
-    serialize() {
-        return {
-            owned: this.#owned,
-        } satisfies ConstructorParameters<typeof SteamOwnedGame>[0];
-    }
+	serialize() {
+		return {
+			owned: this.#owned,
+		} satisfies ConstructorParameters<typeof SteamOwnedGame>[0];
+	}
 
-    get id() {
-        return this.#owned.appid;
-    }
+	get id() {
+		return this.#owned.appid;
+	}
 
-    get playtime() {
-        return this.#owned.playtime_forever;
-    }
+	get playtime() {
+		return this.#owned.playtime_forever;
+	}
 
-    get playtime2Weeks() {
-        return this.#owned.playtime_2weeks;
-    }
+	get playtime2Weeks() {
+		return this.#owned.playtime_2weeks;
+	}
 }

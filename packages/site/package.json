@@ -1,52 +1,52 @@
 {
-    "name": "@project/site",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "dev": "vite dev",
-        "build": "npm run build -w @project/lib && vite build",
-        "preview": "vite preview",
-        "db:migrate": "wrangler d1 migrations apply steam-data",
-        "check": "svelte-kit sync && svelte-check",
-        "test": "vitest run"
-    },
-    "type": "module",
-    "devDependencies": {
-        "@inlang/cli": "^3.0.0",
-        "@inlang/paraglide-js": "2.0.11",
-        "@lucide/svelte": "^0.488.0",
-        "@number-flow/svelte": "^0.3.7",
-        "@project/lib": "^1.0.0",
-        "@sentry/sveltekit": "^10",
-        "@skeletonlabs/skeleton": "^3.1.2",
-        "@skeletonlabs/skeleton-svelte": "^1.2.1",
-        "@sveltejs/adapter-cloudflare": "^7.0.4",
-        "@sveltejs/kit": "^2.21.5",
-        "@sveltejs/vite-plugin-svelte": "^5.1.0",
-        "@tailwindcss/forms": "^0.5.10",
-        "@tailwindcss/typography": "^0.5.16",
-        "@tailwindcss/vite": "^4.1.3",
-        "@testing-library/jest-dom": "^6.6.3",
-        "@testing-library/svelte": "^5.2.4",
-        "chart.js": "^4.4.8",
-        "drizzle-orm": "0.42.0",
-        "jsdom": "^26.0.0",
-        "patch-package": "^8.0.0",
-        "prettier": "^3.5.3",
-        "prettier-plugin-svelte": "^3.3.3",
-        "prettier-plugin-tailwindcss": "^0.6.11",
-        "svelte": "^5.34.3",
-        "svelte-check": "^4.0.0",
-        "sveltersect": "^0.1.3",
-        "tailwindcss": "^4.1.3",
-        "typescript": "^5.0.0",
-        "vite": "^6.2.6",
-        "vitest": "^3.0.0"
-    },
-    "peerDependencies": {
-        "drizzle-orm": "0.42.0"
-    },
-    "overrides": {
-        "esm-env": "npm:esm-env-runtime@^0.1.1"
-    }
+	"name": "@project/site",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "vite dev",
+		"build": "npm run build -w @project/lib && vite build",
+		"preview": "vite preview",
+		"db:migrate": "wrangler d1 migrations apply steam-data",
+		"check": "svelte-kit sync && svelte-check",
+		"test": "vitest run"
+	},
+	"type": "module",
+	"devDependencies": {
+		"@inlang/cli": "^3.0.0",
+		"@inlang/paraglide-js": "2.0.11",
+		"@lucide/svelte": "^0.488.0",
+		"@number-flow/svelte": "^0.3.7",
+		"@project/lib": "^1.0.0",
+		"@sentry/sveltekit": "^10",
+		"@skeletonlabs/skeleton": "^3.1.2",
+		"@skeletonlabs/skeleton-svelte": "^1.2.1",
+		"@sveltejs/adapter-cloudflare": "^7.0.4",
+		"@sveltejs/kit": "^2.21.5",
+		"@sveltejs/vite-plugin-svelte": "^5.1.0",
+		"@tailwindcss/forms": "^0.5.10",
+		"@tailwindcss/typography": "^0.5.16",
+		"@tailwindcss/vite": "^4.1.3",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/svelte": "^5.2.4",
+		"chart.js": "^4.4.8",
+		"drizzle-orm": "0.42.0",
+		"jsdom": "^26.0.0",
+		"patch-package": "^8.0.0",
+		"prettier": "^3.5.3",
+		"prettier-plugin-svelte": "^3.3.3",
+		"prettier-plugin-tailwindcss": "^0.6.11",
+		"svelte": "^5.34.3",
+		"svelte-check": "^4.0.0",
+		"sveltersect": "^0.1.3",
+		"tailwindcss": "^4.1.3",
+		"typescript": "^5.0.0",
+		"vite": "^6.2.6",
+		"vitest": "^3.0.0"
+	},
+	"peerDependencies": {
+		"drizzle-orm": "0.42.0"
+	},
+	"overrides": {
+		"esm-env": "npm:esm-env-runtime@^0.1.1"
+	}
 }

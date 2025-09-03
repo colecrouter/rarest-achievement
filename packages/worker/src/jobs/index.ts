@@ -1,5 +1,5 @@
 import type { ProjectDB, VaultService } from "@project/lib";
-import { deleteStaleUsers, refreshStaleApps } from "./cleanup";
+import { cleanupUserData, refreshStaleApps } from "./cleanup";
 import { refreshRareCount } from "./score";
 
 export interface CronCtx {
@@ -27,9 +27,9 @@ export const jobs = [
         run: refreshStaleApps,
     },
     {
-        id: "deleteStaleUsers",
+        id: "cleanupUserData",
         cron: "45 4 * * 1", // weekly Monday 04:45
-        run: deleteStaleUsers,
+        run: cleanupUserData,
     },
 ] satisfies CronJob[];
 

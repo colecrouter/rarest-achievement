@@ -137,7 +137,9 @@ export const userScores = sqliteTable(
             .$defaultFn(() => new Date()),
     },
     (table) => [
-        foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
+        // Intentionally no FK to users so we can retain historical score rows
+        // after the main user profile & related data is purged. This allows
+        // keeping aggregate / leaderboard history without orphan delete issues.
         index("idx_user_scores_timestamp").on(table.updated_at),
     ],
 );

@@ -1,5 +1,14 @@
-import { achievementsMeta, achievementsStats, apps, getLanguageByAPICode, userAchievements, users } from "@project/lib";
-import { asc, eq, lt } from "drizzle-orm";
+import {
+    achievementsMeta,
+    achievementsStats,
+    apps,
+    friends,
+    getLanguageByAPICode,
+    ownedGames,
+    userAchievements,
+    users,
+} from "@project/lib";
+import { and, asc, eq, exists, lt, not, sql } from "drizzle-orm";
 import type { CronCtx } from ".";
 
 const REFRESH_STALE_APPS_COUNT = 100;
@@ -44,26 +53,50 @@ export const refreshStaleApps = async (ctx: CronCtx) => {
     }
 };
 
-export const deleteStaleUsers = async (ctx: CronCtx) => {
-    const ONE_DAY_AGO = new Date();
-    ONE_DAY_AGO.setDate(ONE_DAY_AGO.getDate() - 1);
+// Single-pass cleanup:
+// 1. Delete stale rows from user-scoped tables (achievements, owned games, friends) using their own updated_at / friend_since heuristics.
+// 2. Delete users that no longer have any related data in those tables.
+// NOTE: user_scores retained (no FK) so orphan scores may remain intentionally for historical purposes.
+const STALE_ACHIEVEMENT_DAYS = 7;
+const STALE_OWNED_GAMES_DAYS = 14;
+const STALE_FRIENDS_DAYS = 14; // using updated_at; friend_since is immutable join time
 
-    // Get the oldest users that are older than 1 day
-    const keys = await ctx.db
-        .select({ id: users.id })
-        .from(users)
-        .where(lt(users.updated_at, ONE_DAY_AGO))
-        .orderBy(asc(users.updated_at));
+export const cleanupUserData = async (ctx: CronCtx) => {
+    const now = ctx.now ?? new Date();
+    const achCutoff = new Date(now);
+    achCutoff.setDate(achCutoff.getDate() - STALE_ACHIEVEMENT_DAYS);
+    const ownedCutoff = new Date(now);
+    ownedCutoff.setDate(ownedCutoff.getDate() - STALE_OWNED_GAMES_DAYS);
+    const friendCutoff = new Date(now);
+    friendCutoff.setDate(friendCutoff.getDate() - STALE_FRIENDS_DAYS);
 
-    if (keys.length === 0) return;
+    // 1. Delete stale user achievements
+    await ctx.db.delete(userAchievements).where(lt(userAchievements.updated_at, achCutoff));
 
-    // This isn't exactly scalable, but it works for now
-    // It also doesn't violate foreign key constraints, because achievements could be updated independently of the user (in the future maybe)
-    for (const key of keys) {
-        // Delete the stale user data
-        await ctx.db.batch([
-            ctx.db.delete(users).where(eq(users.id, key.id)),
-            ctx.db.delete(userAchievements).where(eq(userAchievements.user_id, key.id)),
-        ]);
-    }
+    // 2. Delete stale owned games
+    await ctx.db.delete(ownedGames).where(lt(ownedGames.last_played_at, ownedCutoff));
+
+    // 3. Delete stale friends (by updated_at)
+    await ctx.db.delete(friends).where(lt(friends.updated_at, friendCutoff));
+
+    // 4. Delete users that have no remaining achievements, owned games, or friend relationships (either side)
+    // Use NOT EXISTS subqueries to ensure there is truly no related data.
+    // (Drizzle doesn't have a high-level helper for complex multi NOT EXISTS -> compose manually.)
+    await ctx.db
+        .delete(users)
+        .where(
+            and(
+                not(
+                    exists(
+                        ctx.db
+                            .select({ one: sql`1` })
+                            .from(userAchievements)
+                            .where(eq(userAchievements.user_id, users.id)),
+                    ),
+                ),
+                not(exists(ctx.db.select({ one: sql`1` }).from(ownedGames).where(eq(ownedGames.user_id, users.id)))),
+                not(exists(ctx.db.select({ one: sql`1` }).from(friends).where(eq(friends.user_id, users.id)))),
+                not(exists(ctx.db.select({ one: sql`1` }).from(friends).where(eq(friends.friend_id, users.id)))),
+            ),
+        );
 };

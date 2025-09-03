@@ -7,7 +7,7 @@ import { AttemptStatus } from "../../src/error";
 
 import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { achievementsMeta, achievementsStats, estimatedPlayers, apps } from "../../src/repositories/sqlite/schema.js";
+import { achievementsMeta, achievementsStats, apps, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
 import { seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { basicAchievement, makeAchievementSchema, makeAppData } from "../fixtures/appData";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";

@@ -1,4 +1,4 @@
-import { type SQL, and, asc, desc, eq, inArray, notExists, sql, gte } from "drizzle-orm";
+import { type SQL, and, asc, desc, eq, gte, inArray, notExists, sql } from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
     type APILanguageCode,
@@ -120,31 +120,21 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const friendIdsCTE = this.db
             .$with("friend_user_ids")
             .as(
-                this.db
-                    .selectDistinct({ user_id: friends.friend_id })
-                    .from(friends)
-                    .where(eq(friends.user_id, userId)),
+                this.db.selectDistinct({ user_id: friends.friend_id }).from(friends).where(eq(friends.user_id, userId)),
             );
         this.ctes.push(friendIdsCTE);
 
-        const ownedAppsCTE = this.db
-            .$with("owned_apps")
-            .as(
-                this.db
-                    .selectDistinct({ app_id: ownedGames.app_id })
-                    .from(ownedGames)
-                    .where(
-                        inArray(
-                            ownedGames.user_id,
-                            this.db.select({ user_id: friendIdsCTE.user_id }).from(friendIdsCTE),
-                        ),
-                    ),
-            );
+        const ownedAppsCTE = this.db.$with("owned_apps").as(
+            this.db
+                .selectDistinct({ app_id: ownedGames.app_id })
+                .from(ownedGames)
+                .where(
+                    inArray(ownedGames.user_id, this.db.select({ user_id: friendIdsCTE.user_id }).from(friendIdsCTE)),
+                ),
+        );
         this.ctes.push(ownedAppsCTE);
 
-        this.whereConditions.push(
-            inArray(apps.id, this.db.select({ app_id: ownedAppsCTE.app_id }).from(ownedAppsCTE)),
-        );
+        this.whereConditions.push(inArray(apps.id, this.db.select({ app_id: ownedAppsCTE.app_id }).from(ownedAppsCTE)));
         return this;
     }
 

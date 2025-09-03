@@ -7,22 +7,22 @@
  * and allows the global fetch limiter to interleave other work smoothly.
  */
 export interface EnsurePolicy {
-  mode: "unlocked_at" | "default";
-  caps: {
-    /** Maximum number of apps to process per request */
-    maxAppsPerRequest: number;
-    /** Maximum rows per flush (safeInsert) micro-batch */
-    maxRowsPerFlush: number;
-    /** Soft time budget for the ensure phase (ms) */
-    timeBudgetMs: number;
-  };
-  /** If true, run the direct DB-limited select first, then ensure only what the page needs */
-  preferDirectFirst: boolean;
-  /**
-   * How many recent owned_games to consider as ensure candidates (ordered by last_played_at DESC).
-   * Note: an index on (user_id, last_played_at DESC) is recommended; handled in a separate migration.
-   */
-  candidateWindowFromOwned: number;
+    mode: "unlocked_at" | "default";
+    caps: {
+        /** Maximum number of apps to process per request */
+        maxAppsPerRequest: number;
+        /** Maximum rows per flush (safeInsert) micro-batch */
+        maxRowsPerFlush: number;
+        /** Soft time budget for the ensure phase (ms) */
+        timeBudgetMs: number;
+    };
+    /** If true, run the direct DB-limited select first, then ensure only what the page needs */
+    preferDirectFirst: boolean;
+    /**
+     * How many recent owned_games to consider as ensure candidates (ordered by last_played_at DESC).
+     * Note: an index on (user_id, last_played_at DESC) is recommended; handled in a separate migration.
+     */
+    candidateWindowFromOwned: number;
 }
 
 /**
@@ -36,17 +36,17 @@ export interface EnsurePolicy {
  * - preferDirectFirst=true to return the current page ASAP, then backfill what it needs
  */
 export function defaultUnlockedAtEnsurePolicy(): EnsurePolicy {
-  const maxAppsPerRequest = 24;
-  const maxRowsPerFlush = 150;
-  const timeBudgetMs = 600;
-  const candidateWindowFromOwned = 64;
+    const maxAppsPerRequest = 24;
+    const maxRowsPerFlush = 150;
+    const timeBudgetMs = 600;
+    const candidateWindowFromOwned = 64;
 
-  return {
-    mode: "unlocked_at",
-    caps: { maxAppsPerRequest, maxRowsPerFlush, timeBudgetMs },
-    preferDirectFirst: true,
-    candidateWindowFromOwned,
-  };
+    return {
+        mode: "unlocked_at",
+        caps: { maxAppsPerRequest, maxRowsPerFlush, timeBudgetMs },
+        preferDirectFirst: true,
+        candidateWindowFromOwned,
+    };
 }
 
 /**
@@ -55,14 +55,14 @@ export function defaultUnlockedAtEnsurePolicy(): EnsurePolicy {
  * already bound themselves differently (and they are not activated for unlocked_at).
  */
 export function defaultEnsurePolicy(): EnsurePolicy {
-  return {
-    mode: "default",
-    caps: {
-      maxAppsPerRequest: 512,
-      maxRowsPerFlush: 500,
-      timeBudgetMs: 5_000,
-    },
-    preferDirectFirst: false,
-    candidateWindowFromOwned: 256,
-  };
+    return {
+        mode: "default",
+        caps: {
+            maxAppsPerRequest: 512,
+            maxRowsPerFlush: 500,
+            timeBudgetMs: 5_000,
+        },
+        preferDirectFirst: false,
+        candidateWindowFromOwned: 256,
+    };
 }

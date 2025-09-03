@@ -27,10 +27,10 @@ import type { AppAchievementRepository } from "./AppAchievement";
 import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import type { FriendsRepository } from "./Friends";
 import type { UserRepository } from "./User";
+import type { EnsurePolicy } from "./ensurePolicy";
+import { defaultEnsurePolicy, defaultUnlockedAtEnsurePolicy } from "./ensurePolicy";
 import { achievementsMeta } from "./schema";
 import { safeInsert } from "./utils";
-import type { EnsurePolicy } from "./ensurePolicy";
-import { defaultUnlockedAtEnsurePolicy, defaultEnsurePolicy } from "./ensurePolicy";
 
 const DEBUG_COUNTERS = false as const;
 

@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, sql, gte } from "drizzle-orm";
+import { asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Attempt, type AttemptStatus, type ProjectDB, friends, ownedGames, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";

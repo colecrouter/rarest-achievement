@@ -12,26 +12,26 @@
 @source inline("{bg,text,border,to,from}-{ultra-rare,rare,uncommon,common,locked}{-dark,-light,}{/10,/20,/30,/50,}");
 
 @theme {
-    --color-ultra-rare: var(--color-amber-500);
-    --color-ultra-rare-dark: var(--color-amber-600);
-    --color-ultra-rare-light: var(--color-amber-400);
-    --color-rare: var(--color-gray-400);
-    --color-rare-dark: var(--color-gray-500);
-    --color-rare-light: var(--color-gray-300);
-    --color-uncommon: var(--color-amber-700);
-    --color-uncommon-dark: var(--color-amber-800);
-    --color-uncommon-light: var(--color-amber-600);
-    --color-common: var(--color-slate-500);
-    --color-common-dark: var(--color-slate-600);
-    --color-common-light: var(--color-slate-400);
-    --color-locked: var(--color-gray-700);
-    --color-locked-dark: var(--color-gray-900);
-    --color-locked-light: var(--color-gray-600);
+	--color-ultra-rare: var(--color-amber-500);
+	--color-ultra-rare-dark: var(--color-amber-600);
+	--color-ultra-rare-light: var(--color-amber-400);
+	--color-rare: var(--color-gray-400);
+	--color-rare-dark: var(--color-gray-500);
+	--color-rare-light: var(--color-gray-300);
+	--color-uncommon: var(--color-amber-700);
+	--color-uncommon-dark: var(--color-amber-800);
+	--color-uncommon-light: var(--color-amber-600);
+	--color-common: var(--color-slate-500);
+	--color-common-dark: var(--color-slate-600);
+	--color-common-light: var(--color-slate-400);
+	--color-locked: var(--color-gray-700);
+	--color-locked-dark: var(--color-gray-900);
+	--color-locked-light: var(--color-gray-600);
 }
 
 html {
-    @apply bg-gradient-to-b from-gray-900 to-gray-950;
-    /* background-image: radial-gradient(
+	@apply bg-gradient-to-b from-gray-900 to-gray-950;
+	/* background-image: radial-gradient(
 
     @media print {
 
@@ -39,7 +39,7 @@ html {
         color-mix(in oklab, var(--color-primary-500) 30%, transparent) 0px,
         transparent 30%
     ); */
-    /* radial-gradient(
+	/* radial-gradient(
             at 35% 13%,
             color-mix(in oklab, var(--color-success-500) 18%, transparent) 0px,
             transparent 30%
@@ -49,63 +49,63 @@ html {
             color-mix(in oklab, var(--color-error-500) 3%, transparent) 0px,
             transparent 40%
         ); */
-    background-attachment: fixed;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
+	background-attachment: fixed;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: cover;
 }
 
 @utility container {
-    margin-inline: auto;
-    padding-inline: 1rem;
+	margin-inline: auto;
+	padding-inline: 1rem;
 }
 
 @layer base {
-    body {
-        background-color: transparent;
-    }
+	body {
+		background-color: transparent;
+	}
 }
 
 .card {
-    @apply border-surface-700 bg-surface-800 overflow-hidden border-[1px];
+	@apply border-surface-700 bg-surface-800 overflow-hidden border-[1px];
 }
 
 .card.secondary {
-    @apply bg-surface-900 border-surface-800;
+	@apply bg-surface-900 border-surface-800;
 }
 
 .prose h2 {
-    @apply mt-8 mb-4 text-2xl font-bold;
+	@apply mt-8 mb-4 text-2xl font-bold;
 }
 .prose ul {
-    @apply list-disc space-y-2 pl-6;
+	@apply list-disc space-y-2 pl-6;
 }
 .prose blockquote {
-    @apply blockquote;
+	@apply blockquote;
 }
 .prose section {
-    @apply mb-8;
+	@apply mb-8;
 }
 .prose > section > * ~ * {
-    @apply mb-4;
+	@apply mb-4;
 }
 
 /* Printing nonsense */
 
 @media not print {
-    .prose {
-        @apply prose prose-invert;
-    }
+	.prose {
+		@apply prose prose-invert;
+	}
 }
 
 @media print {
-    :root {
-        @apply text-gray-900;
-    }
+	:root {
+		@apply text-gray-900;
+	}
 }
 
 .cds--cc--chart-wrapper {
-    /* --cds-charts-font-family:
+	/* --cds-charts-font-family:
         "Segoe UI", "Segoe UI", "Segoe UI", "Helvetica Neue", "Helvetica Neue",
         "Helvetica Neue", "Arial", sans-serif;
     --cds-charts-font-family-condensed:
@@ -114,9 +114,9 @@ html {
 }
 
 .rounded-container {
-    @apply !rounded-container;
+	@apply !rounded-container;
 }
 
 .rounded {
-    @apply !rounded;
+	@apply !rounded;
 }

@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { setAchievementClientSortManager } from "$lib/SortManager/AchievementSortManager";
+	import { setAchievementClientSortManager } from "$lib/SortManager/AchievementSortManager";
 
-    let { children } = $props();
+	let { children } = $props();
 
-    setAchievementClientSortManager();
+	setAchievementClientSortManager();
 </script>
 
 {@render children()}

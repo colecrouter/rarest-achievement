@@ -1,181 +1,181 @@
 <script lang="ts" module>
-    const podiumConfig = {
-        1: {
-            zIndex: "20",
-            width: "w-[220px]",
-            iconComponent: Crown,
-            iconWrapper: "h-10 w-10 text-amber-500",
-            labelTextClass: "text-sm font-bold text-amber-500",
-            placeStatClass: "text-xs text-amber-500",
-            cardWrapper:
-                "w-full rounded-t-(--radius-container) border border-amber-600/30 bg-surface-800 p-4 shadow-lg shadow-amber-900/20",
-            iconSize: {
-                width: 80,
-                height: 80,
-                imgClass:
-                    "z-10 rounded border-2 border-amber-500 bg-surface-900",
-            },
-            nameTextClass: "mt-2 text-center font-bold text-amber-100",
-            appTextClass: "mt-1 text-center text-xs text-amber-300/70",
-            gradientBar:
-                "w-full h-[160px] border-x border-amber-700/30 bg-gradient-to-t from-amber-900/30 to-surface-800",
-        },
-        2: {
-            zIndex: "10",
-            width: "w-[200px]",
-            iconComponent: Medal,
-            iconWrapper: "h-8 w-8 text-surface-300",
-            labelTextClass: "text-sm font-medium text-surface-300",
-            placeStatClass: "text-xs text-amber-500",
-            cardWrapper:
-                "w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
-            iconSize: {
-                width: 64,
-                height: 64,
-                imgClass: "rounded border-2 border-surface-700 bg-surface-900",
-            },
-            nameTextClass: "mt-2 text-center font-bold",
-            appTextClass: "mt-1 text-center text-xs text-surface-300",
-            gradientBar:
-                "w-full h-[120px] border-x border-surface-700 bg-gradient-to-t from-surface-700 to-surface-800",
-        },
-        3: {
-            zIndex: "10",
-            width: "w-[180px]",
-            iconComponent: Award,
-            iconWrapper: "h-7 w-7 text-amber-700",
-            labelTextClass: "text-sm font-medium text-amber-700",
-            placeStatClass: "text-xs text-amber-500",
-            cardWrapper:
-                "w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
-            iconSize: {
-                width: 56,
-                height: 56,
-                imgClass: "rounded border-2 border-surface-700 bg-surface-900",
-            },
-            nameTextClass: "mt-2 text-center font-bold",
-            appTextClass: "mt-1 text-center text-xs text-surface-300",
-            gradientBar:
-                "w-full h-[100px] border-x border-surface-700 bg-gradient-to-t from-surface-700 to-surface-800",
-        },
-    };
+	const podiumConfig = {
+		1: {
+			zIndex: "20",
+			width: "w-[220px]",
+			iconComponent: Crown,
+			iconWrapper: "h-10 w-10 text-amber-500",
+			labelTextClass: "text-sm font-bold text-amber-500",
+			placeStatClass: "text-xs text-amber-500",
+			cardWrapper:
+				"w-full rounded-t-(--radius-container) border border-amber-600/30 bg-surface-800 p-4 shadow-lg shadow-amber-900/20",
+			iconSize: {
+				width: 80,
+				height: 80,
+				imgClass:
+					"z-10 rounded border-2 border-amber-500 bg-surface-900",
+			},
+			nameTextClass: "mt-2 text-center font-bold text-amber-100",
+			appTextClass: "mt-1 text-center text-xs text-amber-300/70",
+			gradientBar:
+				"w-full h-[160px] border-x border-amber-700/30 bg-gradient-to-t from-amber-900/30 to-surface-800",
+		},
+		2: {
+			zIndex: "10",
+			width: "w-[200px]",
+			iconComponent: Medal,
+			iconWrapper: "h-8 w-8 text-surface-300",
+			labelTextClass: "text-sm font-medium text-surface-300",
+			placeStatClass: "text-xs text-amber-500",
+			cardWrapper:
+				"w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
+			iconSize: {
+				width: 64,
+				height: 64,
+				imgClass: "rounded border-2 border-surface-700 bg-surface-900",
+			},
+			nameTextClass: "mt-2 text-center font-bold",
+			appTextClass: "mt-1 text-center text-xs text-surface-300",
+			gradientBar:
+				"w-full h-[120px] border-x border-surface-700 bg-gradient-to-t from-surface-700 to-surface-800",
+		},
+		3: {
+			zIndex: "10",
+			width: "w-[180px]",
+			iconComponent: Award,
+			iconWrapper: "h-7 w-7 text-amber-700",
+			labelTextClass: "text-sm font-medium text-amber-700",
+			placeStatClass: "text-xs text-amber-500",
+			cardWrapper:
+				"w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
+			iconSize: {
+				width: 56,
+				height: 56,
+				imgClass: "rounded border-2 border-surface-700 bg-surface-900",
+			},
+			nameTextClass: "mt-2 text-center font-bold",
+			appTextClass: "mt-1 text-center text-xs text-surface-300",
+			gradientBar:
+				"w-full h-[100px] border-x border-surface-700 bg-gradient-to-t from-surface-700 to-surface-800",
+		},
+	};
 
-    function grow(
-        node: HTMLElement,
-        params: {
-            delay?: number;
-            duration?: number;
-            easing?: (t: number) => number;
-        },
-    ) {
-        const target = getComputedStyle(node).height.replace("none", "");
-        return {
-            delay: params.delay || 0,
-            duration: params.duration || 400,
-            easing: params.easing,
-            css: (t: number) => {
-                const height = Math.round(t * Number.parseFloat(target));
-                return `max-height: ${height}px; overflow: hidden;`;
-            },
-        };
-    }
+	function grow(
+		node: HTMLElement,
+		params: {
+			delay?: number;
+			duration?: number;
+			easing?: (t: number) => number;
+		},
+	) {
+		const target = getComputedStyle(node).height.replace("none", "");
+		return {
+			delay: params.delay || 0,
+			duration: params.duration || 400,
+			easing: params.easing,
+			css: (t: number) => {
+				const height = Math.round(t * Number.parseFloat(target));
+				return `max-height: ${height}px; overflow: hidden;`;
+			},
+		};
+	}
 </script>
 
 <script lang="ts">
-    import { m } from "$lib/paraglide/messages";
+	import { m } from "$lib/paraglide/messages";
 
-    import Award from "@lucide/svelte/icons/award";
-    import Crown from "@lucide/svelte/icons/crown";
-    import Medal from "@lucide/svelte/icons/medal";
-    import type { SteamAppAchievement } from "@project/lib";
-    import { cubicOut } from "svelte/easing";
-    import { fade } from "svelte/transition";
-    import { localizeHref } from "$lib/paraglide/runtime";
+	import Award from "@lucide/svelte/icons/award";
+	import Crown from "@lucide/svelte/icons/crown";
+	import Medal from "@lucide/svelte/icons/medal";
+	import type { SteamAppAchievement } from "@project/lib";
+	import { cubicOut } from "svelte/easing";
+	import { fade } from "svelte/transition";
+	import { localizeHref } from "$lib/paraglide/runtime";
 
-    interface Props {
-        place: 1 | 2 | 3;
-        achievement: SteamAppAchievement;
-    }
+	interface Props {
+		place: 1 | 2 | 3;
+		achievement: SteamAppAchievement;
+	}
 
-    let { place, achievement }: Props = $props();
+	let { place, achievement }: Props = $props();
 
-    const config = $derived(podiumConfig[place]);
-    const IconComponent = $derived(config.iconComponent);
+	const config = $derived(podiumConfig[place]);
+	const IconComponent = $derived(config.iconComponent);
 
-    let animate = $state(false);
-    $effect(() => {
-        animate = true;
-    });
+	let animate = $state(false);
+	$effect(() => {
+		animate = true;
+	});
 
-    let gameURL = `/game/${achievement.app.id}`;
-    let achievementURL = `/game/${achievement.app.id}/achievement/${achievement.id}`;
+	let gameURL = `/game/${achievement.app.id}`;
+	let achievementURL = `/game/${achievement.app.id}/achievement/${achievement.id}`;
 
-    // Compute podium label from i18n messages
-    let podiumLabel =
-        place === 1
-            ? m.podiumLabelFirst()
-            : place === 2
-              ? m.podiumLabelSecond()
-              : m.podiumLabelThird();
+	// Compute podium label from i18n messages
+	let podiumLabel =
+		place === 1
+			? m.podiumLabelFirst()
+			: place === 2
+				? m.podiumLabelSecond()
+				: m.podiumLabelThird();
 </script>
 
 <div
-    class={[
-        "z- relative",
-        config.zIndex,
-        config.width,
-        "flex flex-col items-center",
-    ]}
+	class={[
+		"z- relative",
+		config.zIndex,
+		config.width,
+		"flex flex-col items-center",
+	]}
 >
-    {#if animate}
-        <div
-            transition:fade={{ duration: 300, delay: 100 * place + 400 }}
-            class="mb-2 flex flex-col items-center"
-        >
-            <IconComponent class={config.iconWrapper} />
-            <span class={config.labelTextClass}>
-                {podiumLabel}
-            </span>
-            <span class={config.placeStatClass}>
-                {m.podiumPercentOfPlayers({
-                    percentage: achievement.globalPercentage,
-                })}
-            </span>
-        </div>
-        <div class={config.cardWrapper}>
-            <div
-                class="flex flex-col items-center"
-                transition:fade={{ duration: 300, delay: 100 * place + 400 }}
-            >
-                <a href={localizeHref(achievementURL)}>
-                    <img
-                        src={achievement.icon}
-                        alt={achievement.name}
-                        width={config.iconSize.width}
-                        height={config.iconSize.height}
-                        class={config.iconSize.imgClass}
-                    />
-                </a>
-                <a href={localizeHref(achievementURL)}>
-                    <h3 class="hover:underline {config.nameTextClass}">
-                        {achievement.name}
-                    </h3>
-                </a>
-                <a
-                    href={localizeHref(gameURL)}
-                    class="hover:underline {config.appTextClass}"
-                >
-                    {achievement.app.name}
-                </a>
-            </div>
-        </div>
-        <div
-            transition:grow={{
-                duration: 300,
-                delay: 100 * place + 200,
-                easing: cubicOut,
-            }}
-            class={[config.gradientBar]}
-        ></div>
-    {/if}
+	{#if animate}
+		<div
+			transition:fade={{ duration: 300, delay: 100 * place + 400 }}
+			class="mb-2 flex flex-col items-center"
+		>
+			<IconComponent class={config.iconWrapper} />
+			<span class={config.labelTextClass}>
+				{podiumLabel}
+			</span>
+			<span class={config.placeStatClass}>
+				{m.podiumPercentOfPlayers({
+					percentage: achievement.globalPercentage,
+				})}
+			</span>
+		</div>
+		<div class={config.cardWrapper}>
+			<div
+				class="flex flex-col items-center"
+				transition:fade={{ duration: 300, delay: 100 * place + 400 }}
+			>
+				<a href={localizeHref(achievementURL)}>
+					<img
+						src={achievement.icon}
+						alt={achievement.name}
+						width={config.iconSize.width}
+						height={config.iconSize.height}
+						class={config.iconSize.imgClass}
+					/>
+				</a>
+				<a href={localizeHref(achievementURL)}>
+					<h3 class="hover:underline {config.nameTextClass}">
+						{achievement.name}
+					</h3>
+				</a>
+				<a
+					href={localizeHref(gameURL)}
+					class="hover:underline {config.appTextClass}"
+				>
+					{achievement.app.name}
+				</a>
+			</div>
+		</div>
+		<div
+			transition:grow={{
+				duration: 300,
+				delay: 100 * place + 200,
+				easing: cubicOut,
+			}}
+			class={[config.gradientBar]}
+		></div>
+	{/if}
 </div>

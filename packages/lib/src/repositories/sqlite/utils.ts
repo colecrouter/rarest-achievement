@@ -1,4 +1,12 @@
-import { type AnyTable, type Column, type InferSelectModel, and, getTableColumns, getTableName } from "drizzle-orm";
+import {
+	type AnyColumn,
+	type AnyTable,
+	type Column,
+	type InferSelectModel,
+	and,
+	getTableColumns,
+	getTableName,
+} from "drizzle-orm";
 import { type Query, type SQL, sql } from "drizzle-orm/sql";
 import type { SQLiteInsert, SQLiteInsertBase, SQLiteTable, TableConfig } from "drizzle-orm/sqlite-core";
 import type { ProjectDB } from "../..";
@@ -128,4 +136,39 @@ export function getTableAliasedColumns<T extends AnyTable<TableConfig>>(table: T
 			[P in keyof DataType]: SQL.Aliased<DataType[P]>;
 		},
 	);
+}
+
+// Partially taken from https://gist.github.com/rphlmr/0d1722a794ed5a16da0fdf6652902b15#file-utils-ts
+
+/** Return a distinct value for a column */
+export function distinct<Column extends AnyColumn>(column: Column) {
+	return sql<Column["_"]["data"]>`distinct(${column})`;
+}
+
+/** Return a maximum value for a column */
+export function max<Column extends AnyColumn>(column: Column) {
+	return sql<Column["_"]["data"]>`max(${column})`;
+}
+
+/**
+ * Coalesce a value to a default value if the value is null
+ * @example
+ * coalesce(pubThemeListQuery.themes, sql`'[]'`)
+ * coalesce(PubPollAnswersQuery.count, sql`0`)
+ */
+export function coalesce<T>(value: SQL.Aliased<T> | SQL<T>, defaultValue: SQL) {
+	return sql<T>`coalesce(${value}, ${defaultValue})`;
+}
+
+type Unit = "minutes" | "minute";
+type Operator = "+" | "-";
+
+/**
+ * Get the current timestamp
+ * @example
+ * now()
+ * now("+ interval 1 minute")
+ */
+export function now(interval?: `${Operator} interval ${number} ${Unit}`) {
+	return sql<string>`now() ${interval || ""}`;
 }

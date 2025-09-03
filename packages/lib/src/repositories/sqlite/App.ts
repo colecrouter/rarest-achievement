@@ -13,6 +13,7 @@ import {
     achievementsStats,
     apps,
     estimatedPlayers,
+    friends,
     getFetchManager,
     getLanguageByCode,
     ownedGames,
@@ -101,6 +102,49 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         this.ctes.push(ownedAppsCTE);
         this.whereConditions.push(inArray(apps.id, this.db.select({ app_id: ownedAppsCTE.app_id }).from(ownedAppsCTE)));
 
+        return this;
+    }
+
+    /**
+     * Filter apps owned by friends of a specific user without materializing the full friend ID list
+     * This avoids large IN (...) parameter lists that can trigger SQLite / D1 limits.
+     *
+     * Implementation details:
+     * - friend_user_ids CTE: SELECT DISTINCT friend_id FROM friends WHERE user_id = <userId>
+     * - owned_apps CTE: SELECT DISTINCT app_id FROM ownedGames WHERE ownedGames.user_id IN (SELECT user_id FROM friend_user_ids)
+     * - Main query filters apps.id IN (SELECT app_id FROM owned_apps)
+     */
+    withOwnedByFriendsOf(userId: string): this {
+        if (!userId) return this;
+
+        const friendIdsCTE = this.db
+            .$with("friend_user_ids")
+            .as(
+                this.db
+                    .selectDistinct({ user_id: friends.friend_id })
+                    .from(friends)
+                    .where(eq(friends.user_id, userId)),
+            );
+        this.ctes.push(friendIdsCTE);
+
+        const ownedAppsCTE = this.db
+            .$with("owned_apps")
+            .as(
+                this.db
+                    .selectDistinct({ app_id: ownedGames.app_id })
+                    .from(ownedGames)
+                    .where(
+                        inArray(
+                            ownedGames.user_id,
+                            this.db.select({ user_id: friendIdsCTE.user_id }).from(friendIdsCTE),
+                        ),
+                    ),
+            );
+        this.ctes.push(ownedAppsCTE);
+
+        this.whereConditions.push(
+            inArray(apps.id, this.db.select({ app_id: ownedAppsCTE.app_id }).from(ownedAppsCTE)),
+        );
         return this;
     }
 

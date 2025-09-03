@@ -45,23 +45,8 @@ export class VaultService {
     }) {
         console.log(`🎮 Getting apps owned by friends of user ${params.userId}`);
 
-        // First get friends using composable query
-        const friendsResult = await this.friendRepo
-            .compose()
-            .withUserIds(params.userId)
-            .build({
-                sort: { method: "id", direction: "asc" },
-            });
-
-        if (!friendsResult.data?.length) {
-            console.log("No friends found");
-            return new RepositoryResult([], 0, friendsResult.error);
-        }
-
-        const friendIds = friendsResult.data.map((friend) => friend.id);
-        console.log(`👥 Found ${friendIds.length} friends`);
-
-        let composer = this.appRepo.compose().withLanguage(params.lang).withOwnedByUsers(friendIds);
+        // Build app query directly using subqueries; avoids materializing friend ID list in JS
+        let composer = this.appRepo.compose().withLanguage(params.lang).withOwnedByFriendsOf(params.userId); // new subquery-based method
 
         if (params.withAchievements) {
             composer = composer.withAchievements();

@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql, gte } from "drizzle-orm";
 import { Attempt, type AttemptStatus, type ProjectDB, friends, ownedGames, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
@@ -22,6 +22,8 @@ interface FriendsSortFilters {
 
 class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSortMethod> {
     private userIds = new Set<string>();
+    /** Optional freshness cutoff for friend relationship & user freshness propagation */
+    private freshnessCutoff: Date | undefined;
 
     constructor(
         private db: ProjectDB,
@@ -41,6 +43,12 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
             }
         }
 
+        return this;
+    }
+
+    /** Treat any existing friend/user rows older than cutoff as missing */
+    withCutoff(cutoff: Date): this {
+        this.freshnessCutoff = cutoff;
         return this;
     }
 
@@ -107,17 +115,24 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
         // First ensure main users exist in the users table
         console.log(`👤 Ensuring ${ids.length} main users exist in database`);
-        const userEnsureResult = await this.userRepository.compose().withUserIds(ids).ensureDataExists();
+        const userComposer = this.userRepository.compose().withUserIds(ids);
+        if (this.freshnessCutoff) userComposer.withCutoff(this.freshnessCutoff);
+        const userEnsureResult = await userComposer.ensureDataExists();
         if (userEnsureResult.error) {
             console.warn("Failed to ensure users exist for friends query:", userEnsureResult.error);
         }
 
         // Fetch summary to figure out what friends data is missing
         // This is consumer-controlled (friends composer controls user IDs), so inArray is safe
-        const existingFriendsUsers = await this.db
-            .selectDistinct({ user_id: friends.user_id })
+        let existingFriendsQ = this.db
+            .selectDistinct({ user_id: friends.user_id, updated_at: friends.updated_at })
             .from(friends)
-            .where(inArray(friends.user_id, ids));
+            .where(inArray(friends.user_id, ids))
+            .$dynamic();
+        if (this.freshnessCutoff) {
+            existingFriendsQ = existingFriendsQ.where(gte(friends.updated_at, this.freshnessCutoff));
+        }
+        const existingFriendsUsers = await existingFriendsQ;
 
         const existingUserIds = new Set(existingFriendsUsers.map((r) => r.user_id));
         const missingUserIds = new Set(ids.filter((id) => !existingUserIds.has(id)));
@@ -179,10 +194,11 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
                         WHERE user_id IN (${sql.join(Array.from(this.userIds), sql`, `)})
                     )`;
 
-                    const friendUsersResult = await this.userRepository
+                    const friendUserComposer = this.userRepository
                         .compose()
-                        .withRequiredEntitySubquery("user", friendUserIdsSubquery)
-                        .ensureDataExists();
+                        .withRequiredEntitySubquery("user", friendUserIdsSubquery);
+                    if (this.freshnessCutoff) friendUserComposer.withCutoff(this.freshnessCutoff);
+                    const friendUsersResult = await friendUserComposer.ensureDataExists();
 
                     if (friendUsersResult.error) {
                         console.warn("Some friend users could not be fetched:", friendUsersResult.error);

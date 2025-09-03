@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql, gte } from "drizzle-orm";
 import {
     Attempt,
     type AttemptStatus,
@@ -30,6 +30,8 @@ interface UserSortFilters {
 class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
     private userIds = new Set<string>();
     private requiredUserSubquery: SQL | undefined;
+    /** If set, treat rows with updated_at older than this Date as missing */
+    private freshnessCutoff: Date | undefined;
 
     constructor(
         private db: ProjectDB,
@@ -58,6 +60,16 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
         if (entityType === "user") {
             this.requiredUserSubquery = subquery;
         }
+        return this;
+    }
+
+    /**
+     * Provide a freshness cutoff (ms since epoch). Any existing DB row with updated_at < cutoff
+     * is considered stale and will be re-fetched by ensureDataExists. If not provided, existing
+     * rows are accepted regardless of age (current behavior).
+     */
+    withCutoff(cutoff: Date): this {
+        this.freshnessCutoff = cutoff;
         return this;
     }
 
@@ -171,28 +183,47 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
      * Find user IDs that are missing from the database
      */
     private async findMissingUsers(): Promise<string[]> {
-        // Use subquery pattern when available, fall back to explicit IDs
+        // If we have a required user subquery, first collect those IDs, then filter by existing fresh rows.
         if (this.requiredUserSubquery) {
-            // Find users that are required by the subquery but don't exist in the database
-            const missingUsersQuery = this.db
+            const requiredRows = await this.db
                 .select({ user_id: sql<string>`required_users.user_id` })
-                .from(sql`(${this.requiredUserSubquery}) AS required_users`)
-                .where(notExists(this.db.select().from(users).where(eq(users.id, sql`required_users.user_id`))));
+                .from(sql`(${this.requiredUserSubquery}) AS required_users`);
 
-            const result = await missingUsersQuery;
-            return result.map((row) => row.user_id);
+            if (requiredRows.length === 0) return [];
+            const requiredIds = requiredRows.map((r) => r.user_id);
+
+            // Fetch existing (fresh) user rows
+            let existingQ = this.db
+                .select({ id: users.id, updated_at: users.updated_at })
+                .from(users)
+                .where(inArray(users.id, requiredIds))
+                .$dynamic();
+
+            if (this.freshnessCutoff) {
+                existingQ = existingQ.where(gte(users.updated_at, this.freshnessCutoff));
+            }
+
+            const existing = await existingQ;
+            const existingIds = new Set(existing.map((r) => r.id));
+            return requiredIds.filter((id) => !existingIds.has(id));
         }
 
+        // Explicit user IDs path
         if (this.userIds.size > 0) {
-            // Fall back to explicit ID checking (direct consumer-controlled usage)
-            const existingUsersQuery = this.db
-                .selectDistinct({ id: users.id })
+            const explicitIds = Array.from(this.userIds);
+            let existingQ = this.db
+                .select({ id: users.id, updated_at: users.updated_at })
                 .from(users)
-                .where(inArray(users.id, Array.from(this.userIds)));
+                .where(inArray(users.id, explicitIds))
+                .$dynamic();
 
-            const existingUsers = await existingUsersQuery;
-            const existingUserIds = new Set(existingUsers.map((u) => u.id));
-            return Array.from(this.userIds).filter((id) => !existingUserIds.has(id));
+            if (this.freshnessCutoff) {
+                existingQ = existingQ.where(gte(users.updated_at, this.freshnessCutoff));
+            }
+
+            const existing = await existingQ;
+            const existingFreshIds = new Set(existing.map((r) => r.id));
+            return explicitIds.filter((id) => !existingFreshIds.has(id));
         }
 
         return [];

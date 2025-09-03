@@ -44,6 +44,13 @@ export interface QueryComposer<TResult, TSortMethod extends string> {
     withLanguage?(lang: LanguageCode): this;
 
     /**
+     * Provide a freshness cutoff (Date). Any existing row with updated_at < cutoff
+     * should be considered stale by ensureDataExists() implementations. Optional
+     * so repositories that do not rely on freshness can ignore it.
+     */
+    withCutoff?(cutoff: Date): this;
+
+    /**
      * Build and execute the composed query, returning results with error propagation
      */
     build(options?: ComposableQueryOptions<TSortMethod>): Promise<ComposableQueryResult<TResult>>;

@@ -94,6 +94,32 @@ describe("FriendsRepository - SQLite (in-memory)", () => {
         assert.strictEqual(result.data.length, 0);
     });
 
+    test("withCutoff refetches stale friend relationships", async () => {
+        const main = "fresh-main";
+        const staleFriend = "old-f1";
+        const repo = getRepo();
+        await seedUsers([main, staleFriend]);
+        // Seed stale friendship row (updated_at in past) directly
+        const staleDate = new Date(Date.now() - 60 * 60 * 1000);
+        await db
+            .insert(friendsTable)
+            .values({ user_id: main, friend_id: staleFriend, friend_since: new Date(0), updated_at: staleDate });
+
+        // API now returns two friends (refresh should replace stale single row with both)
+        const freshFriends = [staleFriend, "new-f2"];
+        setFriendsList(main, freshFriends);
+        setPlayerSummariesForUsers(freshFriends);
+        setOwnedGamesForUsers(freshFriends, 0);
+
+        const res = await repo.compose().withUserIds(main).withCutoff(new Date()).build();
+        const outIds = res.data.map((f) => f.id).sort();
+        assert.deepStrictEqual(
+            outIds,
+            freshFriends.sort(),
+            "Stale friend list should be refetched to include new friend",
+        );
+    });
+
     // 2) Data ensuring and insertion + idempotency
     test("ensureDataExists fetches via Steam API and inserts friend relationships; also ensures friend users", async () => {
         const main = "main-1";

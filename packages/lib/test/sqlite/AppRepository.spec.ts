@@ -289,6 +289,31 @@ describe("AppRepository - SQLite (in-memory)", () => {
         assert.ok(ep, "Estimated players row should be inserted");
         assert.strictEqual(ep?.est, null, "Estimated players value should be null");
     });
+
+    test("withCutoff refetches stale app data", async () => {
+        const { repo, auth, store } = ctx;
+        const appId = 88001;
+        const staleDate = new Date(Date.now() - 60 * 60 * 1000);
+        await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Old App") });
+        // Manually backdate updated_at
+        await db
+            .update(apps)
+            .set({ updated_at: staleDate })
+            .where(and(eq(apps.id, appId), eq(apps.lang, "english")));
+
+        const resp = { [appId]: { success: true as const, data: makeAppData(appId, "New App") } };
+        store.setAppDetails(appId, resp);
+        auth.setSchemaForGame({ appid: appId, l: "english" }, makeAchievementSchema("New App", []));
+
+        const cutoff = new Date();
+        const result = await repo.compose().withLanguage("en").withAppIds(appId).withCutoff(cutoff).build();
+        assert.strictEqual(result.data[0]?.name, "New App");
+        const updated = await db
+            .select({ updated_at: apps.updated_at })
+            .from(apps)
+            .where(and(eq(apps.id, appId), eq(apps.lang, "english")));
+        assert.ok(updated[0]?.updated_at && updated[0].updated_at > staleDate, "updated_at should refresh");
+    });
 });
 
 describe("Upsert regression - App repository", () => {

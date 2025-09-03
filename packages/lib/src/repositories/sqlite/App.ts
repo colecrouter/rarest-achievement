@@ -1,4 +1,4 @@
-import { type SQL, and, asc, desc, eq, inArray, notExists, sql } from "drizzle-orm";
+import { type SQL, and, asc, desc, eq, inArray, notExists, sql, gte } from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
 import {
     type APILanguageCode,
@@ -47,6 +47,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
     private requiredAppsSubquery?: SQL;
     /** When true, prefer small FIFO and micro-batch inserts to minimize memory (used by unlocked_at ensure path) */
     private unlockedAtMode = false;
+    /** If set, treat rows with updated_at older than this Date as missing */
+    private freshnessCutoff: Date | undefined;
 
     constructor(
         private db: ProjectDB,
@@ -146,6 +148,14 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      */
     withUnlockedAtMode(enabled: boolean): this {
         this.unlockedAtMode = !!enabled;
+        return this;
+    }
+
+    /**
+     * Provide a freshness cutoff; any existing app / player estimate rows older than this will be re-fetched
+     */
+    withCutoff(cutoff: Date): this {
+        this.freshnessCutoff = cutoff;
         return this;
     }
 
@@ -362,7 +372,28 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
         if (this.requiredAppsSubquery) {
-            // Use provided subquery from cross-repository dependency with notExists
+            // Use provided subquery from cross-repository dependency with notExists; incorporate freshness cutoff if present
+            if (this.freshnessCutoff) {
+                const missingAppsQuery = this.db
+                    .select({ app_id: sql<number>`app_id`.as("app_id") })
+                    .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+                    .where(
+                        notExists(
+                            this.db
+                                .select()
+                                .from(apps)
+                                .where(
+                                    and(
+                                        eq(apps.id, sql`required_apps.app_id`),
+                                        eq(apps.lang, lang),
+                                        gte(apps.updated_at, this.freshnessCutoff),
+                                    ),
+                                ),
+                        ),
+                    );
+                const result = await missingAppsQuery;
+                return result.map((row) => row.app_id);
+            }
             const missingAppsQuery = this.db
                 .select({ app_id: sql<number>`app_id`.as("app_id") })
                 .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
@@ -374,7 +405,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                             .where(and(eq(apps.id, sql`required_apps.app_id`), eq(apps.lang, lang))),
                     ),
                 );
-
             const result = await missingAppsQuery;
             return result.map((row) => row.app_id);
         }
@@ -382,10 +412,17 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         if (this.appIds.size > 0) {
             // Consumer-controlled app IDs - safe to use inArray directly
             const appIdsArray = Array.from(this.appIds);
-            const existingApps = await this.db
-                .selectDistinct({ id: apps.id })
+            let existingAppsQ = this.db
+                .selectDistinct({ id: apps.id, updated_at: apps.updated_at })
                 .from(apps)
-                .where(and(eq(apps.lang, lang), inArray(apps.id, appIdsArray)));
+                .where(and(eq(apps.lang, lang), inArray(apps.id, appIdsArray)))
+                .$dynamic();
+
+            if (this.freshnessCutoff) {
+                existingAppsQ = existingAppsQ.where(gte(apps.updated_at, this.freshnessCutoff));
+            }
+
+            const existingApps = await existingAppsQ;
 
             const existingIds = new Set(existingApps.map((row) => row.id));
             return appIdsArray.filter((id) => !existingIds.has(id));
@@ -401,7 +438,26 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
      */
     private async findMissingPlayerEstimates(): Promise<number[]> {
         if (this.requiredAppsSubquery) {
-            // Use provided subquery from cross-repository dependency with notExists
+            if (this.freshnessCutoff) {
+                const missingPlayerEstimatesQuery = this.db
+                    .select({ app_id: sql<number>`app_id`.as("app_id") })
+                    .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+                    .where(
+                        notExists(
+                            this.db
+                                .select()
+                                .from(estimatedPlayers)
+                                .where(
+                                    and(
+                                        eq(estimatedPlayers.app_id, sql`required_apps.app_id`),
+                                        gte(estimatedPlayers.updated_at, this.freshnessCutoff),
+                                    ),
+                                ),
+                        ),
+                    );
+                const result = await missingPlayerEstimatesQuery;
+                return result.map((row) => row.app_id);
+            }
             const missingPlayerEstimatesQuery = this.db
                 .select({ app_id: sql<number>`app_id`.as("app_id") })
                 .from(sql`(${this.requiredAppsSubquery}) as required_apps`)
@@ -413,7 +469,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                             .where(eq(estimatedPlayers.app_id, sql`required_apps.app_id`)),
                     ),
                 );
-
             const result = await missingPlayerEstimatesQuery;
             return result.map((row) => row.app_id);
         }
@@ -421,10 +476,17 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         if (this.appIds.size > 0) {
             // Consumer-controlled app IDs - safe to use inArray directly
             const appIdsArray = Array.from(this.appIds);
-            const existingPlayerEstimates = await this.db
-                .selectDistinct({ app_id: estimatedPlayers.app_id })
+            let existingPlayerEstimatesQ = this.db
+                .selectDistinct({ app_id: estimatedPlayers.app_id, updated_at: estimatedPlayers.updated_at })
                 .from(estimatedPlayers)
-                .where(inArray(estimatedPlayers.app_id, appIdsArray));
+                .where(inArray(estimatedPlayers.app_id, appIdsArray))
+                .$dynamic();
+            if (this.freshnessCutoff) {
+                existingPlayerEstimatesQ = existingPlayerEstimatesQ.where(
+                    gte(estimatedPlayers.updated_at, this.freshnessCutoff),
+                );
+            }
+            const existingPlayerEstimates = await existingPlayerEstimatesQ;
 
             const existingIds = new Set(existingPlayerEstimates.map((row) => row.app_id));
             return appIdsArray.filter((id) => !existingIds.has(id));
@@ -714,9 +776,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
         // App data fetch helper (per app)
         const fetchAppData = async (id: number) => {
             const [appDetails, achievementMeta, achievementStats] = await Promise.all([
-                this.steamStoreApi
-                    .getAppDetails(id, { l: lang })
-                    .then((res) => Object.values(res)[0]?.data || null),
+                this.steamStoreApi.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
                 this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
                     console.warn(`Achievement meta fetch failed for app ${id}:`, err);
                     return null;
@@ -752,7 +812,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
             console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
             const attempt = await Attempt.all(appIds.map((id) => fetchAppData(id)));
 
-            const validData = attempt.data.filter((d) => d !== undefined && d.achievementStats !== undefined && d.achievementMeta !== undefined);
+            const validData = attempt.data.filter(
+                (d) => d !== undefined && d.achievementStats !== undefined && d.achievementMeta !== undefined,
+            );
 
             if (validData.length > 0) {
                 const appData = validData
@@ -772,7 +834,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
                     `📊 Apps being processed: ${appsWithAchievements} with achievements, ${appsWithoutAchievements} without achievements`,
                 );
 
-                const achievementStatsData = validData.flatMap((data) => data?.achievementStats).filter((s) => s !== undefined);
+                const achievementStatsData = validData
+                    .flatMap((data) => data?.achievementStats)
+                    .filter((s) => s !== undefined);
                 const achievementMetaData = validData
                     .flatMap((data) => {
                         const results: Array<{

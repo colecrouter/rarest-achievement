@@ -7,7 +7,7 @@ import { AttemptStatus } from "../../src/error";
 
 import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
-import { achievementsMeta, achievementsStats, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
+import { achievementsMeta, achievementsStats, estimatedPlayers, apps } from "../../src/repositories/sqlite/schema.js";
 import { seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { basicAchievement, makeAchievementSchema, makeAppData } from "../fixtures/appData";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
@@ -171,6 +171,49 @@ describe("AppAchievementRepository - upsert regression (sqlite)", () => {
         if (!res.data) throw new Error("expected data");
         assert.strictEqual(res.data.length, 1);
         assert.strictEqual(res.data[0]?.app.id, appPos);
+    });
+
+    test("withCutoff propagates to AppRepository and refetches stale app data", async () => {
+        const { repo: appRepo, auth, store } = makeAppRepoWithMocks(db);
+        const appAchRepo = new AppAchievementRepository(db, appRepo);
+        const appId = 88111;
+        // Seed stale app + achievement stats (old updated_at)
+        await db.insert(achievementsStats).values({
+            app_id: appId,
+            ach_id: basicAchievement.name,
+            percent: 10,
+            updated_at: new Date(Date.now() - 3600_000),
+        });
+        // Initial app row with old name
+        await db.insert(achievementsMeta).values({
+            app_id: appId,
+            ach_id: basicAchievement.name,
+            lang: "english",
+            display_name: basicAchievement.displayName,
+            default_value: 0,
+            description: basicAchievement.description,
+            icon: basicAchievement.icon,
+            icon_gray: basicAchievement.icongray,
+            hidden: 0,
+        });
+        // Seed app row manually (old name) and backdate using ORM (avoids raw Date binding issues)
+        const staleDate = new Date(Date.now() - 3600_000);
+        await db
+            .insert(apps)
+            .values({ id: appId, data: makeAppData(appId, "Old Name"), lang: "english", updated_at: staleDate });
+        // Mock API returns new name
+        store.setAppDetails(appId, { [appId]: { success: true as const, data: makeAppData(appId, "Fresh Name") } });
+        auth.setSchemaForGame({ appid: appId, l: "english" }, makeAchievementSchema("Fresh Name", [basicAchievement]));
+
+        const res = await appAchRepo
+            .compose()
+            .withLanguage("en")
+            .withAppIds([appId])
+            .withCutoff(new Date())
+            .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+        assert.strictEqual(res.data.length, 1);
+        assert.strictEqual(res.data[0]?.app.name, "Fresh Name", "Stale app data should be refetched through cutoff");
     });
 });
 

@@ -5,10 +5,14 @@ export const load = async ({ parent, locals }) => {
 
     const locale = getLocale();
 
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
     // If the user is logged in, fetch user achievements instead of global achievements
     const achievements = locals.steamUser
         ? await locals.vault.userAchievements
               .compose()
+              .withCutoff(oneDayAgo)
               .withLanguage(locale)
               .withAppIds(app.id)
               .withUserIds([locals.steamUser.id])

@@ -108,6 +108,8 @@ class UserAchievementQueryComposer
     private friendsOfUserId?: string;
     private unlockedFilter?: boolean;
     private ensurePolicy: EnsurePolicy = defaultEnsurePolicy();
+    /** Optional freshness cutoff passed to dependent repositories */
+    private freshnessCutoff: Date | undefined;
 
     constructor(
         db: ProjectDB,
@@ -193,6 +195,12 @@ class UserAchievementQueryComposer
                 unlocked ? isNotNull(userAchievements.unlocked_at) : isNull(userAchievements.unlocked_at),
             );
         }
+        return this;
+    }
+
+    /** Provide a freshness cutoff so dependent repositories can treat stale rows as missing */
+    withCutoff(cutoff: Date): this {
+        this.freshnessCutoff = cutoff;
         return this;
     }
 
@@ -292,11 +300,12 @@ class UserAchievementQueryComposer
             try {
                 const appIds = Array.from(this.appIds);
                 // Fetch app achievements
-                const appAchResult = await this.appAchievementRepository
+                const appAchComposer = this.appAchievementRepository
                     .compose()
                     .withLanguage(this.lang)
-                    .withAppIds(appIds)
-                    .build();
+                    .withAppIds(appIds);
+                if (this.freshnessCutoff) appAchComposer.withCutoff(this.freshnessCutoff);
+                const appAchResult = await appAchComposer.build();
 
                 const finalData: SteamUserAchievement[] = [];
                 if (appAchResult.hasData()) {
@@ -308,7 +317,9 @@ class UserAchievementQueryComposer
                     // Fetch user object if we have an ID to attach
                     let userObj = null;
                     if (primaryUserId) {
-                        const userRes = await this.userRepository.compose().withUserIds([primaryUserId]).build();
+                        const userComposer = this.userRepository.compose().withUserIds([primaryUserId]);
+                        if (this.freshnessCutoff) userComposer.withCutoff(this.freshnessCutoff);
+                        const userRes = await userComposer.build();
                         if (userRes.hasData() && userRes.data.length > 0) {
                             userObj = userRes.data[0];
                         }
@@ -832,7 +843,9 @@ class UserAchievementQueryComposer
         const uniqueUserIds = [...new Set(rows.map((row) => row.user_id))];
 
         // Fetch user data (we still need this as it's not in the main query) - now returns Attempt
-        const userDataResult = await this.userRepository.compose().withUserIds(uniqueUserIds).build();
+        const userDataComposer = this.userRepository.compose().withUserIds(uniqueUserIds);
+        if (this.freshnessCutoff) userDataComposer.withCutoff(this.freshnessCutoff);
+        const userDataResult = await userDataComposer.build();
 
         // Even if user data fetch fails, we can try to build what we can
         // (though results will be empty without user data)
@@ -917,10 +930,9 @@ class UserAchievementQueryComposer
             // When friendsOfUserId is set, we first need to ensure the friends data exists
             // This will populate the friends table if it doesn't exist yet
             console.log(`🔍 Ensuring friends data exists for user ${this.friendsOfUserId}`);
-            friendsResult = await this.friendsRepository
-                .compose()
-                .withUserIds(this.friendsOfUserId)
-                .build({ limit: 1000 }); // Get up to 1000 friends
+            const friendsComposer = this.friendsRepository.compose().withUserIds(this.friendsOfUserId);
+            if (this.freshnessCutoff) friendsComposer.withCutoff(this.freshnessCutoff);
+            friendsResult = await friendsComposer.build({ limit: 1000 }); // Get up to 1000 friends
 
             if (friendsResult.error) {
                 console.warn(`Failed to fetch friends for user ${this.friendsOfUserId}:`, friendsResult.error);
@@ -936,16 +948,19 @@ class UserAchievementQueryComposer
                 WHERE user_id = ${this.friendsOfUserId}
             )`;
 
-            result = await this.userRepository
+            const friendUsersComposer = this.userRepository
                 .compose()
-                .withRequiredEntitySubquery("user", friendUserIdsSubquery)
-                .ensureDataExists();
+                .withRequiredEntitySubquery("user", friendUserIdsSubquery);
+            if (this.freshnessCutoff) friendUsersComposer.withCutoff(this.freshnessCutoff);
+            result = await friendUsersComposer.ensureDataExists();
         } else {
             const userIds = Array.from(this.userIds);
             if (userIds.length === 0) return Attempt.ok(undefined);
 
             // First, ensure user profile and owned games data exists
-            result = await this.userRepository.compose().withUserIds(userIds).ensureDataExists();
+            const userEnsureComposer = this.userRepository.compose().withUserIds(userIds);
+            if (this.freshnessCutoff) userEnsureComposer.withCutoff(this.freshnessCutoff);
+            result = await userEnsureComposer.ensureDataExists();
         }
 
         // Then, ensure app data exists for the apps we'll be querying
@@ -1330,12 +1345,14 @@ class UserAchievementQueryComposer
         console.log("🚀 Ensuring app data exists using subquery-based approach");
 
         // Use the App repository with subquery-based data ensuring
-        const appDataResult = await this.appRepository
+        const appDataComposer = this.appRepository
             .compose()
             .withLanguage(this.lang)
             .withRequiredEntitySubquery("apps", requiredAppsSubquery)
-            .withUnlockedAtMode(this.ensurePolicy?.mode === "unlocked_at")
-            .build();
+            .withUnlockedAtMode(this.ensurePolicy?.mode === "unlocked_at");
+        // Intentionally don't check for app freshness
+        // if (this.freshnessCutoff) appDataComposer.withCutoff(this.freshnessCutoff);
+        const appDataResult = await appDataComposer.build();
 
         if (appDataResult.error) {
             console.warn("Failed to ensure app data exists:", appDataResult.error);
@@ -1371,11 +1388,12 @@ class UserAchievementQueryComposer
 
         if (uniqueAppIds.length <= 50) {
             // Safe to use direct approach for small sets
-            appAchievementsResult = await this.appAchievementRepository
+            const achComposer = this.appAchievementRepository
                 .compose()
                 .withLanguage(this.lang)
-                .withAppIds(uniqueAppIds)
-                .build();
+                .withAppIds(uniqueAppIds);
+            if (this.freshnessCutoff) achComposer.withCutoff(this.freshnessCutoff);
+            appAchievementsResult = await achComposer.build();
         } else {
             // For larger sets, chunk the requests
             // TODO this is still giving me PTSD
@@ -1387,7 +1405,14 @@ class UserAchievementQueryComposer
 
             const chunkResults = await Promise.all(
                 chunks.map((chunk) =>
-                    this.appAchievementRepository.compose().withLanguage(this.lang).withAppIds(chunk).build(),
+                    (() => {
+                        const chunkComposer = this.appAchievementRepository
+                            .compose()
+                            .withLanguage(this.lang)
+                            .withAppIds(chunk);
+                        if (this.freshnessCutoff) chunkComposer.withCutoff(this.freshnessCutoff);
+                        return chunkComposer.build();
+                    })(),
                 ),
             );
 
@@ -1408,7 +1433,9 @@ class UserAchievementQueryComposer
             appAchievementsResult = Attempt.from(allAppAchievements, firstError);
         }
 
-        const userDataResult = await this.userRepository.compose().withUserIds(uniqueUserIds).build();
+        const userDataComposer2 = this.userRepository.compose().withUserIds(uniqueUserIds);
+        if (this.freshnessCutoff) userDataComposer2.withCutoff(this.freshnessCutoff);
+        const userDataResult = await userDataComposer2.build();
 
         // Combine both attempts - if either failed, we can still try to build partial results
         const combinedResult = appAchievementsResult.and(userDataResult);

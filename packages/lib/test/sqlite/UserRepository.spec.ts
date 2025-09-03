@@ -241,6 +241,33 @@ describe("UserRepository - SQLite (in-memory)", () => {
         assert.ok(row.last instanceof Date);
         assert.strictEqual(row.last.getTime(), 0);
     });
+
+    test("withCutoff refetches stale user data", async () => {
+        const repo = getRepo();
+        const staleId = "fresh-1";
+        const staleDate = new Date(Date.now() - 1000 * 60 * 60); // 1 hour old
+        // Seed stale row with old persona name
+        const baseOld = makeUserData(staleId);
+        const oldData = { ...baseOld, personaname: "Old Name" } as typeof baseOld;
+        await db.insert(users).values({ id: staleId, data: oldData, updated_at: staleDate });
+
+        // Prepare API mock with updated persona name
+        const baseNew = makeUserData(staleId);
+        const newData = { ...baseNew, personaname: "New Name" } as typeof baseNew;
+        const ps: GetPlayerSummariesResponse = { response: { players: [newData] } };
+        authMock.setPlayerSummaries([staleId], ps);
+        const ownedQ: GetOwnedGamesQuery<false> = { steamid: staleId, include_played_free_games: true };
+        const ownedR: GetOwnedGamesResponse<false> = { response: { game_count: 0, games: [] } };
+        authMock.setOwnedGames(ownedQ, ownedR);
+
+        const cutoff = new Date(); // Anything older than 'now' is stale
+        const result = await repo.compose().withUserIds([staleId]).withCutoff(cutoff).build();
+        assert.strictEqual(result.data.length, 1);
+        assert.strictEqual(result.data[0]?.serialize().data.personaname, "New Name", "Stale user should be refetched");
+        // Verify updated_at changed
+        const row = await db.select({ updated_at: users.updated_at }).from(users).where(eq(users.id, staleId));
+        assert.ok(row[0]?.updated_at && row[0].updated_at > staleDate, "updated_at should be refreshed");
+    });
 });
 
 // Count() parity and error propagation tests for UserRepository

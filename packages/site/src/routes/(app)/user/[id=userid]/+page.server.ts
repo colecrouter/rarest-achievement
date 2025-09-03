@@ -17,10 +17,14 @@ export const load = async ({ url, locals, parent }) => {
 
         const config = paramParser.parseFromURL(url);
 
+        const oneDayAgo = new Date();
+        oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
         const achievementsForUserQuery = locals.vault.userAchievements
             .compose()
             .withLanguage(locale)
             .withUserIds([user.id])
+            .withCutoff(oneDayAgo)
             .withUnlockedStatus(true);
 
         if (config.search) achievementsForUserQuery.withSearch(config.search);

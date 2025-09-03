@@ -59,6 +59,49 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
         assert.ok(res.data.length === 0 || res.data.length === 1);
     });
 
+    test("withCutoff refetches stale user profile for achievements", async () => {
+        const repo = getRepo();
+        const userId = "fresh-ach-user";
+        const appId = 93001;
+        // Seed stale user row
+        await insertUser(db, { id: userId, data: makeUserData(userId) });
+        const staleDate = new Date(Date.now() - 3600_000);
+        // Use ORM update to persist stale timestamp (Date will be serialized correctly)
+        await db.update(users).set({ updated_at: staleDate }).where(eq(users.id, userId));
+        await insertOwnedGame(db, { user_id: userId, app_id: appId });
+        await seedAppWithPlayers(db, appId, "Fresh App", 1500);
+        await seedStats(db, appId, [{ ach: "FA1", percent: 10 }]);
+        await seedMetaByCode(db, appId, "en", [{ ach: "FA1", display: "Fresh Ach" }]);
+
+        // Mock player summaries with changed persona name
+        const updatedSummary = makePlayerSummariesResponse([userId], {
+            [userId]: { personaname: "Refetched Persona" },
+        });
+        authMock.setPlayerSummaries([userId], updatedSummary);
+        // Mock owned games response for ensure path
+        const ownedResp: GetOwnedGamesResponse<false> = {
+            response: { game_count: 1, games: [{ appid: appId, playtime_forever: 0 }] },
+        };
+        authMock.setOwnedGames({ steamid: userId, include_played_free_games: true }, ownedResp);
+        // Mock player achievements
+        authMock.setPlayerAchievements(
+            { steamid: userId, appid: appId },
+            makePlayerAchievementsPayload({ userId, appId, items: [{ ach: "FA1", achieved: 1, unlock: new Date() }] }),
+        );
+
+        const res = await repo
+            .compose()
+            .withLanguage("en")
+            .withUserIds(userId)
+            .withAppIds(appId)
+            .withCutoff(new Date())
+            .build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+        assert.strictEqual(res.data.length, 1);
+        const item = res.data[0];
+        assert.ok(item?.user?.serialize().data.personaname === "Refetched Persona", "persona name should be updated");
+    });
+
     // 2) Data ensure: fetch via API and upsert user_achievements_stats; idempotency; cross-repo pre-reqs
     test("ensureDataExists fetches player achievements and upserts into user_achievements_stats; idempotent", async () => {
         const repo = getRepo();

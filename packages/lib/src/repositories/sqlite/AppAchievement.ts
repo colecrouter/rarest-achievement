@@ -24,6 +24,8 @@ export interface AppAchievementFilters {
 
 class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppAchievement, AppAchievementSortMethod> {
     private requiresEnglishFallback = false;
+    /** Optional freshness cutoff passed through to underlying App repository */
+    private freshnessCutoff: Date | undefined;
 
     constructor(
         db: ProjectDB,
@@ -38,6 +40,12 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
     withLanguage(lang: LanguageCode): this {
         super.withLanguage(lang);
         this.requiresEnglishFallback = lang !== "en";
+        return this;
+    }
+
+    /** Provide freshness cutoff to underlying dependency ensures */
+    withCutoff(cutoff: Date): this {
+        this.freshnessCutoff = cutoff;
         return this;
     }
 
@@ -125,6 +133,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
             (hasExplicitAppIds ? undefined : this.buildAppsSubqueryForCurrentFilters());
 
         const composer = this.appRepository.compose().withLanguage(this.lang);
+        if (this.freshnessCutoff) composer.withCutoff(this.freshnessCutoff);
 
         if (hasExplicitAppIds) {
             composer.withAppIds(this.appIds);

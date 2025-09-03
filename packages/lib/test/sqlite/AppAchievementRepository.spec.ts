@@ -22,7 +22,7 @@ describe("AppAchievementRepository - upsert regression (sqlite)", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
     });
 
     test("achievements meta upsert uses EXCLUDED fields", async () => {
@@ -183,7 +183,7 @@ describe("AppAchievementRepository - count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        db = drizzle(sqlite, { logger: true }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
     });
 
     test("count equals build().data.length with appIds and language", async () => {

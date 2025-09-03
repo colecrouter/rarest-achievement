@@ -38,7 +38,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
         sqlite.exec("PRAGMA synchronous = NORMAL;");
 
         await runMigrations(sqlite);
-        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
 
         // Fresh per-test repo + mocks
         ctx = makeAppRepoWithMocks(db);
@@ -300,7 +300,7 @@ describe("Upsert regression - App repository", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
     });
 
     test("app metadata upsert uses EXCLUDED fields", async () => {

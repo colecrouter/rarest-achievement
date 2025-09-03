@@ -29,7 +29,7 @@ describe("FriendsRepository - SQLite (in-memory)", () => {
         await runMigrations(sqlite);
         // Disable FK enforcement in tests to avoid order dependencies
         sqlite.exec("PRAGMA foreign_keys = OFF;");
-        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
     });
 
     // Wire repo + auth for helper functions
@@ -340,7 +340,7 @@ test("friend edge upsert is idempotent (no duplicates)", async () => {
     await runMigrations(sqlite);
     // Foreign keys disabled in this suite's setup pattern; keep consistent
     sqlite.exec("PRAGMA foreign_keys = OFF;");
-    const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+    const db = drizzle(sqlite) as unknown as ProjectDB;
 
     const userId = "upsert-main";
     const friendId = "upsert-friend";
@@ -404,7 +404,7 @@ describe_count_friends("FriendsRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         const { repo } = makeFriendsRepoWithMocks(db);
 
@@ -437,7 +437,7 @@ describe_count_friends("FriendsRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         const { repo } = makeFriendsRepoWithMocks(db);
 
@@ -452,7 +452,7 @@ describe_count_friends("FriendsRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         const { repo } = makeFriendsRepoWithMocks(db);
 

@@ -40,7 +40,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
         await runMigrations(sqlite);
         // Disable FK enforcement in tests to prevent order constraints during ensure paths
         sqlite.exec("PRAGMA foreign_keys = OFF;");
-        db = drizzle(sqlite, { logger: true }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
 
         // Fresh repo + mocks
         const { repo, auth } = makeUserAchievementRepoWithMocks(db);

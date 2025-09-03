@@ -26,7 +26,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
         sqlite.exec("PRAGMA synchronous = NORMAL;");
 
         await runMigrations(sqlite);
-        db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        db = drizzle(sqlite) as unknown as ProjectDB;
     });
 
     function getRepo() {
@@ -253,7 +253,7 @@ describe_count_user("UserRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         // Seed two users
         await db.insert(users).values({ id: "111", data: makeUserData("111"), updated_at: new Date() });
@@ -277,7 +277,7 @@ describe_count_user("UserRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         // Seed three users
         await db.insert(users).values({ id: "u1", data: makeUserData("u1"), updated_at: new Date() });
@@ -299,7 +299,7 @@ describe_count_user("UserRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         // Seed a superset of users
         await db.insert(users).values({ id: "su1", data: makeUserData("su1"), updated_at: new Date() });
@@ -337,7 +337,7 @@ describe_count_user("UserRepository.count()", () => {
         sqlite.exec("PRAGMA journal_mode = WAL;");
         sqlite.exec("PRAGMA synchronous = NORMAL;");
         await runMigrations(sqlite);
-        const db = drizzle(sqlite, { logger: false }) as unknown as ProjectDB;
+        const db = drizzle(sqlite) as unknown as ProjectDB;
 
         // Seed a user
         await db.insert(users).values({ id: "boom", data: makeUserData("boom"), updated_at: new Date() });

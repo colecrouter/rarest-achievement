@@ -1,16 +1,18 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
 	"files": {
-		"ignore": ["**/worker-configuration.d.ts"]
+		"includes": ["**", "!**/worker-configuration.d.ts"]
 	},
 	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
 		"useIgnoreFile": true
 	},
 	"formatter": {
 		"indentStyle": "tab",
 		"indentWidth": 4,
 		"lineEnding": "lf",
-		"ignore": ["**/*.svelte", "**/*.css", "**/*.html"],
+		"includes": ["**", "!**/*.svelte", "!**/*.css", "!**/*.html"],
 		"lineWidth": 120
 	},
 	"linter": {
@@ -22,8 +24,23 @@
 	},
 	"overrides": [
 		{
-			"include": ["**/*.svelte"],
-			"linter": { "rules": { "style": { "useConst": "off", "useImportType": "off" } } }
+			"includes": ["**/*.svelte"],
+			"linter": {
+				"rules": {
+					"correctness": { "noUnusedVariables": "off", "noUnusedImports": "off" },
+					"style": { "useConst": "off", "useImportType": "off" }
+				}
+			}
+		},
+		{
+			"includes": ["**/*.css"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noUnknownAtRules": "off"
+					}
+				}
+			}
 		}
 	]
 }

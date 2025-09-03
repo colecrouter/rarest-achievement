@@ -1,7 +1,7 @@
-import type { SQL } from "drizzle-orm";
+import type { ColumnsSelection } from "drizzle-orm";
+import type { SubqueryWithSelection, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import { Attempt, AttemptStatus } from "../error";
 import type { LanguageCode } from "../lang";
-
 export type SortDirection = "asc" | "desc";
 
 /**
@@ -62,6 +62,11 @@ export interface QueryComposer<TResult, TSortMethod extends string> {
 	count(): Promise<Attempt<number, AttemptStatus>>;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: I don't think we can properly narrow this without causing issues elsewhere
+export type RequiredSubquery<T extends ColumnsSelection = any> =
+	| WithSubqueryWithSelection<T, string>
+	| SubqueryWithSelection<T, string>;
+
 /**
  * Interface for composers that can provide CTEs to define required data
  * This enables cross-repository data dependency resolution without parameter explosion
@@ -72,7 +77,7 @@ export interface SubqueryProvider {
 	 * Returns a CTE that can be used by dependency repositories
 	 * to determine what data needs to be fetched
 	 */
-	buildRequiredEntitySubquery?(entityType: string, cteName: string): SQL | undefined;
+	buildRequiredEntitySubquery?(entityType: string, cteName: string): RequiredSubquery | undefined;
 }
 
 /**
@@ -84,7 +89,7 @@ export interface SubqueryConsumer<TResult, TSortMethod extends string> extends Q
 	 * Accept a CTE that defines which entities are required
 	 * This CTE will be used instead of explicit ID arrays for data existence checking
 	 */
-	withRequiredEntitySubquery?(entityType: string, subquery: SQL): this;
+	withRequiredEntitySubquery?(entityType: string, subquery: RequiredSubquery): this;
 
 	/**
 	 * Ensure required data exists based on current filter state

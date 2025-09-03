@@ -19,6 +19,7 @@ import {
 	ComposableQueryResult,
 	type ComposableRepository,
 	createQueryResult,
+	type RequiredSubquery,
 	type SubqueryProvider,
 } from "../composable";
 import type { Repository } from "../repository";
@@ -30,7 +31,7 @@ import { defaultEnsurePolicy, defaultUnlockedAtEnsurePolicy } from "./ensurePoli
 import type { FriendsRepository } from "./Friends";
 import { achievementsMeta } from "./schema";
 import type { UserRepository } from "./User";
-import { safeInsert } from "./utils";
+import { countDistinct, excluded, max, safeInsert } from "./utils";
 
 const DEBUG_COUNTERS = false as const;
 
@@ -187,7 +188,7 @@ class UserAchievementQueryComposer
 	 * Build a subquery that selects the app IDs required by this query
 	 * This enables cross-repository data dependency resolution without parameter explosion
 	 */
-	buildRequiredEntitySubquery(entityType: string): SQL | undefined {
+	buildRequiredEntitySubquery(entityType: string, _cteName: string = "required_apps"): RequiredSubquery | undefined {
 		if (entityType !== "apps") {
 			return undefined;
 		}
@@ -212,7 +213,8 @@ class UserAchievementQueryComposer
 			neededAppsQuery = neededAppsQuery.where(inArray(ownedGames.app_id, Array.from(this.appIds)));
 		}
 
-		return neededAppsQuery.getSQL();
+		// Alias must be "required_apps" to match downstream innerJoin in App repo
+		return neededAppsQuery.as("required_apps");
 	}
 
 	/**
@@ -238,7 +240,7 @@ class UserAchievementQueryComposer
 		const rows = await this.db
 			.select({
 				app_id: ownedGames.app_id,
-				last: sql`max(${ownedGames.last_played_at})`.as("last"),
+				last: max(ownedGames.last_played_at).as("last"),
 			})
 			.from(ownedGames)
 			.where(inArray(ownedGames.user_id, userIds))
@@ -374,7 +376,9 @@ class UserAchievementQueryComposer
 			let query = this.db
 				.with(...this.ctes)
 				.select({
-					count: sql<number>`count(distinct ${userAchievements.user_id} || ':' || ${userAchievements.app_id} || ':' || ${userAchievements.ach_id})`,
+					count: countDistinct(
+						sql`${userAchievements.user_id} || ':' || ${userAchievements.app_id} || ':' || ${userAchievements.ach_id}`,
+					),
 				})
 				.from(userAchievements)
 				// Enforce "owned" semantics identical to build()
@@ -921,11 +925,17 @@ class UserAchievementQueryComposer
 			console.log(`🔍 Using subquery for friends of user ${this.friendsOfUserId}`);
 
 			// First, ensure user profile and owned games data exists using subquery
-			const friendUserIdsSubquery = sql`(
-                SELECT DISTINCT friend_id AS user_id
-                FROM friends
-                WHERE user_id = ${this.friendsOfUserId}
-            )`;
+			// const friendUserIdsSubquery = sql`(
+			//     SELECT DISTINCT friend_id AS user_id
+			//     FROM friends
+			//     WHERE user_id = ${this.friendsOfUserId}
+			// )`;
+			const friendUserIdsSubquery = this.db
+				.selectDistinct({ id: friends.friend_id })
+				.from(friends)
+				.where(eq(friends.user_id, this.friendsOfUserId))
+				.limit(1000)
+				.as("required_users");
 
 			const friendUsersComposer = this.userRepository
 				.compose()
@@ -1069,7 +1079,7 @@ class UserAchievementQueryComposer
 											userAchievements.ach_id,
 										],
 										set: {
-											unlocked_at: sql`excluded.unlocked_at`,
+											unlocked_at: excluded(userAchievements.unlocked_at),
 											updated_at: new Date(),
 										},
 									}),
@@ -1269,7 +1279,7 @@ class UserAchievementQueryComposer
 						.onConflictDoUpdate({
 							target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
 							set: {
-								unlocked_at: sql`excluded.unlocked_at`,
+								unlocked_at: excluded(userAchievements.unlocked_at),
 								updated_at: new Date(),
 							},
 						}),

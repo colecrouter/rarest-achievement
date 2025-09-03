@@ -9,6 +9,7 @@ import {
 	type ComposableRepository,
 	createQueryResult,
 } from "../composable";
+import type { RequiredSubquery } from "../composable";
 import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
 import { BaseAchievementQueryComposer } from "./BaseAchievement";
@@ -135,7 +136,8 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		if (hasExplicitAppIds) {
 			composer.withAppIds(this.appIds);
 		} else if (requiredAppsSubquery) {
-			composer.withRequiredEntitySubquery("apps", requiredAppsSubquery);
+			// Cast to RequiredSubquery to satisfy AppRepository's strict CTE typing (.app_id field)
+			composer.withRequiredEntitySubquery("apps", requiredAppsSubquery as unknown as RequiredSubquery);
 		} else {
 			return createQueryResult([], 0, null);
 		}
@@ -301,7 +303,8 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		const bySub = await this.appRepository
 			.compose()
 			.withLanguage(this.lang)
-			.withRequiredEntitySubquery("apps", subquery)
+			// Cast to RequiredSubquery to satisfy AppRepository's strict CTE typing (.app_id field)
+			.withRequiredEntitySubquery("apps", subquery as unknown as RequiredSubquery)
 			.build({
 				limit: 1000,
 				sort: { method: "id", direction: "asc" },

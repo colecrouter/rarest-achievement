@@ -1,7 +1,8 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { excluded } from "../../src/repositories/sqlite/utils";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
@@ -342,7 +343,7 @@ describe("Upsert regression - App repository", () => {
 			.onConflictDoUpdate({
 				target: [apps.id, apps.lang],
 				set: {
-					data: sql`excluded.data`,
+					data: excluded(apps.data),
 					updated_at: new Date(),
 				},
 			});
@@ -375,7 +376,7 @@ describe("Upsert regression - App repository", () => {
 			.onConflictDoUpdate({
 				target: [achievementsStats.app_id, achievementsStats.ach_id],
 				set: {
-					percent: sql`excluded.percent`,
+					percent: excluded(achievementsStats.percent),
 					updated_at: new Date(),
 				},
 			});

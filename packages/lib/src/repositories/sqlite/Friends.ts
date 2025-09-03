@@ -10,6 +10,7 @@ import {
 	createQueryResult,
 	type QueryComposer,
 } from "../composable";
+import type { RequiredSubquery } from "../composable";
 import type { Repository } from "../repository";
 import type { UserRepository } from "./User";
 import { safeInsert } from "./utils";
@@ -183,16 +184,17 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 				if (allFriendIds.size > 0) {
 					console.log(`👥 Ensuring ${allFriendIds.size} friend users exist in database using subquery`);
 
-					// Create subquery for friend user IDs from the friends table we just populated
-					const friendUserIdsSubquery = sql`(
-                        SELECT DISTINCT friend_id AS user_id 
-                        FROM friends 
-                        WHERE user_id IN (${sql.join(Array.from(this.userIds), sql`, `)})
-                    )`;
+					// Create a typed subquery for friend user IDs (drizzle CTE) to satisfy UserRepository type expectations
+					const friendUserIdsSubquery = this.db
+						.selectDistinct({ id: friends.friend_id })
+						.from(friends)
+						.where(inArray(friends.user_id, Array.from(this.userIds)))
+						.as("required_users");
 
 					const friendUserComposer = this.userRepository
 						.compose()
-						.withRequiredEntitySubquery("user", friendUserIdsSubquery);
+						// Cast to RequiredSubquery to satisfy SubqueryConsumer method type
+						.withRequiredEntitySubquery("user", friendUserIdsSubquery as unknown as RequiredSubquery);
 					if (this.freshnessCutoff) friendUserComposer.withCutoff(this.freshnessCutoff);
 					const friendUsersResult = await friendUserComposer.ensureDataExists();
 
@@ -219,17 +221,17 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 			options.sort?.method === "friend_since" ? sql`${friends.friend_since}` : sql`${friends.friend_id}`;
 		const sortDirection = options.sort?.direction !== "desc" ? desc : asc;
 
-		// Create a subquery for the friend user IDs we need instead of using explicit IDs
-		// This avoids parameter explosion when there are many friends
-		const friendUserIdsSubquery = sql`
-            SELECT DISTINCT ${friends.friend_id} as user_id 
-            FROM ${friends} 
-            WHERE ${inArray(friends.user_id, ids)}
-        `;
+		// Create a typed subquery for the friend user IDs we need (avoids parameter explosion)
+		const friendUserIdsSubquery = this.db
+			.selectDistinct({ id: friends.friend_id })
+			.from(friends)
+			.where(inArray(friends.user_id, ids))
+			.as("required_users");
 
 		const friendUsersEnsureResult = await this.userRepository
 			.compose()
-			.withRequiredEntitySubquery("user", friendUserIdsSubquery)
+			// Cast to RequiredSubquery to satisfy SubqueryConsumer method type
+			.withRequiredEntitySubquery("user", friendUserIdsSubquery as unknown as RequiredSubquery)
 			.ensureDataExists();
 		if (friendUsersEnsureResult.error) {
 			console.warn("Failed to ensure friend user data exists:", friendUsersEnsureResult.error);

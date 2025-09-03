@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gte, inArray, notExists, or, type SQL, sql } from "drizzle-orm";
-import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
+import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	type APILanguageCode,
 	Attempt,
@@ -24,14 +24,18 @@ import {
 	type ComposableQueryOptions,
 	type ComposableQueryResult,
 	createQueryResult,
+	type RequiredSubquery,
 	type SubqueryConsumer,
 } from "../composable";
 import type { Repository } from "../repository";
-import { safeInsert, searchTerms } from "./utils";
+import { countDistinct, excluded, jsonExtract, safeInsert, searchTerms } from "./utils";
 
 const DEBUG_COUNTERS = false as const;
 
 type AppSortMethod = "id";
+
+// Precise CTE type for "required apps" subquery: must expose a single column "app_id"
+type RequiredAppsSubquery = WithSubqueryWithSelection<{ app_id: typeof apps.id }, string>;
 
 class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	private appIds: Set<number> = new Set();
@@ -41,7 +45,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	private lang: LanguageCode = "en";
 	private searchTerm?: string; /// TODO
 	// Store required apps subquery for cross-repository dependencies
-	private requiredAppsSubquery?: SQL;
+	private requiredAppsSubquery?: RequiredAppsSubquery;
 	/** When true, prefer small FIFO and micro-batch inserts to minimize memory (used by unlocked_at ensure path) */
 	private unlockedAtMode = false;
 	/** If set, treat rows with updated_at older than this Date as missing */
@@ -153,29 +157,17 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	/**
 	 * Filter apps by search term (name contains search)
 	 */
-	withSearch(search: string): this {
-		this.searchTerm = search;
+	withSearch(query: string): this {
+		if (!query || query.trim() === "") return this;
 
-		// Search across several textual fields. Each searchTerms() enforces that all terms appear
-		// in that specific column; we OR the columns together so a match in any field qualifies.
-		// Fields chosen:
-		// - name
-		// - short_description
-		// - developers (array -> JSON text search is acceptable; substring match still works)
-		// - publishers (array)
-		const nameExpr = sql`json_extract(${apps.data}, '$.name')`;
-		const descExpr = sql`json_extract(${apps.data}, '$.short_description')`;
-		const devExpr = sql`json_extract(${apps.data}, '$.developers')`;
-		const pubExpr = sql`json_extract(${apps.data}, '$.publishers')`;
+		this.searchTerm = query;
+
+		const nameExpr = jsonExtract(apps.data, "name");
+		const descExpr = jsonExtract(apps.data, "short_description");
 
 		// OR across each column; each searchTerms() ensures all tokens appear in that column
-		const clauses = [
-			searchTerms(nameExpr, search),
-			searchTerms(descExpr, search),
-			searchTerms(devExpr, search),
-			searchTerms(pubExpr, search),
-		] as const;
-		const condition = or(...clauses) ?? sql`1=1`;
+		const condition = or(searchTerms(nameExpr, query), searchTerms(descExpr, query)) ?? sql`1=1`;
+
 		this.whereConditions.push(condition);
 		return this;
 	}
@@ -184,10 +176,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 * Accept a subquery that defines which app entities are required
 	 * This enables cross-repository data dependency resolution without parameter explosion
 	 */
-	withRequiredEntitySubquery(entityType: string, subquery: SQL): this {
+	withRequiredEntitySubquery(entityType: string, subquery: RequiredSubquery): this {
 		if (entityType === "apps") {
-			// Store the raw SQL subquery for use in queries
-			this.requiredAppsSubquery = subquery;
+			// Store the raw SQL subquery for use in queries. Narrow to the expected selection shape.
+			this.requiredAppsSubquery = subquery as unknown as RequiredAppsSubquery;
 		}
 		return this;
 	}
@@ -346,7 +338,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 			let query = withCTE
 				.select({
-					cnt: sql<number>`count(distinct ${apps.id})`,
+					cnt: countDistinct(apps.id),
 				})
 				.from(apps)
 				.$dynamic();
@@ -427,7 +419,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			if (this.freshnessCutoff) {
 				const missingAppsQuery = this.db
 					.select({ app_id: sql<number>`app_id`.as("app_id") })
-					.from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+					.from(this.requiredAppsSubquery)
 					.where(
 						notExists(
 							this.db
@@ -435,7 +427,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 								.from(apps)
 								.where(
 									and(
-										eq(apps.id, sql`required_apps.app_id`),
+										eq(apps.id, this.requiredAppsSubquery.app_id),
 										eq(apps.lang, lang),
 										gte(apps.updated_at, this.freshnessCutoff),
 									),
@@ -447,13 +439,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			}
 			const missingAppsQuery = this.db
 				.select({ app_id: sql<number>`app_id`.as("app_id") })
-				.from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+				.from(this.requiredAppsSubquery)
 				.where(
 					notExists(
 						this.db
 							.select()
 							.from(apps)
-							.where(and(eq(apps.id, sql`required_apps.app_id`), eq(apps.lang, lang))),
+							.where(and(eq(apps.id, this.requiredAppsSubquery.app_id), eq(apps.lang, lang))),
 					),
 				);
 			const result = await missingAppsQuery;
@@ -492,7 +484,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			if (this.freshnessCutoff) {
 				const missingPlayerEstimatesQuery = this.db
 					.select({ app_id: sql<number>`app_id`.as("app_id") })
-					.from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+					.from(this.requiredAppsSubquery)
 					.where(
 						notExists(
 							this.db
@@ -500,7 +492,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 								.from(estimatedPlayers)
 								.where(
 									and(
-										eq(estimatedPlayers.app_id, sql`required_apps.app_id`),
+										eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
 										gte(estimatedPlayers.updated_at, this.freshnessCutoff),
 									),
 								),
@@ -511,13 +503,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			}
 			const missingPlayerEstimatesQuery = this.db
 				.select({ app_id: sql<number>`app_id`.as("app_id") })
-				.from(sql`(${this.requiredAppsSubquery}) as required_apps`)
+				.from(this.requiredAppsSubquery)
 				.where(
 					notExists(
 						this.db
 							.select()
 							.from(estimatedPlayers)
-							.where(eq(estimatedPlayers.app_id, sql`required_apps.app_id`)),
+							.where(eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id)),
 					),
 				);
 			const result = await missingPlayerEstimatesQuery;
@@ -931,7 +923,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						.values(chunk)
 						.onConflictDoUpdate({
 							target: [apps.id, apps.lang],
-							set: { data: sql`excluded.data`, updated_at: new Date() },
+							set: { data: excluded(apps.data), updated_at: new Date() },
 						}),
 				);
 				await safeInsert(this.db, achievementStatsData, (chunk) =>
@@ -940,7 +932,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						.values(chunk)
 						.onConflictDoUpdate({
 							target: [achievementsStats.app_id, achievementsStats.ach_id],
-							set: { percent: sql`excluded.percent`, updated_at: new Date() },
+							set: { percent: excluded(achievementsStats.percent), updated_at: new Date() },
 						}),
 				);
 				await safeInsert(this.db, achievementMetaData, (chunk) =>
@@ -950,12 +942,12 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						.onConflictDoUpdate({
 							target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
 							set: {
-								display_name: sql`excluded.display_name`,
-								default_value: sql`excluded.default_value`,
-								description: sql`excluded.description`,
-								icon: sql`excluded.icon`,
-								icon_gray: sql`excluded.icon_gray`,
-								hidden: sql`excluded.hidden`,
+								display_name: excluded(achievementsMeta.display_name),
+								default_value: excluded(achievementsMeta.default_value),
+								description: excluded(achievementsMeta.description),
+								icon: excluded(achievementsMeta.icon),
+								icon_gray: excluded(achievementsMeta.icon_gray),
+								hidden: excluded(achievementsMeta.hidden),
 							},
 						}),
 				);
@@ -988,7 +980,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						.values(chunk)
 						.onConflictDoUpdate({
 							target: [apps.id, apps.lang],
-							set: { data: sql`excluded.data`, updated_at: new Date() },
+							set: { data: excluded(apps.data), updated_at: new Date() },
 						}),
 				);
 
@@ -1001,7 +993,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 							.values(chunk)
 							.onConflictDoUpdate({
 								target: [achievementsStats.app_id, achievementsStats.ach_id],
-								set: { percent: sql`excluded.percent`, updated_at: new Date() },
+								set: { percent: excluded(achievementsStats.percent), updated_at: new Date() },
 							}),
 					);
 					processedRows += stats.length;
@@ -1044,12 +1036,12 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 							.onConflictDoUpdate({
 								target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
 								set: {
-									display_name: sql`excluded.display_name`,
-									default_value: sql`excluded.default_value`,
-									description: sql`excluded.description`,
-									icon: sql`excluded.icon`,
-									icon_gray: sql`excluded.icon_gray`,
-									hidden: sql`excluded.hidden`,
+									display_name: excluded(achievementsMeta.display_name),
+									default_value: excluded(achievementsMeta.default_value),
+									description: excluded(achievementsMeta.description),
+									icon: excluded(achievementsMeta.icon),
+									icon_gray: excluded(achievementsMeta.icon_gray),
+									hidden: excluded(achievementsMeta.hidden),
 								},
 							}),
 					);
@@ -1088,13 +1080,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 		if (this.requiredAppsSubquery) {
 			// Use provided subquery from cross-repository dependency to avoid parameter explosion
-			const requiredApps = sql`(${this.requiredAppsSubquery}) as required_apps`;
+			// Use .as() instead of raw alias for consistency & type-safety
 			appDetailsRows = await this.db
 				.select({
 					id: apps.id,
 					data: apps.data,
 				})
-				.from(requiredApps)
+				.from(this.requiredAppsSubquery)
 				.innerJoin(apps, eq(sql`required_apps.app_id`, apps.id))
 				.where(
 					and(
@@ -1103,7 +1095,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 							this.db
 								.select({ app_id: estimatedPlayers.app_id })
 								.from(estimatedPlayers)
-								.where(eq(estimatedPlayers.app_id, sql`required_apps.app_id`)),
+								.where(eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id)),
 						),
 					),
 				);

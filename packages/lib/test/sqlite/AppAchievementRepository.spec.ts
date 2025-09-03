@@ -1,13 +1,12 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
-import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { AttemptStatus } from "../../src/error";
-
 import { AppAchievementRepository } from "../../src/repositories/sqlite/AppAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { achievementsMeta, achievementsStats, apps, estimatedPlayers } from "../../src/repositories/sqlite/schema.js";
+import { excluded } from "../../src/repositories/sqlite/utils";
 import { seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { basicAchievement, makeAchievementSchema, makeAppData } from "../fixtures/appData";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
@@ -60,12 +59,12 @@ describe("AppAchievementRepository - upsert regression (sqlite)", () => {
 			.onConflictDoUpdate({
 				target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
 				set: {
-					display_name: sql`excluded.display_name`,
-					default_value: sql`excluded.default_value`,
-					description: sql`excluded.description`,
-					icon: sql`excluded.icon`,
-					icon_gray: sql`excluded.icon_gray`,
-					hidden: sql`excluded.hidden`,
+					display_name: excluded(achievementsMeta.display_name),
+					default_value: excluded(achievementsMeta.default_value),
+					description: excluded(achievementsMeta.description),
+					icon: excluded(achievementsMeta.icon),
+					icon_gray: excluded(achievementsMeta.icon_gray),
+					hidden: excluded(achievementsMeta.hidden),
 				},
 			});
 

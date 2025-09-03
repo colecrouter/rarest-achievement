@@ -1,13 +1,14 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { AttemptStatus } from "../../src/error";
 import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { ownedGames, users } from "../../src/repositories/sqlite/schema.js";
+import { excluded } from "../../src/repositories/sqlite/utils";
 import { makeUserRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
@@ -175,7 +176,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
 			.onConflictDoUpdate({
 				target: users.id,
 				set: {
-					data: sql`excluded.data`,
+					data: excluded(users.data),
 					updated_at: new Date(),
 				},
 			});
@@ -218,9 +219,9 @@ describe("UserRepository - SQLite (in-memory)", () => {
 			.onConflictDoUpdate({
 				target: [ownedGames.user_id, ownedGames.app_id],
 				set: {
-					playtime_total_minutes: sql`excluded.playtime_total`,
-					playtime_2w_minutes: sql`excluded.playtime_last_two_weeks`,
-					last_played_at: sql`excluded.last_played_at`,
+					playtime_total_minutes: excluded(ownedGames.playtime_total_minutes),
+					playtime_2w_minutes: excluded(ownedGames.playtime_2w_minutes),
+					last_played_at: excluded(ownedGames.last_played_at),
 				},
 			});
 
@@ -335,12 +336,12 @@ describe_count_user("UserRepository.count()", () => {
 
 		const { repo } = makeUserRepoWithMocks(db);
 
-		// Subquery that yields the required user ids
-		const requiredUsersSubquery = sql`
-            SELECT 'su1' AS user_id
-            UNION
-            SELECT 'su2' AS user_id
-        `;
+		// Typed Drizzle subquery for required users (selects real users.id column so repository can narrow types)
+		const requiredUsersSubquery = db
+			.select({ id: users.id })
+			.from(users)
+			.where(inArray(users.id, ["su1", "su2"]))
+			.as("required_users");
 
 		const builderForBuild = repo
 			.compose()

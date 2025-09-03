@@ -1,5 +1,5 @@
-import type { SQL } from "drizzle-orm";
-import { asc, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	Attempt,
 	type AttemptStatus,
@@ -16,16 +16,20 @@ import {
 	type ComposableQueryResult,
 	type ComposableRepository,
 	createQueryResult,
+	type RequiredSubquery,
 	type SubqueryConsumer,
 } from "../composable";
 import type { Repository } from "../repository";
-import { safeInsert } from "./utils";
+import { countDistinct, excluded, safeInsert } from "./utils";
 
 type UserSortMethod = "id";
 
+// Precise CTE type for "required users" subquery (selects a single "id" column)
+type RequiredUsersSubquery = WithSubqueryWithSelection<{ id: typeof users.id }, string>;
+
 class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	private userIds = new Set<string>();
-	private requiredUserSubquery: SQL | undefined;
+	private requiredUserSubquery?: RequiredUsersSubquery;
 	/** If set, treat rows with updated_at older than this Date as missing */
 	private freshnessCutoff: Date | undefined;
 
@@ -52,9 +56,10 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	/**
 	 * Accept a subquery that defines which user IDs are required
 	 */
-	withRequiredEntitySubquery(entityType: string, subquery: SQL): this {
+	withRequiredEntitySubquery(entityType: string, subquery: RequiredSubquery): this {
 		if (entityType === "user") {
-			this.requiredUserSubquery = subquery;
+			// Narrow the generic RequiredSubquery to the expected selection shape for users
+			this.requiredUserSubquery = subquery as unknown as RequiredUsersSubquery;
 		}
 		return this;
 	}
@@ -115,18 +120,16 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 		try {
 			// If a required user subquery is specified, count distinct users in that subquery that exist in users
 			if (this.requiredUserSubquery) {
-				const requiredUsers = sql`(${this.requiredUserSubquery}) AS required_users`;
-
 				// SELECT COUNT(DISTINCT users.id)
 				// FROM (subquery) AS required_users
 				// INNER JOIN users ON users.id = required_users.user_id
 				// [AND users.id IN (...)] if withUserIds() was also provided
 				let q = this.db
 					.select({
-						cnt: sql<number>`count(distinct ${users.id})`,
+						cnt: countDistinct(users.id),
 					})
-					.from(requiredUsers)
-					.innerJoin(users, eq(users.id, sql`required_users.user_id`))
+					.from(this.requiredUserSubquery)
+					.innerJoin(users, eq(users.id, this.requiredUserSubquery.id))
 					.$dynamic();
 
 				if (this.userIds.size > 0) {
@@ -141,7 +144,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 			// Otherwise, base count from users with optional explicit ID filter
 			let q = this.db
 				.select({
-					cnt: sql<number>`count(distinct ${users.id})`,
+					cnt: countDistinct(users.id),
 				})
 				.from(users)
 				.$dynamic();
@@ -189,12 +192,12 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 				: isNull(users.id);
 
 			const missingRows = await this.db
-				.select({ user_id: sql<string>`required_users.user_id` })
-				.from(sql`(${this.requiredUserSubquery}) AS required_users`)
-				.leftJoin(users, eq(users.id, sql`required_users.user_id`))
+				.select({ user_id: this.requiredUserSubquery.id })
+				.from(this.requiredUserSubquery)
+				.leftJoin(users, eq(users.id, this.requiredUserSubquery.id))
 				.where(staleOrMissingCondition);
 
-			return missingRows.map((r) => r.user_id);
+			return missingRows.map((r) => r.user_id as string);
 		}
 
 		// Explicit user IDs path
@@ -275,7 +278,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 					.onConflictDoUpdate({
 						target: users.id,
 						set: {
-							data: sql`excluded.data`,
+							data: excluded(users.data),
 							updated_at: new Date(),
 						},
 					}),
@@ -305,9 +308,9 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 						.onConflictDoUpdate({
 							target: [ownedGames.user_id, ownedGames.app_id],
 							set: {
-								last_played_at: sql`excluded.last_played_at`,
-								playtime_2w_minutes: sql`excluded.playtime_last_two_weeks`,
-								playtime_total_minutes: sql`excluded.playtime_total`,
+								last_played_at: excluded(ownedGames.last_played_at),
+								playtime_2w_minutes: excluded(ownedGames.playtime_2w_minutes),
+								playtime_total_minutes: excluded(ownedGames.playtime_total_minutes),
 							},
 						}),
 			),

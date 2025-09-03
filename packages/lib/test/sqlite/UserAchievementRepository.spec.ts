@@ -1,7 +1,8 @@
 import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
+import { excluded } from "../../src/repositories/sqlite/utils";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { AttemptStatus } from "../../src/error";
 
@@ -1125,7 +1126,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			.onConflictDoUpdate({
 				target: [userAchievements.user_id, userAchievements.app_id, userAchievements.ach_id],
 				set: {
-					unlocked_at: sql`excluded.unlocked_at`,
+					unlocked_at: excluded(userAchievements.unlocked_at),
 					updated_at: new Date(),
 				},
 			});

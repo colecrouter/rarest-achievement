@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, gt, inArray, isNotNull, lte, or, type SQL, sql } from "drizzle-orm";
-import type { SQLiteColumn, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core";
+import { and, asc, desc, eq, exists, gt, inArray, isNotNull, lte, or, type SQL, sql } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import { apps, getLanguageByCode, type LanguageCode, type ProjectDB } from "../..";
 import type { Attempt, AttemptStatus } from "../../error";
-import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer } from "../composable";
+import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer, RequiredSubquery } from "../composable";
 import { achievementsMeta, achievementsStats } from "./schema";
-import { searchTerms } from "./utils";
+import { jsonExtract, searchTerms } from "./utils";
 
 /**
  * Base class for achievement-related query composers
@@ -83,8 +84,19 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 
 		this.ctes.push(rareAchievementsCTE);
 		// Add EXISTS condition to match on the (app_id, ach_id) pair
+		// Use Drizzle exists() instead of raw SQL string for better type safety
 		this.whereConditions.push(
-			sql`EXISTS (SELECT 1 FROM (${rareAchievementsCTE}) AS rare WHERE rare.app_id = ${this.getAppIdColumn()} AND rare.ach_id = ${this.getAchievementIdColumn()})`,
+			exists(
+				this.db
+					.select({ one: sql`1` })
+					.from(rareAchievementsCTE)
+					.where(
+						and(
+							eq(rareAchievementsCTE.app_id, this.getAppIdColumn()),
+							eq(rareAchievementsCTE.ach_id, this.getAchievementIdColumn()),
+						),
+					),
+			),
 		);
 
 		return this;
@@ -113,7 +125,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 						searchTerms(achievementsMeta.display_name, search),
 						searchTerms(achievementsMeta.description, search),
 						// Search in app names
-						searchTerms(sql`json_extract(${apps.data}, '$.name')`, search),
+						searchTerms(jsonExtract(apps.data, "name"), search),
 					),
 				),
 		);
@@ -121,8 +133,19 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		this.ctes.push(searchableAchievementsCTE);
 
 		// Add EXISTS condition to filter by the CTE (match on the (app_id, ach_id) pair)
+		// Use Drizzle exists() instead of raw SQL string for better type safety
 		this.whereConditions.push(
-			sql`EXISTS (SELECT 1 FROM (${searchableAchievementsCTE}) AS s WHERE s.app_id = ${this.getAppIdColumn()} AND s.ach_id = ${this.getAchievementIdColumn()})`,
+			exists(
+				this.db
+					.select({ one: sql`1` })
+					.from(searchableAchievementsCTE)
+					.where(
+						and(
+							eq(searchableAchievementsCTE.app_id, this.getAppIdColumn()),
+							eq(searchableAchievementsCTE.ach_id, this.getAchievementIdColumn()),
+						),
+					),
+			),
 		);
 
 		return this;
@@ -152,8 +175,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 	 */
 	protected addEntitySubqueryCondition(entityType: string, subquery: SQL): void {
 		if (entityType === "apps") {
-			// Use EXISTS with a raw SQL subquery to avoid driver limitations on IN (...subquery)
-			// and to support callers that pass precompiled SQL via getSQL()
+			// Keep raw EXISTS due to type incompatibility constructing a Drizzle subquery from arbitrary SQL
 			this.whereConditions.push(
 				sql`EXISTS (SELECT 1 FROM (${subquery}) AS required_apps WHERE required_apps.app_id = ${this.getAppIdColumn()})`,
 			);
@@ -243,11 +265,12 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		return sql`${this.getAppIdColumn()}`;
 	}
 
-	protected buildAppsSubqueryForCurrentFilters(): SQL | undefined {
+	protected buildAppsSubqueryForCurrentFilters(): RequiredSubquery | undefined {
+		// IMPORTANT: Use a real column for selection (not a generic SQL expr) so T extends ColumnsSelection.
 		let query = this.db
 			.with(...this.ctes)
 			.selectDistinct({
-				app_id: this.getAppIdExpr(),
+				app_id: this.getAppIdColumn(),
 			})
 			.from(this.getAppSourceTable())
 			.$dynamic();
@@ -258,7 +281,9 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 			query = query.where(and(...definedConditions));
 		}
 
-		return query.getSQL();
+		// Alias consistently to "required_apps"
+		// Cast to RequiredSubquery to satisfy consumers that expect a typed CTE object
+		return query.as("required_apps") as unknown as RequiredSubquery;
 	}
 
 	/**

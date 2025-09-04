@@ -41,9 +41,8 @@
 
 	let statsChart = $state<HTMLCanvasElement>();
 	$effect(() => {
-		const rarityChartData = [...(gameAchievements.data.values() ?? [])]
-			.slice()
-			.sort((a, b) => a.globalPercentage - b.globalPercentage)
+		const rarityChartData = gameAchievements.data
+			.toSorted((a, b) => a.globalPercentage - b.globalPercentage)
 			.map((current) => ({
 				name:
 					current.name.length > 20

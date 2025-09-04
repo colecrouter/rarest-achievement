@@ -39,14 +39,18 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 		}
 
 		// Return record where value is ConstructorParams<T> MINUS the first element (the app)
-		const a = [...apps.entries()].map(([app, achievements]) => {
+		// Iterate entries directly without materializing intermediate array first
+		const a = apps
+			.entries()
+			.map(([app, achievements]) => {
 			const params = achievements.map((a) => {
 				const { app: _, ...rest } = a.serialize();
 				return rest as Omit<Params<T>[0], "app">;
 			});
 
 			return [app.serialize(), params] as const;
-		});
+			})
+			.toArray();
 
 		return a;
 	}

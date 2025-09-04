@@ -77,22 +77,24 @@ export const GET = async ({ url, setHeaders, locals }) => {
 		}
 	}
 
-	const sitemapEntries = [
-		...new Set(
-			Array.from(appGroups.values()).flatMap((group) => {
-				const appUrl = `${baseUrl}/game/${group.app.id}`;
-				const lastmod = group.app.updated_at;
-				const appPage = generateXml(appUrl, lastmod);
-
-				const achievementPages = group.achievements.map((achievement) => {
-					const achievementUrl = `${baseUrl}/game/${group.app.id}/achievement/${encodeURIComponent(achievement.ach_id)}`;
-					return generateXml(achievementUrl, lastmod);
-				});
-
-				return [appPage, achievementPages].flat();
-			}),
-		),
-	];
+	// Build entries without materializing the entire Map values first; dedupe via Set at end
+	const sitemapEntries = (() => {
+		const entriesSet = new Set<string>();
+		for (const group of appGroups.values()) {
+			const appUrl = `${baseUrl}/game/${group.app.id}`;
+			const lastmod = group.app.updated_at;
+			entriesSet.add(generateXml(appUrl, lastmod));
+			for (const achievement of group.achievements) {
+				entriesSet.add(
+					generateXml(
+						`${baseUrl}/game/${group.app.id}/achievement/${encodeURIComponent(achievement.ach_id)}`,
+						lastmod,
+					),
+				);
+			}
+		}
+		return [...entriesSet];
+	})();
 
 	// Add static entries
 	const staticEntries = [

@@ -40,9 +40,9 @@
 	);
 
 	let unlockedCount = $derived(
-		[...allAchievements.values()]
-			.filter((a) => a instanceof SteamUserAchievement)
-			.filter((achievement) => achievement.unlocked).length,
+		allAchievements.filter(
+			(a) => a instanceof SteamUserAchievement && a.unlocked,
+		).length,
 	);
 	let totalCount = $derived(allAchievements.length);
 

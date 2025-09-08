@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, inArray, isNotNull, isNull, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNotNull, isNull, lt, or, type SQL, sql } from "drizzle-orm";
+import type { SubqueryWithSelection, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	achievementsStats,
 	apps,
@@ -20,7 +21,6 @@ import {
 	type ComposableRepository,
 	createQueryResult,
 	type RequiredSubquery,
-	type SubqueryProvider,
 } from "../composable";
 import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
@@ -80,16 +80,14 @@ export type UserAchievementSortMethod = "rarity_pct" | "rarity_score" | "unlocke
  * Composable query builder for user achievements
  * Uses SQL composition with JOINs to avoid parameter explosion
  */
-class UserAchievementQueryComposer
-	extends BaseAchievementQueryComposer<SteamUserAchievement, UserAchievementSortMethod>
-	implements SubqueryProvider
-{
+class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
+	SteamUserAchievement,
+	UserAchievementSortMethod
+> {
 	private userIds: Set<string> = new Set();
 	private friendsOfUserId?: string;
 	private unlockedFilter?: boolean;
 	private ensurePolicy: EnsurePolicy = defaultEnsurePolicy();
-	/** Optional freshness cutoff passed to dependent repositories */
-	private freshnessCutoff: Date | undefined;
 
 	constructor(
 		db: ProjectDB,
@@ -185,18 +183,12 @@ class UserAchievementQueryComposer
 	}
 
 	/**
-	 * Build a subquery that selects the app IDs required by this query
-	 * This enables cross-repository data dependency resolution without parameter explosion
+	 * Override base hook: derive required app scope from ownedGames (user context) instead of achievementsStats.
 	 */
-	buildRequiredEntitySubquery(entityType: string, _cteName: string = "required_apps"): RequiredSubquery | undefined {
-		if (entityType !== "apps") {
-			return undefined;
-		}
-
-		// Build the same logic we use to determine which apps we need
+	protected buildRequiredAppsScope(): RequiredSubquery | undefined {
 		let neededAppsQuery = this.db.selectDistinct({ app_id: ownedGames.app_id }).from(ownedGames).$dynamic();
 
-		// Apply the same user filtering logic as our main query
+		// User / friends scoping
 		if (this.friendsOfUserId) {
 			neededAppsQuery = neededAppsQuery
 				.innerJoin(friends, eq(friends.friend_id, ownedGames.user_id))
@@ -204,17 +196,33 @@ class UserAchievementQueryComposer
 		} else if (this.userIds.size > 0) {
 			neededAppsQuery = neededAppsQuery.where(inArray(ownedGames.user_id, Array.from(this.userIds)));
 		} else {
-			// No user filter specified - can't determine needed apps
-			return undefined;
+			return undefined; // No user scope => no derivable app scope
 		}
 
-		// If we have explicit app IDs, intersect with those
+		// Optional explicit app narrowing
 		if (this.appIds.size > 0) {
 			neededAppsQuery = neededAppsQuery.where(inArray(ownedGames.app_id, Array.from(this.appIds)));
 		}
 
-		// Alias must be "required_apps" to match downstream innerJoin in App repo
 		return neededAppsQuery.as("required_apps");
+	}
+
+	/** Provide a required user subquery selecting { id } */
+	withRequiredUser(
+		sub: WithSubqueryWithSelection<{ id: unknown }, string> | SubqueryWithSelection<{ id: unknown }, string>,
+	): this {
+		// Validate presence of id column structurally; no 'any' usage
+		const idCol = (sub as { id?: unknown }).id; // still unknown typed
+		if (!idCol) throw new Error("withRequiredUser: subquery must select { id }");
+		this.whereConditions.push(
+			exists(
+				this.db
+					.select({ one: sql`1` })
+					.from(sub as WithSubqueryWithSelection<{ id: unknown }, string>)
+					.where(eq(idCol as unknown as typeof userAchievements.user_id, userAchievements.user_id)),
+			),
+		);
+		return this;
 	}
 
 	/**
@@ -261,6 +269,9 @@ class UserAchievementQueryComposer
 			return createQueryResult([], options.cursor || 0);
 		}
 
+		// Unified ensure path (captures dependency ensure across users/apps/achievements)
+		const ensureAttempt = await this.ensureDependencies();
+
 		// Determine processing mode based on filters or unlocked_at policy
 		let resultsAttempt: Attempt<SteamUserAchievement[], AttemptStatus>;
 		if (options.sort && options.sort.method === "unlocked_at" && this.searchTerm === undefined) {
@@ -285,7 +296,7 @@ class UserAchievementQueryComposer
 					.compose()
 					.withLanguage(this.lang)
 					.withAppIds(appIds);
-				if (this.freshnessCutoff) appAchComposer.withCutoff(this.freshnessCutoff);
+				// AppAchievement composer no longer exposes withCutoff; freshness only applied at ensure layer.
 				const appAchResult = await appAchComposer.build();
 
 				const finalData: SteamUserAchievement[] = [];
@@ -334,10 +345,11 @@ class UserAchievementQueryComposer
 			}
 		}
 
+		const combinedError = resultsAttempt.error || ensureAttempt.error || null;
 		return new ComposableQueryResult(
 			resultsAttempt.hasData() ? resultsAttempt.data : [],
 			(options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
-			resultsAttempt.error,
+			combinedError,
 		);
 	}
 	/**
@@ -351,13 +363,11 @@ class UserAchievementQueryComposer
 			return Attempt.ok(0);
 		}
 
-		// Ensure dual-storage semantics (fetch + upsert required data) before counting.
-		// Preserve any ensure error as a Partial Attempt if the count succeeds.
+		// Consolidated ensure path
 		let ensureResult: Attempt<void, AttemptStatus>;
 		try {
-			ensureResult = await this.ensureUserDataExists();
+			ensureResult = await this.ensureDependencies();
 		} catch (e) {
-			// In case ensure throws (it normally returns Attempt), capture as failure but still attempt count
 			ensureResult = Attempt.fail(e as Error);
 		}
 
@@ -469,7 +479,7 @@ class UserAchievementQueryComposer
 	private async executeDirectQuery(
 		options: ComposableQueryOptions<UserAchievementSortMethod>,
 	): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
-		console.log("🚀 Using direct query processing");
+		// Direct query path (simple filters, minimal joins)
 
 		// Step 1: Determine actual user filtering approach
 		const userFilterConditions: SQL[] = [];
@@ -486,7 +496,7 @@ class UserAchievementQueryComposer
 			const userIdsArray = this.userIds.values().toArray();
 			userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
 		} else {
-			console.log("⚠️ No user filtering criteria provided");
+			// No user scope provided
 			return Attempt.ok([]);
 		}
 
@@ -676,7 +686,7 @@ class UserAchievementQueryComposer
 	private async executeWithComprehensiveSQL(
 		options: ComposableQueryOptions<UserAchievementSortMethod>,
 	): Promise<Attempt<SteamUserAchievement[], AttemptStatus>> {
-		console.log("🔍 Using pure SQL composition for complex filtering");
+		// Comprehensive path (search/unlocked/rarity or wide metadata needs)
 
 		// Step 1: Determine actual user filtering approach
 		const userFilterConditions: SQL[] = [];
@@ -693,7 +703,7 @@ class UserAchievementQueryComposer
 			ensureResult = await this.ensureUserDataExists();
 			userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
 		} else {
-			console.log("⚠️ No user filtering criteria provided");
+			// No scope
 			return Attempt.ok([]);
 		}
 
@@ -787,7 +797,7 @@ class UserAchievementQueryComposer
 			query = query.offset(options.cursor);
 		}
 
-		console.log("🚀 Executing comprehensive SQL query with all JOINs");
+		// Execute comprehensive query
 
 		const rows = await query;
 
@@ -891,7 +901,7 @@ class UserAchievementQueryComposer
 			}
 		}
 
-		console.log(`✅ Built ${results.length} final user achievements from comprehensive query`);
+		// Comprehensive path build complete
 
 		// Return success or partial based on whether we had any errors during user data fetching
 		return Attempt.from(results, userDataResult.error);
@@ -912,7 +922,7 @@ class UserAchievementQueryComposer
 		if (this.friendsOfUserId) {
 			// When friendsOfUserId is set, we first need to ensure the friends data exists
 			// This will populate the friends table if it doesn't exist yet
-			console.log(`🔍 Ensuring friends data exists for user ${this.friendsOfUserId}`);
+			// Ensuring friends data for requesting user
 			const friendsComposer = this.friendsRepository.compose().withUserIds(this.friendsOfUserId);
 			if (this.freshnessCutoff) friendsComposer.withCutoff(this.freshnessCutoff);
 			friendsResult = await friendsComposer.build({ limit: 1000 }); // Get up to 1000 friends
@@ -922,7 +932,7 @@ class UserAchievementQueryComposer
 			}
 
 			// Use subquery to get friend IDs instead of extracting them (avoids parameter explosion)
-			console.log(`🔍 Using subquery for friends of user ${this.friendsOfUserId}`);
+			// Subquery-based friend scoping
 
 			// First, ensure user profile and owned games data exists using subquery
 			// const friendUserIdsSubquery = sql`(
@@ -989,9 +999,7 @@ class UserAchievementQueryComposer
 			const maxApps = policy.caps.maxAppsPerRequest;
 			const budgetMs = policy.caps.timeBudgetMs;
 
-			let processedApps = 0;
-			let processedRows = 0;
-			let capped = false;
+			let processedApps = 0; // retained for maxApps limiting logic
 			let firstError: Error | null = null;
 
 			// Resolve target users
@@ -1026,7 +1034,6 @@ class UserAchievementQueryComposer
 			let shouldStop = false;
 			for (const appId of candidates) {
 				if (Date.now() - start > budgetMs) {
-					capped = true;
 					break;
 				}
 
@@ -1084,7 +1091,7 @@ class UserAchievementQueryComposer
 										},
 									}),
 							);
-							processedRows += batch.length;
+							// processedRows removed (debug only)
 							await maybeYield();
 						}
 					} catch (err) {
@@ -1092,7 +1099,6 @@ class UserAchievementQueryComposer
 					}
 
 					if (Date.now() - start > budgetMs) {
-						capped = true;
 						shouldStop = true;
 						break;
 					}
@@ -1102,17 +1108,13 @@ class UserAchievementQueryComposer
 
 				processedApps++;
 				if (processedApps >= maxApps) {
-					capped = true;
 					break;
 				}
 				await maybeYield();
 			}
 
 			if (DEBUG_COUNTERS) {
-				const elapsedMs = Date.now() - start;
-				console.log(
-					`[UA.ensure] processedApps=${processedApps} processedRows=${processedRows} elapsedMs=${elapsedMs} capped=${capped}`,
-				);
+				// Debug counters suppressed (was: processedApps/rows/time/capped)
 			}
 
 			return Attempt.from(undefined, firstError);
@@ -1130,17 +1132,14 @@ class UserAchievementQueryComposer
 
 		// Apply user filtering - use different approaches for friends vs direct user IDs
 		if (this.friendsOfUserId) {
-			console.log(`🔄 Ensuring achievement data exists for friends of user ${this.friendsOfUserId}`);
 			// Use JOIN with friends table to get owned games for friends (avoids parameter explosion)
 			baseQuery = baseQuery
 				.innerJoin(friends, eq(friends.friend_id, ownedGames.user_id))
 				.where(eq(friends.user_id, this.friendsOfUserId));
 		} else if (this.userIds.size > 0) {
 			const filterUserIds = Array.from(this.userIds);
-			console.log(`🔄 Ensuring achievement data exists for ${filterUserIds.length} users`);
 			baseQuery = baseQuery.where(inArray(ownedGames.user_id, filterUserIds));
 		} else {
-			console.log("⚠️ No users specified for achievement data fetching");
 			return Attempt.ok(undefined);
 		}
 
@@ -1154,22 +1153,10 @@ class UserAchievementQueryComposer
 		const ownedGamesResult = await baseQuery;
 
 		if (ownedGamesResult.length === 0) {
-			console.log("⚠️ No owned games found for target users");
 			return Attempt.ok(undefined);
 		}
 
-		// Debug: log the number of users, games, and user-game pairs
-		const uniqueUsers = new Set(ownedGamesResult.map((row) => row.user_id));
-		const uniqueGames = new Set(ownedGamesResult.map((row) => row.app_id));
-		// Build optional filter suffix
-		const filterSuffix = appFilterIds.length > 0 ? ` (filtered by appIds: ${appFilterIds.join(",")})` : "";
-		console.log(
-			"🔎 Debug:",
-			`${ownedGamesResult.length} user-game pairs,`,
-			`${uniqueUsers.size} unique users,`,
-			`${uniqueGames.size} unique games${filterSuffix}`,
-		);
-		console.log(`📊 Found ${ownedGamesResult.length} user-game combinations to check`);
+		// Debug metrics suppressed (user-game pairs / unique users / games)
 
 		// Now find missing user achievement data using the same filtering approach
 		const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
@@ -1196,7 +1183,16 @@ class UserAchievementQueryComposer
 			.$dynamic();
 
 		// Apply the same user filtering as above
-		const whereConditions: SQL[] = [isNull(userAchievements.ach_id)];
+		const whereConditions: SQL[] = [];
+		if (this.freshnessCutoff) {
+			const cutoff: Date = this.freshnessCutoff; // narrow for type system
+			// Treat rows missing OR stale (updated_at older than cutoff) as needing refresh
+			whereConditions.push(
+				or(isNull(userAchievements.ach_id) as SQL, lt(userAchievements.updated_at, cutoff) as SQL) as SQL,
+			);
+		} else {
+			whereConditions.push(isNull(userAchievements.ach_id) as SQL);
+		}
 		if (this.friendsOfUserId) {
 			// Use JOIN with friends table for friends filtering
 			missingDataQuery = missingDataQuery.innerJoin(friends, eq(friends.friend_id, ownedGames.user_id));
@@ -1216,11 +1212,9 @@ class UserAchievementQueryComposer
 		const missingData = await missingDataQuery;
 
 		if (missingData.length === 0) {
-			console.log("✅ All user achievement data already exists");
 			return Attempt.ok(undefined);
 		}
-
-		console.log(`🚀 Need to fetch achievement data for ${missingData.length} user-game combinations`);
+		// Need to fetch missing achievement data combinations
 
 		const fetchUserAchievements = async (row: { user_id: string; app_id: number }) => {
 			const { user_id, app_id } = row;
@@ -1258,8 +1252,6 @@ class UserAchievementQueryComposer
 		const accumulatedError = achievementsResult.error;
 
 		if (achievementDataToInsert.length > 0) {
-			console.log(`💾 Inserting ${achievementDataToInsert.length} achievement records`);
-
 			// Insert achievement data in chunks to avoid SQL parameter limits (database operation - let it throw)
 			await safeInsert(
 				this.db,
@@ -1284,8 +1276,7 @@ class UserAchievementQueryComposer
 							},
 						}),
 			);
-			console.log("✅ Successfully inserted/updated achievement data");
-			// 🔧 Optional minimal instrumentation to verify inserts/updates landed
+			// Optional instrumentation to verify inserts/updates landed
 			try {
 				const userIdSet = new Set<string>();
 				const appIdSet = new Set<number>();
@@ -1294,21 +1285,8 @@ class UserAchievementQueryComposer
 					userIdSet.add(d.user_id);
 					appIdSet.add(d.app_id);
 				}
-				const processedUserIds = Array.from(userIdSet);
-				const processedAppIds = Array.from(appIdSet);
-				if (processedUserIds.length > 0 && processedAppIds.length > 0) {
-					const countResult = await this.db
-						.select({ count: sql<number>`count(*)` })
-						.from(userAchievements)
-						.where(
-							and(
-								inArray(userAchievements.user_id, processedUserIds),
-								inArray(userAchievements.app_id, processedAppIds),
-							),
-						);
-					const postCount = countResult[0]?.count ?? 0;
-					console.log(`🔧 Post-insert count=${postCount}`);
-				}
+				// Processed ID sets available for potential future diagnostics
+				// Post-insert verification suppressed
 			} catch {
 				// keep instrumentation non-fatal and quiet on errors
 			}
@@ -1324,14 +1302,14 @@ class UserAchievementQueryComposer
 	 */
 	private async ensureAppDataExists(): Promise<Attempt<void, AttemptStatus>> {
 		// Build subquery for required apps using the same logic as our main query
-		const requiredAppsSubquery = this.buildRequiredEntitySubquery("apps");
+		const requiredAppsSubquery = this.buildRequiredAppsScope();
 
 		if (!requiredAppsSubquery) {
-			console.log("⚠️ No app subquery could be built (no users specified?)");
+			// No derived app scope
 			return Attempt.ok(undefined);
 		}
 
-		console.log("🚀 Ensuring app data exists using subquery-based approach");
+		// Ensure app data via subquery scope
 
 		// Use the App repository with subquery-based data ensuring
 		const appDataComposer = this.appRepository
@@ -1348,7 +1326,7 @@ class UserAchievementQueryComposer
 			return Attempt.partial(undefined, appDataResult.error);
 		}
 
-		console.log("✅ App data ensured using subquery approach");
+		// App data ensured
 		return Attempt.ok(undefined);
 	}
 
@@ -1381,7 +1359,7 @@ class UserAchievementQueryComposer
 				.compose()
 				.withLanguage(this.lang)
 				.withAppIds(uniqueAppIds);
-			if (this.freshnessCutoff) achComposer.withCutoff(this.freshnessCutoff);
+			// No withCutoff on AppAchievement composer
 			appAchievementsResult = await achComposer.build();
 		} else {
 			// For larger sets, chunk the requests
@@ -1399,7 +1377,7 @@ class UserAchievementQueryComposer
 							.compose()
 							.withLanguage(this.lang)
 							.withAppIds(chunk);
-						if (this.freshnessCutoff) chunkComposer.withCutoff(this.freshnessCutoff);
+						// No withCutoff on AppAchievement composer
 						return chunkComposer.build();
 					})(),
 				),
@@ -1465,10 +1443,19 @@ class UserAchievementQueryComposer
 			}
 		}
 
-		console.log(`✅ Built ${results.length} final user achievements`);
+		// Final results built
 
 		// Return success or partial based on whether we had any errors during dependency fetching
 		return Attempt.from(results, combinedResult.error);
+	}
+
+	/**
+	 * Consolidated ensure hook implementation bridging legacy ensure paths.
+	 * Reuses existing ensureUserDataExists() which already aggregates friends/apps/achievements.
+	 */
+	// eslint-disable-next-line @typescript-eslint/require-await
+	protected async ensureDependencies(): Promise<Attempt<void, AttemptStatus>> {
+		return this.ensureUserDataExists();
 	}
 }
 

@@ -1,5 +1,6 @@
-import { and, eq, type SQL, sql } from "drizzle-orm";
-import { achievementsStats, estimatedPlayers, getLanguageByCode, type LanguageCode, type ProjectDB } from "../..";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import type { SubqueryWithSelection, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
+import { achievementsStats, estimatedPlayers, getLanguageByCode, type ProjectDB } from "../..";
 import { Attempt, type AttemptStatus } from "../../error";
 import type { SteamApp } from "../../models";
 import { SteamAppAchievement } from "../../models";
@@ -9,7 +10,6 @@ import {
 	type ComposableRepository,
 	createQueryResult,
 } from "../composable";
-import type { RequiredSubquery } from "../composable";
 import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
 import { BaseAchievementQueryComposer } from "./BaseAchievement";
@@ -21,10 +21,6 @@ export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 // Legacy AppAchievementFilters removed: repository interface no longer carries filter generic
 
 class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppAchievement, AppAchievementSortMethod> {
-	private requiresEnglishFallback = false;
-	/** Optional freshness cutoff passed through to underlying App repository */
-	private freshnessCutoff: Date | undefined;
-
 	constructor(
 		db: ProjectDB,
 		private appRepository: AppRepository,
@@ -33,15 +29,8 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 	}
 
 	/**
-	 * Set the language for this query and determine if English fallback is needed
+	 * Provide freshness cutoff for dependent App repository ensure logic.
 	 */
-	withLanguage(lang: LanguageCode): this {
-		super.withLanguage(lang);
-		this.requiresEnglishFallback = lang !== "en";
-		return this;
-	}
-
-	/** Provide freshness cutoff to underlying dependency ensures */
 	withCutoff(cutoff: Date): this {
 		this.freshnessCutoff = cutoff;
 		return this;
@@ -50,9 +39,13 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 	/**
 	 * Filter achievements by app IDs from a subquery (avoids parameter explosion)
 	 */
-	withRequiredAppSubquery(appIdsSubquery: SQL): this {
-		// Store for downstream consumers and add to WHERE conditions
-		this.withRequiredEntitySubquery("apps", appIdsSubquery);
+	withRequiredApp(
+		appIdsSubquery:
+			| WithSubqueryWithSelection<{ app_id: unknown }, string>
+			| SubqueryWithSelection<{ app_id: unknown }, string>,
+	): this {
+		// Store for downstream consumers and add to WHERE conditions (canonical key 'app')
+		this.withRequiredEntitySubquery("app", appIdsSubquery);
 		return this;
 	}
 
@@ -62,18 +55,17 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 	async build(
 		options: ComposableQueryOptions<AppAchievementSortMethod> = {},
 	): Promise<ComposableQueryResult<SteamAppAchievement>> {
-		// Ensure data exists and get any error information
-		const ensureResult = await this.ensureDataExists();
-		if (ensureResult.error) {
+		// Consolidated ensure path via base hook
+		const ensureAttempt = await this.ensureDependencies();
+		if (ensureAttempt.error) {
 			console.warn(
-				"Failed to ensure all achievement data exists, continuing with existing data:",
-				ensureResult.error,
+				"Failed to ensure all achievement dependencies exist, continuing with existing data:",
+				ensureAttempt.error,
 			);
 		}
 
-		const results = await this.executeMainQuery(options);
-
-		return createQueryResult(results, options.cursor, ensureResult.error);
+		const results = await this.executeDirectQuery(options);
+		return createQueryResult(results, options.cursor, ensureAttempt.error);
 	}
 
 	/**
@@ -82,13 +74,12 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 	 * Reuses identical CTEs and WHERE stack as build(), but avoids ORDER BY/LIMIT and hydration.
 	 */
 	async count(): Promise<Attempt<number, AttemptStatus>> {
-		// Preserve dual-storage semantics; capture ensure error but continue to COUNT
+		// Consolidated ensure path (capture partial error but proceed with COUNT)
 		let ensureError: Error | null = null;
 		try {
-			const ensure = await this.ensureDataExists();
+			const ensure = await this.ensureDependencies();
 			ensureError = ensure.error;
 		} catch (e) {
-			// If ensure throws (e.g., DB layer failure), capture and still attempt COUNT
 			ensureError = e as Error;
 		}
 
@@ -127,8 +118,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		// Determine scope: explicit app IDs or a subquery built from current filters
 		const hasExplicitAppIds = this.appIds.size > 0;
 		const requiredAppsSubquery =
-			this.getRequiredEntitySubquery("apps") ??
-			(hasExplicitAppIds ? undefined : this.buildAppsSubqueryForCurrentFilters());
+			this.getRequiredEntitySubquery("app") ?? (hasExplicitAppIds ? undefined : this.buildRequiredAppsScope());
 
 		const composer = this.appRepository.compose().withLanguage(this.lang);
 		if (this.freshnessCutoff) composer.withCutoff(this.freshnessCutoff);
@@ -136,8 +126,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		if (hasExplicitAppIds) {
 			composer.withAppIds(this.appIds);
 		} else if (requiredAppsSubquery) {
-			// Cast to RequiredSubquery to satisfy AppRepository's strict CTE typing (.app_id field)
-			composer.withRequiredEntitySubquery("apps", requiredAppsSubquery as unknown as RequiredSubquery);
+			composer.withRequiredEntitySubquery("apps", requiredAppsSubquery);
 		} else {
 			return createQueryResult([], 0, null);
 		}
@@ -148,9 +137,11 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 	}
 
 	/**
-	 * Execute the main achievement query with all filters applied
+	 * Execute the primary (direct) achievement query with all filters applied.
+	 * Named executeDirectQuery to mirror naming in other composers (e.g. UserAchievementQueryComposer)
+	 * for consistency across repositories.
 	 */
-	private async executeMainQuery(
+	private async executeDirectQuery(
 		options: ComposableQueryOptions<AppAchievementSortMethod>,
 	): Promise<SteamAppAchievement[]> {
 		// Get apps that we'll need
@@ -209,9 +200,10 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 
 		const data = await query;
 
-		// Get English fallback metadata if needed
-		const englishMetadata = await this.getEnglishFallbackMetadata(data);
-		const englishMetaMap = new Map(englishMetadata.map((row) => [`${row.app_id}-${row.ach_id}`, row.meta]));
+		// Always attempt fallback computation when a non-English language is requested;
+		// the helper scopes the fetch to only rows missing valid metadata to avoid waste.
+		const englishFallbackRows = await this.getEnglishFallbackMetadata(data);
+		const englishMetaMap = new Map(englishFallbackRows.map((row) => [`${row.app_id}-${row.ach_id}`, row.meta]));
 
 		// Map results to SteamAppAchievement objects
 		const achievements = data
@@ -297,14 +289,13 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		}
 
 		// Otherwise, derive required apps from current filters (search, rarity, subqueries)
-		const subquery = this.getRequiredEntitySubquery("apps") ?? this.buildAppsSubqueryForCurrentFilters();
+		const subquery = this.getRequiredEntitySubquery("app") ?? this.buildRequiredAppsScope();
 		if (!subquery) return [];
 
 		const bySub = await this.appRepository
 			.compose()
 			.withLanguage(this.lang)
-			// Cast to RequiredSubquery to satisfy AppRepository's strict CTE typing (.app_id field)
-			.withRequiredEntitySubquery("apps", subquery as unknown as RequiredSubquery)
+			.withRequiredEntitySubquery("apps", subquery)
 			.build({
 				limit: 1000,
 				sort: { method: "id", direction: "asc" },
@@ -314,43 +305,55 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 
 	/**
 	 * Get English fallback metadata when needed
+	 * @todo clean this up
 	 */
 	private async getEnglishFallbackMetadata(
 		data: { app_id: number; ach_id: string; meta: unknown; stats: unknown }[],
 	) {
-		if (!this.requiresEnglishFallback || data.length === 0) return [];
+		// Fast bail-outs
+		if (data.length === 0) return [];
+		if (this.lang === "en") return [];
 
-		// This is similar to the main query, but we filter for English metadata only
-		// We do this to serve the English achievement metadata when the requested language is not available
-		// Note: no estimatedPlayers join here; fallback should work regardless of the current sort mode
-		let query = this.db
-			.with(...this.ctes)
+		// Determine which rows actually need fallback (missing meta or critical fields)
+		const missing: Array<{ app_id: number; ach_id: string }> = [];
+		for (const row of data) {
+			const m = row.meta as {
+				ach_id: string | null;
+				icon: string | null;
+				icon_gray: string | null;
+				display_name: string | null;
+			} | null;
+			if (!m || !m.display_name || !m.icon || !m.icon_gray) {
+				missing.push({ app_id: row.app_id, ach_id: row.ach_id });
+			}
+		}
+		if (missing.length === 0) return [];
+
+		// Scope fallback fetch to affected app_ids only to keep parameter count low.
+		const appIds = Array.from(new Set(missing.map((r) => r.app_id)));
+
+		const fallbackQuery = this.db
 			.select({
 				app_id: achievementsMeta.app_id,
 				ach_id: achievementsMeta.ach_id,
 				meta: getTableAliasedColumns(achievementsMeta),
 			})
-			.from(achievementsStats)
-			.innerJoin(
-				achievementsMeta,
-				and(
-					eq(achievementsStats.app_id, achievementsMeta.app_id),
-					eq(achievementsStats.ach_id, achievementsMeta.ach_id),
-					eq(achievementsMeta.lang, "english"), // Always English for fallback
-				),
-			)
+			.from(achievementsMeta)
+			.where(and(eq(achievementsMeta.lang, "english"), inArray(achievementsMeta.app_id, appIds)))
 			.$dynamic();
 
-		// Apply the same where conditions as the main query
-		const allConditions = this.collectWhereConditions();
-		if (allConditions.length > 0) {
-			query = query.where(and(...allConditions));
-		}
-
-		return await query;
+		return await fallbackQuery;
 	}
 
-	// Use BaseAchievementQueryComposer's default buildAppsSubqueryForCurrentFilters implementation
+	/**
+	 * Consolidated ensure hook implementation for BaseAchievement.
+	 * Converts the existing ensureDataExists result into an Attempt<void> while preserving error state.
+	 */
+	// eslint-disable-next-line @typescript-eslint/require-await
+	protected async ensureDependencies(): Promise<Attempt<void, AttemptStatus>> {
+		const res = await this.ensureDataExists();
+		return Attempt.from(undefined, res.error);
+	}
 }
 export class AppAchievementRepository
 	implements

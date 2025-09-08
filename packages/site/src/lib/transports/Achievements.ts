@@ -43,12 +43,12 @@ export class AchievementArrayContext<T extends SteamAppAchievement | SteamUserAc
 		const a = apps
 			.entries()
 			.map(([app, achievements]) => {
-			const params = achievements.map((a) => {
-				const { app: _, ...rest } = a.serialize();
-				return rest as Omit<Params<T>[0], "app">;
-			});
+				const params = achievements.map((a) => {
+					const { app: _, ...rest } = a.serialize();
+					return rest as Omit<Params<T>[0], "app">;
+				});
 
-			return [app.serialize(), params] as const;
+				return [app.serialize(), params] as const;
 			})
 			.toArray();
 

@@ -2,10 +2,8 @@ import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, asc, eq } from "drizzle-orm";
-import { excluded } from "../../src/repositories/sqlite/utils";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { AttemptStatus } from "../../src/error";
-
 import type { GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
@@ -17,6 +15,7 @@ import {
 	userAchievements,
 	users,
 } from "../../src/repositories/sqlite/schema.js";
+import { excluded } from "../../src/repositories/sqlite/utils";
 import { insertAppByCode, seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { makeAppData } from "../fixtures/appData";
 import { insertApp, insertOwnedGame, insertUser, insertUserAchievement } from "../fixtures/dbHelpers";
@@ -101,6 +100,69 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 		assert.strictEqual(res.data.length, 1);
 		const item = res.data[0];
 		assert.ok(item?.user?.serialize().data.personaname === "Refetched Persona", "persona name should be updated");
+	});
+
+	test("withCutoff refetches stale user achievement rows (unlocked state updated)", async () => {
+		const repo = getRepo();
+		const userId = "stale-ach-user";
+		const appId = 93011;
+
+		// Seed initial locked achievement row with stale updated_at
+		await insertUser(db, { id: userId, data: makeUserData(userId) });
+		await insertOwnedGame(db, { user_id: userId, app_id: appId });
+		await seedAppWithPlayers(db, appId, "Stale Ach App", 1111);
+		await seedStats(db, appId, [{ ach: "STA1", percent: 12 }]);
+		await seedMetaByCode(db, appId, "en", [{ ach: "STA1", display: "Stale One" }]);
+		await insertUserAchievement(db, { user_id: userId, app_id: appId, ach_id: "STA1", unlocked_at: null });
+
+		// Force row to be stale
+		const staleDate = new Date(Date.now() - 7 * 24 * 3600_000);
+		await db
+			.update(userAchievements)
+			.set({ updated_at: staleDate })
+			.where(and(eq(userAchievements.user_id, userId), eq(userAchievements.app_id, appId)));
+
+		// Mock API now shows the achievement unlocked (new state should overwrite)
+		authMock.setPlayerAchievements(
+			{ steamid: userId, appid: appId },
+			makePlayerAchievementsPayload({
+				userId,
+				appId,
+				items: [{ ach: "STA1", achieved: 1, unlock: new Date() }],
+			}),
+		);
+
+		const res = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.withAppIds(appId)
+			.withCutoff(new Date()) // trigger stale refresh logic
+			.build({ sort: { method: "rarity_pct", direction: "asc" } });
+
+		assert.strictEqual(res.data.length, 1);
+		const item = res.data[0];
+		assert.ok(item, "expected refreshed achievement");
+		assert.ok(item.unlocked instanceof Date, "achievement should now be unlocked after refetch");
+
+		// Verify DB row updated (unlocked_at not null and updated_at advanced)
+		const dbRow = await db
+			.select({ unlocked_at: userAchievements.unlocked_at, updated_at: userAchievements.updated_at })
+			.from(userAchievements)
+			.where(
+				and(
+					eq(userAchievements.user_id, userId),
+					eq(userAchievements.app_id, appId),
+					eq(userAchievements.ach_id, "STA1"),
+				),
+			);
+		assert.strictEqual(dbRow.length, 1);
+		assert.ok(dbRow[0]?.unlocked_at instanceof Date, "DB unlocked_at should be set");
+		const updatedAt = dbRow[0]?.updated_at;
+		assert.ok(
+			updatedAt instanceof Date && updatedAt.getTime() > staleDate.getTime(),
+			"updated_at should be more recent than stale timestamp",
+		);
 	});
 
 	// 2) Data ensure: fetch via API and upsert user_achievements_stats; idempotency; cross-repo pre-reqs
@@ -551,60 +613,69 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 
 	describe("builder methods", () => {
 		test("rarity_score sort omits achievements without estimated players", async () => {
-			const userId = "u-rscore-filter";
-			const appWithPlayers = 97001;
-			const appNoPlayers = 97002;
+			try {
+				const userId = "u-rscore-filter";
+				const appWithPlayers = 97001;
+				const appNoPlayers = 97002;
 
-			await insertUser(db, { id: userId, data: makeUserData(userId) });
-			await insertOwnedGame(db, { user_id: userId, app_id: appWithPlayers });
-			await insertOwnedGame(db, { user_id: userId, app_id: appNoPlayers });
+				await insertUser(db, { id: userId, data: makeUserData(userId) });
+				await insertOwnedGame(db, { user_id: userId, app_id: appWithPlayers });
+				await insertOwnedGame(db, { user_id: userId, app_id: appNoPlayers });
 
-			// App rows
-			await insertApp(db, {
-				id: appWithPlayers,
-				lang: "english",
-				data: makeAppData(appWithPlayers, "Has Players"),
-			});
-			await insertApp(db, { id: appNoPlayers, lang: "english", data: makeAppData(appNoPlayers, "No Players") });
+				// App rows
+				await insertApp(db, {
+					id: appWithPlayers,
+					lang: "english",
+					data: makeAppData(appWithPlayers, "Has Players"),
+				});
+				await insertApp(db, {
+					id: appNoPlayers,
+					lang: "english",
+					data: makeAppData(appNoPlayers, "No Players"),
+				});
 
-			// Estimated players only for the first app
-			await db
-				.insert(estimatedPlayers)
-				.values({ app_id: appWithPlayers, estimated_players: 2000, updated_at: new Date() });
+				// Estimated players only for the first app
+				await db
+					.insert(estimatedPlayers)
+					.values({ app_id: appWithPlayers, estimated_players: 2000, updated_at: new Date() });
 
-			// Stats + meta for both apps
-			await seedStats(db, appWithPlayers, [{ ach: "RZ1", percent: 10 }]);
-			await seedMetaByCode(db, appWithPlayers, "en", [{ ach: "RZ1", display: "RS-One" }]);
-			await seedStats(db, appNoPlayers, [{ ach: "RZ2", percent: 20 }]);
-			await seedMetaByCode(db, appNoPlayers, "en", [{ ach: "RZ2", display: "RS-Two" }]);
+				// Stats + meta for both apps
+				await seedStats(db, appWithPlayers, [{ ach: "RZ1", percent: 10 }]);
+				await seedMetaByCode(db, appWithPlayers, "en", [{ ach: "RZ1", display: "RS-One" }]);
+				await seedStats(db, appNoPlayers, [{ ach: "RZ2", percent: 20 }]);
+				await seedMetaByCode(db, appNoPlayers, "en", [{ ach: "RZ2", display: "RS-Two" }]);
 
-			// User achievements for both
-			await insertUserAchievement(db, {
-				user_id: userId,
-				app_id: appWithPlayers,
-				ach_id: "RZ1",
-				unlocked_at: null,
-			});
-			await insertUserAchievement(db, {
-				user_id: userId,
-				app_id: appNoPlayers,
-				ach_id: "RZ2",
-				unlocked_at: null,
-			});
+				// User achievements for both
+				await insertUserAchievement(db, {
+					user_id: userId,
+					app_id: appWithPlayers,
+					ach_id: "RZ1",
+					unlocked_at: null,
+				});
+				await insertUserAchievement(db, {
+					user_id: userId,
+					app_id: appNoPlayers,
+					ach_id: "RZ2",
+					unlocked_at: null,
+				});
 
-			const repo = getRepo();
-			const res = await repo
-				.compose()
-				.withLanguage("en")
-				.withUserIds(userId)
-				.build({ sort: { method: "rarity_score", direction: "desc" } });
+				const repo = getRepo();
+				const res = await repo
+					.compose()
+					.withLanguage("en")
+					.withUserIds(userId)
+					.build({ sort: { method: "rarity_score", direction: "desc" } });
 
-			// Only the app with estimated players should be present
-			assert.strictEqual(res.data.length, 1);
-			const only = res.data[0];
-			assert.ok(only);
-			assert.strictEqual(only.app.id, appWithPlayers);
-			assert.strictEqual(only.id, "RZ1");
+				// Only the app with estimated players should be present
+				assert.strictEqual(res.data.length, 1);
+				const only = res.data[0];
+				assert.ok(only);
+				assert.strictEqual(only.app.id, appWithPlayers);
+				assert.strictEqual(only.id, "RZ1");
+			} catch (err) {
+				console.error(err);
+				throw err;
+			}
 		});
 		test("withAchievementIds filters to specified achievements", async () => {
 			const userId = "u-b1";

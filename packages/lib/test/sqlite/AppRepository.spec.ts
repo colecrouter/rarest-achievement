@@ -2,7 +2,6 @@ import { strict as assert } from "node:assert";
 import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, eq } from "drizzle-orm";
-import { excluded } from "../../src/repositories/sqlite/utils";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
@@ -13,6 +12,7 @@ import {
 	ownedGames,
 	users,
 } from "../../src/repositories/sqlite/schema.js";
+import { excluded } from "../../src/repositories/sqlite/utils";
 import {
 	basicAchievement,
 	basicAchievementEn,

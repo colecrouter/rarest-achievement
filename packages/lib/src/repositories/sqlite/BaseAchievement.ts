@@ -1,17 +1,15 @@
 import { and, asc, desc, eq, exists, gt, inArray, isNotNull, lte, or, type SQL, sql } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
-import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
+import type { SubqueryWithSelection, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import { apps, getLanguageByCode, type LanguageCode, type ProjectDB } from "../..";
 import type { Attempt, AttemptStatus } from "../../error";
 import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer, RequiredSubquery } from "../composable";
+import { RequiredEntityStore } from "../entitySubqueries";
 import { achievementsMeta, achievementsStats } from "./schema";
 import { jsonExtract, searchTerms } from "./utils";
 
-/**
- * Base class for achievement-related query composers
- * Extracts common functionality like language handling, ID collection, rarity filtering, search, and subqueries
- */
 export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends string>
+	extends RequiredEntityStore<"app" | "ach">
 	implements QueryComposer<TResult, TSortMethod>
 {
 	protected appIds: Set<number> = new Set();
@@ -19,18 +17,52 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 	protected lang: LanguageCode = "en";
 	protected searchTerm?: string;
 	protected rarityThreshold?: number;
-	protected requiredEntitySubqueries: Map<string, SQL> = new Map();
-	protected whereConditions: SQL[] = [];
+	/** Optional freshness cutoff for dependency ensure flows */
+	protected freshnessCutoff?: Date;
 	// biome-ignore lint/suspicious/noExplicitAny: I don't think there's a way to type this properly
 	protected ctes: WithSubqueryWithSelection<Record<string, any>, string>[] = [];
 
-	constructor(protected db: ProjectDB) {}
+	constructor(protected db: ProjectDB) {
+		super(db, {
+			app: achievementsStats.app_id,
+			ach: achievementsStats.ach_id,
+		});
+	}
+
+	/** Provide a required app subquery (selects { app_id }). Adds EXISTS(...) correlation automatically. */
+	withRequiredApp(
+		sub:
+			| WithSubqueryWithSelection<{ app_id: unknown }, string>
+			| SubqueryWithSelection<{ app_id: unknown }, string>,
+	): this {
+		this.withRequiredEntitySubquery(
+			"app",
+			sub as unknown as WithSubqueryWithSelection<{ app_id: unknown }, string>,
+		);
+		return this;
+	}
+
+	/** Provide a required achievement subquery (selects { ach_id }). Adds EXISTS(...) correlation automatically. */
+	withRequiredAchievement(
+		sub:
+			| WithSubqueryWithSelection<{ ach_id: unknown }, string>
+			| SubqueryWithSelection<{ ach_id: unknown }, string>,
+	): this {
+		this.withRequiredEntitySubquery("ach", sub);
+		return this;
+	}
 
 	/**
 	 * Set the language for this query
 	 */
 	withLanguage(lang: LanguageCode): this {
 		this.lang = lang;
+		return this;
+	}
+
+	/** Set freshness cutoff (optional override usage by subclasses) */
+	withCutoff(cutoff: Date): this {
+		this.freshnessCutoff = cutoff;
 		return this;
 	}
 
@@ -92,8 +124,8 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 					.from(rareAchievementsCTE)
 					.where(
 						and(
-							eq(rareAchievementsCTE.app_id, this.getAppIdColumn()),
-							eq(rareAchievementsCTE.ach_id, this.getAchievementIdColumn()),
+							eq(rareAchievementsCTE.app_id, achievementsStats.app_id),
+							eq(rareAchievementsCTE.ach_id, achievementsStats.ach_id),
 						),
 					),
 			),
@@ -141,56 +173,14 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 					.from(searchableAchievementsCTE)
 					.where(
 						and(
-							eq(searchableAchievementsCTE.app_id, this.getAppIdColumn()),
-							eq(searchableAchievementsCTE.ach_id, this.getAchievementIdColumn()),
+							eq(searchableAchievementsCTE.app_id, achievementsStats.app_id),
+							eq(searchableAchievementsCTE.ach_id, achievementsStats.ach_id),
 						),
 					),
 			),
 		);
 
 		return this;
-	}
-
-	/**
-	 * Accept a subquery that defines which entities are required
-	 * This enables cross-repository data dependency resolution without parameter explosion
-	 */
-	withRequiredEntitySubquery(entityType: string, subquery: SQL): this {
-		this.requiredEntitySubqueries.set(entityType, subquery);
-		// Add to whereConditions for immediate use
-		this.addEntitySubqueryCondition(entityType, subquery);
-		return this;
-	}
-
-	/**
-	 * Get a stored subquery for a specific entity type
-	 */
-	protected getRequiredEntitySubquery(entityType: string): SQL | undefined {
-		return this.requiredEntitySubqueries.get(entityType);
-	}
-
-	/**
-	 * Add entity subquery condition to whereConditions (avoids parameter explosion)
-	 * This is a generic method that can be used for different entity types
-	 */
-	protected addEntitySubqueryCondition(entityType: string, subquery: SQL): void {
-		if (entityType === "apps") {
-			// Keep raw EXISTS due to type incompatibility constructing a Drizzle subquery from arbitrary SQL
-			this.whereConditions.push(
-				sql`EXISTS (SELECT 1 FROM (${subquery}) AS required_apps WHERE required_apps.app_id = ${this.getAppIdColumn()})`,
-			);
-		}
-		// Could be extended for other entity types in the future
-	}
-
-	// Column providers for table-agnostic filtering logic
-	// Subclasses can override these to point at their own tables/columns
-	protected getAppIdColumn(): SQLiteColumn {
-		return achievementsStats.app_id;
-	}
-
-	protected getAchievementIdColumn(): SQLiteColumn {
-		return achievementsStats.ach_id;
 	}
 
 	/**
@@ -208,7 +198,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 	 * Subclasses can override this to use different table columns
 	 */
 	protected createAppIdsCondition(appIds: number[]): SQL {
-		return inArray(this.getAppIdColumn(), appIds);
+		return inArray(achievementsStats.app_id, appIds);
 	}
 
 	/**
@@ -216,7 +206,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 	 * Subclasses can override this to use different table columns
 	 */
 	protected createAchievementIdsCondition(achIds: string[]): SQL {
-		return inArray(this.getAchievementIdColumn(), achIds);
+		return inArray(achievementsStats.ach_id, achIds);
 	}
 
 	/**
@@ -249,40 +239,21 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 	}
 
 	/**
-	 * Base table used for building required apps subqueries. Subclasses can override
-	 * when their filtering originates from a different table (e.g., user achievements).
+	 * Protected hook to build the app scope for the current filter stack.
+	 * Subclasses with alternative roots (e.g. user-owned games) override this
+	 * to remain fully compositional while reusing higher‑level ensure logic.
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle Table generics aren't easily expressed here
-	protected getAppSourceTable(): any {
-		return achievementsStats;
-	}
-
-	/**
-	 * Build a subquery that selects the app IDs required by the current filters/CTEs.
-	 * Subclasses can override for custom logic; default uses the base table and standard filters.
-	 */
-	protected getAppIdExpr(): SQL {
-		return sql`${this.getAppIdColumn()}`;
-	}
-
-	protected buildAppsSubqueryForCurrentFilters(): RequiredSubquery | undefined {
-		// IMPORTANT: Use a real column for selection (not a generic SQL expr) so T extends ColumnsSelection.
+	protected buildRequiredAppsScope(): RequiredSubquery | undefined {
+		// Base implementation: derive scope solely from achievementsStats + applied filters.
 		let query = this.db
 			.with(...this.ctes)
-			.selectDistinct({
-				app_id: this.getAppIdColumn(),
-			})
-			.from(this.getAppSourceTable())
+			.selectDistinct({ app_id: achievementsStats.app_id })
+			.from(achievementsStats)
 			.$dynamic();
 
 		const allConditions = this.buildStandardWhereConditions();
 		const definedConditions = allConditions.filter((c): c is SQL => c !== undefined);
-		if (definedConditions.length > 0) {
-			query = query.where(and(...definedConditions));
-		}
-
-		// Alias consistently to "required_apps"
-		// Cast to RequiredSubquery to satisfy consumers that expect a typed CTE object
+		if (definedConditions.length > 0) query = query.where(and(...definedConditions));
 		return query.as("required_apps") as unknown as RequiredSubquery;
 	}
 

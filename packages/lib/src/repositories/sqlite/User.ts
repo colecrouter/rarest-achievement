@@ -19,6 +19,7 @@ import {
 	type RequiredSubquery,
 	type SubqueryConsumer,
 } from "../composable";
+import { RequiredEntityStore } from "../entitySubqueries";
 import type { Repository } from "../repository";
 import { countDistinct, excluded, safeInsert } from "./utils";
 
@@ -27,7 +28,7 @@ type UserSortMethod = "id";
 // Precise CTE type for "required users" subquery (selects a single "id" column)
 type RequiredUsersSubquery = WithSubqueryWithSelection<{ id: typeof users.id }, string>;
 
-class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
+class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	private userIds = new Set<string>();
 	private requiredUserSubquery?: RequiredUsersSubquery;
 	/** If set, treat rows with updated_at older than this Date as missing */
@@ -36,7 +37,9 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	constructor(
 		private db: ProjectDB,
 		private steamApi: SteamAuthenticatedAPI,
-	) {}
+	) {
+		super(db, { user: users.id });
+	}
 
 	/**
 	 * Filter by specific user IDs
@@ -59,7 +62,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	withRequiredEntitySubquery(entityType: string, subquery: RequiredSubquery): this {
 		if (entityType === "user") {
 			// Narrow the generic RequiredSubquery to the expected selection shape for users
-			this.requiredUserSubquery = subquery as unknown as RequiredUsersSubquery;
+			this.requiredUserSubquery = subquery as RequiredUsersSubquery;
 		}
 		return this;
 	}
@@ -88,7 +91,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 		let results: SteamUser[];
 		let queryError: Error | null = null;
 		try {
-			results = await this.executeMainQuery(options);
+			results = await this.executeDirectQuery(options);
 		} catch (error) {
 			queryError = error as Error;
 			console.warn("Error during User query, returning partial results:", error);
@@ -120,10 +123,6 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 		try {
 			// If a required user subquery is specified, count distinct users in that subquery that exist in users
 			if (this.requiredUserSubquery) {
-				// SELECT COUNT(DISTINCT users.id)
-				// FROM (subquery) AS required_users
-				// INNER JOIN users ON users.id = required_users.user_id
-				// [AND users.id IN (...)] if withUserIds() was also provided
 				let q = this.db
 					.select({
 						cnt: countDistinct(users.id),
@@ -197,7 +196,7 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 				.leftJoin(users, eq(users.id, this.requiredUserSubquery.id))
 				.where(staleOrMissingCondition);
 
-			return missingRows.map((r) => r.user_id as string);
+			return missingRows.map((r) => r.user_id);
 		}
 
 		// Explicit user IDs path
@@ -322,60 +321,33 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 	}
 
 	/**
-	 * Execute the main user query
+	 * Execute the primary (direct) user query for current composition state.
 	 */
-	private async executeMainQuery(options: ComposableQueryOptions<UserSortMethod>): Promise<SteamUser[]> {
+	private async executeDirectQuery(options: ComposableQueryOptions<UserSortMethod>): Promise<SteamUser[]> {
 		const sortDir = options.sort?.direction === "desc" ? desc : asc;
-		const sortMethod = users.id; // Currently only "id" is supported
+		const sortMethod = users.id; // Only supported sort currently
 
-		// First, get the paginated users
 		let userQuery = this.db
-			.select({
-				id: users.id,
-				data: users.data,
-			})
+			.select({ id: users.id, data: users.data })
 			.from(users)
 			.orderBy(sortDir(sortMethod))
 			.$dynamic();
 
-		// Apply user ID filtering
 		if (this.userIds.size > 0) {
 			userQuery = userQuery.where(inArray(users.id, Array.from(this.userIds)));
 		}
-
-		// Apply pagination to users only
-		if (options.limit !== undefined) {
-			userQuery = userQuery.limit(options.limit);
-		}
-		if (options.cursor !== undefined) {
-			userQuery = userQuery.offset(options.cursor);
-		}
+		if (options.limit !== undefined) userQuery = userQuery.limit(options.limit);
+		if (options.cursor !== undefined) userQuery = userQuery.offset(options.cursor);
 
 		const userRows = await userQuery;
+		if (userRows.length === 0) return [];
 
-		// If no users found, return empty array
-		if (userRows.length === 0) {
-			return [];
-		}
-
-		// Now get all owned games for these users using a subquery to avoid parameter limits
-		// Create a subquery that matches the same user filtering and pagination as the main query
 		let userIdsSubquery = this.db.select({ id: users.id }).from(users).orderBy(sortDir(sortMethod)).$dynamic();
+		if (this.userIds.size > 0) userIdsSubquery = userIdsSubquery.where(inArray(users.id, Array.from(this.userIds)));
+		if (options.limit !== undefined) userIdsSubquery = userIdsSubquery.limit(options.limit);
+		if (options.cursor !== undefined) userIdsSubquery = userIdsSubquery.offset(options.cursor);
 
-		// Apply the same user ID filtering as the main query
-		if (this.userIds.size > 0) {
-			userIdsSubquery = userIdsSubquery.where(inArray(users.id, Array.from(this.userIds)));
-		}
-
-		// Apply the same pagination as the main query
-		if (options.limit !== undefined) {
-			userIdsSubquery = userIdsSubquery.limit(options.limit);
-		}
-		if (options.cursor !== undefined) {
-			userIdsSubquery = userIdsSubquery.offset(options.cursor);
-		}
-
-		const ownedGamesQuery = this.db
+		const ownedGamesRows = await this.db
 			.select({
 				user_id: ownedGames.user_id,
 				app_id: ownedGames.app_id,
@@ -387,33 +359,22 @@ class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
 			.where(inArray(ownedGames.user_id, userIdsSubquery))
 			.orderBy(asc(ownedGames.user_id), asc(ownedGames.app_id));
 
-		const ownedGamesRows = await ownedGamesQuery;
-
-		// Group results by user_id and construct SteamUser objects
 		const userMap = new Map<string, { data: SteamUserRaw; ownedApps: OwnedGame<false>[] }>();
-
-		// Initialize all users in the map
-		for (const userRow of userRows) {
-			userMap.set(userRow.id, {
-				data: userRow.data,
-				ownedApps: [],
-			});
+		for (const row of userRows) {
+			userMap.set(row.id, { data: row.data, ownedApps: [] });
 		}
-
-		// Add owned games to their respective users
-		for (const gameRow of ownedGamesRows) {
-			const user = userMap.get(gameRow.user_id);
-			if (user) {
-				user.ownedApps.push({
-					appid: gameRow.app_id,
-					playtime_forever: gameRow.playtime_total_minutes ?? undefined,
-					playtime_2weeks: gameRow.playtime_2w_minutes ?? undefined,
-					rtime_last_played: gameRow.last_played_at ? gameRow.last_played_at.getTime() / 1000 : undefined, // Convert to seconds
+		for (const game of ownedGamesRows) {
+			const entry = userMap.get(game.user_id);
+			if (entry) {
+				entry.ownedApps.push({
+					appid: game.app_id,
+					playtime_forever: game.playtime_total_minutes ?? undefined,
+					playtime_2weeks: game.playtime_2w_minutes ?? undefined,
+					rtime_last_played: game.last_played_at ? game.last_played_at.getTime() / 1000 : undefined,
 				});
 			}
 		}
 
-		// Convert map to SteamUser objects
 		return userMap
 			.values()
 			.map(({ data, ownedApps }) => new SteamUser({ data, ownedApps }))

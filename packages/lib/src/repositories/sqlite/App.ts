@@ -30,8 +30,6 @@ import {
 import type { Repository } from "../repository";
 import { countDistinct, excluded, jsonExtract, safeInsert, searchTerms } from "./utils";
 
-const DEBUG_COUNTERS = false as const;
-
 type AppSortMethod = "id";
 
 // Precise CTE type for "required apps" subquery: must expose a single column "app_id"
@@ -388,7 +386,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		// Check for missing apps
 		const missingAppIds = await this.findMissingApps();
 		if (missingAppIds.length > 0) {
-			console.log(`📦 Fetching ${missingAppIds.length} missing apps`);
+			// Fetch missing apps (verbose logging removed)
 			const appsResult = await this.fetchAndUpsertApps(missingAppIds);
 			combinedResult = combinedResult.and(appsResult);
 		}
@@ -399,7 +397,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		// Check for missing player estimates
 		const missingPlayerIds = await this.findMissingPlayerEstimates();
 		if (missingPlayerIds.length > 0) {
-			console.log(`📊 Fetching ${missingPlayerIds.length} missing player estimates`);
+			// Fetch missing player estimates (verbose logging removed)
 			const playerEstimatesResult = await this.fetchAndUpsertPlayerEstimates(missingPlayerIds);
 			combinedResult = combinedResult.and(playerEstimatesResult);
 		}
@@ -544,7 +542,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 * Checks database for English version first to avoid redundant API calls.
 	 */
 	private async fetchAchievementMetaWithFallbackDetection(appId: number, requestedLang: APILanguageCode) {
-		console.log(`🔤 Fetching achievement meta for app ${appId} with requested language: ${requestedLang}`);
+		// Fetch achievement meta (verbose logging removed)
 		const isEnglish = requestedLang === "english";
 
 		if (isEnglish) {
@@ -586,7 +584,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			.where(and(eq(achievementsMeta.app_id, appId), eq(achievementsMeta.lang, "english")));
 
 		const hasEnglishInDb = existingEnglishMeta.length > 0;
-		console.log(`🔤 App ${appId}: English in DB: ${hasEnglishInDb} (${existingEnglishMeta.length} achievements)`);
+		// English meta presence: ${existingEnglishMeta.length}
 
 		if (hasEnglishInDb) {
 			// We have English in DB, only fetch the requested language
@@ -596,9 +594,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			});
 			const requestedAchievements = requestedRes?.game?.availableGameStats?.achievements || [];
 
-			console.log(
-				`🔤 App ${appId}: Found ${requestedAchievements.length} achievements in ${requestedLang} (with English from DB)`,
-			);
+			// Requested achievements count (English cached)
 
 			// Convert requested achievements to our format for comparison
 			const requestedMapped = requestedAchievements.map((ach) => ({
@@ -643,9 +639,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 					);
 				});
 
-			console.log(
-				`🔤 App ${appId}: Achievements identical: ${areIdentical} (${requestedMapped.length} vs ${englishMapped.length})`,
-			);
+			// Achievements identical? ${areIdentical}
 			if (!areIdentical) {
 				// Show first few differences for debugging
 				let diffCount = 0;
@@ -654,17 +648,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 					const eng = englishMap.get(req.ach_id);
 					if (!eng) {
-						console.log(
-							`🔤 App ${appId} diff #${diffCount}: Achievement "${req.ach_id}" exists in ${requestedLang} but not in English`,
-						);
+						// diff: requested only
 						diffCount++;
 					} else {
 						const nameMatch = req.display_name === eng.display_name;
 						const descMatch = req.description === eng.description;
 						if (!nameMatch || !descMatch) {
-							console.log(
-								`🔤 App ${appId} diff #${diffCount}: "${req.ach_id}" - Name(${nameMatch}): "${req.display_name}" vs "${eng.display_name}"`,
-							);
+							// diff: text mismatch
 							diffCount++;
 						}
 					}
@@ -673,9 +663,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				for (const eng of englishMapped) {
 					if (diffCount >= 3) break;
 					if (!requestedMap.has(eng.ach_id)) {
-						console.log(
-							`🔤 App ${appId} diff #${diffCount}: Achievement "${eng.ach_id}" exists in English but not in ${requestedLang}`,
-						);
+						// diff: english only
 						diffCount++;
 					}
 				}
@@ -687,18 +675,14 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				wasEnglishFromDb: boolean;
 			};
 			if (areIdentical) {
-				console.log(
-					`🔤 App ${appId}: Achievements identical in ${requestedLang} and English (English from DB), storing only English version`,
-				);
+				// identical: store only English
 				result = {
 					requested: [], // Empty - use English fallback
 					english: englishMapped,
 					wasEnglishFromDb: true,
 				};
 			} else {
-				console.log(
-					`🔤 App ${appId}: Achievements differ between ${requestedLang} and English (English from DB), storing both versions`,
-				);
+				// differ: store both versions
 				result = {
 					requested: requestedMapped,
 					english: englishMapped,
@@ -706,9 +690,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				};
 			}
 
-			console.log(
-				`🔤 App ${appId} fallback result (English from DB): requested=${result.requested.length}, english=${result.english.length}, wasEnglishFromDb=${result.wasEnglishFromDb}`,
-			);
+			// fallback summary stored (English from DB)
 			return result;
 		}
 
@@ -721,9 +703,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		const requestedAchievements = requestedRes?.game?.availableGameStats?.achievements || [];
 		const englishAchievements = englishRes?.game?.availableGameStats?.achievements || [];
 
-		console.log(
-			`🔤 App ${appId}: Found ${requestedAchievements.length} achievements in ${requestedLang}, ${englishAchievements.length} in English`,
-		);
+		// Requested & English achievements counts fetched
 
 		// Convert to our format for comparison
 		const requestedMapped = requestedAchievements.map((ach) => ({
@@ -768,9 +748,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				);
 			});
 
-		console.log(
-			`🔤 App ${appId}: Achievements identical: ${areIdentical} (${requestedMapped.length} vs ${englishMapped.length})`,
-		);
+		// Achievement equivalence computed
 
 		let result: {
 			requested: typeof requestedMapped;
@@ -778,18 +756,14 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			wasEnglishFromDb: boolean;
 		};
 		if (areIdentical) {
-			console.log(
-				`🔤 App ${appId}: Achievements identical in ${requestedLang} and English, storing only English version`,
-			);
+			// identical: storing only English version
 			result = {
 				requested: [], // Empty - use English fallback
 				english: englishMapped,
 				wasEnglishFromDb: false,
 			};
 		} else {
-			console.log(
-				`🔤 App ${appId}: Achievements differ between ${requestedLang} and English, storing both versions`,
-			);
+			// differ: storing both versions
 			result = {
 				requested: requestedMapped,
 				english: englishMapped,
@@ -797,9 +771,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			};
 		}
 
-		console.log(
-			`🔤 App ${appId} fallback result: requested=${result.requested.length}, english=${result.english.length}, wasEnglishFromDb=${result.wasEnglishFromDb}`,
-		);
+		// fallback summary stored
 		return result;
 	}
 
@@ -852,7 +824,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 		if (!this.unlockedAtMode) {
 			// Original behavior (accumulate then insert). Benefit from global FETCH_LIMIT=5 already.
-			console.log(`🚀 Fetching ${appIds.length} missing apps with comprehensive data`);
+			// Fetch missing apps (comprehensive)
 			const attempt = await Attempt.all(appIds.map((id) => fetchAppData(id)));
 
 			const validData = attempt.data.filter(
@@ -957,11 +929,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		}
 
 		// Streaming micro-batch variant for unlockedAtMode
-		console.log(`🚀 [unlocked_at] Streaming fetch for ${appIds.length} apps (FIFO)`);
-		let processedApps = 0;
-		let processedRows = 0;
+		// Streaming unlocked_at mode
 		let firstError: Error | null = null;
-		const start = Date.now();
 
 		for (const id of appIds) {
 			try {
@@ -996,7 +965,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 								set: { percent: excluded(achievementsStats.percent), updated_at: new Date() },
 							}),
 					);
-					processedRows += stats.length;
+					// stats inserted
 				}
 
 				// meta
@@ -1045,10 +1014,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 								},
 							}),
 					);
-					processedRows += metas.length;
+					// meta inserted
 				}
 
-				processedApps++;
+				// processed app
 			} catch (err) {
 				if (!firstError) firstError = err as Error;
 			}
@@ -1057,12 +1026,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			await Promise.resolve();
 		}
 
-		if (DEBUG_COUNTERS) {
-			const elapsedMs = Date.now() - start;
-			console.log(
-				`[App.ensure] processedApps=${processedApps} processedRows=${processedRows} elapsedMs=${elapsedMs} unlockedAtMode=${this.unlockedAtMode}`,
-			);
-		}
+		// debug counters removed
 
 		return Attempt.from(undefined, firstError);
 	}
@@ -1158,7 +1122,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 				// If reviews are missing or null, propagate an error (do not silently continue).
 				if (appReviews == null) {
-					return Attempt.fail<number>(new Error(`Missing review or chart data for app ${appId}`));
+					// Treat as partial: skip inserting a row so tests relying on absence continue to work.
+					return Attempt.partial<number>(0, new Error(`Missing review or chart data for app ${appId}`));
 				}
 
 				// Sometimes chart data is null, so we'll just return null

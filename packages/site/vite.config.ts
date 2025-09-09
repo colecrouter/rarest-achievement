@@ -5,14 +5,16 @@ import tailwindcss from "@tailwindcss/vite";
 import { svelteTesting } from "@testing-library/svelte/vite";
 import { defineConfig } from "vitest/config";
 
-export default defineConfig({
+export default defineConfig((env) => ({
 	plugins: [
-		sentrySvelteKit({
-			sourceMapsUploadOptions: {
-				org: "cole-crouter",
-				project: "steam-vault",
-			},
-		}),
+		env.mode === "production"
+			? sentrySvelteKit({
+					sourceMapsUploadOptions: {
+						org: "cole-crouter",
+						project: "steam-vault",
+					},
+				})
+			: undefined,
 		tailwindcss(), // @ts-ignore
 		sveltekit(),
 		paraglideVitePlugin({
@@ -32,7 +34,7 @@ export default defineConfig({
 					name: "client",
 					environment: "jsdom",
 					clearMocks: true,
-					include: ["src/**/*.svelte.{test,spec}.{js,ts}"],
+					include: ["src/**/*.{test,spec}.{js,ts}"],
 					exclude: ["src/lib/server/**"],
 					setupFiles: ["./vitest-setup-client.ts"],
 				},
@@ -43,7 +45,7 @@ export default defineConfig({
 				test: {
 					name: "server",
 					environment: "node",
-					include: ["src/**/*.{test,spec}.{js,ts}"],
+					include: ["src/lib/server/**/*.{test,spec}.{js,ts}"],
 					exclude: ["src/**/*.svelte.{test,spec}.{js,ts}"],
 				},
 			},
@@ -54,4 +56,4 @@ export default defineConfig({
 			allow: ["../.."],
 		},
 	},
-});
+}));

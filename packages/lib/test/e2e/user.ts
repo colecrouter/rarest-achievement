@@ -1,6 +1,6 @@
 import { SteamUser, type SteamUserRaw } from "../../src";
-import { makeUserData } from "..";
 import { makeOwnedGame } from "../fixtures/ownedData";
+import { makeUserData } from "../fixtures/userData";
 
 /**
  * Create a Steam user with optional overrides for user data and owned games.

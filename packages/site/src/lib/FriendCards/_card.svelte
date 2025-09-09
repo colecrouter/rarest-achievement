@@ -84,6 +84,7 @@
 			<a
 				class="font-medium hover:underline"
 				href={localizeHref(`/user/${friend.id}`)}
+				data-testid="friend-card-name-link"
 			>
 				{friend.displayName}
 			</a>

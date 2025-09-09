@@ -1,4 +1,3 @@
-import type { GetFriendsListResponse } from "../../src/repositories/api/steampowered/friends";
 import type { GetPlayerAchievementsResponse } from "../../src/repositories/api/steampowered/playerAchievement";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { insertUserAchievement } from "./dbHelpers";
@@ -23,26 +22,6 @@ export function makePlayerAchievementsPayload(opts: {
 			})),
 		},
 	} as GetPlayerAchievementsResponse<undefined>;
-}
-
-/**
- * Build a typed GetFriendsListResponse payload for a user's friend list.
- * friend_since accepts Date or seconds (number) and is normalized to seconds.
- */
-export function makeFriendsListResponse(
-	friends: Array<{ steamid: string; friend_since: Date | number }>,
-): GetFriendsListResponse {
-	const toSeconds = (v: Date | number) => (typeof v === "number" ? Math.floor(v) : Math.floor(v.getTime() / 1000));
-
-	return {
-		friendslist: {
-			friends: friends.map((f) => ({
-				steamid: f.steamid,
-				relationship: "friend",
-				friend_since: toSeconds(f.friend_since),
-			})),
-		},
-	};
 }
 
 /**

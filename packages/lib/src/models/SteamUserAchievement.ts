@@ -46,7 +46,9 @@ export class SteamUserAchievement extends SteamAppAchievement {
 	}
 
 	get unlocked() {
-		return this.#userStats && this.#userStats.unlocktime !== 0 ? new Date(this.#userStats.unlocktime * 1000) : null;
+		return this.#userStats && this.#userStats.achieved === 1 && this.#userStats.unlocktime !== 0
+			? new Date(this.#userStats.unlocktime * 1000)
+			: null;
 	}
 
 	get icon() {

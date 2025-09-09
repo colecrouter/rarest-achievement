@@ -3,7 +3,7 @@ import type { GetSchemaForGameResponse } from "../../src/repositories/api/steamp
 import type { AppDetailsData } from "../../src/repositories/api/store/appdetails";
 
 // Minimal base data for creating valid app records
-const appDataBase: Omit<AppDetailsData, "name" | "steam_appid"> = {
+const appDataBase = {
 	type: "game",
 	required_age: 0,
 	is_free: false,
@@ -30,7 +30,7 @@ const appDataBase: Omit<AppDetailsData, "name" | "steam_appid"> = {
 	release_date: { coming_soon: false, date: "Jan 1, 2020" },
 	support_info: { url: "https://example.com", email: "test@example.com" },
 	content_descriptors: { ids: [], notes: "" },
-};
+} satisfies Omit<AppDetailsData, "name" | "steam_appid">;
 
 /**
  * Create app data fixture for testing

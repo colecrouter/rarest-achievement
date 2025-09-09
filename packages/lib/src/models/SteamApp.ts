@@ -70,6 +70,12 @@ export class SteamApp {
 		return this.#estimatedPlayers;
 	}
 
+	get language() {
+		const lang = getLanguageByAPICode(this.#lang);
+		if (!lang) throw new Error(`Unknown language code: ${this.#lang}`);
+		return lang;
+	}
+
 	serialize() {
 		return {
 			data: this.#app,

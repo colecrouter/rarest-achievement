@@ -9,7 +9,8 @@
 		".": "./src/index.js",
 		"./models": "./src/models/index.js",
 		"./search": "./src/search/index.js",
-		"./repositories": "./src/steam/repositories/index.js"
+		"./repositories": "./src/steam/repositories/index.js",
+		"./test": "./test/e2e/index.js"
 	},
 	"scripts": {
 		"build:python": "node ../../python/xgboost_model/run-training.js",

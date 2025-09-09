@@ -15,4 +15,12 @@ Object.defineProperty(window, "matchMedia", {
 	})),
 });
 
+// jsdom does not implement Element.animate
+Element.prototype.animate ??= vi.fn().mockReturnValue({
+	finished: Promise.resolve(),
+	cancel: vi.fn(),
+	startTime: null,
+	currentTime: null,
+});
+
 // add more mocks here if you need them

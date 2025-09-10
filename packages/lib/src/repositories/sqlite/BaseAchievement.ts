@@ -1,12 +1,20 @@
-import { and, asc, desc, eq, exists, gt, inArray, isNotNull, lte, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, gt, inArray, isNotNull, isNull, lte, or, type SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import type { SubqueryWithSelection, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
-import { apps, getLanguageByCode, type LanguageCode, type ProjectDB } from "../..";
+import {
+	type APILanguageCode,
+	apps,
+	getLanguageByAPICode,
+	getLanguageByCode,
+	type LanguageCode,
+	type ProjectDB,
+} from "../..";
 import type { Attempt, AttemptStatus } from "../../error";
 import type { ComposableQueryOptions, ComposableQueryResult, QueryComposer, RequiredSubquery } from "../composable";
 import { RequiredEntityStore } from "../entitySubqueries";
+import { caseWhen, coalesce, jsonExtract, multiply } from "./operators";
 import { achievementsMeta, achievementsStats } from "./schema";
-import { jsonExtract, searchTerms } from "./utils";
+import { searchTerms } from "./utils";
 
 export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends string>
 	extends RequiredEntityStore<"app" | "ach">
@@ -27,6 +35,55 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 			app: achievementsStats.app_id,
 			ach: achievementsStats.ach_id,
 		});
+	}
+
+	/**
+	 * Static helper to generate the COALESCE language fallback query used in achievement metadata joins.
+	 * This ensures consistent language fallback logic across all achievement repositories.
+	 *
+	 * @param appIdColumn - The column containing the app_id (e.g., achievementsStats.app_id or userAchievements.app_id)
+	 * @param achIdColumn - The column containing the ach_id (e.g., achievementsStats.ach_id or userAchievements.ach_id)
+	 * @param apiCode - The requested API language code (e.g., "french", "german", etc.)
+	 * @returns SQL expression for the COALESCE language fallback logic
+	 */
+	protected createLanguageFallbackCondition(
+		appIdColumn: SQLiteColumn,
+		achIdColumn: SQLiteColumn,
+		apiCode: APILanguageCode,
+	): SQL {
+		// return sql`${achievementsMeta.lang} = (
+		// 	SELECT COALESCE(
+		// 		(SELECT lang FROM ${achievementsMeta} WHERE app_id = ${appIdColumn} AND ach_id = ${achIdColumn} AND lang = ${apiCode} LIMIT 1),
+		// 		(SELECT lang FROM ${achievementsMeta} WHERE app_id = ${appIdColumn} AND ach_id = ${achIdColumn} AND lang = 'english' LIMIT 1)
+		// 	)
+		// )`;
+		return eq(
+			achievementsMeta.lang,
+			coalesce(
+				this.db
+					.select({ lang: achievementsMeta.lang })
+					.from(achievementsMeta)
+					.where(
+						and(
+							eq(achievementsMeta.app_id, appIdColumn),
+							eq(achievementsMeta.ach_id, achIdColumn),
+							eq(achievementsMeta.lang, apiCode),
+						),
+					)
+					.limit(1),
+				this.db
+					.select({ lang: achievementsMeta.lang })
+					.from(achievementsMeta)
+					.where(
+						and(
+							eq(achievementsMeta.app_id, appIdColumn),
+							eq(achievementsMeta.ach_id, achIdColumn),
+							eq(achievementsMeta.lang, "english"),
+						),
+					)
+					.limit(1),
+			),
+		);
 	}
 
 	/** Provide a required app subquery (selects { app_id }). Adds EXISTS(...) correlation automatically. */
@@ -120,7 +177,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		this.whereConditions.push(
 			exists(
 				this.db
-					.select({ one: sql`1` })
+					.select()
 					.from(rareAchievementsCTE)
 					.where(
 						and(
@@ -169,7 +226,7 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		this.whereConditions.push(
 			exists(
 				this.db
-					.select({ one: sql`1` })
+					.select()
 					.from(searchableAchievementsCTE)
 					.where(
 						and(
@@ -287,9 +344,13 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		if (String(sort.method) === "rarity_score") {
 			const dir = sort.direction === "desc" ? desc : asc;
 			const nullsLast = asc(
-				sql`CASE WHEN ${percentColumn} IS NULL OR ${estimatedPlayersColumn} IS NULL THEN 1 ELSE 0 END`,
+				// sql`CASE WHEN ${percentColumn} IS NULL OR ${estimatedPlayersColumn} IS NULL THEN 1 ELSE 0 END`,
+				caseWhen()
+					.when(or(isNull(percentColumn), isNull(estimatedPlayersColumn)), 1)
+					.else(0)
+					.endNonNull(),
 			);
-			const score = dir(sql`${percentColumn} * ${estimatedPlayersColumn}`);
+			const score = dir(multiply(percentColumn, estimatedPlayersColumn));
 			return {
 				orderBy: [nullsLast, score],
 				// Ensure rows have a valid (positive) estimated player count when sorting by player-driven score
@@ -298,6 +359,44 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		}
 
 		return fallback;
+	}
+
+	/**
+	 * Unified helper for detecting effective language based on content comparison.
+	 * Compares the row's display_name and description with English metadata to detect
+	 * when API returned English data for a non-English request.
+	 */
+	protected detectEffectiveLanguage(
+		requestedLang: LanguageCode,
+		actualRowLang: string | null,
+		displayName: string,
+		description: string | null,
+		englishMetaMap: Map<string, { display_name: string; description: string | null }>,
+		appId: number,
+		achId: string,
+	): APILanguageCode {
+		// If no actual row language (null), it means no translation available
+		if (!actualRowLang) {
+			return "english";
+		}
+
+		// If already English, return as "english"
+		if (actualRowLang === "en" || actualRowLang === "english") {
+			return "english";
+		}
+
+		// For non-English requests, check if content matches English
+		if (requestedLang !== "en") {
+			const englishMeta = englishMetaMap.get(`${appId}-${achId}`);
+			if (englishMeta && displayName === englishMeta.display_name && description === englishMeta.description) {
+				return "english"; // Content is English despite lang field
+			}
+		}
+
+		// Return the actual row language, converted to API code
+		const normalizedLang = actualRowLang === "english" ? "en" : actualRowLang;
+		const langEntry = getLanguageByAPICode(normalizedLang as APILanguageCode);
+		return langEntry?.apiCode || "english";
 	}
 
 	/**

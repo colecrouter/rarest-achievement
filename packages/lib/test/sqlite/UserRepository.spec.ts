@@ -8,7 +8,6 @@ import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/reposi
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { ownedGames, users } from "../../src/repositories/sqlite/schema.js";
-import { excluded } from "../../src/repositories/sqlite/utils";
 import { makeUserRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
@@ -273,6 +272,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
 
 // Count() parity and error propagation tests for UserRepository
 import { describe as describe_count_user, test as test_count_user } from "node:test";
+import { excluded } from "../../src/repositories/sqlite/operators";
 
 describe_count_user("UserRepository.count()", () => {
 	test_count_user("parity: withUserIds equals build length", async () => {

@@ -1,5 +1,5 @@
 import { achievementsStats, apps, estimatedPlayers } from "@project/lib";
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, lte } from "drizzle-orm";
 import { locales, localizeUrl } from "$lib/paraglide/runtime";
 
 const _xmlEscapeMap: Record<string, string> = {
@@ -31,7 +31,7 @@ export const GET = async ({ url, setHeaders, locals }) => {
 		// Sort by most common games, then rarest achievements
 		.orderBy(desc(estimatedPlayers.estimated_players), asc(achievementsStats.percent))
 		// Filter out achievements with percent >= 10 (10%)
-		.where(sql`${achievementsStats.percent} <= 10`);
+		.where(lte(achievementsStats.percent, 10));
 
 	// Create XML entries for each page.
 	const generateXml = (url: string, lastmod?: Date) => {

@@ -13,6 +13,7 @@
 		"./test": "./test/e2e/index.js"
 	},
 	"scripts": {
+		"check": "tsc --noEmit --skipLibCheck",
 		"build:python": "node ../../python/xgboost_model/run-training.js",
 		"build": "npm run build:python",
 		"watch:python": "watch \"npm run build:python\" ../../python/xgboost_model/input",

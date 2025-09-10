@@ -1,4 +1,18 @@
-import { and, asc, desc, eq, exists, inArray, isNotNull, isNull, lt, or, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	countDistinct,
+	desc,
+	eq,
+	exists,
+	inArray,
+	isNotNull,
+	isNull,
+	lt,
+	max,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import type { SubqueryWithSelection, WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	achievementsStats,
@@ -29,11 +43,10 @@ import { BaseAchievementQueryComposer } from "./BaseAchievement";
 import type { EnsurePolicy } from "./ensurePolicy";
 import { defaultEnsurePolicy, defaultUnlockedAtEnsurePolicy } from "./ensurePolicy";
 import type { FriendsRepository } from "./Friends";
+import { caseWhen, concat, excluded } from "./operators";
 import { achievementsMeta } from "./schema";
 import type { UserRepository } from "./User";
-import { countDistinct, excluded, max, safeInsert } from "./utils";
-
-const DEBUG_COUNTERS = false as const;
+import { safeInsert } from "./utils";
 
 /**
  * UserAchievement Repository - Pure SQL Composition Architecture
@@ -125,7 +138,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		if (options.sort.method === "unlocked_at") {
 			const dir = options.sort.direction === "desc" ? desc : asc;
 			return query.orderBy(
-				asc(sql`CASE WHEN ${userAchievements.unlocked_at} IS NULL THEN 1 ELSE 0 END`),
+				asc(caseWhen().when(isNull(userAchievements.unlocked_at), 1).else(0).endNonNull()),
 				dir(userAchievements.unlocked_at),
 			);
 		}
@@ -212,16 +225,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		sub: WithSubqueryWithSelection<{ id: unknown }, string> | SubqueryWithSelection<{ id: unknown }, string>,
 	): this {
 		// Validate presence of id column structurally; no 'any' usage
-		const idCol = (sub as { id?: unknown }).id; // still unknown typed
-		if (!idCol) throw new Error("withRequiredUser: subquery must select { id }");
-		this.whereConditions.push(
-			exists(
-				this.db
-					.select({ one: sql`1` })
-					.from(sub as WithSubqueryWithSelection<{ id: unknown }, string>)
-					.where(eq(idCol as unknown as typeof userAchievements.user_id, userAchievements.user_id)),
-			),
-		);
+		this.whereConditions.push(exists(this.db.select().from(sub).where(eq(sub.id, userAchievements.user_id))));
 		return this;
 	}
 
@@ -245,15 +249,16 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 	 */
 	private async getCandidateAppsFromOwnedGamesForUsers(userIds: string[], window: number): Promise<number[]> {
 		if (userIds.length === 0) return [];
+		const last = max(ownedGames.last_played_at).as("last");
 		const rows = await this.db
 			.select({
 				app_id: ownedGames.app_id,
-				last: max(ownedGames.last_played_at).as("last"),
+				last,
 			})
 			.from(ownedGames)
 			.where(inArray(ownedGames.user_id, userIds))
 			.groupBy(ownedGames.app_id)
-			.orderBy(desc(sql`last`), asc(ownedGames.app_id))
+			.orderBy(desc(last), asc(ownedGames.app_id))
 			.limit(window);
 		return rows.map((r) => r.app_id);
 	}
@@ -387,7 +392,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				.with(...this.ctes)
 				.select({
 					count: countDistinct(
-						sql`${userAchievements.user_id} || ':' || ${userAchievements.app_id} || ':' || ${userAchievements.ach_id}`,
+						concat(userAchievements.user_id, ":", userAchievements.app_id, ":", userAchievements.ach_id),
 					),
 				})
 				.from(userAchievements)
@@ -417,12 +422,11 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 						and(
 							eq(userAchievements.app_id, achievementsMeta.app_id),
 							eq(userAchievements.ach_id, achievementsMeta.ach_id),
-							sql`${achievementsMeta.lang} = (
-                                SELECT COALESCE(
-                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
-                                    (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
-                                )
-                            )`,
+							super.createLanguageFallbackCondition(
+								userAchievements.app_id,
+								userAchievements.ach_id,
+								apiCode,
+							),
 						),
 					)
 					// Join apps to mirror the comprehensive build composition
@@ -745,12 +749,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 					eq(userAchievements.app_id, achievementsMeta.app_id),
 					eq(userAchievements.ach_id, achievementsMeta.ach_id),
 					// Fallback logic: try requested language first, then English
-					sql`${achievementsMeta.lang} = (
-                            SELECT COALESCE(
-                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = ${apiCode} LIMIT 1),
-                                (SELECT lang FROM ${achievementsMeta} WHERE app_id = ${userAchievements.app_id} AND ach_id = ${userAchievements.ach_id} AND lang = 'english' LIMIT 1)
-                            )
-                        )`,
+					super.createLanguageFallbackCondition(userAchievements.app_id, userAchievements.ach_id, apiCode),
 				),
 			)
 			// JOIN for app data
@@ -842,7 +841,30 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Even if user data fetch fails, we can try to build what we can
 		// (though results will be empty without user data)
-		const userMap = userDataResult.hasData() ? new Map(userDataResult.data.map((u) => [u.id, u])) : new Map(); // Build results directly from comprehensive rows
+		const userMap = userDataResult.hasData() ? new Map(userDataResult.data.map((u) => [u.id, u])) : new Map();
+
+		// For non-English requests, fetch English metadata to detect fallback cases
+		let englishMetaMap = new Map<string, { display_name: string; description: string | null }>();
+		if (this.lang !== "en") {
+			const uniqueAppIds = [...new Set(rows.map((row) => row.app_id))];
+			const englishRows = await this.db
+				.select({
+					app_id: achievementsMeta.app_id,
+					ach_id: achievementsMeta.ach_id,
+					display_name: achievementsMeta.display_name,
+					description: achievementsMeta.description,
+				})
+				.from(achievementsMeta)
+				.where(and(eq(achievementsMeta.lang, "english"), inArray(achievementsMeta.app_id, uniqueAppIds)));
+			englishMetaMap = new Map(
+				englishRows.map((row) => [
+					`${row.app_id}-${row.ach_id}`,
+					{ display_name: row.display_name, description: row.description },
+				]),
+			);
+		}
+
+		// Build results directly from comprehensive rows
 		const results: SteamUserAchievement[] = [];
 
 		for (const row of rows) {
@@ -879,15 +901,23 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 								percent: 0, // Default value when no stats available
 							};
 
-				// Determine effective language: use achievement_lang if available, otherwise app_lang
-				const effectiveLanguage = row.achievement_lang || row.app_lang;
+				// Determine effective language using unified detection
+				const effectiveLanguage = this.detectEffectiveLanguage(
+					this.lang,
+					row.achievement_lang,
+					row.display_name,
+					row.description,
+					englishMetaMap,
+					row.app_id,
+					row.ach_id,
+				);
 
 				results.push(
 					new SteamUserAchievement({
 						app: app,
 						meta: meta,
 						globalStats: globalStats,
-						lang: effectiveLanguage, // Use the actual achievement language
+						lang: effectiveLanguage, // Use the detected effective language
 						user: user,
 						userStats: row.unlocked_at
 							? {
@@ -1111,10 +1141,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 					break;
 				}
 				await maybeYield();
-			}
-
-			if (DEBUG_COUNTERS) {
-				// Debug counters suppressed (was: processedApps/rows/time/capped)
 			}
 
 			return Attempt.from(undefined, firstError);

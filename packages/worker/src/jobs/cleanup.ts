@@ -8,7 +8,7 @@ import {
 	userAchievements,
 	users,
 } from "@project/lib";
-import { and, asc, eq, exists, lt, not, sql } from "drizzle-orm";
+import { and, asc, eq, exists, lt, not } from "drizzle-orm";
 import type { CronCtx } from ".";
 
 const REFRESH_STALE_APPS_COUNT = 100;
@@ -86,17 +86,10 @@ export const cleanupUserData = async (ctx: CronCtx) => {
 		.delete(users)
 		.where(
 			and(
-				not(
-					exists(
-						ctx.db
-							.select({ one: sql`1` })
-							.from(userAchievements)
-							.where(eq(userAchievements.user_id, users.id)),
-					),
-				),
-				not(exists(ctx.db.select({ one: sql`1` }).from(ownedGames).where(eq(ownedGames.user_id, users.id)))),
-				not(exists(ctx.db.select({ one: sql`1` }).from(friends).where(eq(friends.user_id, users.id)))),
-				not(exists(ctx.db.select({ one: sql`1` }).from(friends).where(eq(friends.friend_id, users.id)))),
+				not(exists(ctx.db.select().from(userAchievements).where(eq(userAchievements.user_id, users.id)))),
+				not(exists(ctx.db.select().from(ownedGames).where(eq(ownedGames.user_id, users.id)))),
+				not(exists(ctx.db.select().from(friends).where(eq(friends.user_id, users.id)))),
+				not(exists(ctx.db.select().from(friends).where(eq(friends.friend_id, users.id)))),
 			),
 		);
 };

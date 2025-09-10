@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { asc, countDistinct, desc, eq, gte, inArray } from "drizzle-orm";
 import { Attempt, type AttemptStatus, friends, ownedGames, type ProjectDB, users } from "../..";
 import { SteamFriendUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
@@ -107,7 +107,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 			const ids = Array.from(this.userIds);
 			const rows = await this.db
 				.select({
-					cnt: sql<number>`count(distinct ${friends.friend_id})`,
+					cnt: countDistinct(friends.friend_id),
 				})
 				.from(friends)
 				.where(inArray(friends.user_id, ids));
@@ -230,8 +230,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 		const ids = Array.from(this.userIds);
 
 		// Get users for friends via subquery (avoids parameter explosion & intermediate arrays)
-		const sortMethod =
-			options.sort?.method === "friend_since" ? sql`${friends.friend_since}` : sql`${friends.friend_id}`;
+		const sortMethod = options.sort?.method === "friend_since" ? friends.friend_since : friends.friend_id;
 		const sortDirection = options.sort?.direction !== "desc" ? desc : asc;
 
 		// Create a typed subquery for the friend user IDs we need (avoids parameter explosion)

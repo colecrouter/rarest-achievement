@@ -1,5 +1,6 @@
 import { AttemptStatus, userScores, users } from "@project/lib";
 import { asc, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { coalesce } from "../../../lib/src/repositories/sqlite/operators";
 import type { CronCtx } from ".";
 
 const TTL_DAYS = 7;
@@ -18,7 +19,7 @@ export async function refreshRareCount(ctx: CronCtx) {
 		.leftJoin(userScores, eq(userScores.user_id, users.id))
 		.where(or(isNull(userScores.updated_at), lt(userScores.updated_at, threshold)))
 		// Order NULL first, then oldest first
-		.orderBy(asc(sql`COALESCE(${userScores.updated_at}, ${0})`))
+		.orderBy(asc(coalesce(userScores.updated_at, sql<Date>`0`)))
 		.limit(1);
 
 	const userId = candidates[0]?.userId;

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, notExists, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, gte, inArray, notExists, or, type SQL, sql } from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	type APILanguageCode,
@@ -28,7 +28,8 @@ import {
 	type SubqueryConsumer,
 } from "../composable";
 import type { Repository } from "../repository";
-import { countDistinct, excluded, jsonExtract, safeInsert, searchTerms } from "./utils";
+import { excluded, jsonExtract } from "./operators";
+import { safeInsert, searchTerms } from "./utils";
 
 type AppSortMethod = "id";
 
@@ -416,7 +417,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			// Use provided subquery from cross-repository dependency with notExists; incorporate freshness cutoff if present
 			if (this.freshnessCutoff) {
 				const missingAppsQuery = this.db
-					.select({ app_id: sql<number>`app_id`.as("app_id") })
+					.select({ app_id: this.requiredAppsSubquery.app_id })
 					.from(this.requiredAppsSubquery)
 					.where(
 						notExists(
@@ -436,7 +437,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				return result.map((row) => row.app_id);
 			}
 			const missingAppsQuery = this.db
-				.select({ app_id: sql<number>`app_id`.as("app_id") })
+				.select({ app_id: this.requiredAppsSubquery.app_id })
 				.from(this.requiredAppsSubquery)
 				.where(
 					notExists(
@@ -481,7 +482,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		if (this.requiredAppsSubquery) {
 			if (this.freshnessCutoff) {
 				const missingPlayerEstimatesQuery = this.db
-					.select({ app_id: sql<number>`app_id`.as("app_id") })
+					.select({ app_id: this.requiredAppsSubquery.app_id })
 					.from(this.requiredAppsSubquery)
 					.where(
 						notExists(
@@ -500,7 +501,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				return result.map((row) => row.app_id);
 			}
 			const missingPlayerEstimatesQuery = this.db
-				.select({ app_id: sql<number>`app_id`.as("app_id") })
+				.select({ app_id: this.requiredAppsSubquery.app_id })
 				.from(this.requiredAppsSubquery)
 				.where(
 					notExists(
@@ -621,9 +622,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 			// Achievement fallback detection logic:
 			// 1. Compare [lang] vs English achievements by matching ach_id (not array position)
-			// 2. If identical (same display_name, description), store ONLY English to avoid duplication
+			// 2. If identical (same display_name, description), store BOTH versions with same content for SQL COALESCE compatibility
 			// 3. [lang] app record is still created (for re-fetch prevention)
-			// 4. UI will use Google Translate on English text when displaying in [lang]
+			// 4. SQL COALESCE in achievement queries will handle fallback automatically
 			const requestedMap = new Map(requestedMapped.map((ach) => [ach.ach_id, ach]));
 			const englishMap = new Map(englishMapped.map((ach) => [ach.ach_id, ach]));
 
@@ -675,9 +676,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				wasEnglishFromDb: boolean;
 			};
 			if (areIdentical) {
-				// identical: store only English
+				// identical: treat as no translation exists, don't store requested language
 				result = {
-					requested: [], // Empty - use English fallback
+					requested: [], // Don't store duplicate content
 					english: englishMapped,
 					wasEnglishFromDb: true,
 				};
@@ -730,9 +731,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 		// Achievement fallback detection logic (when English exists in DB):
 		// 1. Compare newly fetched French vs existing English by matching ach_id
-		// 2. If identical, store ONLY English to avoid duplication
+		// 2. If identical, store BOTH versions with same content for SQL COALESCE compatibility
 		// 3. French app record is still created (prevents re-fetching)
-		// 4. UserAchievement queries will fall back to English when French achievements missing
+		// 4. SQL COALESCE in achievement queries will handle fallback automatically
 		const englishMap = new Map(englishMapped.map((ach) => [ach.ach_id, ach]));
 
 		// TODO there are several faster ways to do this
@@ -756,9 +757,9 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			wasEnglishFromDb: boolean;
 		};
 		if (areIdentical) {
-			// identical: storing only English version
+			// identical: treat as no translation exists, don't store requested language
 			result = {
-				requested: [], // Empty - use English fallback
+				requested: [], // Don't store duplicate content
 				english: englishMapped,
 				wasEnglishFromDb: false,
 			};
@@ -876,8 +877,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 							})),
 						);
 
-						// Also English if applicable
-						if (lang !== "english" && meta.english && !meta.wasEnglishFromDb) {
+						// Also English if applicable (always store English when available)
+						if (lang !== "english" && meta.english) {
 							results.push(
 								...meta.english.map((m) => ({
 									...m,
@@ -988,7 +989,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 							lang,
 						})),
 					);
-					if (lang !== "english" && meta.english && !meta.wasEnglishFromDb) {
+					if (lang !== "english" && meta.english) {
 						metas.push(
 							...meta.english.map((m) => ({
 								...m,
@@ -1051,7 +1052,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 					data: apps.data,
 				})
 				.from(this.requiredAppsSubquery)
-				.innerJoin(apps, eq(sql`required_apps.app_id`, apps.id))
+				.innerJoin(apps, eq(this.requiredAppsSubquery.app_id, apps.id))
 				.where(
 					and(
 						eq(apps.lang, lang),
@@ -1165,7 +1166,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 					.onConflictDoUpdate({
 						target: estimatedPlayers.app_id,
 						set: {
-							estimated_players: sql`excluded.estimated_players`,
+							estimated_players: excluded(estimatedPlayers.estimated_players),
 							updated_at: new Date(),
 						},
 					}),

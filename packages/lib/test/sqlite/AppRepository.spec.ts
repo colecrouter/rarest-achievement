@@ -3,6 +3,7 @@ import { beforeEach, describe, test } from "node:test";
 import Database from "better-sqlite3";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { excluded } from "../../src/repositories/sqlite/operators";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
 	achievementsMeta,
@@ -12,7 +13,6 @@ import {
 	ownedGames,
 	users,
 } from "../../src/repositories/sqlite/schema.js";
-import { excluded } from "../../src/repositories/sqlite/utils";
 import {
 	basicAchievement,
 	basicAchievementEn,
@@ -75,7 +75,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
 		assert.strictEqual(metaRows.length, 0, "No achievement meta rows for empty schema");
 	});
 
-	test("French localization identical to English – only English meta stored", async () => {
+	test("French localization identical to English - only English stored", async () => {
 		const { repo, auth, store } = ctx;
 
 		await insertApp(db, {
@@ -99,11 +99,15 @@ describe("AppRepository - SQLite (in-memory)", () => {
 			[fixtureAppFr.appid]: { success: true as const, data: makeAppData(fixtureAppFr.appid, fixtureAppFr.name) },
 		};
 		store.setAppDetails(fixtureAppFr.appid, frResp);
-		auth.setSchemaForGame({ appid: fixtureAppEn.appid, l: "french" }, makeAchievementSchema("Test Game", []));
+		// Mock French response with identical content to English
+		auth.setSchemaForGame(
+			{ appid: fixtureAppEn.appid, l: "french" },
+			makeAchievementSchema("Test Game", [basicAchievement]),
+		);
 
 		await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
 
-		// Verify only EN meta remains
+		// Verify only EN meta is stored when FR content is identical to EN
 		const metaAll = await db
 			.select({
 				app_id: achievementsMeta.app_id,
@@ -112,13 +116,12 @@ describe("AppRepository - SQLite (in-memory)", () => {
 			})
 			.from(achievementsMeta);
 		const metaRows = metaAll.filter((r) => r.app_id === fixtureAppEn.appid);
-		assert.strictEqual(metaRows.length, 1, "Only English meta should be stored");
-		const first = metaRows[0];
-		assert.ok(first, "Expected at least one meta row");
-		assert.strictEqual(first.lang, "english");
+		assert.strictEqual(metaRows.length, 1, "Only English meta should be stored when French content is identical");
+		const langs = new Set(metaRows.map((r) => r.lang));
+		assert.deepStrictEqual(langs, new Set(["english"]), "Only English language code should be present");
 	});
 
-	test("French localization differs – both languages stored", async () => {
+	test("French localization differs - both languages stored", async () => {
 		const { repo, auth, store } = ctx;
 
 		await insertApp(db, {
@@ -151,12 +154,28 @@ describe("AppRepository - SQLite (in-memory)", () => {
 
 		// Verify both EN and FR meta rows exist for ACH1
 		const metaAll2 = await db
-			.select({ app_id: achievementsMeta.app_id, ach_id: achievementsMeta.ach_id, lang: achievementsMeta.lang })
+			.select({
+				app_id: achievementsMeta.app_id,
+				ach_id: achievementsMeta.ach_id,
+				lang: achievementsMeta.lang,
+				display_name: achievementsMeta.display_name,
+				description: achievementsMeta.description,
+			})
 			.from(achievementsMeta);
 		const forApp = metaAll2.filter((r) => r.app_id === fixtureAppEn.appid && r.ach_id === basicAchievementEn.name);
 		const langs = new Set(forApp.map((r) => r.lang));
 		assert.strictEqual(forApp.length, 2, "Both EN and FR meta should be stored");
 		assert.deepStrictEqual(langs, new Set(["english", "french"]));
+
+		// Verify content is correct for each language
+		const englishRow = forApp.find((r) => r.lang === "english");
+		const frenchRow = forApp.find((r) => r.lang === "french");
+		assert.ok(englishRow, "English row should exist");
+		assert.ok(frenchRow, "French row should exist");
+		assert.strictEqual(englishRow.display_name, "Achievement 1", "English should have correct display name");
+		assert.strictEqual(englishRow.description, "Desc EN", "English should have correct description");
+		assert.strictEqual(frenchRow.display_name, "Achievement 1", "French should have correct display name");
+		assert.strictEqual(frenchRow.description, "Desc FR", "French should have correct description");
 
 		// Also verify selection behavior by language
 		const frResult = await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
@@ -164,6 +183,60 @@ describe("AppRepository - SQLite (in-memory)", () => {
 
 		const enResult = await repo.compose().withLanguage("en").withAppIds(fixtureAppEn.appid).build();
 		assert.strictEqual(enResult.data.length >= 1, true);
+	});
+
+	test("API returns English content for French request - content correctly labeled as English", async () => {
+		const { repo, auth, store } = ctx;
+
+		await insertApp(db, {
+			id: fixtureAppEn.appid,
+			lang: "english",
+			data: makeAppData(fixtureAppEn.appid, fixtureAppEn.name ?? "Test App EN"),
+		});
+
+		const frResp = {
+			[fixtureAppFr.appid]: { success: true as const, data: makeAppData(fixtureAppFr.appid, fixtureAppFr.name) },
+		};
+		store.setAppDetails(fixtureAppFr.appid, frResp);
+
+		// Mock API returning English content when French is requested (simulating API fallback)
+		const englishAchievement = basicAchievement; // Same English content
+		auth.setSchemaForGame(
+			{ appid: fixtureAppEn.appid, l: "french" },
+			makeAchievementSchema("Test Game", [englishAchievement]),
+		);
+		// Also mock the English request to return the same content
+		auth.setSchemaForGame(
+			{ appid: fixtureAppEn.appid, l: "english" },
+			makeAchievementSchema("Test Game", [englishAchievement]),
+		);
+
+		await repo.compose().withLanguage("fr").withAppIds(fixtureAppEn.appid).build();
+
+		// Verify that even though we requested French, the stored content is correctly labeled
+		const metaRows = await db
+			.select({
+				app_id: achievementsMeta.app_id,
+				ach_id: achievementsMeta.ach_id,
+				lang: achievementsMeta.lang,
+				display_name: achievementsMeta.display_name,
+				description: achievementsMeta.description,
+			})
+			.from(achievementsMeta)
+			.where(eq(achievementsMeta.app_id, fixtureAppEn.appid));
+
+		// Should have only English entry (no duplicate French when content is identical)
+		assert.strictEqual(metaRows.length, 1, "Should store only English when French content is identical");
+
+		const englishRow = metaRows.find((r) => r.lang === "english");
+		assert.ok(englishRow, "English row should exist");
+
+		// Should not have French row when content is identical
+		const frenchRow = metaRows.find((r) => r.lang === "french");
+		assert.strictEqual(frenchRow, undefined, "Should not store French row when content is identical to English");
+
+		// But they should be correctly labeled with their respective language codes
+		assert.strictEqual(englishRow.lang, "english", "English content should be labeled as English");
 	});
 
 	test("app with no achievements still returns the app row", async () => {

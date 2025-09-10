@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import { asc, countDistinct, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	Attempt,
@@ -21,7 +21,8 @@ import {
 } from "../composable";
 import { RequiredEntityStore } from "../entitySubqueries";
 import type { Repository } from "../repository";
-import { countDistinct, excluded, safeInsert } from "./utils";
+import { excluded } from "./operators";
+import { safeInsert } from "./utils";
 
 type UserSortMethod = "id";
 

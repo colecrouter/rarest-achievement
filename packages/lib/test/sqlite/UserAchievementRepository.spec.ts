@@ -5,6 +5,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { AttemptStatus } from "../../src/error";
 import type { GetOwnedGamesResponse } from "../../src/repositories/api/steampowered/owned";
+import { excluded } from "../../src/repositories/sqlite/operators";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import {
 	achievementsMeta,
@@ -15,13 +16,12 @@ import {
 	userAchievements,
 	users,
 } from "../../src/repositories/sqlite/schema.js";
-import { excluded } from "../../src/repositories/sqlite/utils";
 import { insertAppByCode, seedAppWithPlayers, seedMetaByCode, seedStats } from "../fixtures/appAchievementsData";
 import { makeAppData } from "../fixtures/appData";
 import { insertApp, insertOwnedGame, insertUser, insertUserAchievement } from "../fixtures/dbHelpers";
 import { makeUserAchievementRepoWithMocks } from "../fixtures/mockHelpers";
-import { makeFriendsListResponse, makePlayerAchievementsPayload } from "../fixtures/userAchievementsData";
-import { makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
+import { makePlayerAchievementsPayload } from "../fixtures/userAchievementsData";
+import { makeFriendsListResponse, makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
 import { runMigrations } from "../helpers/migrate";
 import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 
@@ -1030,8 +1030,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			await seedMetaByCode(db, appId, "en", [{ ach: "FZ1", display: "Friend Zed One" }]);
 
 			// Configure API mocks
-			const unixTs = Math.floor(Date.now() / 1000) - 1000;
-			const friendsResponse = makeFriendsListResponse([{ steamid: friend, friend_since: unixTs }]);
+			const friendsResponse = makeFriendsListResponse([friend]);
 			authMock.setFriendsList({ steamid: main, relationship: "friend" }, friendsResponse);
 
 			authMock.setPlayerSummaries(makePlayerSummariesResponse([friend]));

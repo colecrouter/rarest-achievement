@@ -43,7 +43,7 @@ export class VaultService {
 		cursor?: number;
 		lang: LanguageCode;
 	}) {
-		console.log(`🎮 Getting apps owned by friends of user ${params.userId}`);
+		console.debug(`🎮 Getting apps owned by friends of user ${params.userId}`);
 
 		// Build app query directly using subqueries; avoids materializing friend ID list in JS
 		let composer = this.appRepo.compose().withLanguage(params.lang).withOwnedByFriendsOf(params.userId); // new subquery-based method
@@ -62,7 +62,7 @@ export class VaultService {
 			sort: { method: "id", direction: "asc" },
 		});
 
-		console.log(`✅ Found ${results.data?.length || 0} apps for user ${params.userId}`);
+		console.debug(`✅ Found ${results.data?.length || 0} apps for user ${params.userId}`);
 		return new RepositoryResult(results.data || [], results.cursor, results.error);
 	}
 
@@ -79,7 +79,7 @@ export class VaultService {
 		cursor?: number;
 		lang: LanguageCode;
 	}) {
-		console.log(`🏆 Getting user achievements for ${params.userIds.length} users (unlocked: ${params.unlocked})`);
+		console.debug(`🏆 Getting user achievements for ${params.userIds.length} users (unlocked: ${params.unlocked})`);
 
 		// Use composable query with batched processing for unlocked filtering
 		let composer = this.userAchRepo
@@ -106,7 +106,7 @@ export class VaultService {
 			sort: { method: "rarity_pct", direction: "asc" },
 		});
 
-		console.log(`✅ Found ${results.data?.length || 0} user achievements`);
+		console.debug(`✅ Found ${results.data?.length || 0} user achievements`);
 		return new RepositoryResult(results.data || [], results.cursor, results.error);
 	}
 
@@ -120,7 +120,7 @@ export class VaultService {
 		cursor?: number;
 		lang: LanguageCode;
 	}) {
-		console.log("🏆 Getting popular apps with achievements");
+		console.debug("🏆 Getting popular apps with achievements");
 
 		let composer = this.appRepo.compose().withLanguage(params.lang).withAchievements(); // Only apps that have achievements
 
@@ -138,7 +138,7 @@ export class VaultService {
 			sort: { method: "id", direction: "asc" },
 		});
 
-		console.log(`✅ Found ${results.data?.length || 0} popular apps with achievements`);
+		console.debug(`✅ Found ${results.data?.length || 0} popular apps with achievements`);
 		return new RepositoryResult(results.data || [], results.cursor, results.error);
 	}
 
@@ -146,7 +146,7 @@ export class VaultService {
 	 * Get apps by specific IDs with full data - efficient batching
 	 */
 	async getAppsWithFullData(params: { appIds: number[]; lang: LanguageCode }) {
-		console.log(`📱 Getting ${params.appIds.length} apps with full data`);
+		console.debug(`📱 Getting ${params.appIds.length} apps with full data`);
 
 		const composer = this.appRepo.compose().withLanguage(params.lang).withAppIds(params.appIds);
 
@@ -154,7 +154,7 @@ export class VaultService {
 			sort: { method: "id", direction: "asc" },
 		});
 
-		console.log(`✅ Retrieved ${results.data.length} apps with full data`);
+		console.debug(`✅ Retrieved ${results.data.length} apps with full data`);
 		return createQueryResult(results.data, results.cursor, results.error);
 	}
 
@@ -169,7 +169,7 @@ export class VaultService {
 		cursor?: number;
 		lang: LanguageCode;
 	}) {
-		console.log(`🏆 Getting rare achievements for ${params.appIds.length} apps`);
+		console.debug(`🏆 Getting rare achievements for ${params.appIds.length} apps`);
 
 		// Use composable query for achievements
 		let composer = this.appAchRepo
@@ -189,7 +189,7 @@ export class VaultService {
 			sort: { method: "rarity_pct", direction: "asc" }, // Rarest first
 		});
 
-		console.log(`✅ Found ${results.data?.length || 0} rare achievements`);
+		console.debug(`✅ Found ${results.data?.length || 0} rare achievements`);
 		return new RepositoryResult(results.data || [], results.cursor, results.error);
 	}
 
@@ -197,7 +197,7 @@ export class VaultService {
 	 * Get users by IDs with their owned games - composable approach
 	 */
 	async getUsersWithOwnedGames(params: { userIds: string[]; limit?: number; cursor?: number; lang: LanguageCode }) {
-		console.log(`👤 Getting users: ${params.userIds.join(", ")}`);
+		console.debug(`👤 Getting users: ${params.userIds.join(", ")}`);
 
 		const results = await this.users
 			.compose()
@@ -208,7 +208,7 @@ export class VaultService {
 				sort: { method: "id", direction: "asc" },
 			});
 
-		console.log(`✅ Retrieved ${results.data?.length || 0} users with owned games`);
+		console.debug(`✅ Retrieved ${results.data?.length || 0} users with owned games`);
 		return new RepositoryResult(results.data || [], results.cursor, results.error);
 	}
 

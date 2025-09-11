@@ -55,30 +55,13 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 		options: ComposableQueryOptions<FriendsSortMethod> = {},
 	): Promise<ComposableQueryResult<SteamFriendUser>> {
 		// Ensure data exists first (non-fatal on partial failure)
-		let ensureError: Error | null = null;
-		let ensureAttemptError: Error | null = null;
-		try {
-			const ensureAttempt = await this.ensureDataExists();
-			ensureAttemptError = ensureAttempt.error;
-			if (ensureAttempt.error) console.warn("Failed to ensure friends data exists:", ensureAttempt.error);
-		} catch (err) {
-			ensureError = err as Error; // DB-level failure
-			console.warn("Failed to ensure friends data exists (thrown):", ensureError);
-		}
+		const ensureAttempt = await this.ensureDataExists();
+		if (ensureAttempt.error)
+			console.warn(`[FriendsRepository] Failed to ensure all data exists: ${ensureAttempt.error.message}`);
 
-		let items: SteamFriendUser[] = [];
-		let queryError: Error | null = null;
-		try {
-			items = await this.executeDirectQuery(options);
-		} catch (err) {
-			queryError = err as Error;
-			console.warn("Friends query failed, returning partial results:", queryError);
-		}
+		const items = await this.executeDirectQuery(options);
 
-		const combined = Attempt.from(undefined, ensureError || ensureAttemptError).and(
-			Attempt.from(undefined, queryError),
-		);
-		return createQueryResult(items, options.cursor, combined.error);
+		return createQueryResult(items, options.cursor, ensureAttempt.error);
 	}
 
 	/**
@@ -95,28 +78,20 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 		}
 
 		// Ensure-before-read; capture Attempt error or thrown DB error
-		let ensureError: Error | null = null;
-		try {
-			const ensureAttempt = await this.ensureDataExists();
-			ensureError = ensureAttempt.error;
-		} catch (err) {
-			ensureError = err as Error;
-		}
+		const ensureAttempt = await this.ensureDataExists();
+		if (ensureAttempt.error)
+			console.warn(`[FriendsRepository] Failed to ensure all data exists: ${ensureAttempt.error.message}`);
 
-		try {
-			const ids = Array.from(this.userIds);
-			const rows = await this.db
-				.select({
-					cnt: countDistinct(friends.friend_id),
-				})
-				.from(friends)
-				.where(inArray(friends.user_id, ids));
+		const ids = Array.from(this.userIds);
+		const rows = await this.db
+			.select({
+				cnt: countDistinct(friends.friend_id),
+			})
+			.from(friends)
+			.where(inArray(friends.user_id, ids));
 
-			const cnt = rows[0]?.cnt ?? 0;
-			return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
-		} catch (err) {
-			return Attempt.fail<number>(err as Error);
-		}
+		const cnt = rows[0]?.cnt ?? 0;
+		return ensureAttempt.map(() => cnt);
 	}
 
 	/**
@@ -126,15 +101,12 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 		if (this.userIds.size === 0) return Attempt.ok(undefined);
 
 		const ids = Array.from(this.userIds);
-		let combined: Attempt<undefined, AttemptStatus> = Attempt.ok(undefined);
 
 		// First ensure main users exist in the users table
 		const userComposer = this.userRepository.compose().withUserIds(ids);
 		if (this.freshnessCutoff) userComposer.withCutoff(this.freshnessCutoff);
 		const userEnsureResult = await userComposer.ensureDataExists();
-		if (userEnsureResult.error)
-			console.warn("Failed to ensure users exist for friends query:", userEnsureResult.error);
-		combined = combined.and(userEnsureResult.map(() => undefined));
+		let combined = userEnsureResult.map(() => undefined);
 
 		// Fetch summary to figure out what friends data is missing
 		// This is consumer-controlled (friends composer controls user IDs), so inArray is safe
@@ -156,6 +128,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 			// Fetch friends lists for users missing relationships
 
 			// Fetch friends lists from Steam API
+			console.debug(`[FriendsRepository] Requesting ${missingUserIds.size} entries`);
 			const friendsListData = await Attempt.all(
 				Array.from(missingUserIds).map(async (userId) => {
 					const result = await this.steamApi.getFriendsList({
@@ -165,7 +138,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 					return { userId, friendsList: result.friendslist.friends };
 				}),
 			);
-			if (friendsListData.error) console.warn("Failed to fetch some friends lists:", friendsListData.error);
+			// Suppress non-build/count warnings per logging standard
 			combined = combined.and(friendsListData.map(() => undefined));
 
 			if (friendsListData.data) {
@@ -187,6 +160,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 				// Ensure all friend users exist in the users table AFTER inserting friend relationships
 				// First, insert friend relationships to avoid parameter explosion in user data fetching
 				if (friendsToInsert.length > 0) {
+					console.debug(`[FriendsRepository] Upsert ${friendsToInsert.length} entries`);
 					// Insert new friend relationships (no updates on conflict)
 					await safeInsert(
 						this.db,
@@ -210,8 +184,7 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 						.withRequiredEntitySubquery("user", friendUserIdsSubquery);
 					if (this.freshnessCutoff) friendUserComposer.withCutoff(this.freshnessCutoff);
 					const friendUsersResult = await friendUserComposer.ensureDataExists();
-					if (friendUsersResult.error)
-						console.warn("Some friend users could not be fetched:", friendUsersResult.error);
+					// Suppress non-build/count warnings per logging standard
 					combined = combined.and(friendUsersResult.map(() => undefined));
 				}
 			}
@@ -240,14 +213,12 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 			.where(inArray(friends.user_id, ids))
 			.as("required_users");
 
-		const friendUsersEnsureResult = await this.userRepository
+		await this.userRepository
 			.compose()
 			// Cast to RequiredSubquery to satisfy SubqueryConsumer method type
 			.withRequiredEntitySubquery("user", friendUserIdsSubquery)
 			.ensureDataExists();
-		if (friendUsersEnsureResult.error) {
-			console.warn("Failed to ensure friend user data exists:", friendUsersEnsureResult.error);
-		}
+		// Suppress non-build/count warnings per logging standard
 
 		// Fetch original users for mapping
 		const originalUsersResponse = await this.userRepository

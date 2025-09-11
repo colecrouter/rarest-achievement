@@ -214,7 +214,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 		// First ensure all required data exists (this may accumulate errors)
 		const ensureDataResult = await this.ensureDataExists();
-		if (ensureDataResult.error) console.warn("Failed to ensure all data exists:", ensureDataResult.error);
+		if (ensureDataResult.error)
+			console.warn(`[AppRepository] Failed to ensure all data exists: ${ensureDataResult.error.message}`);
 
 		// Start with base query
 		let query = this.db.select({ apps: apps }).from(apps).$dynamic();
@@ -308,55 +309,38 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 */
 	async count(): Promise<Attempt<number, AttemptStatus>> {
 		// Enforce explicit scope: either app IDs or a required-apps subquery must be provided
-		try {
-			if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined && !this.searchTerm) {
-				throw new Error(
-					"AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...) or withSearch(...).",
-				);
-			}
-		} catch (err) {
-			return Attempt.fail<number>(err as Error);
+		if (this.appIds.size === 0 && this.requiredAppsSubquery === undefined && !this.searchTerm) {
+			throw new Error(
+				"AppRepository.build(): undefined scope. Provide withAppIds(...) or withRequiredEntitySubquery('apps', ...) or withSearch(...).",
+			);
 		}
 
 		// Ensure data first; capture any error but proceed to COUNT
-		let ensureError: Error | null = null;
-		try {
-			const ensureRes = await this.ensureDataExists();
-			ensureError = ensureRes.error;
-		} catch (err) {
-			// DB ensure failure should not prevent us from attempting COUNT; record as partial if COUNT succeeds
-			ensureError = err as Error;
+		const ensureRes = await this.ensureDataExists();
+		if (ensureRes.error)
+			console.warn(`[AppRepository] Failed to ensure all data exists: ${ensureRes.error.message}`);
+
+		// Start base COUNT query
+		const lang = getLanguageByCode(this.lang)?.apiCode || "english";
+
+		// If we have CTEs, apply them to the query
+		const withCTE = this.ctes.length > 0 ? this.db.with(...this.ctes) : this.db;
+
+		let query = withCTE
+			.select({
+				cnt: countDistinct(apps.id),
+			})
+			.from(apps)
+			.$dynamic();
+
+		const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
+		if (allConditions.length > 0) {
+			query = query.where(and(...allConditions));
 		}
 
-		try {
-			// Start base COUNT query
-			const lang = getLanguageByCode(this.lang)?.apiCode || "english";
-
-			// If we have CTEs, apply them to the query
-			const withCTE = this.ctes.length > 0 ? this.db.with(...this.ctes) : this.db;
-
-			let query = withCTE
-				.select({
-					cnt: countDistinct(apps.id),
-				})
-				.from(apps)
-				.$dynamic();
-
-			const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
-			if (allConditions.length > 0) {
-				query = query.where(and(...allConditions));
-			}
-
-			const rows = await query;
-			const count = rows[0]?.cnt ?? 0;
-
-			if (ensureError) {
-				return Attempt.partial(count, ensureError);
-			}
-			return Attempt.ok(count);
-		} catch (err) {
-			return Attempt.fail<number>(err as Error);
-		}
+		const rows = await query;
+		const count = rows[0]?.cnt ?? 0;
+		return ensureRes.map(() => count);
 	}
 
 	/**
@@ -387,7 +371,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		// Check for missing apps
 		const missingAppIds = await this.findMissingApps();
 		if (missingAppIds.length > 0) {
-			// Fetch missing apps (verbose logging removed)
 			const appsResult = await this.fetchAndUpsertApps(missingAppIds);
 			combinedResult = combinedResult.and(appsResult);
 		}
@@ -398,7 +381,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		// Check for missing player estimates
 		const missingPlayerIds = await this.findMissingPlayerEstimates();
 		if (missingPlayerIds.length > 0) {
-			// Fetch missing player estimates (verbose logging removed)
 			const playerEstimatesResult = await this.fetchAndUpsertPlayerEstimates(missingPlayerIds);
 			combinedResult = combinedResult.and(playerEstimatesResult);
 		}
@@ -787,14 +769,16 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	private async fetchAndUpsertApps(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
 		if (appIds.length === 0) return Attempt.ok(undefined);
 
+		console.debug(`[AppRepository] Requesting ${appIds.length} entries`);
+
 		const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
 		// App data fetch helper (per app)
 		const fetchAppData = async (id: number) => {
 			const [appDetails, achievementMeta, achievementStats] = await Promise.all([
 				this.steamStoreApi.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
-				this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((err) => {
-					console.warn(`Achievement meta fetch failed for app ${id}:`, err);
+				this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((_err) => {
+					// Suppress non-build/count warnings per logging standard
 					return null;
 				}),
 				this.steamApi
@@ -809,8 +793,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						}
 						return [];
 					})
-					.catch((err) => {
-						console.warn(`Achievement stats fetch failed for app ${id}:`, err);
+					.catch((_err) => {
+						// Suppress non-build/count warnings per logging standard
 						return [];
 					}),
 			]);
@@ -841,14 +825,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						data: data.appDetails,
 					}));
 
-				const appsWithAchievements = validData.filter(
-					(data) => data?.achievementStats && data.achievementStats.length > 0,
-				).length;
-				const appsWithoutAchievements = validData.length - appsWithAchievements;
-
-				console.log(
-					`📊 Apps being processed: ${appsWithAchievements} with achievements, ${appsWithoutAchievements} without achievements`,
-				);
+				console.debug(`[AppRepository] Upsert ${validData.length} entries`);
 
 				const achievementStatsData = validData
 					.flatMap((data) => data?.achievementStats)
@@ -1038,6 +1015,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	private async fetchAndUpsertPlayerEstimates(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
 		if (appIds.length === 0) return Attempt.ok(undefined);
 
+		console.debug(`[AppRepository] Requesting ${appIds.length} entries`);
+
 		// Use composition to find missing estimates and get app details
 		const lang = getLanguageByCode(this.lang)?.apiCode || "english";
 
@@ -1099,7 +1078,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			const appId = row.id;
 			const appDetails = appDetailsMap.get(appId);
 			if (!appDetails) {
-				console.warn(`No app details found for app ${appId}, inserting null player estimate`);
+				// Suppress non-build/count warnings per logging standard
 				// Still insert a record with null/undefined to mark that we attempted estimation
 				return Attempt.ok({
 					app_id: appId,
@@ -1159,6 +1138,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 
 		// Insert estimated player counts (database operation - let it throw)
 		if (filteredData.length > 0) {
+			console.debug(`[AppRepository] Upsert ${filteredData.length} entries`);
 			await safeInsert(this.db, filteredData, (chunk) =>
 				this.db
 					.insert(estimatedPlayers)

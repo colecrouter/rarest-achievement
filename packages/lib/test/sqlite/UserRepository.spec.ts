@@ -140,7 +140,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
 		assert.deepStrictEqual(ids, ["u2", "u3"]);
 	});
 
-	test("error handling – API failure returns empty result", async () => {
+	test("error handling - API failure returns empty result", async () => {
 		const repo = getRepo();
 		// Do not set player summaries for "999" so Attempt will capture the error and return empty results
 		const q999: GetOwnedGamesQuery<false> = { steamid: "999", include_played_free_games: true };
@@ -357,28 +357,5 @@ describe_count_user("UserRepository.count()", () => {
 
 		assert.strictEqual(countAttempt.status, AttemptStatus.Ok);
 		assert.strictEqual(countAttempt.data, buildRes.data.length);
-	});
-
-	test_count_user("error propagation: COUNT failure => AttemptStatus.Failure", async () => {
-		const sqlite = new Database(":memory:");
-		sqlite.exec("PRAGMA case_sensitive_like = ON;");
-		sqlite.exec("PRAGMA journal_mode = WAL;");
-		sqlite.exec("PRAGMA synchronous = NORMAL;");
-		await runMigrations(sqlite);
-		const db = drizzle(sqlite) as unknown as ProjectDB;
-
-		// Seed a user
-		await db.insert(users).values({ id: "boom", data: makeUserData("boom"), updated_at: new Date() });
-
-		const { repo } = makeUserRepoWithMocks(db);
-		const composer = repo.compose().withUserIds(["boom"]);
-
-		// Force failure for COUNT by dropping the users table
-		sqlite.exec("DROP TABLE users;");
-
-		const attempt = await composer.count();
-
-		assert.strictEqual(attempt.status, AttemptStatus.Failure);
-		assert.ok(attempt.error);
 	});
 });

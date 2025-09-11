@@ -84,24 +84,14 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 	async build(options: ComposableQueryOptions<UserSortMethod> = {}): Promise<ComposableQueryResult<SteamUser>> {
 		// Ensure data exists first
 		const ensureResult = await this.ensureDataExists();
-		if (ensureResult.error) {
-			console.warn("Failed to ensure all user data exists, continuing with existing data:", ensureResult.error);
-		}
+		if (ensureResult.error)
+			console.warn(`[UserRepository] Failed to ensure all data exists: ${ensureResult.error.message}`);
 
 		// Execute main query
-		let results: SteamUser[];
-		let queryError: Error | null = null;
-		try {
-			results = await this.executeDirectQuery(options);
-		} catch (error) {
-			queryError = error as Error;
-			console.warn("Error during User query, returning partial results:", error);
-			results = []; // Return empty results on error
-		}
+		const items = await this.executeDirectQuery(options);
 
 		// Combine errors using Attempt chaining
-		const finalResult = ensureResult.and(Attempt.from(undefined, queryError));
-		return createQueryResult(results, options.cursor, finalResult.error);
+		return createQueryResult(items, options.cursor, ensureResult.error);
 	}
 
 	/**
@@ -113,40 +103,19 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 	 */
 	async count(): Promise<Attempt<number, AttemptStatus>> {
 		// Ensure-before-read: capture error but attempt COUNT regardless
-		let ensureError: Error | null = null;
-		try {
-			const ensureRes = await this.ensureDataExists();
-			ensureError = ensureRes.error;
-		} catch (err) {
-			ensureError = err as Error;
-		}
 
-		try {
-			// If a required user subquery is specified, count distinct users in that subquery that exist in users
-			if (this.requiredUserSubquery) {
-				let q = this.db
-					.select({
-						cnt: countDistinct(users.id),
-					})
-					.from(this.requiredUserSubquery)
-					.innerJoin(users, eq(users.id, this.requiredUserSubquery.id))
-					.$dynamic();
+		const ensureRes = await this.ensureDataExists();
+		if (ensureRes.error)
+			console.warn(`[UserRepository] Failed to ensure all data exists: ${ensureRes.error.message}`);
 
-				if (this.userIds.size > 0) {
-					q = q.where(inArray(users.id, Array.from(this.userIds)));
-				}
-
-				const rows = await q;
-				const cnt = rows[0]?.cnt ?? 0;
-				return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
-			}
-
-			// Otherwise, base count from users with optional explicit ID filter
+		// If a required user subquery is specified, count distinct users in that subquery that exist in users
+		if (this.requiredUserSubquery) {
 			let q = this.db
 				.select({
 					cnt: countDistinct(users.id),
 				})
-				.from(users)
+				.from(this.requiredUserSubquery)
+				.innerJoin(users, eq(users.id, this.requiredUserSubquery.id))
 				.$dynamic();
 
 			if (this.userIds.size > 0) {
@@ -155,10 +124,24 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 
 			const rows = await q;
 			const cnt = rows[0]?.cnt ?? 0;
-			return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
-		} catch (err) {
-			return Attempt.fail<number>(err as Error);
+			return ensureRes.map(() => cnt);
 		}
+
+		// Otherwise, base count from users with optional explicit ID filter
+		let q = this.db
+			.select({
+				cnt: countDistinct(users.id),
+			})
+			.from(users)
+			.$dynamic();
+
+		if (this.userIds.size > 0) {
+			q = q.where(inArray(users.id, Array.from(this.userIds)));
+		}
+
+		const rows = await q;
+		const cnt = rows[0]?.cnt ?? 0;
+		return ensureRes.map(() => cnt);
 	}
 
 	/**
@@ -226,7 +209,7 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 			return Attempt.ok(undefined);
 		}
 
-		console.debug(`Missing users: ${missingUserIds.length}`);
+		console.debug(`[UserRepository] Requesting ${missingUserIds.length} entries`);
 
 		const validData = [];
 
@@ -260,7 +243,7 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 			}
 		}
 
-		console.debug(`Users to insert: ${validData.length}`);
+		console.debug(`[UserRepository] Upsert ${validData.length} entries`);
 
 		// Insert missing data into the database
 		// Note: Database errors should bubble up, not be caught
@@ -315,6 +298,8 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 						}),
 			),
 		]);
+
+		console.debug(`[UserRepository] Upsert ${validData.length} entries`);
 
 		// Combine errors from both API calls using Attempt chaining
 		const combinedResult = missingPlayerSummaries.and(missingOwnedGames.map(() => undefined));

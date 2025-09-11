@@ -20,8 +20,18 @@ export class MockSteamStoreAPIClient implements SteamStoreAPI {
 
 	async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
 		app: number,
+		// Accept and ignore options to match production signature
+		_opts?: unknown,
 	): Promise<GetAppDetailsResponse<T>> {
-		return this.appDetails.get(app) as GetAppDetailsResponse<T>;
+		// Return a safe default keyed response when not pre-seeded to avoid runtime errors
+		const existing = this.appDetails.get(app) as GetAppDetailsResponse<T> | undefined;
+		if (existing) return existing;
+		// Default to an object with a null data payload; production code tolerates null and skips estimation
+		// success must be the literal 1 in production API, but our type uses `true` in tests elsewhere.
+		// Use the same shape as seeded responses with data: null.
+		return {
+			[app]: { success: true as const, data: null as unknown as AppDetailsData },
+		} as GetAppDetailsResponse<T>;
 	}
 
 	/**
@@ -32,7 +42,22 @@ export class MockSteamStoreAPIClient implements SteamStoreAPI {
 	}
 
 	async getAppReviews(app: number): Promise<GetAppReviewsResponse | null> {
-		return this.appReviews.get(app) || null;
+		const existing = this.appReviews.get(app);
+		if (existing) return existing;
+		// Provide a minimal, valid default summary so estimation can proceed without emitting test warnings.
+		return {
+			success: 1,
+			query_summary: {
+				num_reviews: 0,
+				review_score: 0,
+				review_score_desc: "",
+				total_positive: 0,
+				total_negative: 0,
+				total_reviews: 0,
+			},
+			reviews: [],
+			cursor: "*",
+		} satisfies GetAppReviewsResponse;
 	}
 
 	/**

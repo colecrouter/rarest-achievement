@@ -276,6 +276,10 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Unified ensure path (captures dependency ensure across users/apps/achievements)
 		const ensureAttempt = await this.ensureDependencies();
+		if (ensureAttempt.error)
+			console.warn(
+				`[UserAchievementRepository] Failed to ensure all data exists: ${ensureAttempt.error.message}`,
+			);
 
 		// Determine processing mode based on filters or unlocked_at policy
 		let resultsAttempt: Attempt<SteamUserAchievement[], AttemptStatus>;
@@ -294,60 +298,47 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		// fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
 		// non-owners still see the app's achievements (mirrors anonymous behavior).
 		if (resultsAttempt.hasData() && resultsAttempt.data.length === 0 && this.appIds.size > 0) {
-			try {
-				const appIds = Array.from(this.appIds);
-				// Fetch app achievements
-				const appAchComposer = this.appAchievementRepository
-					.compose()
-					.withLanguage(this.lang)
-					.withAppIds(appIds);
-				// AppAchievement composer no longer exposes withCutoff; freshness only applied at ensure layer.
-				const appAchResult = await appAchComposer.build();
+			const appIds = Array.from(this.appIds);
+			// Fetch app achievements
+			const appAchComposer = this.appAchievementRepository.compose().withLanguage(this.lang).withAppIds(appIds);
+			// AppAchievement composer no longer exposes withCutoff; freshness only applied at ensure layer.
+			const appAchResult = await appAchComposer.build();
 
-				const finalData: SteamUserAchievement[] = [];
-				if (appAchResult.hasData()) {
-					// Determine a primary user to attach (if available). Prefer explicit userIds, otherwise use friendsOfUserId.
-					let primaryUserId: string | undefined;
-					if (this.userIds.size > 0) primaryUserId = Array.from(this.userIds)[0];
-					else if (this.friendsOfUserId) primaryUserId = this.friendsOfUserId;
+			const finalData: SteamUserAchievement[] = [];
+			if (appAchResult.hasData()) {
+				// Determine a primary user to attach (if available). Prefer explicit userIds, otherwise use friendsOfUserId.
+				let primaryUserId: string | undefined;
+				if (this.userIds.size > 0) primaryUserId = Array.from(this.userIds)[0];
+				else if (this.friendsOfUserId) primaryUserId = this.friendsOfUserId;
 
-					// Fetch user object if we have an ID to attach
-					let userObj = null;
-					if (primaryUserId) {
-						const userComposer = this.userRepository.compose().withUserIds([primaryUserId]);
-						if (this.freshnessCutoff) userComposer.withCutoff(this.freshnessCutoff);
-						const userRes = await userComposer.build();
-						if (userRes.hasData() && userRes.data.length > 0) {
-							userObj = userRes.data[0];
-						}
-					}
-
-					for (const appAch of appAchResult.data) {
-						// Build a SteamUserAchievement with userStats=null (user hasn't unlocked anything)
-						finalData.push(
-							new SteamUserAchievement({
-								app: appAch.app,
-								meta: appAch.serialize().meta,
-								globalStats: appAch.serialize().globalStats,
-								lang: appAch.serialize().lang,
-								user: userObj ?? undefined,
-								userStats: null,
-							}),
-						);
+				// Fetch user object if we have an ID to attach
+				let userObj = null;
+				if (primaryUserId) {
+					const userComposer = this.userRepository.compose().withUserIds([primaryUserId]);
+					if (this.freshnessCutoff) userComposer.withCutoff(this.freshnessCutoff);
+					const userRes = await userComposer.build();
+					if (userRes.hasData() && userRes.data.length > 0) {
+						userObj = userRes.data[0];
 					}
 				}
 
-				const combinedError = resultsAttempt.error || (appAchResult?.error ?? null);
-				return new ComposableQueryResult(finalData, (options.cursor || 0) + finalData.length, combinedError);
-			} catch (fallbackError) {
-				// If fallback fails, just fall back to the original (empty) result with the original error
-				console.warn("UserAchievement fallback to AppAchievement failed:", fallbackError);
-				return new ComposableQueryResult(
-					resultsAttempt.hasData() ? resultsAttempt.data : [],
-					(options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
-					resultsAttempt.error,
-				);
+				for (const appAch of appAchResult.data) {
+					// Build a SteamUserAchievement with userStats=null (user hasn't unlocked anything)
+					finalData.push(
+						new SteamUserAchievement({
+							app: appAch.app,
+							meta: appAch.serialize().meta,
+							globalStats: appAch.serialize().globalStats,
+							lang: appAch.serialize().lang,
+							user: userObj ?? undefined,
+							userStats: null,
+						}),
+					);
+				}
 			}
+
+			const combinedError = resultsAttempt.error || (appAchResult?.error ?? null);
+			return new ComposableQueryResult(finalData, (options.cursor || 0) + finalData.length, combinedError);
 		}
 
 		const combinedError = resultsAttempt.error || ensureAttempt.error || null;
@@ -369,95 +360,81 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		}
 
 		// Consolidated ensure path
-		let ensureResult: Attempt<void, AttemptStatus>;
-		try {
-			ensureResult = await this.ensureDependencies();
-		} catch (e) {
-			ensureResult = Attempt.fail(e as Error);
+		const ensureResult = await this.ensureDependencies();
+		if (ensureResult.error)
+			console.warn(`[UserAchievementRepository] Failed to ensure all data exists: ${ensureResult.error.message}`);
+
+		// Build user filter conditions (same as build paths)
+		const userFilterConditions = [];
+		if (!this.friendsOfUserId && this.userIds.size > 0) {
+			const userIdsArray = Array.from(this.userIds) as string[];
+			userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
 		}
 
-		try {
-			// Build user filter conditions (same as build paths)
-			const userFilterConditions = [];
-			if (!this.friendsOfUserId && this.userIds.size > 0) {
-				const userIdsArray = Array.from(this.userIds) as string[];
-				userFilterConditions.push(inArray(userAchievements.user_id, userIdsArray));
-			}
+		const useComprehensive = this.shouldUseComprehensiveSQL();
+		const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
 
-			const useComprehensive = this.shouldUseComprehensiveSQL();
-			const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
+		// Build COUNT query with identical joins/filters; avoid ORDER BY/LIMIT and hydration
+		let query = this.db
+			.with(...this.ctes)
+			.select({
+				count: countDistinct(
+					concat(userAchievements.user_id, ":", userAchievements.app_id, ":", userAchievements.ach_id),
+				),
+			})
+			.from(userAchievements)
+			// Enforce "owned" semantics identical to build()
+			.innerJoin(
+				ownedGames,
+				and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
+			)
+			// Provide achievementsStats so rarity/search CTE EXISTS correlate to these columns (same as build)
+			.leftJoin(
+				achievementsStats,
+				and(
+					eq(userAchievements.app_id, achievementsStats.app_id),
+					eq(userAchievements.ach_id, achievementsStats.ach_id),
+				),
+			)
+			.$dynamic();
 
-			// Build COUNT query with identical joins/filters; avoid ORDER BY/LIMIT and hydration
-			let query = this.db
-				.with(...this.ctes)
-				.select({
-					count: countDistinct(
-						concat(userAchievements.user_id, ":", userAchievements.app_id, ":", userAchievements.ach_id),
-					),
-				})
-				.from(userAchievements)
-				// Enforce "owned" semantics identical to build()
+		if (useComprehensive) {
+			// Join achievements_meta with language fallback logic (keeps identical semantics to build)
+			query = query
 				.innerJoin(
-					ownedGames,
+					achievementsMeta,
 					and(
-						eq(userAchievements.user_id, ownedGames.user_id),
-						eq(userAchievements.app_id, ownedGames.app_id),
-					),
-				)
-				// Provide achievementsStats so rarity/search CTE EXISTS correlate to these columns (same as build)
-				.leftJoin(
-					achievementsStats,
-					and(
-						eq(userAchievements.app_id, achievementsStats.app_id),
-						eq(userAchievements.ach_id, achievementsStats.ach_id),
-					),
-				)
-				.$dynamic();
-
-			if (useComprehensive) {
-				// Join achievements_meta with language fallback logic (keeps identical semantics to build)
-				query = query
-					.innerJoin(
-						achievementsMeta,
-						and(
-							eq(userAchievements.app_id, achievementsMeta.app_id),
-							eq(userAchievements.ach_id, achievementsMeta.ach_id),
-							super.createLanguageFallbackCondition(
-								userAchievements.app_id,
-								userAchievements.ach_id,
-								apiCode,
-							),
+						eq(userAchievements.app_id, achievementsMeta.app_id),
+						eq(userAchievements.ach_id, achievementsMeta.ach_id),
+						super.createLanguageFallbackCondition(
+							userAchievements.app_id,
+							userAchievements.ach_id,
+							apiCode,
 						),
-					)
-					// Join apps to mirror the comprehensive build composition
-					.innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)));
-			}
-
-			// Friends-of filter via JOIN (same as build() paths)
-			if (this.friendsOfUserId) {
-				const friendsOf = this.friendsOfUserId as string;
-				query = query.innerJoin(
-					friends,
-					and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, friendsOf)),
-				);
-			}
-
-			// Collect all standard and extra conditions (appIds, achIds, unlocked, rarity/search CTE EXISTS, etc.)
-			const allConditions = this.collectWhereConditions(...userFilterConditions);
-			if (allConditions.length > 0) {
-				query = query.where(and(...allConditions));
-			}
-
-			const rows = await query;
-			const count = rows[0]?.count ?? 0;
-
-			if (ensureResult.error) {
-				return Attempt.partial(count, ensureResult.error);
-			}
-			return Attempt.ok(count);
-		} catch (err) {
-			return Attempt.fail(err as Error);
+					),
+				)
+				// Join apps to mirror the comprehensive build composition
+				.innerJoin(apps, and(eq(userAchievements.app_id, apps.id), eq(apps.lang, apiCode)));
 		}
+
+		// Friends-of filter via JOIN (same as build() paths)
+		if (this.friendsOfUserId) {
+			const friendsOf = this.friendsOfUserId as string;
+			query = query.innerJoin(
+				friends,
+				and(eq(friends.friend_id, userAchievements.user_id), eq(friends.user_id, friendsOf)),
+			);
+		}
+
+		// Collect all standard and extra conditions (appIds, achIds, unlocked, rarity/search CTE EXISTS, etc.)
+		const allConditions = this.collectWhereConditions(...userFilterConditions);
+		if (allConditions.length > 0) {
+			query = query.where(and(...allConditions));
+		}
+
+		const rows = await query;
+		const count = rows[0]?.count ?? 0;
+		return ensureResult.map(() => count);
 	}
 
 	/**
@@ -651,28 +628,25 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		const pageResultAttempt = await this.buildResultsFromRows(pageRows);
 
 		// Candidate sourcing from owned_games by recency; intersect with apps on this page first
-		let orderedCandidates: number[] = [];
-		try {
-			const pageAppIds = Array.from(new Set(pageRows.map((r) => r.app_id)));
-			let candidateBase: number[] = [];
-			if (this.userIds.size > 0) {
-				const ids = Array.from(this.userIds);
-				candidateBase = await this.getCandidateAppsFromOwnedGamesForUsers(ids, policy.candidateWindowFromOwned);
-			} else if (this.friendsOfUserId) {
-				// Scope by the requesting user's recent play history to stay bounded
-				candidateBase = await this.getCandidateAppsFromOwnedGames(
-					this.friendsOfUserId,
-					policy.candidateWindowFromOwned,
-				);
-			}
-
-			const pageSet = new Set(pageAppIds);
-			const intersection = candidateBase.filter((a) => pageSet.has(a));
-			const remaining = candidateBase.filter((a) => !pageSet.has(a));
-			orderedCandidates = [...intersection, ...remaining];
-		} catch {
-			orderedCandidates = [];
+		const pageAppIds = Array.from(new Set(pageRows.map((r) => r.app_id)));
+		let candidateBase: number[] = [];
+		if (this.userIds.size > 0) {
+			const ids = Array.from(this.userIds);
+			candidateBase = await this.getCandidateAppsFromOwnedGamesForUsers(ids, policy.candidateWindowFromOwned);
+		} else if (this.friendsOfUserId) {
+			// Scope by the requesting user's recent play history to stay bounded
+			candidateBase = await this.getCandidateAppsFromOwnedGames(
+				this.friendsOfUserId,
+				policy.candidateWindowFromOwned,
+			);
 		}
+
+		// TODO I have no idea what's going on here but it smells weird
+		const pageSet = new Set(pageAppIds);
+		const candidateSet = new Set(candidateBase);
+		const intersection = pageSet.intersection(candidateSet);
+		const remaining = pageSet.symmetricDifference(candidateSet);
+		const orderedCandidates = [...intersection, ...remaining];
 
 		// Scoped ensure with streaming micro-batches under caps/time budget; never throw due to caps
 		const ensureAttempt = await this.ensureUserAchievementDataExists(policy, orderedCandidates);
@@ -957,9 +931,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			if (this.freshnessCutoff) friendsComposer.withCutoff(this.freshnessCutoff);
 			friendsResult = await friendsComposer.build({ limit: 1000 }); // Get up to 1000 friends
 
-			if (friendsResult.error) {
-				console.warn(`Failed to fetch friends for user ${this.friendsOfUserId}:`, friendsResult.error);
-			}
+			// Suppress non-build/count warnings per logging standard
 
 			// Use subquery to get friend IDs instead of extracting them (avoids parameter explosion)
 			// Subquery-based friend scoping
@@ -1271,6 +1243,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		};
 
 		// Fetch all user achievements concurrently with partial result support
+		console.debug(`[UserAchievementRepository] Requesting ${missingData.length} entries`);
 		const achievementsResult = await Attempt.all(missingData.map((row) => fetchUserAchievements(row)));
 
 		// Collect all achievement data from successful fetches
@@ -1278,6 +1251,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		const accumulatedError = achievementsResult.error;
 
 		if (achievementDataToInsert.length > 0) {
+			console.debug(`[UserAchievementRepository] Upsert ${achievementDataToInsert.length} entries`);
 			// Insert achievement data in chunks to avoid SQL parameter limits (database operation - let it throw)
 			await safeInsert(
 				this.db,
@@ -1302,20 +1276,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 							},
 						}),
 			);
-			// Optional instrumentation to verify inserts/updates landed
-			try {
-				const userIdSet = new Set<string>();
-				const appIdSet = new Set<number>();
-				for (const d of achievementDataToInsert) {
-					if (!d) continue;
-					userIdSet.add(d.user_id);
-					appIdSet.add(d.app_id);
-				}
-				// Processed ID sets available for potential future diagnostics
-				// Post-insert verification suppressed
-			} catch {
-				// keep instrumentation non-fatal and quiet on errors
-			}
 		}
 
 		// Return appropriate result based on whether we encountered errors
@@ -1348,7 +1308,9 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		const appDataResult = await appDataComposer.build();
 
 		if (appDataResult.error) {
-			console.warn("Failed to ensure app data exists:", appDataResult.error);
+			console.warn(
+				`[UserAchievementRepository] Failed to ensure all data exists: ${appDataResult.error.message}`,
+			);
 			return Attempt.partial(undefined, appDataResult.error);
 		}
 

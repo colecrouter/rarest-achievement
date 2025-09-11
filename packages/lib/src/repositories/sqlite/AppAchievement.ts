@@ -59,10 +59,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		// Consolidated ensure path via base hook
 		const ensureAttempt = await this.ensureDependencies();
 		if (ensureAttempt.error) {
-			console.warn(
-				"Failed to ensure all achievement dependencies exist, continuing with existing data:",
-				ensureAttempt.error,
-			);
+			console.warn(`[AppAchievementRepository] Failed to ensure all data exists: ${ensureAttempt.error.message}`);
 		}
 
 		const results = await this.executeDirectQuery(options);
@@ -76,54 +73,37 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 	 */
 	async count(): Promise<Attempt<number, AttemptStatus>> {
 		// Consolidated ensure path (capture partial error but proceed with COUNT)
-		let ensureError: Error | null = null;
-		try {
-			const ensure = await this.ensureDependencies();
-			ensureError = ensure.error;
-		} catch (e) {
-			ensureError = e as Error;
+		const ensureAttempt = await this.ensureDependencies();
+		if (ensureAttempt.error)
+			console.warn(`[AppAchievementRepository] Failed to ensure all data exists: ${ensureAttempt.error.message}`);
+
+		// COUNT distinct (app_id, ach_id) from achievementsStats with identical filter stack.
+		// Avoid joins that could multiply rows. Leverage CTEs/EXISTS previously added by withRarityThreshold/withSearch/etc.
+		const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
+		let query = this.db
+			.with(...this.ctes)
+			.select({
+				count: countDistinct(concat(achievementsStats.app_id, ":", achievementsStats.ach_id)),
+			})
+			.from(achievementsStats)
+			.innerJoin(
+				achievementsMeta,
+				and(
+					eq(achievementsStats.app_id, achievementsMeta.app_id),
+					eq(achievementsStats.ach_id, achievementsMeta.ach_id),
+					super.createLanguageFallbackCondition(achievementsStats.app_id, achievementsStats.ach_id, apiCode),
+				),
+			)
+			.$dynamic();
+
+		const allConditions = this.collectWhereConditions();
+		if (allConditions.length > 0) {
+			query = query.where(and(...allConditions));
 		}
 
-		try {
-			// COUNT distinct (app_id, ach_id) from achievementsStats with identical filter stack.
-			// Avoid joins that could multiply rows. Leverage CTEs/EXISTS previously added by withRarityThreshold/withSearch/etc.
-			const apiCode = getLanguageByCode(this.lang)?.apiCode || "english";
-			let query = this.db
-				.with(...this.ctes)
-				.select({
-					count: countDistinct(concat(achievementsStats.app_id, ":", achievementsStats.ach_id)),
-				})
-				.from(achievementsStats)
-				.innerJoin(
-					achievementsMeta,
-					and(
-						eq(achievementsStats.app_id, achievementsMeta.app_id),
-						eq(achievementsStats.ach_id, achievementsMeta.ach_id),
-						super.createLanguageFallbackCondition(
-							achievementsStats.app_id,
-							achievementsStats.ach_id,
-							apiCode,
-						),
-					),
-				)
-				.$dynamic();
-
-			const allConditions = this.collectWhereConditions();
-			if (allConditions.length > 0) {
-				query = query.where(and(...allConditions));
-			}
-
-			const rows = await query;
-			const cnt = rows[0]?.count ?? 0;
-
-			// If the ensure step had an error but COUNT succeeded, propagate Partial
-			if (ensureError) {
-				return Attempt.partial(cnt, ensureError);
-			}
-			return Attempt.ok(cnt);
-		} catch (err) {
-			return Attempt.fail(err as Error);
-		}
+		const rows = await query;
+		const count = rows[0]?.count ?? 0;
+		return ensureAttempt.map(() => count);
 	}
 	/**
 	 * Ensure all required data exists in the database
@@ -145,6 +125,8 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 			return createQueryResult([], 0, null);
 		}
 
+		// This path doesn't actually fetch its own data, so no API calls/try-catch needed
+		// Just return the result of the Apps ensure operation
 		return await composer.build({
 			sort: { method: "id", direction: "asc" },
 		});

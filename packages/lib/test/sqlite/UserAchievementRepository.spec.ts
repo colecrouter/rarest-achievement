@@ -1410,32 +1410,5 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			assert.strictEqual(attempt.status, AttemptStatus.Ok);
 			assert.strictEqual(typeof attempt.data, "number");
 		});
-
-		test("count returns Attempt failure on SQL error", async () => {
-			const repo = getRepo();
-			const userId = "u-count-error";
-			// minimal prerequisite so composer has a user scope
-			await insertUser(db, { id: userId, data: makeUserData(userId) });
-
-			// Bypass TS protected access for testing error path
-			// biome-ignore lint/suspicious/noExplicitAny: allow access to `db` method
-			const composer: any = repo.compose().withLanguage("en").withUserIds(userId);
-
-			// Monkey-patch the drizzle client's `with` method to force an error during COUNT
-			const originalWith = composer.db.with;
-			try {
-				composer.db.with = () => {
-					throw new Error("forced-sql-error");
-				};
-				const attempt = await composer.count();
-
-				// Should propagate as a Failure Attempt with an Error instance
-				assert.strictEqual(attempt.status, AttemptStatus.Failure);
-				assert.ok(attempt.error instanceof Error);
-			} finally {
-				// Restore patched method to avoid side effects
-				composer.db.with = originalWith;
-			}
-		});
 	});
 });

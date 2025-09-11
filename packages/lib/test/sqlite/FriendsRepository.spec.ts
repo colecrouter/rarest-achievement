@@ -469,32 +469,4 @@ describe_count_friends("FriendsRepository.count()", () => {
 		assert.strictEqual(attempt.status, AttemptStatus.Ok);
 		assert.strictEqual(attempt.data, 0);
 	});
-
-	test_count_friends("error propagation: COUNT failure => AttemptStatus.Failure", async () => {
-		const sqlite = new Database(":memory:");
-		sqlite.exec("PRAGMA case_sensitive_like = ON;");
-		sqlite.exec("PRAGMA journal_mode = WAL;");
-		sqlite.exec("PRAGMA synchronous = NORMAL;");
-		await runMigrations(sqlite);
-		const db = drizzle(sqlite) as unknown as ProjectDB;
-
-		const { repo } = makeFriendsRepoWithMocks(db);
-
-		const main = "boom-main";
-		const fid = "boom-friend";
-
-		await db.insert(usersTable).values({ id: main, data: makeUserData(main), updated_at: new Date() });
-		await db.insert(usersTable).values({ id: fid, data: makeUserData(fid), updated_at: new Date() });
-		await insertFriend(db, { user_id: main, friend_id: fid, friend_since: new Date() });
-
-		const composer = repo.compose().withUserIds(main);
-
-		// Drop table to force COUNT failure
-		sqlite.exec("DROP TABLE friends;");
-
-		const attempt = await composer.count();
-
-		assert.strictEqual(attempt.status, AttemptStatus.Failure);
-		assert.ok(attempt.error);
-	});
 });

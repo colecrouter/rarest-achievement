@@ -24,6 +24,7 @@ import {
 import { insertAchievementMeta, insertApp } from "../fixtures/dbHelpers";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
+import { createLocalBudget, decorateWithBudget } from "../helpers/fetchBudget";
 import { runMigrations } from "../helpers/migrate";
 
 describe("AppRepository - SQLite (in-memory)", () => {
@@ -306,6 +307,40 @@ describe("AppRepository - SQLite (in-memory)", () => {
 
 		await repo.compose().withLanguage("en").withAppIds([4001]).withAchievements().build();
 		assert.ok(true, "withAchievements executes without throwing");
+	});
+
+	// Parallel ensure/upsert path under a synthetic fetch budget
+	test("parallel ensure populates only apps covered by budget", async () => {
+		const { repo: appRepo, auth, store } = ctx;
+		const appIds = Array.from({ length: 12 }, (_, i) => 1000 + i);
+
+		for (const id of appIds) {
+			store.setAppDetails(id, { [id]: { success: true as const, data: makeAppData(id, `App ${id}`) } });
+			auth.setSchemaForGame(
+				{ appid: id, l: "english" },
+				makeAchievementSchema(`App ${id}`, [basicAchievementEn]),
+			);
+			auth.setGlobalAchievementPercentagesForApp(id, {
+				achievementpercentages: { achievements: [{ name: basicAchievement.name, percent: 25 }] },
+			});
+		}
+
+		// Each app needs up to 3 calls (details, schema, stats). Budget for ~4 apps.
+		const budget = createLocalBudget(3 * 4);
+		decorateWithBudget(store, ["getAppDetails"], budget);
+		decorateWithBudget(auth, ["getSchemaForGame", "getGlobalAchievementPercentagesForApp"], budget);
+
+		const res = await appRepo.compose().withLanguage("en").withAppIds(appIds).build();
+		assert.ok(res.isOk() || res.isPartial());
+
+		// Verify tables reflect only a budget-limited subset
+		const appRows = await db.select().from(apps);
+		assert.ok(appRows.length >= 3 && appRows.length <= 5);
+
+		const metaRows = await db.select().from(achievementsMeta);
+		const statsRows = await db.select().from(achievementsStats);
+		assert.ok(metaRows.length >= 3 && metaRows.length <= 5);
+		assert.ok(statsRows.length >= 3 && statsRows.length <= 5);
 	});
 
 	test("pagination and sorting do not throw", async () => {

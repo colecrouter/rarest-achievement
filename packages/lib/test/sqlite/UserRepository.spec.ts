@@ -8,8 +8,10 @@ import type { GetOwnedGamesQuery, GetOwnedGamesResponse } from "../../src/reposi
 import type { GetPlayerSummariesResponse } from "../../src/repositories/api/steampowered/playerSummary";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
 import { ownedGames, users } from "../../src/repositories/sqlite/schema.js";
+import { makeUser } from "../e2e/user";
 import { makeUserRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
+import { createLocalBudget, decorateWithBudget } from "../helpers/fetchBudget";
 import { runMigrations } from "../helpers/migrate";
 import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 
@@ -151,6 +153,44 @@ describe("UserRepository - SQLite (in-memory)", () => {
 
 		// ensure no exception is thrown and result is empty
 		assert.strictEqual(result.data.length, 0);
+	});
+
+	// Parallel fetch: summaries + per-user owned games under a tight budget
+	test("parallel upsert: owned-games only for subset under budget", async () => {
+		const repo = getRepo();
+
+		// Prepare 20 users with deterministic IDs
+		const usersE2E = Array.from({ length: 20 }, (_, i) => makeUser(`u-${i + 1}`));
+		const userIds = usersE2E.map((u) => u.id);
+
+		// Player summaries (single batched call)
+		const ps: GetPlayerSummariesResponse = {
+			response: { players: userIds.map((id) => makeUserData(id)) },
+		};
+		authMock.setPlayerSummaries(ps);
+
+		// Owned games per user (distinct call per user)
+		for (const id of userIds) {
+			authMock.setOwnedGames(
+				{ steamid: id, include_played_free_games: true },
+				{ response: { game_count: 1, games: [{ appid: 101, playtime_forever: 0 }] } },
+			);
+		}
+
+		// Budget: 1 summary + first ~8 owned-games calls
+		const budget = createLocalBudget(1 + 8);
+		decorateWithBudget(authMock, ["getPlayerSummaries", "getOwnedGames"], budget);
+
+		const res = await repo.compose().withUserIds(userIds).build();
+		assert.ok(res.isOk() || res.isPartial());
+
+		// All summaries insert user rows
+		const userRows = await db.select().from(users);
+		assert.strictEqual(userRows.length, 20);
+
+		// Only a budget-limited subset has ownedGames rows
+		const ownedRows = await db.select().from(ownedGames);
+		assert.ok(ownedRows.length >= 4 && ownedRows.length <= 8);
 	});
 
 	test("users upsert uses EXCLUDED.data", async () => {

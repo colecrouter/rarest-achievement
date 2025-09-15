@@ -22,6 +22,7 @@ import { insertApp, insertOwnedGame, insertUser, insertUserAchievement } from ".
 import { makeUserAchievementRepoWithMocks } from "../fixtures/mockHelpers";
 import { makePlayerAchievementsPayload } from "../fixtures/userAchievementsData";
 import { makeFriendsListResponse, makePlayerSummariesResponse, makeUserData } from "../fixtures/userData";
+import { createLocalBudget, decorateWithBudget } from "../helpers/fetchBudget";
 import { runMigrations } from "../helpers/migrate";
 import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 
@@ -1410,5 +1411,152 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			assert.strictEqual(attempt.status, AttemptStatus.Ok);
 			assert.strictEqual(typeof attempt.data, "number");
 		});
+	});
+});
+
+// Parallel ensure behavior under synthetic fetch budgets (API call-level)
+describe("UserAchievementRepository parallel fetching", () => {
+	let db: ProjectDB;
+	let auth: MockSteamAuthenticatedAPIClient;
+
+	beforeEach(async () => {
+		const sqlite = new Database(":memory:");
+		sqlite.exec("PRAGMA case_sensitive_like = ON;");
+		sqlite.exec("PRAGMA journal_mode = WAL;");
+		sqlite.exec("PRAGMA synchronous = NORMAL;");
+		await runMigrations(sqlite);
+		// Keep FK off as other specs do to avoid order constraints when ensuring
+		sqlite.exec("PRAGMA foreign_keys = OFF;");
+		db = drizzle(sqlite) as unknown as ProjectDB;
+		const ctx = makeUserAchievementRepoWithMocks(db);
+		auth = ctx.auth;
+		getRepo = () => ctx.repo;
+	});
+
+	let getRepo: () => ReturnType<typeof makeUserAchievementRepoWithMocks>["repo"];
+
+	test("default path: partial upserts of user achievements under budget", async () => {
+		const repo = getRepo();
+		const userId = "u-ach-1";
+		await insertUser(db, { id: userId, data: makeUserData(userId) });
+
+		const appIds = Array.from({ length: 10 }, (_, i) => 2000 + i);
+		for (const id of appIds) {
+			await insertApp(db, { id, lang: "english", data: makeAppData(id, `App ${id}`) });
+			await seedStats(db, id, [{ ach: "ACH-1", percent: 50 }]);
+			await seedMetaByCode(db, id, "en", [{ ach: "ACH-1", display: "A1" }]);
+			await insertOwnedGame(db, { user_id: userId, app_id: id });
+			auth.setPlayerAchievements(
+				{ steamid: userId, appid: id },
+				makePlayerAchievementsPayload({
+					userId,
+					appId: id,
+					items: [{ ach: "ACH-1", achieved: 1, unlock: new Date() }],
+				}),
+			);
+		}
+
+		const budget = createLocalBudget(4);
+		decorateWithBudget(auth, ["getPlayerAchievements"], budget);
+
+		const res = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.build({ sort: { method: "rarity_pct", direction: "asc" } });
+		assert.ok(res.isOk() || res.isPartial());
+
+		const rows = await db.select().from(userAchievements);
+		assert.ok(rows.length >= 1 && rows.length <= 5);
+	});
+
+	test("unlocked_at path: streaming inserts should commit early rows within budget", async () => {
+		const repo = getRepo();
+		const userId = "u-stream-1";
+		await insertUser(db, { id: userId, data: makeUserData(userId) });
+
+		const appIds = Array.from({ length: 12 }, (_, i) => 3000 + i);
+		for (const id of appIds) {
+			await insertApp(db, { id, lang: "english", data: makeAppData(id, `App ${id}`) });
+			await seedStats(db, id, [{ ach: "ACH-1", percent: 50 }]);
+			await seedMetaByCode(db, id, "en", [{ ach: "ACH-1", display: "A1" }]);
+			await insertOwnedGame(db, {
+				user_id: userId,
+				app_id: id,
+				last_played_at: new Date(Date.now() - (id % 5) * 1000),
+			});
+			auth.setPlayerAchievements(
+				{ steamid: userId, appid: id },
+				makePlayerAchievementsPayload({
+					userId,
+					appId: id,
+					items: [{ ach: "ACH-1", achieved: 1, unlock: new Date() }],
+				}),
+			);
+		}
+
+		const budget = createLocalBudget(5);
+		decorateWithBudget(auth, ["getPlayerAchievements"], budget);
+
+		const res = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.build({ sort: { method: "unlocked_at", direction: "desc" } });
+		assert.ok(res.isOk() || res.isPartial());
+
+		const rows = await db.select().from(userAchievements);
+		assert.ok(rows.length >= 1 && rows.length <= 6);
+	});
+
+	test("friends-of path: partial achievements for subset of friends under budget", async () => {
+		const repo = getRepo();
+		const requester = "u-owner";
+		const friendsList = Array.from({ length: 6 }, (_, i) => `f-${i + 1}`);
+		await insertUser(db, { id: requester, data: makeUserData(requester) });
+		const appBase = 4000;
+		for (let i = 0; i < friendsList.length; i++) {
+			const fid: string = friendsList[i] as string;
+			const appId = appBase + i;
+			await insertUser(db, { id: fid, data: makeUserData(fid) });
+			await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, `App ${appId}`) });
+			await seedStats(db, appId, [{ ach: "ACH-1", percent: 50 }]);
+			await seedMetaByCode(db, appId, "en", [{ ach: "ACH-1", display: "A1" }]);
+			await insertOwnedGame(db, { user_id: fid, app_id: appId });
+			auth.setPlayerAchievements(
+				{ steamid: fid, appid: appId },
+				makePlayerAchievementsPayload({
+					userId: fid,
+					appId,
+					items: [{ ach: "ACH-1", achieved: 1, unlock: new Date() }],
+				}),
+			);
+		}
+
+		auth.setFriendsList(
+			{ steamid: requester, relationship: "friend" },
+			{
+				friendslist: {
+					friends: friendsList.map((id, idx) => ({
+						steamid: id,
+						relationship: "friend",
+						friend_since: Math.floor(Date.now() / 1000) - idx,
+					})),
+				},
+			},
+		);
+
+		const budget = createLocalBudget(3);
+		decorateWithBudget(auth, ["getPlayerAchievements"], budget);
+
+		const res = await repo
+			.compose()
+			.withLanguage("en")
+			.withFriendsOf(requester)
+			.build({ sort: { method: "rarity_pct", direction: "asc" } });
+		assert.ok(res.isOk() || res.isPartial());
+
+		const rows = await db.select().from(userAchievements);
+		assert.ok(rows.length >= 1 && rows.length <= 4);
 	});
 });

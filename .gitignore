@@ -29,4 +29,4 @@ src/lib/paraglide
 *.db
 
 venv
-/packages/lib/steam_model.json
+# /packages/lib/steam_model.json

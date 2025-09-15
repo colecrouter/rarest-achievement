@@ -1,0 +1,34 @@
+{
+	"learner": {
+		"attributes": { "scikit_learn": "{\"_estimator_type\":\"regressor\"}" },
+		"feature_names": [
+			"total_reviews",
+			"review_score",
+			"is_free",
+			"price",
+			"all_time_peak",
+			"avg_count",
+			"day_peak",
+			"release_date_numeric"
+		],
+		"feature_types": ["int", "int", "int", "float", "int", "float", "int", "int"],
+		"gradient_booster": {
+			"model": {
+				"gbtree_model_param": { "num_parallel_tree": "1", "num_trees": "0" },
+				"iteration_indptr": [0],
+				"tree_info": [],
+				"trees": []
+			},
+			"name": "gbtree"
+		},
+		"learner_model_param": {
+			"base_score": "0.5",
+			"boost_from_average": "1",
+			"num_class": "0",
+			"num_feature": "8",
+			"num_target": "1"
+		},
+		"objective": { "name": "reg:squarederror", "reg_loss_param": { "scale_pos_weight": "1" } }
+	},
+	"version": [1, 7, 0]
+}

@@ -1,4 +1,4 @@
-import { type ProjectDB, SteamAuthenticatedAPIClient, VaultService, type schema } from "@project/lib";
+import { type ProjectDB, SteamAuthenticatedAPIClient, type schema, VaultService } from "@project/lib";
 import { drizzle } from "drizzle-orm/d1";
 import { getJobsForCron } from "./jobs";
 
@@ -16,22 +16,22 @@ import { getJobsForCron } from "./jobs";
  */
 
 export default {
-    scheduled: async (event, env, ctx) => {
-        const db = drizzle<typeof schema>(env.DB) as unknown as ProjectDB; // TODO: Fix this type
-        const service = new VaultService(db, new SteamAuthenticatedAPIClient(env.STEAM_API_KEY));
-        const now = new Date();
+	scheduled: async (event, env, ctx) => {
+		const db = drizzle<typeof schema>(env.DB) as unknown as ProjectDB; // TODO: Fix this type
+		const service = new VaultService(db, new SteamAuthenticatedAPIClient(env.STEAM_API_KEY));
+		const now = new Date();
 
-        const cron = event.cron;
-        const targets = getJobsForCron(cron);
+		const cron = event.cron;
+		const targets = getJobsForCron(cron);
 
-        if (targets.length === 0) return;
+		if (targets.length === 0) return;
 
-        for (const job of targets) {
-            try {
-                await job.run({ db, service, now, ctx });
-            } catch (err) {
-                console.error(`[scheduled] job=${job.id} error=${(err as Error).message}`);
-            }
-        }
-    },
+		for (const job of targets) {
+			try {
+				await job.run({ db, service, now, ctx });
+			} catch (err) {
+				console.error(`[scheduled] job=${job.id} error=${(err as Error).message}`);
+			}
+		}
+	},
 } satisfies ExportedHandler<Env>;

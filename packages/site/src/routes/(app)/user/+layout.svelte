@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { page } from "$app/state";
-    import { setAchievementServerSortManager } from "$lib/SortManager/AchievementSortManager";
+	import { page } from "$app/state";
+	import { setAchievementServerSortManager } from "$lib/SortManager/AchievementSortManager";
 
-    let { children } = $props();
+	let { children } = $props();
 
-    let url = $derived(page.url);
+	let url = $derived(page.url);
 
-    setAchievementServerSortManager();
+	setAchievementServerSortManager();
 </script>
 
 {@render children()}

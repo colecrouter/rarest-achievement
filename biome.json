@@ -1,33 +1,51 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-    "files": {
-        "ignore": [
-            "**/node_modules/**",
-            "**/.svelte-kit/**",
-            "**/worker-configuration.d.ts",
-            "**/src/lib/paraglide/**",
-            "./packages/lib/steam_model.json"
-        ],
-        "include": ["packages/**/*"]
-    },
-    "formatter": {
-        "indentStyle": "space",
-        "indentWidth": 4,
-        "lineEnding": "lf",
-        "ignore": ["**/*.svelte", "**/*.css"],
-        "lineWidth": 120
-    },
-    "linter": {
-        "rules": {
-            "complexity": {
-                "noStaticOnlyClass": "off"
-            }
-        }
-    },
-    "overrides": [
-        {
-            "include": ["**/*.svelte"],
-            "linter": { "rules": { "style": { "useConst": "off", "useImportType": "off" } } }
-        }
-    ]
+	"$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+	"files": {
+		"includes": ["**", "!**/worker-configuration.d.ts"]
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"formatter": {
+		"indentStyle": "tab",
+		"indentWidth": 4,
+		"lineEnding": "lf",
+		"includes": ["**", "!**/*.svelte", "!**/*.css", "!**/*.html"],
+		"lineWidth": 120
+	},
+	"linter": {
+		"rules": {
+			"complexity": {
+				"noStaticOnlyClass": "off"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.svelte"],
+			"linter": {
+				"rules": {
+					"correctness": { "noUnusedVariables": "off", "noUnusedImports": "off" },
+					"style": { "useConst": "off", "useImportType": "off" }
+				}
+			},
+			"assist": {
+				"actions": {
+					"source": { "organizeImports": "off" }
+				}
+			}
+		},
+		{
+			"includes": ["**/*.css"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noUnknownAtRules": "off"
+					}
+				}
+			}
+		}
+	]
 }

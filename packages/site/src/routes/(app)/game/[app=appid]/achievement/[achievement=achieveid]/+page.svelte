@@ -1,357 +1,356 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
-    import { base } from "$app/paths";
-    import { page } from "$app/state";
-    import AchievementCards from "$lib/AchievementCards";
-    import FriendCards from "$lib/FriendCards";
-    import IndexError from "$lib/IndexError.svelte";
-    import Transition from "$lib/Transition.svelte";
-    import TransitionWrapper from "$lib/TransitionWrapper.svelte";
-    import TranslationToggle from "$lib/TranslationToggle.svelte";
-    import { m } from "$lib/paraglide/messages.js";
-    import {
-        deLocalizeUrl,
-        getLocale,
-        localizeHref,
-    } from "$lib/paraglide/runtime";
-    import { getRarity, localizedRarity } from "$lib/rarity";
-    import BookOpenText from "@lucide/svelte/icons/book-open-text";
-    import NotebookText from "@lucide/svelte/icons/notebook-text";
-    import Share from "@lucide/svelte/icons/share";
-    import YouTube from "@lucide/svelte/icons/youtube";
-    import { Tooltip } from "@skeletonlabs/skeleton-svelte";
-    import Chart from "chart.js/auto";
-    import Colors from "tailwindcss/colors";
-    import Breadcrumbs from "../../../../Breadcrumbs.svelte";
+	import BookOpenText from "@lucide/svelte/icons/book-open-text";
+	import NotebookText from "@lucide/svelte/icons/notebook-text";
+	import Share from "@lucide/svelte/icons/share";
+	import YouTube from "@lucide/svelte/icons/youtube";
+	import { Tooltip } from "@skeletonlabs/skeleton-svelte";
+	import Chart from "chart.js/auto";
+	import Colors from "tailwindcss/colors";
+	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
+	import { page } from "$app/state";
+	import AchievementCards from "$lib/AchievementCards";
+	import FriendCards from "$lib/FriendCards";
+	import IndexError from "$lib/IndexError.svelte";
+	import { m } from "$lib/paraglide/messages.js";
+	import {
+		deLocalizeUrl,
+		getLocale,
+		localizeHref,
+	} from "$lib/paraglide/runtime";
+	import { getRarity, localizedRarity } from "$lib/rarity";
+	import Transition from "$lib/Transition.svelte";
+	import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+	import TranslationToggle from "$lib/TranslationToggle.svelte";
+	import Breadcrumbs from "../../../../Breadcrumbs.svelte";
 
-    let { data } = $props();
+	let { data } = $props();
 
-    let {
-        achievement,
-        gameAchievements,
-        app,
-        friendsWithAchievement,
-        articles,
-        translation,
-    } = $derived(data);
+	let {
+		achievement,
+		gameAchievements,
+		app,
+		friendsWithAchievement,
+		articles,
+		translation,
+	} = $derived(data);
 
-    let rarity = $derived(getRarity(achievement.globalPercentage));
+	let rarity = $derived(getRarity(achievement.globalPercentage));
 
-    let isSignedIn = true;
+	let isSignedIn = true;
 
-    let statsChart = $state<HTMLCanvasElement>();
-    $effect(() => {
-        const rarityChartData = [...(gameAchievements.data.values() ?? [])]
-            .slice()
-            .sort((a, b) => a.globalPercentage - b.globalPercentage)
-            .map((current) => ({
-                name:
-                    current.name.length > 20
-                        ? `${current.name.substring(0, 20)}...`
-                        : current.name,
-                rarity: current.globalPercentage,
-                id: current.id,
-                isCurrent: current.id === achievement.id,
-            }));
+	let statsChart = $state<HTMLCanvasElement>();
+	$effect(() => {
+		const rarityChartData = gameAchievements.data
+			.toSorted((a, b) => a.globalPercentage - b.globalPercentage)
+			.map((current) => ({
+				name:
+					current.name.length > 20
+						? `${current.name.substring(0, 20)}...`
+						: current.name,
+				rarity: current.globalPercentage,
+				id: current.id,
+				isCurrent: current.id === achievement.id,
+			}));
 
-        const style = getComputedStyle(document.documentElement);
-        const rarityChartColors = rarityChartData.map((data) => {
-            const rarity = getRarity(data.rarity);
-            if (data.isCurrent) {
-                return style.getPropertyValue(`--color-${rarity}-light`);
-            }
-            return style.getPropertyValue(`--color-${rarity}-dark`);
-        });
+		const style = getComputedStyle(document.documentElement);
+		const rarityChartColors = rarityChartData.map((data) => {
+			const rarity = getRarity(data.rarity);
+			if (data.isCurrent) {
+				return style.getPropertyValue(`--color-${rarity}-light`);
+			}
+			return style.getPropertyValue(`--color-${rarity}-dark`);
+		});
 
-        const currentIndex = rarityChartData.findIndex(
-            (data) => data.isCurrent,
-        );
-        const selectedColor = rarityChartColors[currentIndex];
+		const currentIndex = rarityChartData.findIndex(
+			(data) => data.isCurrent,
+		);
+		const selectedColor = rarityChartColors[currentIndex];
 
-        const ctx = statsChart?.getContext("2d");
-        if (!ctx) return;
+		const ctx = statsChart?.getContext("2d");
+		if (!ctx) return;
 
-        const chart = new Chart(ctx, {
-            type: "bar",
-            data: {
-                labels: rarityChartData.map((d) => d.name),
-                datasets: [
-                    {
-                        label: m.achievementThisAchievementLabel(),
-                        data: rarityChartData.map((d) => d.rarity),
-                        backgroundColor: rarityChartColors,
-                        // @ts-expect-error custom field
-                        selectedColor, // custom field for legend use
-                    },
-                ],
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                    },
-                    x: {
-                        ticks: {
-                            color: Colors.gray[300],
-                            maxRotation: 60,
-                        },
-                    },
-                },
-                color: Colors.gray[300],
-                plugins: {
-                    legend: {
-                        labels: {
-                            generateLabels: (chart) => {
-                                const dataset = chart.data.datasets[0];
-                                return [
-                                    {
-                                        text: dataset?.label ?? "",
-                                        fontColor: Colors.gray[300],
-                                        // @ts-expect-error custom field
-                                        fillStyle: dataset?.selectedColor ?? "",
-                                    },
-                                ];
-                            },
-                        },
-                    },
-                },
-                onClick(_, elements) {
-                    const first = elements[0];
-                    if (!first) return;
-                    const index = first.index;
-                    const selectedAchievement = rarityChartData[index]?.id;
-                    if (!selectedAchievement) return;
-                    const selectedAchievementId = gameAchievements.data.find(
-                        (a) => a.id === selectedAchievement,
-                    )?.id;
-                    if (!selectedAchievementId) return;
-                    goto(
-                        localizeHref(
-                            `/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
-                        ),
-                        { keepFocus: true },
-                    );
-                },
-                onHover(event, elements, chart) {
-                    // Reset
-                    chart.canvas.style.cursor = "default";
+		const chart = new Chart(ctx, {
+			type: "bar",
+			data: {
+				labels: rarityChartData.map((d) => d.name),
+				datasets: [
+					{
+						label: m.achievementThisAchievementLabel(),
+						data: rarityChartData.map((d) => d.rarity),
+						backgroundColor: rarityChartColors,
+						// @ts-expect-error custom field
+						selectedColor, // custom field for legend use
+					},
+				],
+			},
+			options: {
+				scales: {
+					y: {
+						beginAtZero: true,
+					},
+					x: {
+						ticks: {
+							color: Colors.gray[300],
+							maxRotation: 60,
+						},
+					},
+				},
+				color: Colors.gray[300],
+				plugins: {
+					legend: {
+						labels: {
+							generateLabels: (chart) => {
+								const dataset = chart.data.datasets[0];
+								return [
+									{
+										text: dataset?.label ?? "",
+										fontColor: Colors.gray[300],
+										// @ts-expect-error custom field
+										fillStyle: dataset?.selectedColor ?? "",
+									},
+								];
+							},
+						},
+					},
+				},
+				onClick(_, elements) {
+					const first = elements[0];
+					if (!first) return;
+					const index = first.index;
+					const selectedAchievement = rarityChartData[index]?.id;
+					if (!selectedAchievement) return;
+					const selectedAchievementId = gameAchievements.data.find(
+						(a) => a.id === selectedAchievement,
+					)?.id;
+					if (!selectedAchievementId) return;
+					goto(
+						localizeHref(
+							`/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
+						),
+						{ keepFocus: true },
+					);
+				},
+				onHover(_, elements, chart) {
+					// Reset
+					chart.canvas.style.cursor = "default";
 
-                    const first = elements[0];
-                    if (!first) return;
-                    const index = first.index;
-                    const selectedAchievement = rarityChartData[index]?.id;
-                    if (!selectedAchievement) return;
-                    const selectedAchievementId = gameAchievements.data.find(
-                        (a) => a.id === selectedAchievement,
-                    )?.id;
-                    if (!selectedAchievementId) return;
+					const first = elements[0];
+					if (!first) return;
+					const index = first.index;
+					const selectedAchievement = rarityChartData[index]?.id;
+					if (!selectedAchievement) return;
+					const selectedAchievementId = gameAchievements.data.find(
+						(a) => a.id === selectedAchievement,
+					)?.id;
+					if (!selectedAchievementId) return;
 
-                    chart.canvas.style.cursor = "pointer";
-                },
-            },
-        });
+					chart.canvas.style.cursor = "pointer";
+				},
+			},
+		});
 
-        return () => chart.destroy();
-    });
+		return () => chart.destroy();
+	});
 
-    let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(
-        () => {
-            switch (page.url.searchParams.get("tab")) {
-                case "friends":
-                    return "friends";
-                case "articles":
-                    return "articles";
-                default:
-                    return "stats";
-            }
-        },
-    );
+	let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(
+		() => {
+			switch (page.url.searchParams.get("tab")) {
+				case "friends":
+					return "friends";
+				case "articles":
+					return "articles";
+				default:
+					return "stats";
+			}
+		},
+	);
 
-    let viewHover = $state(false);
-    let shareHover = $state(false);
-    let translate = $state(true);
+	let viewHover = $state(false);
+	let shareHover = $state(false);
+	let translate = $state(true);
 </script>
 
 <svelte:head>
-    <title>
-        {m.achievementPageMetaTitle({
-            achievementName: achievement.name,
-            appName: app.name,
-        })}
-    </title>
-    <meta
-        name="description"
-        content={m.achievementPageMetaDescription({
-            achievementName: achievement.name,
-            appName: app.name,
-            percentage: achievement.globalPercentage,
-        })}
-    />
-    <link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
-    <meta
-        property="og:title"
-        content={m.achievementPageMetaTitle({
-            achievementName: achievement.name,
-            appName: app.name,
-        })}
-    />
-    <meta
-        property="og:description"
-        content={m.achievementPageMetaDescription({
-            achievementName: achievement.name,
-            appName: app.name,
-            percentage: achievement.globalPercentage,
-        })}
-    />
-    <meta property="og:image" content={achievement.icon} />
-    <meta
-        property="og:url"
-        content={`/game/${app.id}/achievement/${achievement.id}`}
-    />
-    <meta property="og:type" content="summary" />
-    <meta property="twitter:card" content="summary" />
-    <meta
-        property="keywords"
-        content={`Steam, ${app.name}, ${achievement.name}`}
-    />
+	<title>
+		{m.achievementPageMetaTitle({
+			achievementName: achievement.name,
+			appName: app.name,
+		})}
+	</title>
+	<meta
+		name="description"
+		content={m.achievementPageMetaDescription({
+			achievementName: achievement.name,
+			appName: app.name,
+			percentage: achievement.globalPercentage,
+		})}
+	/>
+	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
+	<meta
+		property="og:title"
+		content={m.achievementPageMetaTitle({
+			achievementName: achievement.name,
+			appName: app.name,
+		})}
+	/>
+	<meta
+		property="og:description"
+		content={m.achievementPageMetaDescription({
+			achievementName: achievement.name,
+			appName: app.name,
+			percentage: achievement.globalPercentage,
+		})}
+	/>
+	<meta property="og:image" content={achievement.icon} />
+	<meta
+		property="og:url"
+		content={`/game/${app.id}/achievement/${achievement.id}`}
+	/>
+	<meta property="og:type" content="summary" />
+	<meta property="twitter:card" content="summary" />
+	<meta
+		property="keywords"
+		content={`Steam, ${app.name}, ${achievement.name}`}
+	/>
 </svelte:head>
 
 <main class="container mx-auto px-4 py-8">
-    <Breadcrumbs path={data.breadcrumbs} />
+	<Breadcrumbs path={data.breadcrumbs} />
 
-    <div
-        class="text border-surface-700 bg-surface-800 rounded-container mb-8 border"
-    >
-        <div
-            class="to-surface-800 from-primary-900/30 rounded-container relative min-h-40 bg-gradient-to-r"
-        >
-            <div
-                class="rounded-container absolute inset-0 bg-cover bg-center opacity-50"
-                style:background-image={`url("${app.banner}")`}
-            ></div>
-            <div class="rounded-container absolute inset-0 overflow-hidden">
-                <div
-                    class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"
-                ></div>
-            </div>
-            <div
-                class="relative flex flex-col items-center px-6 py-4 md:flex-row"
-            >
-                <div class="mb-2 flex items-center gap-6">
-                    <div class="relative">
-                        <div
-                            class="bg-{rarity}/20 rounded-container absolute -inset-1 blur-sm"
-                        ></div>
-                        <div
-                            class="border-{rarity}/50 bg-surface-900 rounded-container relative border p-1"
-                        >
-                            <img
-                                src={achievement.icon}
-                                alt={achievement.name}
-                                width="96"
-                                height="96"
-                                class="max-w-[initial] rounded"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <div class="mb-1 flex items-center gap-3">
-                            <a
-                                href={localizeHref(
-                                    "/game/" + achievement.app.id,
-                                )}
-                            >
-                                <span class="text-surface-300"
-                                    >{achievement.app.name}</span
-                                >
-                            </a>
-                        </div>
-                        <h1 class="mb-1 text-3xl font-bold">
-                            {achievement.name}
-                        </h1>
-                        <p
-                            class="text-surface-200 flex w-full grow items-start"
-                        >
-                            {#if translation}
-                                <TranslationToggle bind:translate />
-                            {/if}
-                            {@html translate && translation
-                                ? translation
-                                : achievement.description}
-                        </p>
-                    </div>
-                </div>
-                <!-- Tinted card with "ultra-rare 1.1% of players" -->
-                <div
-                    class="flex min-w-[120px] flex-col items-center md:ml-auto md:items-end"
-                >
-                    <div
-                        class="w-full text-center md:w-auto md:text-left border-{rarity}/30 bg-{rarity}/10 mb-2 rounded border px-4 py-2"
-                    >
-                        <div class="text-sm font-medium text-{rarity}">
-                            {localizedRarity(rarity)}
-                        </div>
-                        <div class="text-2xl font-bold text-{rarity}-dark">
-                            {achievement.globalPercentage}%
-                        </div>
-                        <div class="text-surface-300 text-xs">
-                            {m.achievementOfPlayers()}
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <Tooltip
-                            open={viewHover}
-                            onOpenChange={(e) => (viewHover = e.open)}
-                            contentBase="bg-surface-100 p-4"
-                            arrowBackground="!bg-surface-100"
-                            contentBackground="rounded text-surface-900"
-                            arrow
-                        >
-                            {#snippet content()}
-                                {m.viewOnSteam()}
-                            {/snippet}
-                            {#snippet trigger()}
-                                <a
-                                    href={localizeHref(
-                                        `https://steamcommunity.com/app/${
-                                            achievement.app.id
-                                        }/stats/${
-                                            achievement.app.id
-                                        }/achievements`,
-                                    )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="btn preset-outlined-surface-500 p-2"
-                                >
-                                    <span hidden>{m.viewOnSteam()}</span>
-                                    <BookOpenText
-                                        class="text-surface-500 h-4 w-4"
-                                        aria-hidden="true"
-                                    />
-                                </a>
-                            {/snippet}
-                        </Tooltip>
-                        <button
-                            class="btn preset-outlined-surface-500 p-2"
-                            onclick={() =>
-                                navigator.share({
-                                    title: `${achievement.name} - ${app.name}`,
-                                    text: `${m.achievementShareText()}`,
-                                    url: page.url.toString(),
-                                })}
-                        >
-                            <span hidden>{m.achievementShareText()}</span>
-                            <Share
-                                class="text-surface-500 h-4 w-4"
-                                aria-hidden="true"
-                            />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {#if isSignedIn}
-            <!-- <div class="flex items-center justify-between border-t border-surface-700 bg-surface-900/50 px-6 py-3">
+	<div
+		class="text border-surface-700 bg-surface-800 rounded-container mb-8 border"
+	>
+		<div
+			class="to-surface-800 from-primary-900/30 rounded-container relative min-h-40 bg-gradient-to-r"
+		>
+			<div
+				class="rounded-container absolute inset-0 bg-cover bg-center opacity-50"
+				style:background-image={`url("${app.banner}")`}
+			></div>
+			<div class="rounded-container absolute inset-0 overflow-hidden">
+				<div
+					class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"
+				></div>
+			</div>
+			<div
+				class="relative flex flex-col items-center px-6 py-4 md:flex-row"
+			>
+				<div class="mb-2 flex items-center gap-6">
+					<div class="relative">
+						<div
+							class="bg-{rarity}/20 rounded-container absolute -inset-1 blur-sm"
+						></div>
+						<div
+							class="border-{rarity}/50 bg-surface-900 rounded-container relative border p-1"
+						>
+							<img
+								src={achievement.icon}
+								alt={achievement.name}
+								width="96"
+								height="96"
+								class="max-w-[initial] rounded"
+							/>
+						</div>
+					</div>
+					<div>
+						<div class="mb-1 flex items-center gap-3">
+							<a
+								href={localizeHref(
+									"/game/" + achievement.app.id,
+								)}
+							>
+								<span class="text-surface-300"
+									>{achievement.app.name}</span
+								>
+							</a>
+						</div>
+						<h1 class="mb-1 text-3xl font-bold">
+							{achievement.name}
+						</h1>
+						<p
+							class="text-surface-200 flex w-full grow items-start"
+						>
+							{#if translation}
+								<TranslationToggle bind:translate />
+							{/if}
+							{@html translate && translation
+								? translation
+								: achievement.description}
+						</p>
+					</div>
+				</div>
+				<!-- Tinted card with "ultra-rare 1.1% of players" -->
+				<div
+					class="flex min-w-[120px] flex-col items-center md:ml-auto md:items-end"
+				>
+					<div
+						class="w-full text-center md:w-auto md:text-left border-{rarity}/30 bg-{rarity}/10 mb-2 rounded border px-4 py-2"
+					>
+						<div class="text-sm font-medium text-{rarity}">
+							{localizedRarity(rarity)}
+						</div>
+						<div class="text-2xl font-bold text-{rarity}-dark">
+							{achievement.globalPercentage}%
+						</div>
+						<div class="text-surface-300 text-xs">
+							{m.achievementOfPlayers()}
+						</div>
+					</div>
+					<div class="flex gap-2">
+						<Tooltip
+							open={viewHover}
+							onOpenChange={(e) => (viewHover = e.open)}
+							contentBase="bg-surface-100 p-4"
+							arrowBackground="!bg-surface-100"
+							contentBackground="rounded text-surface-900"
+							arrow
+						>
+							{#snippet content()}
+								{m.viewOnSteam()}
+							{/snippet}
+							{#snippet trigger()}
+								<a
+									href={localizeHref(
+										`https://steamcommunity.com/app/${
+											achievement.app.id
+										}/stats/${
+											achievement.app.id
+										}/achievements`,
+									)}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn preset-outlined-surface-500 p-2"
+								>
+									<span hidden>{m.viewOnSteam()}</span>
+									<BookOpenText
+										class="text-surface-500 h-4 w-4"
+										aria-hidden="true"
+									/>
+								</a>
+							{/snippet}
+						</Tooltip>
+						<button
+							class="btn preset-outlined-surface-500 p-2"
+							onclick={() =>
+								navigator.share({
+									title: `${achievement.name} - ${app.name}`,
+									text: `${m.achievementShareText()}`,
+									url: page.url.toString(),
+								})}
+						>
+							<span hidden>{m.achievementShareText()}</span>
+							<Share
+								class="text-surface-500 h-4 w-4"
+								aria-hidden="true"
+							/>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		{#if isSignedIn}
+			<!-- <div class="flex items-center justify-between border-t border-surface-700 bg-surface-900/50 px-6 py-3">
                     <div class="flex items-center gap-3">
                         <span class="text-sm">
                             Unlocked on
@@ -366,58 +365,58 @@
                         out of {achievement.totalPlayers.toLocaleString()} players
                     </div>
                 </div> -->
-        {/if}
-    </div>
+		{/if}
+	</div>
 
-    <div>
-        <div class="border-surface-700 flex gap-4 border-b">
-            <button
-                onclick={() => goto("?tab=stats")}
-                class="py-2"
-                class:font-bold={activeTab === "stats"}
-                >{m.achievementTabStats()}</button
-            >
-            <button
-                onclick={() => goto("?tab=friends")}
-                class="py-2"
-                class:font-bold={activeTab === "friends"}
-                >{m.achievementTabFriends()}</button
-            >
-            <button
-                onclick={() => goto("?tab=articles")}
-                class="py-2"
-                class:font-bold={activeTab === "articles"}
-                >{m.achievementTabArticles()}</button
-            >
-        </div>
+	<div>
+		<div class="border-surface-700 flex gap-4 border-b">
+			<button
+				onclick={() => goto("?tab=stats")}
+				class="py-2"
+				class:font-bold={activeTab === "stats"}
+				>{m.achievementTabStats()}</button
+			>
+			<button
+				onclick={() => goto("?tab=friends")}
+				class="py-2"
+				class:font-bold={activeTab === "friends"}
+				>{m.achievementTabFriends()}</button
+			>
+			<button
+				onclick={() => goto("?tab=articles")}
+				class="py-2"
+				class:font-bold={activeTab === "articles"}
+				>{m.achievementTabArticles()}</button
+			>
+		</div>
 
-        <TransitionWrapper>
-            {#if activeTab === "stats"}
-                <Transition>
-                    <section class="mt-6 space-y-8">
-                        <div class="card p-4">
-                            <h2 class="font-bold">
-                                {m.achievementRarityComparisonTitle()}
-                            </h2>
-                            <p class="text-surface-300 text-sm">
-                                {m.achievementRarityComparisonDescription({
-                                    achievementName: achievement.name,
-                                    appName: achievement.app.name,
-                                })}
-                            </p>
-                            <div class="max-h-[480px]">
-                                <!-- Need to key, chartjs not updated when soft-navigating to a different achievement page -->
-                                {#key achievement}
-                                    <canvas
-                                        bind:this={statsChart}
-                                        class="h-full w-full"
-                                    ></canvas>
-                                {/key}
-                            </div>
-                        </div>
+		<TransitionWrapper>
+			{#if activeTab === "stats"}
+				<Transition>
+					<section class="mt-6 space-y-8">
+						<div class="card p-4">
+							<h2 class="font-bold">
+								{m.achievementRarityComparisonTitle()}
+							</h2>
+							<p class="text-surface-300 text-sm">
+								{m.achievementRarityComparisonDescription({
+									achievementName: achievement.name,
+									appName: achievement.app.name,
+								})}
+							</p>
+							<div class="max-h-[480px]">
+								<!-- Need to key, chartjs not updated when soft-navigating to a different achievement page -->
+								{#key achievement}
+									<canvas
+										bind:this={statsChart}
+										class="h-full w-full"
+									></canvas>
+								{/key}
+							</div>
+						</div>
 
-                        {#if isSignedIn}
-                            <!-- <div class="rounded-container border border-surface-700 bg-surface-800 p-4">
+						{#if isSignedIn}
+							<!-- <div class="rounded-container border border-surface-700 bg-surface-800 p-4">
                     <h2 class="font-bold">Achievement Activity</h2>
                     <p class="text-sm text-surface-300">
                         Your achievement unlocks around the time you
@@ -460,214 +459,214 @@
                                                     {/each}
                                                     </div>
                                                     </div> -->
-                        {/if}
+						{/if}
 
-                        <div class="card p-4">
-                            <h2 class="font-bold">
-                                {m.achievementOtherAchievementsTitle({
-                                    appName: achievement.app.name,
-                                })}
-                            </h2>
-                            <p class="text-surface-300 text-sm">
-                                {m.achievementOtherAchievementsDescription()}
-                            </p>
-                            <div class="mt-4">
-                                {#if gameAchievements}
-                                    <AchievementCards
-                                        achievements={[
-                                            ...gameAchievements.data.values(),
-                                        ]}
-                                        secondary
-                                    />
-                                {/if}
-                            </div>
-                        </div>
-                    </section>
-                </Transition>
-            {:else if activeTab === "friends"}
-                <Transition>
-                    <div class="mt-6 space-y-8">
-                        <FriendCards
-                            secondary
-                            hideLocked
-                            allAchievements={friendsWithAchievement}
-                            targetAchievement={achievement}
-                        />
-                    </div>
-                </Transition>
-            {:else if activeTab === "articles"}
-                <Transition>
-                    <section class="mt-6">
-                        {#await articles}
-                            <!-- Loading state -->
-                            <div class="text-surface-300 p-4 text-center">
-                                {m.achievementArticlesLoading()}
-                            </div>
-                        {:then res}
-                            {#if res}
-                                {@const { data: articleResult, error } = res}
-                                {#if error}
-                                    <div class="p-4 text-red-400">
-                                        {m.achievementArticlesError({
-                                            errorMessage: error.message,
-                                        })}
-                                    </div>
-                                {:else}
-                                    <section class="mt-6 space-y-8">
-                                        <!-- Steam Community Guides Card -->
-                                        <div class="card secondary p-4">
-                                            <h2 class="font-bold">
-                                                <NotebookText
-                                                    class="text-primary-500 inline"
-                                                />
-                                                {m.achievementArticlesSteamCommunityTitle()}
-                                            </h2>
-                                            <p class="text-surface-300 text-sm">
-                                                {m.achievementArticlesSteamCommunityDescription()}
-                                            </p>
-                                            <div class="mt-4 space-y-4">
-                                                {#each articleResult?.articles ?? [] as article}
-                                                    <div class="card p-4">
-                                                        <a
-                                                            href={`https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                        >
-                                                            <div
-                                                                class="flex gap-4"
-                                                            >
-                                                                <img
-                                                                    src={article.thumbnail ||
-                                                                        "/placeholder.svg"}
-                                                                    alt={article.title}
-                                                                    class="h-24 w-24 rounded object-cover"
-                                                                />
-                                                                <div>
-                                                                    <div
-                                                                        class="mb-1"
-                                                                    >
-                                                                        <h3
-                                                                            class="text-primary-500 font-bold"
-                                                                        >
-                                                                            {article.title}
-                                                                        </h3>
-                                                                        <span
-                                                                            class="text-surface-300 text-sm"
-                                                                        >
-                                                                            {article.author}
-                                                                        </span>
-                                                                    </div>
-                                                                    <p
-                                                                        class="text-surface-200 text-sm"
-                                                                    >
-                                                                        {article.description}
-                                                                    </p>
-                                                                    <!-- <a href={article.url} class="mt-2 inline-block text-xs text-primary-400 hover:underline">
+						<div class="card p-4">
+							<h2 class="font-bold">
+								{m.achievementOtherAchievementsTitle({
+									appName: achievement.app.name,
+								})}
+							</h2>
+							<p class="text-surface-300 text-sm">
+								{m.achievementOtherAchievementsDescription()}
+							</p>
+							<div class="mt-4">
+								{#if gameAchievements}
+									<AchievementCards
+										achievements={[
+											...gameAchievements.data.values(),
+										]}
+										secondary
+									/>
+								{/if}
+							</div>
+						</div>
+					</section>
+				</Transition>
+			{:else if activeTab === "friends"}
+				<Transition>
+					<div class="mt-6 space-y-8">
+						<FriendCards
+							secondary
+							hideLocked
+							allAchievements={friendsWithAchievement}
+							targetAchievement={achievement}
+						/>
+					</div>
+				</Transition>
+			{:else if activeTab === "articles"}
+				<Transition>
+					<section class="mt-6">
+						{#await articles}
+							<!-- Loading state -->
+							<div class="text-surface-300 p-4 text-center">
+								{m.achievementArticlesLoading()}
+							</div>
+						{:then res}
+							{#if res}
+								{@const { data: articleResult, error } = res}
+								{#if error}
+									<div class="p-4 text-red-400">
+										{m.achievementArticlesError({
+											errorMessage: error.message,
+										})}
+									</div>
+								{:else}
+									<section class="mt-6 space-y-8">
+										<!-- Steam Community Guides Card -->
+										<div class="card secondary p-4">
+											<h2 class="font-bold">
+												<NotebookText
+													class="text-primary-500 inline"
+												/>
+												{m.achievementArticlesSteamCommunityTitle()}
+											</h2>
+											<p class="text-surface-300 text-sm">
+												{m.achievementArticlesSteamCommunityDescription()}
+											</p>
+											<div class="mt-4 space-y-4">
+												{#each articleResult?.articles ?? [] as article}
+													<div class="card p-4">
+														<a
+															href={`https://steamcommunity.com/sharedfiles/filedetails/?id=${article.id}`}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															<div
+																class="flex gap-4"
+															>
+																<img
+																	src={article.thumbnail ||
+																		"/placeholder.svg"}
+																	alt={article.title}
+																	class="h-24 w-24 rounded object-cover"
+																/>
+																<div>
+																	<div
+																		class="mb-1"
+																	>
+																		<h3
+																			class="text-primary-500 font-bold"
+																		>
+																			{article.title}
+																		</h3>
+																		<span
+																			class="text-surface-300 text-sm"
+																		>
+																			{article.author}
+																		</span>
+																	</div>
+																	<p
+																		class="text-surface-200 text-sm"
+																	>
+																		{article.description}
+																	</p>
+																	<!-- <a href={article.url} class="mt-2 inline-block text-xs text-primary-400 hover:underline">
                                                                 Read More
                                                             </a> -->
-                                                                </div>
-                                                            </div>
-                                                        </a>
-                                                    </div>
-                                                {:else}
-                                                    <div
-                                                        class="p-4 text-surface-400"
-                                                    >
-                                                        {m.achievementArticlesNotFound()}
-                                                    </div>
-                                                {/each}
-                                            </div>
-                                        </div>
-                                        <!-- YouTube Video Guides Card -->
-                                        <div class="card secondary p-4">
-                                            <h2 class="font-bold">
-                                                <YouTube
-                                                    class="inline text-red-500"
-                                                />
-                                                {m.achievementArticlesYouTubeTitle()}
-                                            </h2>
-                                            <p class="text-surface-300 text-sm">
-                                                {m.achievementArticlesYouTubeDescription()}
-                                            </p>
-                                            <div class="mt-4 space-y-4">
-                                                {#each articleResult?.videos ?? [] as video}
-                                                    <div class="card p-4">
-                                                        <a
-                                                            href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                        >
-                                                            <div
-                                                                class="flex flex-col gap-4 md:flex-row"
-                                                            >
-                                                                <div
-                                                                    class="relative h-[135px] w-full flex-shrink-0 overflow-hidden rounded md:w-[240px]"
-                                                                >
-                                                                    <img
-                                                                        src="https://i.ytimg.com/vi/{video.videoId}/mqdefault.jpg"
-                                                                        alt={video.title}
-                                                                        class="h-full w-full object-cover"
-                                                                        width="240"
-                                                                        height="135"
-                                                                    />
-                                                                </div>
-                                                                <div
-                                                                    class="flex-1"
-                                                                >
-                                                                    <h3
-                                                                        class="text-primary-500 font-bold"
-                                                                    >
-                                                                        {video.title}
-                                                                    </h3>
-                                                                    <div
-                                                                        class="mb-1 flex items-center gap-2"
-                                                                    >
-                                                                        <!-- <img src={video.channelAvatar ||
+																</div>
+															</div>
+														</a>
+													</div>
+												{:else}
+													<div
+														class="p-4 text-surface-400"
+													>
+														{m.achievementArticlesNotFound()}
+													</div>
+												{/each}
+											</div>
+										</div>
+										<!-- YouTube Video Guides Card -->
+										<div class="card secondary p-4">
+											<h2 class="font-bold">
+												<YouTube
+													class="inline text-red-500"
+												/>
+												{m.achievementArticlesYouTubeTitle()}
+											</h2>
+											<p class="text-surface-300 text-sm">
+												{m.achievementArticlesYouTubeDescription()}
+											</p>
+											<div class="mt-4 space-y-4">
+												{#each articleResult?.videos ?? [] as video}
+													<div class="card p-4">
+														<a
+															href={`https://www.youtube.com/watch?v=${video.videoId}`}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															<div
+																class="flex flex-col gap-4 md:flex-row"
+															>
+																<div
+																	class="relative h-[135px] w-full flex-shrink-0 overflow-hidden rounded md:w-[240px]"
+																>
+																	<img
+																		src="https://i.ytimg.com/vi/{video.videoId}/mqdefault.jpg"
+																		alt={video.title}
+																		class="h-full w-full object-cover"
+																		width="240"
+																		height="135"
+																	/>
+																</div>
+																<div
+																	class="flex-1"
+																>
+																	<h3
+																		class="text-primary-500 font-bold"
+																	>
+																		{video.title}
+																	</h3>
+																	<div
+																		class="mb-1 flex items-center gap-2"
+																	>
+																		<!-- <img src={video.channelAvatar ||
                                                                         "/placeholder.svg"} alt={video.channel} width="20" height="20" class="rounded-full" /> -->
-                                                                        <span
-                                                                            class="text-surface-300 text-sm"
-                                                                        >
-                                                                            {video.channel}
-                                                                        </span>
-                                                                        <!-- <span class="text-xs text-surface-500">
+																		<span
+																			class="text-surface-300 text-sm"
+																		>
+																			{video.channel}
+																		</span>
+																		<!-- <span class="text-xs text-surface-500">
                                                                     {video.date}
                                                                 </span> -->
-                                                                    </div>
-                                                                    <p
-                                                                        class="text-surface-200 mb-3 text-sm"
-                                                                    >
-                                                                        {video.description}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </a>
-                                                    </div>
-                                                {:else}
-                                                    <div
-                                                        class="p-4 text-surface-400"
-                                                    >
-                                                        {m.achievementArticlesNotFound()}
-                                                    </div>
-                                                {/each}
-                                            </div>
-                                        </div>
-                                    </section>
-                                {/if}
-                            {/if}
-                        {:catch error}
-                            <div class="p-4 text-red-400">
-                                {m.achievementArticlesError({
-                                    errorMessage: error.message,
-                                })}
-                            </div>
-                        {/await}
-                    </section>
-                </Transition>
-            {/if}
-        </TransitionWrapper>
-    </div>
+																	</div>
+																	<p
+																		class="text-surface-200 mb-3 text-sm"
+																	>
+																		{video.description}
+																	</p>
+																</div>
+															</div>
+														</a>
+													</div>
+												{:else}
+													<div
+														class="p-4 text-surface-400"
+													>
+														{m.achievementArticlesNotFound()}
+													</div>
+												{/each}
+											</div>
+										</div>
+									</section>
+								{/if}
+							{/if}
+						{:catch error}
+							<div class="p-4 text-red-400">
+								{m.achievementArticlesError({
+									errorMessage: error.message,
+								})}
+							</div>
+						{/await}
+					</section>
+				</Transition>
+			{/if}
+		</TransitionWrapper>
+	</div>
 
-    <!-- <div class="mt-8 mb-8">
+	<!-- <div class="mt-8 mb-8">
         <h2 class="mb-4 text-2xl font-bold">You Might Also Like</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {#each [...(gameAchievements?.values() ?? [])].slice(1, 5) as achievement}

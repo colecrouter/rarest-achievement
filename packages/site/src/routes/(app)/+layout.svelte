@@ -1,36 +1,36 @@
 <script lang="ts">
-    import { page } from "$app/state";
-    import Transition from "$lib/Transition.svelte";
-    import TransitionWrapper from "$lib/TransitionWrapper.svelte";
-    import { locales, localizeHref } from "$lib/paraglide/runtime";
-    import "../../app.css";
-    import Footer from "./Footer.svelte";
-    import Navbar from "./Navbar.svelte";
+	import { page } from "$app/state";
+	import Transition from "$lib/Transition.svelte";
+	import TransitionWrapper from "$lib/TransitionWrapper.svelte";
+	import { locales, localizeHref } from "$lib/paraglide/runtime";
+	import "../../app.css";
+	import Footer from "./Footer.svelte";
+	import Navbar from "./Navbar.svelte";
 
-    const { children, data } = $props();
+	const { children, data } = $props();
 </script>
 
 <!-- Alternate language links -->
 <div style="display: none">
-    {#each locales as locale}
-        <a rel="alternate" href={localizeHref(page.url.pathname, { locale })}>
-            {locale}
-        </a>
-    {/each}
+	{#each locales as locale}
+		<a rel="alternate" href={localizeHref(page.url.pathname, { locale })}>
+			{locale}
+		</a>
+	{/each}
 </div>
 
 <div class="flex min-h-screen flex-col">
-    <Navbar user={data.loggedIn} />
+	<Navbar user={data.loggedIn} />
 
-    <TransitionWrapper>
-        {#key data.paths.join("/")}
-            <Transition>
-                <div class="grow">
-                    {@render children()}
-                </div>
-            </Transition>
-        {/key}
-    </TransitionWrapper>
+	<TransitionWrapper>
+		{#key data.paths.join("/")}
+			<Transition>
+				<div class="grow">
+					{@render children()}
+				</div>
+			</Transition>
+		{/key}
+	</TransitionWrapper>
 
-    <Footer />
+	<Footer />
 </div>

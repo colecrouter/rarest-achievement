@@ -1,58 +1,75 @@
 // Centralized fixtures and minimal type helpers for AppRepository tests
 
 import type { SteamStoreAPI } from "../../src";
-import type {
-    AppDetailsData,
-    GetAppDetailsQuery,
-    GetAppDetailsResponse,
-} from "../../src/repositories/api/store/appdetails";
-import type { GetAppReviewsQuery, GetAppReviewsResponse } from "../../src/repositories/api/store/appreviews";
+import type { AppDetailsData, GetAppDetailsResponse } from "../../src/repositories/api/store/appdetails";
+import type { GetAppReviewsResponse } from "../../src/repositories/api/store/appreviews";
 import type { SearchAppsResponse } from "../../src/repositories/api/store/searchapps";
 
 export class MockSteamStoreAPIClient implements SteamStoreAPI {
-    // internal stores for fixture responses
-    private appDetails = new Map<number, GetAppDetailsResponse>();
-    private appReviews = new Map<number, GetAppReviewsResponse>();
-    private searchResults = new Map<string, SearchAppsResponse>();
+	// internal stores for fixture responses
+	private appDetails = new Map<number, GetAppDetailsResponse>();
+	private appReviews = new Map<number, GetAppReviewsResponse>();
+	private searchResults = new Map<string, SearchAppsResponse>();
 
-    /**
-     * Sets the response for getAppDetails for a given app id
-     */
-    setAppDetails(app: number, response: GetAppDetailsResponse) {
-        this.appDetails.set(app, response as GetAppDetailsResponse);
-    }
+	/**
+	 * Sets the response for getAppDetails for a given app id
+	 */
+	setAppDetails(app: number, response: GetAppDetailsResponse) {
+		this.appDetails.set(app, response as GetAppDetailsResponse);
+	}
 
-    async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
-        app: number,
-        options?: Omit<GetAppDetailsQuery<T>, "appids">,
-    ): Promise<GetAppDetailsResponse<T>> {
-        return this.appDetails.get(app) as GetAppDetailsResponse<T>;
-    }
+	async getAppDetails<T extends Array<keyof AppDetailsData> | undefined>(
+		app: number,
+		// Accept and ignore options to match production signature
+		_opts?: unknown,
+	): Promise<GetAppDetailsResponse<T>> {
+		// Return a safe default keyed response when not pre-seeded to avoid runtime errors
+		const existing = this.appDetails.get(app) as GetAppDetailsResponse<T> | undefined;
+		if (existing) return existing;
+		// Default to an object with a null data payload; production code tolerates null and skips estimation
+		// success must be the literal 1 in production API, but our type uses `true` in tests elsewhere.
+		// Use the same shape as seeded responses with data: null.
+		return {
+			[app]: { success: true as const, data: null as unknown as AppDetailsData },
+		} as GetAppDetailsResponse<T>;
+	}
 
-    /**
-     * Sets the response for getAppReviews for a given app id
-     */
-    setAppReviews(app: number, response: GetAppReviewsResponse) {
-        this.appReviews.set(app, response);
-    }
+	/**
+	 * Sets the response for getAppReviews for a given app id
+	 */
+	setAppReviews(app: number, response: GetAppReviewsResponse) {
+		this.appReviews.set(app, response);
+	}
 
-    async getAppReviews(
-        app: number,
-        options?: Omit<GetAppReviewsQuery, "json">,
-    ): Promise<GetAppReviewsResponse | null> {
-        return this.appReviews.get(app) || null;
-    }
+	async getAppReviews(app: number): Promise<GetAppReviewsResponse | null> {
+		const existing = this.appReviews.get(app);
+		if (existing) return existing;
+		// Provide a minimal, valid default summary so estimation can proceed without emitting test warnings.
+		return {
+			success: 1,
+			query_summary: {
+				num_reviews: 0,
+				review_score: 0,
+				review_score_desc: "",
+				total_positive: 0,
+				total_negative: 0,
+				total_reviews: 0,
+			},
+			reviews: [],
+			cursor: "*",
+		} satisfies GetAppReviewsResponse;
+	}
 
-    /**
-     * Sets the response for searchApps for a given query
-     */
-    setSearchApps(query: string, response: SearchAppsResponse) {
-        this.searchResults.set(query, response);
-    }
+	/**
+	 * Sets the response for searchApps for a given query
+	 */
+	setSearchApps(query: string, response: SearchAppsResponse) {
+		this.searchResults.set(query, response);
+	}
 
-    async searchApps(query: string): Promise<SearchAppsResponse> {
-        return this.searchResults.get(query) || [];
-    }
+	async searchApps(query: string): Promise<SearchAppsResponse> {
+		return this.searchResults.get(query) || [];
+	}
 }
 
 // // Shared base used to craft valid AppDetailsData rows

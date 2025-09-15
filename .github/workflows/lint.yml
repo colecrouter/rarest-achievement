@@ -13,7 +13,7 @@ jobs:
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
-          version: 1.9.4
+          version: 2.2.2
       - name: Copy /packages/site/.env.example to /packages/site/.env
         run: cp packages/site/.env.example packages/site/.env
       - name: Install dependencies

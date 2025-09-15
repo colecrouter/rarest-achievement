@@ -1,441 +1,385 @@
-import type { SQL } from "drizzle-orm";
-import { asc, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { asc, countDistinct, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
-    Attempt,
-    type AttemptStatus,
-    type ProjectDB,
-    type SteamAuthenticatedAPI,
-    getFetchManager,
-    ownedGames,
-    users,
+	Attempt,
+	type AttemptStatus,
+	getFetchManager,
+	ownedGames,
+	type ProjectDB,
+	type SteamAuthenticatedAPI,
+	users,
 } from "../..";
 import { SteamUser, type SteamUserRaw } from "../../models";
 import type { OwnedGame } from "../api/steampowered/owned";
 import {
-    type ComposableQueryOptions,
-    type ComposableQueryResult,
-    type ComposableRepository,
-    type SubqueryConsumer,
-    createQueryResult,
+	type ComposableQueryOptions,
+	type ComposableQueryResult,
+	type ComposableRepository,
+	createQueryResult,
+	type RequiredSubquery,
+	type SubqueryConsumer,
 } from "../composable";
+import { RequiredEntityStore } from "../entitySubqueries";
 import type { Repository } from "../repository";
+import { excluded } from "./operators";
 import { safeInsert } from "./utils";
 
 type UserSortMethod = "id";
 
-interface UserSortFilters {
-    id: string;
-}
+// Precise CTE type for "required users" subquery (selects a single "id" column)
+type RequiredUsersSubquery = WithSubqueryWithSelection<{ id: typeof users.id }, string>;
 
-class UserQueryComposer implements SubqueryConsumer<SteamUser, UserSortMethod> {
-    private userIds = new Set<string>();
-    private requiredUserSubquery: SQL | undefined;
-    /** If set, treat rows with updated_at older than this Date as missing */
-    private freshnessCutoff: Date | undefined;
+class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryConsumer<SteamUser, UserSortMethod> {
+	private userIds = new Set<string>();
+	private requiredUserSubquery?: RequiredUsersSubquery;
+	/** If set, treat rows with updated_at older than this Date as missing */
+	private freshnessCutoff: Date | undefined;
 
-    constructor(
-        private db: ProjectDB,
-        private steamApi: SteamAuthenticatedAPI,
-    ) {}
+	constructor(
+		private db: ProjectDB,
+		private steamApi: SteamAuthenticatedAPI,
+	) {
+		super(db, { user: users.id });
+	}
 
-    /**
-     * Filter by specific user IDs
-     */
-    withUserIds(userIds: string | Iterable<string>): this {
-        if (typeof userIds === "string") {
-            this.userIds.add(userIds);
-        } else {
-            for (const id of userIds) {
-                this.userIds.add(id);
-            }
-        }
+	/**
+	 * Filter by specific user IDs
+	 */
+	withUserIds(userIds: string | Iterable<string>): this {
+		if (typeof userIds === "string") {
+			this.userIds.add(userIds);
+		} else {
+			for (const id of userIds) {
+				this.userIds.add(id);
+			}
+		}
 
-        return this;
-    }
+		return this;
+	}
 
-    /**
-     * Accept a subquery that defines which user IDs are required
-     */
-    withRequiredEntitySubquery(entityType: string, subquery: SQL): this {
-        if (entityType === "user") {
-            this.requiredUserSubquery = subquery;
-        }
-        return this;
-    }
+	/**
+	 * Accept a subquery that defines which user IDs are required
+	 */
+	withRequiredEntitySubquery(entityType: string, subquery: RequiredSubquery): this {
+		if (entityType === "user") {
+			// Narrow the generic RequiredSubquery to the expected selection shape for users
+			this.requiredUserSubquery = subquery as RequiredUsersSubquery;
+		}
+		return this;
+	}
 
-    /**
-     * Provide a freshness cutoff (ms since epoch). Any existing DB row with updated_at < cutoff
-     * is considered stale and will be re-fetched by ensureDataExists. If not provided, existing
-     * rows are accepted regardless of age (current behavior).
-     */
-    withCutoff(cutoff: Date): this {
-        this.freshnessCutoff = cutoff;
-        return this;
-    }
+	/**
+	 * Provide a freshness cutoff (ms since epoch). Any existing DB row with updated_at < cutoff
+	 * is considered stale and will be re-fetched by ensureDataExists. If not provided, existing
+	 * rows are accepted regardless of age (current behavior).
+	 */
+	withCutoff(cutoff: Date): this {
+		this.freshnessCutoff = cutoff;
+		return this;
+	}
 
-    /**
-     * Build and execute the composed query
-     */
-    async build(options: ComposableQueryOptions<UserSortMethod> = {}): Promise<ComposableQueryResult<SteamUser>> {
-        // Ensure data exists first
-        const ensureResult = await this.ensureDataExists();
-        if (ensureResult.error) {
-            console.warn("Failed to ensure all user data exists, continuing with existing data:", ensureResult.error);
-        }
+	/**
+	 * Build and execute the composed query
+	 */
+	async build(options: ComposableQueryOptions<UserSortMethod> = {}): Promise<ComposableQueryResult<SteamUser>> {
+		// Ensure data exists first
+		const ensureResult = await this.ensureDataExists();
+		if (ensureResult.error)
+			console.warn(`[UserRepository] Failed to ensure all data exists: ${ensureResult.error.message}`);
 
-        // Execute main query
-        let results: SteamUser[];
-        let queryError: Error | null = null;
-        try {
-            results = await this.executeMainQuery(options);
-        } catch (error) {
-            queryError = error as Error;
-            console.warn("Error during User query, returning partial results:", error);
-            results = []; // Return empty results on error
-        }
+		// Execute main query
+		const items = await this.executeDirectQuery(options);
 
-        // Combine errors using Attempt chaining
-        const finalResult = ensureResult.and(Attempt.from(undefined, queryError));
-        return createQueryResult(results, options.cursor, finalResult.error);
-    }
+		// Combine errors using Attempt chaining
+		return createQueryResult(items, options.cursor, ensureResult.error);
+	}
 
-    /**
-     * Execute a COUNT over the logical result set produced by the current composition.
-     * - Ensures data before read (calls ensureDataExists)
-     * - Reuses the same filters as build(): withUserIds(); additionally, if a required-user subquery
-     *   was provided, counts DISTINCT users present in that subquery intersected with existing users.
-     * - No ordering or pagination; COUNT only.
-     */
-    async count(): Promise<Attempt<number, AttemptStatus>> {
-        // Ensure-before-read: capture error but attempt COUNT regardless
-        let ensureError: Error | null = null;
-        try {
-            const ensureRes = await this.ensureDataExists();
-            ensureError = ensureRes.error;
-        } catch (err) {
-            ensureError = err as Error;
-        }
+	/**
+	 * Execute a COUNT over the logical result set produced by the current composition.
+	 * - Ensures data before read (calls ensureDataExists)
+	 * - Reuses the same filters as build(): withUserIds(); additionally, if a required-user subquery
+	 *   was provided, counts DISTINCT users present in that subquery intersected with existing users.
+	 * - No ordering or pagination; COUNT only.
+	 */
+	async count(): Promise<Attempt<number, AttemptStatus>> {
+		// Ensure-before-read: capture error but attempt COUNT regardless
 
-        try {
-            // If a required user subquery is specified, count distinct users in that subquery that exist in users
-            if (this.requiredUserSubquery) {
-                const requiredUsers = sql`(${this.requiredUserSubquery}) AS required_users`;
+		const ensureRes = await this.ensureDataExists();
+		if (ensureRes.error)
+			console.warn(`[UserRepository] Failed to ensure all data exists: ${ensureRes.error.message}`);
 
-                // SELECT COUNT(DISTINCT users.id)
-                // FROM (subquery) AS required_users
-                // INNER JOIN users ON users.id = required_users.user_id
-                // [AND users.id IN (...)] if withUserIds() was also provided
-                let q = this.db
-                    .select({
-                        cnt: sql<number>`count(distinct ${users.id})`,
-                    })
-                    .from(requiredUsers)
-                    .innerJoin(users, eq(users.id, sql`required_users.user_id`))
-                    .$dynamic();
+		// If a required user subquery is specified, count distinct users in that subquery that exist in users
+		if (this.requiredUserSubquery) {
+			let q = this.db
+				.select({
+					cnt: countDistinct(users.id),
+				})
+				.from(this.requiredUserSubquery)
+				.innerJoin(users, eq(users.id, this.requiredUserSubquery.id))
+				.$dynamic();
 
-                if (this.userIds.size > 0) {
-                    q = q.where(inArray(users.id, Array.from(this.userIds)));
-                }
+			if (this.userIds.size > 0) {
+				q = q.where(inArray(users.id, Array.from(this.userIds)));
+			}
 
-                const rows = await q;
-                const cnt = rows[0]?.cnt ?? 0;
-                return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
-            }
+			const rows = await q;
+			const cnt = rows[0]?.cnt ?? 0;
+			return ensureRes.map(() => cnt);
+		}
 
-            // Otherwise, base count from users with optional explicit ID filter
-            let q = this.db
-                .select({
-                    cnt: sql<number>`count(distinct ${users.id})`,
-                })
-                .from(users)
-                .$dynamic();
+		// Otherwise, base count from users with optional explicit ID filter
+		let q = this.db
+			.select({
+				cnt: countDistinct(users.id),
+			})
+			.from(users)
+			.$dynamic();
 
-            if (this.userIds.size > 0) {
-                q = q.where(inArray(users.id, Array.from(this.userIds)));
-            }
+		if (this.userIds.size > 0) {
+			q = q.where(inArray(users.id, Array.from(this.userIds)));
+		}
 
-            const rows = await q;
-            const cnt = rows[0]?.cnt ?? 0;
-            return ensureError ? Attempt.partial(cnt, ensureError) : Attempt.ok(cnt);
-        } catch (err) {
-            return Attempt.fail<number>(err as Error);
-        }
-    }
+		const rows = await q;
+		const cnt = rows[0]?.cnt ?? 0;
+		return ensureRes.map(() => cnt);
+	}
 
-    /**
-     * Ensure user data exists in the database, fetching from API if needed
-     */
-    async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
-        // Find missing users using subquery pattern when available
-        // Note: Database errors (SQL issues) should bubble up, not be caught
-        const missingUserIds = await this.findMissingUsers();
+	/**
+	 * Ensure user data exists in the database, fetching from API if needed
+	 */
+	async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
+		// Find missing users using subquery pattern when available
+		// Note: Database errors (SQL issues) should bubble up, not be caught
+		const missingUserIds = await this.findMissingUsers();
 
-        if (missingUserIds.length === 0) {
-            return Attempt.ok(undefined);
-        }
+		if (missingUserIds.length === 0) {
+			return Attempt.ok(undefined);
+		}
 
-        // Fetch and insert missing user data
-        // Note: API errors are handled inside fetchAndUpsertUsers, DB errors bubble up
-        return await this.fetchAndUpsertUsers(missingUserIds);
-    }
+		// Fetch and insert missing user data
+		// Note: API errors are handled inside fetchAndUpsertUsers, DB errors bubble up
+		return await this.fetchAndUpsertUsers(missingUserIds);
+	}
 
-    /**
-     * Find user IDs that are missing from the database
-     */
-    private async findMissingUsers(): Promise<string[]> {
-        // If we have a required user subquery, first collect those IDs, then filter by existing fresh rows.
-        if (this.requiredUserSubquery) {
-            // Anti-join strategy to avoid materializing a large IN (...) list.
-            // We LEFT JOIN users; rows where users.id IS NULL are missing entirely.
-            // If a freshness cutoff is provided, rows with users.updated_at < cutoff are treated as missing.
-            const staleOrMissingCondition = this.freshnessCutoff
-                ? or(isNull(users.id), lt(users.updated_at, this.freshnessCutoff))
-                : isNull(users.id);
+	/**
+	 * Find user IDs that are missing from the database
+	 */
+	private async findMissingUsers(): Promise<string[]> {
+		// If we have a required user subquery, first collect those IDs, then filter by existing fresh rows.
+		if (this.requiredUserSubquery) {
+			// Anti-join strategy to avoid materializing a large IN (...) list.
+			// We LEFT JOIN users; rows where users.id IS NULL are missing entirely.
+			// If a freshness cutoff is provided, rows with users.updated_at < cutoff are treated as missing.
+			const staleOrMissingCondition = this.freshnessCutoff
+				? or(isNull(users.id), lt(users.updated_at, this.freshnessCutoff))
+				: isNull(users.id);
 
-            const missingRows = await this.db
-                .select({ user_id: sql<string>`required_users.user_id` })
-                .from(sql`(${this.requiredUserSubquery}) AS required_users`)
-                .leftJoin(users, eq(users.id, sql`required_users.user_id`))
-                .where(staleOrMissingCondition);
+			const missingRows = await this.db
+				.select({ user_id: this.requiredUserSubquery.id })
+				.from(this.requiredUserSubquery)
+				.leftJoin(users, eq(users.id, this.requiredUserSubquery.id))
+				.where(staleOrMissingCondition);
 
-            return missingRows.map((r) => r.user_id);
-        }
+			return missingRows.map((r) => r.user_id);
+		}
 
-        // Explicit user IDs path
-        if (this.userIds.size > 0) {
-            const explicitIds = Array.from(this.userIds);
-            if (explicitIds.length === 0) return [];
-            let existingQ = this.db
-                .select({ id: users.id, updated_at: users.updated_at })
-                .from(users)
-                .where(inArray(users.id, explicitIds))
-                .$dynamic();
-            if (this.freshnessCutoff) existingQ = existingQ.where(gte(users.updated_at, this.freshnessCutoff));
-            const existing = await existingQ;
-            const existingFresh = new Set(existing.map((r) => r.id));
-            return explicitIds.filter((id) => !existingFresh.has(id));
-        }
+		// Explicit user IDs path
+		if (this.userIds.size > 0) {
+			const explicitIds = Array.from(this.userIds);
+			if (explicitIds.length === 0) return [];
+			let existingQ = this.db
+				.select({ id: users.id, updated_at: users.updated_at })
+				.from(users)
+				.where(inArray(users.id, explicitIds))
+				.$dynamic();
+			if (this.freshnessCutoff) existingQ = existingQ.where(gte(users.updated_at, this.freshnessCutoff));
+			const existing = await existingQ;
+			const existingFresh = new Set(existing.map((r) => r.id));
+			return explicitIds.filter((id) => !existingFresh.has(id));
+		}
 
-        return [];
-    }
+		return [];
+	}
 
-    /**
-     * Fetch and upsert user data from Steam API
-     */
-    private async fetchAndUpsertUsers(missingUserIds: string[]): Promise<Attempt<void, AttemptStatus>> {
-        if (missingUserIds.length === 0) {
-            return Attempt.ok(undefined);
-        }
+	/**
+	 * Fetch and upsert user data from Steam API
+	 */
+	private async fetchAndUpsertUsers(missingUserIds: string[]): Promise<Attempt<void, AttemptStatus>> {
+		if (missingUserIds.length === 0) {
+			return Attempt.ok(undefined);
+		}
 
-        console.debug(`Missing users: ${missingUserIds.length}`);
+		console.debug(`[UserRepository] Requesting ${missingUserIds.length} entries`);
 
-        const validData = [];
+		const validData = [];
 
-        // Fetch user summaries
-        const missingPlayerSummaries = await Attempt.try(() => {
-            return this.steamApi.getPlayerSummaries(missingUserIds);
-        });
+		// Fetch user summaries
+		const missingPlayerSummaries = await Attempt.try(() => {
+			return this.steamApi.getPlayerSummaries(missingUserIds);
+		});
 
-        // Fetch owned games for each user
-        getFetchManager().reset({ maxFetches: 150 }); // We'll say max 150 users for now (who am I kidding, I am making this up as I go)
-        const missingOwnedGames = await Attempt.all(
-            missingUserIds.map((userId) => {
-                return this.steamApi
-                    .getOwnedGames({ steamid: userId, include_played_free_games: true })
-                    .then((d) => (d && "games" in d.response && d.response.games ? d.response.games : []))
-                    .then((d) => ({ user: userId, games: d }));
-            }),
-        );
+		// Fetch owned games for each user
+		getFetchManager().reset({ maxFetches: 150 }); // We'll say max 150 users for now (who am I kidding, I am making this up as I go)
+		const missingOwnedGames = await Attempt.all(
+			missingUserIds.map((userId) => {
+				return this.steamApi
+					.getOwnedGames({ steamid: userId, include_played_free_games: true })
+					.then((d) => (d && "games" in d.response && d.response.games ? d.response.games : []))
+					.then((d) => ({ user: userId, games: d }));
+			}),
+		);
 
-        // Combine user data
-        for (const userId of missingUserIds) {
-            const userData = missingPlayerSummaries.data?.response.players.find((u) => u.steamid === userId);
-            const ownedGamesData = missingOwnedGames.data.find((o) => o?.user === userId);
+		// Combine user data
+		for (const userId of missingUserIds) {
+			const userData = missingPlayerSummaries.data?.response.players.find((u) => u.steamid === userId);
+			const ownedGamesData = missingOwnedGames.data.find((o) => o?.user === userId);
 
-            if (userData) {
-                validData.push({
-                    id: userData.steamid,
-                    user: userData,
-                    ownedGames: ownedGamesData ? ownedGamesData.games : [],
-                });
-            }
-        }
+			if (userData) {
+				validData.push({
+					id: userData.steamid,
+					user: userData,
+					ownedGames: ownedGamesData ? ownedGamesData.games : [],
+				});
+			}
+		}
 
-        console.debug(`Users to insert: ${validData.length}`);
+		console.debug(`[UserRepository] Upsert ${validData.length} entries`);
 
-        // Insert missing data into the database
-        // Note: Database errors should bubble up, not be caught
-        await Promise.all([
-            safeInsert(this.db, validData, (u) =>
-                this.db
-                    .insert(users)
-                    .values(
-                        u.map((data) => ({
-                            id: data.id,
-                            data: data.user,
-                            updated_at: new Date(),
-                        })),
-                    )
-                    .onConflictDoUpdate({
-                        target: users.id,
-                        set: {
-                            data: sql`excluded.data`,
-                            updated_at: new Date(),
-                        },
-                    }),
-            ),
-            safeInsert(
-                this.db,
-                validData.flatMap((d) =>
-                    d.ownedGames.map((g) => ({
-                        user_id: d.id,
-                        ownedGames: g,
-                    })),
-                ),
-                (u) =>
-                    this.db
-                        .insert(ownedGames)
-                        .values(
-                            u.map((data) => ({
-                                user_id: data.user_id,
-                                app_id: data.ownedGames.appid,
-                                last_played_at: data.ownedGames.rtime_last_played
-                                    ? new Date(data.ownedGames.rtime_last_played * 1000) // Convert seconds to milliseconds
-                                    : null,
-                                playtime_2w_minutes: data.ownedGames.playtime_2weeks ?? null,
-                                playtime_total_minutes: data.ownedGames.playtime_forever ?? null,
-                            })),
-                        )
-                        .onConflictDoUpdate({
-                            target: [ownedGames.user_id, ownedGames.app_id],
-                            set: {
-                                last_played_at: sql`excluded.last_played_at`,
-                                playtime_2w_minutes: sql`excluded.playtime_last_two_weeks`,
-                                playtime_total_minutes: sql`excluded.playtime_total`,
-                            },
-                        }),
-            ),
-        ]);
+		// Insert missing data into the database
+		// Note: Database errors should bubble up, not be caught
+		await Promise.all([
+			safeInsert(this.db, validData, (u) =>
+				this.db
+					.insert(users)
+					.values(
+						u.map((data) => ({
+							id: data.id,
+							data: data.user,
+							updated_at: new Date(),
+						})),
+					)
+					.onConflictDoUpdate({
+						target: users.id,
+						set: {
+							data: excluded(users.data),
+							updated_at: new Date(),
+						},
+					}),
+			),
+			safeInsert(
+				this.db,
+				validData.flatMap((d) =>
+					d.ownedGames.map((g) => ({
+						user_id: d.id,
+						ownedGames: g,
+					})),
+				),
+				(u) =>
+					this.db
+						.insert(ownedGames)
+						.values(
+							u.map((data) => ({
+								user_id: data.user_id,
+								app_id: data.ownedGames.appid,
+								last_played_at: data.ownedGames.rtime_last_played
+									? new Date(data.ownedGames.rtime_last_played * 1000) // Convert seconds to milliseconds
+									: null,
+								playtime_2w_minutes: data.ownedGames.playtime_2weeks ?? null,
+								playtime_total_minutes: data.ownedGames.playtime_forever ?? null,
+							})),
+						)
+						.onConflictDoUpdate({
+							target: [ownedGames.user_id, ownedGames.app_id],
+							set: {
+								last_played_at: excluded(ownedGames.last_played_at),
+								playtime_2w_minutes: excluded(ownedGames.playtime_2w_minutes),
+								playtime_total_minutes: excluded(ownedGames.playtime_total_minutes),
+							},
+						}),
+			),
+		]);
 
-        // Combine errors from both API calls using Attempt chaining
-        const combinedResult = missingPlayerSummaries.and(missingOwnedGames.map(() => undefined));
-        return combinedResult;
-    }
+		console.debug(`[UserRepository] Upsert ${validData.length} entries`);
 
-    /**
-     * Execute the main user query
-     */
-    private async executeMainQuery(options: ComposableQueryOptions<UserSortMethod>): Promise<SteamUser[]> {
-        const sortDir = options.sort?.direction === "desc" ? desc : asc;
-        const sortMethod = users.id; // Currently only "id" is supported
+		// Combine errors from both API calls using Attempt chaining
+		const combinedResult = missingPlayerSummaries.and(missingOwnedGames.map(() => undefined));
+		return combinedResult;
+	}
 
-        // First, get the paginated users
-        let userQuery = this.db
-            .select({
-                id: users.id,
-                data: users.data,
-            })
-            .from(users)
-            .orderBy(sortDir(sortMethod))
-            .$dynamic();
+	/**
+	 * Execute the primary (direct) user query for current composition state.
+	 */
+	private async executeDirectQuery(options: ComposableQueryOptions<UserSortMethod>): Promise<SteamUser[]> {
+		const sortDir = options.sort?.direction === "desc" ? desc : asc;
+		const sortMethod = users.id; // Only supported sort currently
 
-        // Apply user ID filtering
-        if (this.userIds.size > 0) {
-            userQuery = userQuery.where(inArray(users.id, Array.from(this.userIds)));
-        }
+		let userQuery = this.db
+			.select({ id: users.id, data: users.data })
+			.from(users)
+			.orderBy(sortDir(sortMethod))
+			.$dynamic();
 
-        // Apply pagination to users only
-        if (options.limit !== undefined) {
-            userQuery = userQuery.limit(options.limit);
-        }
-        if (options.cursor !== undefined) {
-            userQuery = userQuery.offset(options.cursor);
-        }
+		if (this.userIds.size > 0) {
+			userQuery = userQuery.where(inArray(users.id, Array.from(this.userIds)));
+		}
+		if (options.limit !== undefined) userQuery = userQuery.limit(options.limit);
+		if (options.cursor !== undefined) userQuery = userQuery.offset(options.cursor);
 
-        const userRows = await userQuery;
+		const userRows = await userQuery;
+		if (userRows.length === 0) return [];
 
-        // If no users found, return empty array
-        if (userRows.length === 0) {
-            return [];
-        }
+		let userIdsSubquery = this.db.select({ id: users.id }).from(users).orderBy(sortDir(sortMethod)).$dynamic();
+		if (this.userIds.size > 0) userIdsSubquery = userIdsSubquery.where(inArray(users.id, Array.from(this.userIds)));
+		if (options.limit !== undefined) userIdsSubquery = userIdsSubquery.limit(options.limit);
+		if (options.cursor !== undefined) userIdsSubquery = userIdsSubquery.offset(options.cursor);
 
-        // Now get all owned games for these users using a subquery to avoid parameter limits
-        // Create a subquery that matches the same user filtering and pagination as the main query
-        let userIdsSubquery = this.db.select({ id: users.id }).from(users).orderBy(sortDir(sortMethod)).$dynamic();
+		const ownedGamesRows = await this.db
+			.select({
+				user_id: ownedGames.user_id,
+				app_id: ownedGames.app_id,
+				playtime_total_minutes: ownedGames.playtime_total_minutes,
+				playtime_2w_minutes: ownedGames.playtime_2w_minutes,
+				last_played_at: ownedGames.last_played_at,
+			})
+			.from(ownedGames)
+			.where(inArray(ownedGames.user_id, userIdsSubquery))
+			.orderBy(asc(ownedGames.user_id), asc(ownedGames.app_id));
 
-        // Apply the same user ID filtering as the main query
-        if (this.userIds.size > 0) {
-            userIdsSubquery = userIdsSubquery.where(inArray(users.id, Array.from(this.userIds)));
-        }
+		const userMap = new Map<string, { data: SteamUserRaw; ownedApps: OwnedGame<false>[] }>();
+		for (const row of userRows) {
+			userMap.set(row.id, { data: row.data, ownedApps: [] });
+		}
+		for (const game of ownedGamesRows) {
+			const entry = userMap.get(game.user_id);
+			if (entry) {
+				entry.ownedApps.push({
+					appid: game.app_id,
+					playtime_forever: game.playtime_total_minutes ?? undefined,
+					playtime_2weeks: game.playtime_2w_minutes ?? undefined,
+					rtime_last_played: game.last_played_at ? game.last_played_at.getTime() / 1000 : undefined,
+				});
+			}
+		}
 
-        // Apply the same pagination as the main query
-        if (options.limit !== undefined) {
-            userIdsSubquery = userIdsSubquery.limit(options.limit);
-        }
-        if (options.cursor !== undefined) {
-            userIdsSubquery = userIdsSubquery.offset(options.cursor);
-        }
-
-        const ownedGamesQuery = this.db
-            .select({
-                user_id: ownedGames.user_id,
-                app_id: ownedGames.app_id,
-                playtime_total_minutes: ownedGames.playtime_total_minutes,
-                playtime_2w_minutes: ownedGames.playtime_2w_minutes,
-                last_played_at: ownedGames.last_played_at,
-            })
-            .from(ownedGames)
-            .where(inArray(ownedGames.user_id, userIdsSubquery))
-            .orderBy(asc(ownedGames.user_id), asc(ownedGames.app_id));
-
-        const ownedGamesRows = await ownedGamesQuery;
-
-        // Group results by user_id and construct SteamUser objects
-        const userMap = new Map<string, { data: SteamUserRaw; ownedApps: OwnedGame<false>[] }>();
-
-        // Initialize all users in the map
-        for (const userRow of userRows) {
-            userMap.set(userRow.id, {
-                data: userRow.data,
-                ownedApps: [],
-            });
-        }
-
-        // Add owned games to their respective users
-        for (const gameRow of ownedGamesRows) {
-            const user = userMap.get(gameRow.user_id);
-            if (user) {
-                user.ownedApps.push({
-                    appid: gameRow.app_id,
-                    playtime_forever: gameRow.playtime_total_minutes ?? undefined,
-                    playtime_2weeks: gameRow.playtime_2w_minutes ?? undefined,
-                    rtime_last_played: gameRow.last_played_at ? gameRow.last_played_at.getTime() / 1000 : undefined, // Convert to seconds
-                });
-            }
-        }
-
-        // Convert map to SteamUser objects
-        return userMap
-            .values()
-            .map(({ data, ownedApps }) => new SteamUser({ data, ownedApps }))
-            .toArray();
-    }
+		return userMap
+			.values()
+			.map(({ data, ownedApps }) => new SteamUser({ data, ownedApps }))
+			.toArray();
+	}
 }
 
 export class UserRepository
-    implements
-        Repository<SteamUser, UserSortFilters, UserSortMethod>,
-        ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
+	implements Repository<SteamUser, UserSortMethod>, ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
 {
-    constructor(
-        private sqlite: ProjectDB,
-        private steamApi: SteamAuthenticatedAPI,
-    ) {}
+	constructor(
+		private sqlite: ProjectDB,
+		private steamApi: SteamAuthenticatedAPI,
+	) {}
 
-    /**
-     * Create a new composable query builder
-     */
-    compose(): UserQueryComposer {
-        return new UserQueryComposer(this.sqlite, this.steamApi);
-    }
+	/**
+	 * Create a new composable query builder
+	 */
+	compose(): UserQueryComposer {
+		return new UserQueryComposer(this.sqlite, this.steamApi);
+	}
 }

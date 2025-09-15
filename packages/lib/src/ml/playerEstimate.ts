@@ -25,8 +25,8 @@ import { predict } from "./predict.js";
 // // node --experimental-strip-types score.ts
 
 export const estimatePlayerCount = async (features: Features) => {
-    const { default: json } = await import("../../steam_model.json", { with: { type: "json" } });
-    return predict(json as SearchResults, features);
+	const { default: json } = await import("../../steam_model.json", { with: { type: "json" } });
+	return predict(json as SearchResults, features);
 };
 
 // // === new benchmark ===

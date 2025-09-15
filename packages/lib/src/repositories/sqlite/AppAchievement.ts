@@ -113,7 +113,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 			this.getRequiredEntitySubquery("app") ?? (hasExplicitAppIds ? undefined : this.buildRequiredAppsScope());
 
 		const composer = this.appRepository.compose().withLanguage(this.lang);
-		if (this.freshnessCutoff) composer.withCutoff(this.freshnessCutoff);
+		// if (this.freshnessCutoff) composer.withCutoff(this.freshnessCutoff);
 
 		if (hasExplicitAppIds) {
 			composer.withAppIds(this.appIds);

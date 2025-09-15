@@ -105,7 +105,7 @@ export class FetchManager {
 	 * Abort all ongoing operations
 	 */
 	private abort(reason?: string): void {
-		console.warn(`🛑 FetchManager: Aborting operations - ${reason || "Manual abort"}`);
+		console.debug(`🛑 FetchManager: Aborting operations - ${reason || "Manual abort"}`);
 		this.abortController.abort(reason);
 	}
 
@@ -140,11 +140,11 @@ export class FetchManager {
 		const configLimit = this.subConfig?.maxFetches ?? FetchManager.MAX_FETCHES;
 
 		if (this.isNearLimit()) {
-			console.warn(
+			console.debug(
 				`⚠️ FetchManager: ${this.subCount}/${configLimit} fetches used (total: ${this.totalCount}/${FetchManager.MAX_FETCHES}, ${remaining} remaining, ${elapsed}ms elapsed)`,
 			);
 		} else {
-			console.log(
+			console.debug(
 				`📊 FetchManager: ${this.subCount}/${configLimit} fetches used (total: ${this.totalCount}/${FetchManager.MAX_FETCHES}, ${remaining} remaining, ${elapsed}ms elapsed)`,
 			);
 		}

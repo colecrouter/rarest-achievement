@@ -51,12 +51,6 @@ export abstract class BaseAchievementQueryComposer<TResult, TSortMethod extends 
 		achIdColumn: SQLiteColumn,
 		apiCode: APILanguageCode,
 	): SQL {
-		// return sql`${achievementsMeta.lang} = (
-		// 	SELECT COALESCE(
-		// 		(SELECT lang FROM ${achievementsMeta} WHERE app_id = ${appIdColumn} AND ach_id = ${achIdColumn} AND lang = ${apiCode} LIMIT 1),
-		// 		(SELECT lang FROM ${achievementsMeta} WHERE app_id = ${appIdColumn} AND ach_id = ${achIdColumn} AND lang = 'english' LIMIT 1)
-		// 	)
-		// )`;
 		return eq(
 			achievementsMeta.lang,
 			coalesce(

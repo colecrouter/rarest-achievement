@@ -19,8 +19,6 @@ import { getTableAliasedColumns } from "./utils";
 
 export type AppAchievementSortMethod = "rarity_pct" | "rarity_score";
 
-// Legacy AppAchievementFilters removed: repository interface no longer carries filter generic
-
 class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppAchievement, AppAchievementSortMethod> {
 	constructor(
 		db: ProjectDB,

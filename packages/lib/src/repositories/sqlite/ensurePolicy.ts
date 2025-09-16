@@ -13,8 +13,6 @@ export interface EnsurePolicy {
 		maxAppsPerRequest: number;
 		/** Maximum rows per flush (safeInsert) micro-batch */
 		maxRowsPerFlush: number;
-		/** Soft time budget for the ensure phase (ms) */
-		timeBudgetMs: number;
 	};
 	/** If true, run the direct DB-limited select first, then ensure only what the page needs */
 	preferDirectFirst: boolean;
@@ -31,19 +29,17 @@ export interface EnsurePolicy {
  * Defaults chosen to:
  * - maxAppsPerRequest=24 to bound cross-app fanout
  * - maxRowsPerFlush=150 to keep SQLite parameter counts and memory stable
- * - timeBudgetMs=600 to keep first paint responsive on cold datasets
  * - candidateWindowFromOwned=64 to consider recent activity without exploding scope
  * - preferDirectFirst=true to return the current page ASAP, then backfill what it needs
  */
 export function defaultUnlockedAtEnsurePolicy(): EnsurePolicy {
 	const maxAppsPerRequest = 24;
 	const maxRowsPerFlush = 150;
-	const timeBudgetMs = 600;
 	const candidateWindowFromOwned = 64;
 
 	return {
 		mode: "unlocked_at",
-		caps: { maxAppsPerRequest, maxRowsPerFlush, timeBudgetMs },
+		caps: { maxAppsPerRequest, maxRowsPerFlush },
 		preferDirectFirst: true,
 		candidateWindowFromOwned,
 	};
@@ -60,7 +56,6 @@ export function defaultEnsurePolicy(): EnsurePolicy {
 		caps: {
 			maxAppsPerRequest: 512,
 			maxRowsPerFlush: 500,
-			timeBudgetMs: 5_000,
 		},
 		preferDirectFirst: false,
 		candidateWindowFromOwned: 256,

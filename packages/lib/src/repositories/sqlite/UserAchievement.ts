@@ -1003,10 +1003,8 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		scopedAppIds?: number[],
 	): Promise<Attempt<void, AttemptStatus>> {
 		if (policy?.mode === "unlocked_at") {
-			const start = Date.now();
 			const perFlush = policy.caps.maxRowsPerFlush;
 			const maxApps = policy.caps.maxAppsPerRequest;
-			const budgetMs = policy.caps.timeBudgetMs;
 
 			let processedApps = 0; // retained for maxApps limiting logic
 			let firstError: Error | null = null;
@@ -1039,13 +1037,8 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				await Promise.resolve();
 			};
 
-			// Iterate candidates with a cooperative stop flag; avoid labeled breaks to satisfy linter
-			let shouldStop = false;
+			// Iterate candidates; rely on caps rather than wall-clock budgets
 			for (const appId of candidates) {
-				if (Date.now() - start > budgetMs) {
-					break;
-				}
-
 				for (const userId of targetUserIds) {
 					try {
 						const achievements = await this.steamApi.getPlayerAchievements({
@@ -1106,14 +1099,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 					} catch (err) {
 						if (!firstError) firstError = err as Error;
 					}
-
-					if (Date.now() - start > budgetMs) {
-						shouldStop = true;
-						break;
-					}
 				}
-
-				if (shouldStop) break;
 
 				processedApps++;
 				if (processedApps >= maxApps) {

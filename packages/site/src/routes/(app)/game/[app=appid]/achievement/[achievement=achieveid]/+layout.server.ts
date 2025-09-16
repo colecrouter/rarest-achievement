@@ -10,12 +10,13 @@ export const load = async ({ params, parent, locals }) => {
 
 	const { app, breadcrumbs: parentBreadcrumbs } = await parent();
 
-	const { data: achievements } = await locals.vault.appAchievements
+	const gameAchievements = await locals.vault.appAchievements
 		.compose()
 		.withLanguage(getLocale())
 		.withAppIds([app.id])
 		.build();
-	const achievement = achievements?.find((a) => a.id === achievementId);
+
+	const achievement = gameAchievements.data.find((a) => a.id === achievementId);
 	if (!achievement) error(404, "Achievement not found");
 
 	const translation =
@@ -32,6 +33,7 @@ export const load = async ({ params, parent, locals }) => {
 	] satisfies Breadcrumb[];
 
 	return {
+		gameAchievements,
 		achievement,
 		breadcrumbs,
 		translation,

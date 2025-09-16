@@ -12,12 +12,6 @@ export const load = async ({ parent, url, locals, platform }) => {
 	const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE, locals.steamCommunityClient);
 	const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE, platform.env.AI);
 
-	const gameAchievements = await locals.vault.appAchievements
-		.compose()
-		.withLanguage(locale)
-		.withAppIds([app.id])
-		.build();
-
 	const friendsWithAchievement = (async () => {
 		if (!loggedIn) return null;
 		if (url.searchParams.get("tab") !== "friends") return null;
@@ -76,7 +70,6 @@ export const load = async ({ parent, url, locals, platform }) => {
 	})();
 
 	return {
-		gameAchievements,
 		friendsWithAchievement,
 		articles,
 	};

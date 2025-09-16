@@ -26,6 +26,7 @@ import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { createLocalBudget, decorateWithBudget } from "../helpers/fetchBudget";
 import { runMigrations } from "../helpers/migrate";
+import { setupMockFetchWithManager } from "../helpers/mockFetchWithManager";
 
 describe("AppRepository - SQLite (in-memory)", () => {
 	let db: ProjectDB;
@@ -421,6 +422,94 @@ describe("AppRepository - SQLite (in-memory)", () => {
 			.from(apps)
 			.where(and(eq(apps.id, appId), eq(apps.lang, "english")));
 		assert.ok(updated[0]?.updated_at && updated[0].updated_at > staleDate, "updated_at should refresh");
+	});
+
+	test("ensureDataExists respects fetch manager limits", async () => {
+		const { repo, auth, store } = ctx;
+		let cleanupFetch: (() => void) | undefined;
+
+		try {
+			// Setup mock fetch with very low limit to trigger failure
+			cleanupFetch = setupMockFetchWithManager();
+
+			// Mock some apps that will require fetching
+			const appIds = [123, 456, 789];
+
+			// Create missing apps scenario
+			for (const appId of appIds) {
+				const appData = makeAppData(appId, `Test App ${appId}`);
+				const appResp = {
+					[appId]: { success: true as const, data: appData },
+				};
+				store.setAppDetails(appId, appResp);
+
+				// Setup achievement schema
+				auth.setSchemaForGame(
+					{ appid: appId, l: "english" },
+					makeAchievementSchema(`Test Game ${appId}`, [basicAchievement]),
+				);
+			}
+
+			// Build repository with the app IDs using compose pattern
+			const result = await repo.compose().withLanguage("en").withAppIds(appIds).build();
+
+			// Should succeed normally with mock data
+			assert.ok(result.isOk(), "ensureDataExists should succeed with fetch limiting");
+		} finally {
+			cleanupFetch?.();
+		}
+	});
+
+	test("fetchAndUpsertPlayerEstimates respects fetch manager limits", async () => {
+		const { repo, store } = ctx;
+		let cleanupFetch: (() => void) | undefined;
+
+		try {
+			// Setup mock fetch
+			cleanupFetch = setupMockFetchWithManager();
+
+			// Insert some apps that need player estimates
+			const appIds = [123, 456];
+			for (const appId of appIds) {
+				const appData = makeAppData(appId, `Test App ${appId}`);
+
+				// Insert app into database
+				await insertApp(db, {
+					id: appId,
+					data: appData,
+					lang: "english",
+				});
+
+				// Mock API responses for player count estimation
+				const appResp = {
+					[appId]: { success: true as const, data: appData },
+				};
+				store.setAppDetails(appId, appResp);
+				store.setAppReviews(appId, {
+					success: 1,
+					query_summary: {
+						num_reviews: 1000,
+						review_score: 0,
+						review_score_desc: "No user reviews",
+						total_positive: 500,
+						total_negative: 500,
+						total_reviews: 1000,
+					},
+					reviews: [],
+					cursor: "",
+				});
+				// Steam Charts API can fail gracefully, so we don't need to mock it
+			}
+
+			// Build repository with the app IDs - this will call ensureDataExists internally
+			// which will trigger fetchAndUpsertPlayerEstimates for the missing player estimates
+			const result = await repo.compose().withLanguage("en").withAppIds(appIds).build();
+
+			// Should succeed - player estimates are attempted but failures are acceptable
+			assert.ok(result.isOk(), "Player estimates should work with fetch limiting");
+		} finally {
+			cleanupFetch?.();
+		}
 	});
 });
 

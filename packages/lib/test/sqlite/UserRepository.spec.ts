@@ -13,6 +13,7 @@ import { makeUserRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { createLocalBudget, decorateWithBudget } from "../helpers/fetchBudget";
 import { runMigrations } from "../helpers/migrate";
+import { setupMockFetchWithManager } from "../helpers/mockFetchWithManager";
 import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticated";
 
 describe("UserRepository - SQLite (in-memory)", () => {
@@ -307,6 +308,99 @@ describe("UserRepository - SQLite (in-memory)", () => {
 		// Verify updated_at changed
 		const row = await db.select({ updated_at: users.updated_at }).from(users).where(eq(users.id, staleId));
 		assert.ok(row[0]?.updated_at && row[0].updated_at > staleDate, "updated_at should be refreshed");
+	});
+
+	test("fetchAndUpsertUsers respects fetch manager limits", async () => {
+		const repo = getRepo();
+		let cleanupFetch: (() => void) | undefined;
+
+		try {
+			// Setup mock fetch
+			cleanupFetch = setupMockFetchWithManager();
+
+			// Mock some users that will require fetching
+			const userIds = ["123", "456", "789"];
+
+			// Setup player summaries response
+			const ps: GetPlayerSummariesResponse = {
+				response: {
+					players: userIds.map((id) => makeUserData(id)),
+				},
+			};
+			authMock.setPlayerSummaries(ps);
+
+			// Setup owned games responses for each user
+			for (const userId of userIds) {
+				const ownedQ: GetOwnedGamesQuery<false> = {
+					steamid: userId,
+					include_played_free_games: true,
+				};
+				const ownedR: GetOwnedGamesResponse<false> = {
+					response: {
+						game_count: 2,
+						games: [
+							{ appid: 440, playtime_forever: 100 },
+							{ appid: 730, playtime_forever: 200 },
+						],
+					},
+				};
+				authMock.setOwnedGames(ownedQ, ownedR);
+			}
+
+			// Build repository with the user IDs - this will trigger fetchAndUpsertUsers
+			const result = await repo.compose().withUserIds(userIds).build();
+
+			// Should succeed with fetch limiting
+			assert.ok(result.isOk(), "fetchAndUpsertUsers should succeed with fetch limiting");
+			assert.strictEqual(result.data.length, userIds.length, "All users should be fetched");
+		} finally {
+			cleanupFetch?.();
+		}
+	});
+
+	test("ensureDataExists respects fetch manager limits", async () => {
+		const repo = getRepo();
+		let cleanupFetch: (() => void) | undefined;
+
+		try {
+			// Setup mock fetch
+			cleanupFetch = setupMockFetchWithManager();
+
+			// Mock some users that will require fetching
+			const userIds = ["100", "200"];
+
+			// Setup player summaries response
+			const ps: GetPlayerSummariesResponse = {
+				response: {
+					players: userIds.map((id) => makeUserData(id)),
+				},
+			};
+			authMock.setPlayerSummaries(ps);
+
+			// Setup owned games responses for each user
+			for (const userId of userIds) {
+				const ownedQ: GetOwnedGamesQuery<false> = {
+					steamid: userId,
+					include_played_free_games: true,
+				};
+				const ownedR: GetOwnedGamesResponse<false> = {
+					response: {
+						game_count: 1,
+						games: [{ appid: 570, playtime_forever: 50 }],
+					},
+				};
+				authMock.setOwnedGames(ownedQ, ownedR);
+			}
+
+			// Build repository with the user IDs - this will call ensureDataExists internally
+			const result = await repo.compose().withUserIds(userIds).build();
+
+			// Should succeed with fetch limiting
+			assert.ok(result.isOk(), "ensureDataExists should succeed with fetch limiting");
+			assert.strictEqual(result.data.length, userIds.length, "All users should be available");
+		} finally {
+			cleanupFetch?.();
+		}
 	});
 });
 

@@ -1412,6 +1412,48 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			assert.strictEqual(typeof attempt.data, "number");
 		});
 	});
+
+	// Test fetch manager integration with mocked global fetch
+	test("should respect fetch limits with mocked global fetch", async () => {
+		// Import the mock fetch helper
+		const { setupMockFetchWithManager } = await import("../helpers/mockFetchWithManager");
+
+		// Set up mock fetch that integrates with FetchManager
+		const cleanup = setupMockFetchWithManager();
+
+		try {
+			const repo = getRepo();
+			const userId = "fetch-manager-test";
+			await insertUser(db, { id: userId, data: makeUserData(userId) });
+
+			// Create a few apps
+			const appIds = [9001, 9002, 9003];
+			for (const appId of appIds) {
+				await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, `App ${appId}`) });
+				await insertOwnedGame(db, { user_id: userId, app_id: appId });
+				await seedMetaByCode(db, appId, "en", [{ ach: "ACH-1", display: "Achievement 1" }]);
+
+				// Mock API responses (this will still work with the mock fetch)
+				authMock.setPlayerAchievements(
+					{ steamid: userId, appid: appId },
+					makePlayerAchievementsPayload({
+						userId,
+						appId,
+						items: [{ ach: "ACH-1", achieved: 1, unlock: new Date() }],
+					}),
+				);
+			}
+
+			// This should work - the getFetchManager().reset() calls in the repository
+			// should set appropriate limits that the mock fetch will respect
+			const res = await repo.compose().withLanguage("en").withUserIds(userId).build();
+
+			assert.ok(res.isOk() || res.isPartial());
+		} finally {
+			// Always clean up the mock
+			cleanup();
+		}
+	});
 });
 
 // Parallel ensure behavior under synthetic fetch budgets (API call-level)

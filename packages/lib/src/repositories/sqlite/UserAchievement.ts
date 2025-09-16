@@ -36,6 +36,7 @@ import {
 	createQueryResult,
 	type RequiredSubquery,
 } from "../composable";
+import { getFetchManager } from "../fetchManager";
 import type { Repository } from "../repository";
 import type { AppRepository } from "./App";
 import type { AppAchievementRepository } from "./AppAchievement";
@@ -275,7 +276,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		}
 
 		// Unified ensure path (captures dependency ensure across users/apps/achievements)
-		const ensureAttempt = await this.ensureDependencies();
+		const ensureAttempt = await this.ensureUserDataExists();
 		if (ensureAttempt.error)
 			console.warn(
 				`[UserAchievementRepository] Failed to ensure all data exists: ${ensureAttempt.error.message}`,
@@ -360,7 +361,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		}
 
 		// Consolidated ensure path
-		const ensureResult = await this.ensureDependencies();
+		const ensureResult = await this.ensureUserDataExists();
 		if (ensureResult.error)
 			console.warn(`[UserAchievementRepository] Failed to ensure all data exists: ${ensureResult.error.message}`);
 
@@ -647,6 +648,9 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		const intersection = pageSet.intersection(candidateSet);
 		const remaining = pageSet.symmetricDifference(candidateSet);
 		const orderedCandidates = [...intersection, ...remaining];
+
+		// Set fetch limit for scoped ensure with potentially many concurrent API calls
+		getFetchManager().reset({ maxFetches: Math.min(orderedCandidates.length * 10, 400) }); // Estimate up to 10 API calls per app, cap at 400
 
 		// Scoped ensure with streaming micro-batches under caps/time budget; never throw due to caps
 		const ensureAttempt = await this.ensureUserAchievementDataExists(policy, orderedCandidates);
@@ -966,6 +970,9 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Then, ensure app data exists for the apps we'll be querying
 		const appDataResult = await this.ensureAppDataExists();
+
+		// Set fetch limit for user achievement data fetching (potentially many concurrent API calls)
+		getFetchManager().reset({ maxFetches: 400 }); // Cap at 400 to stay well under Cloudflare's 1000 limit
 
 		// Then, ensure user achievement data exists for their owned games
 		const achievementResult = await this.ensureUserAchievementDataExists();
@@ -1435,15 +1442,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Return success or partial based on whether we had any errors during dependency fetching
 		return Attempt.from(results, combinedResult.error);
-	}
-
-	/**
-	 * Consolidated ensure hook implementation bridging legacy ensure paths.
-	 * Reuses existing ensureUserDataExists() which already aggregates friends/apps/achievements.
-	 */
-	// eslint-disable-next-line @typescript-eslint/require-await
-	protected async ensureDependencies(): Promise<Attempt<void, AttemptStatus>> {
-		return this.ensureUserDataExists();
 	}
 }
 

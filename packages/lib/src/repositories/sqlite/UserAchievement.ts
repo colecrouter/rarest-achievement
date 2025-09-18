@@ -848,7 +848,11 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		for (const row of rows) {
 			const user = userMap.get(row.user_id);
 
-			if (user && row.app_data && row.display_name) {
+			// Skip if we don't have the user or the user is private (mirror buildResultsFromRows behavior)
+			if (!user) continue;
+			if (user.private) continue;
+
+			if (row.app_data && row.display_name) {
 				// Create SteamApp object from database data
 				const app = new SteamApp({
 					data: row.app_data,
@@ -1037,7 +1041,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				await Promise.resolve();
 			};
 
-			// Iterate candidates; rely on caps rather than wall-clock budgets
+			// Iterate candidates; rely on caps and fetch limiter to keep us in check
 			for (const appId of candidates) {
 				for (const userId of targetUserIds) {
 					try {
@@ -1237,6 +1241,14 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Fetch all user achievements concurrently with partial result support
 		console.debug(`[UserAchievementRepository] Requesting ${missingData.length} entries`);
+		// console.log(missingData[0]?.user_id);
+		// const firstMissing = missingData[0];
+		// if (firstMissing) {
+		// 	const {
+		// 		response: { players },
+		// 	} = await this.steamApi.getPlayerSummaries([firstMissing.user_id]);
+		// 	console.log(players[0]);
+		// }
 		const achievementsResult = await Attempt.all(missingData.map((row) => fetchUserAchievements(row)));
 
 		// Collect all achievement data from successful fetches

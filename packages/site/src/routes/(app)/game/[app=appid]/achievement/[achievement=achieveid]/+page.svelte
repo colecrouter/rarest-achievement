@@ -7,17 +7,11 @@
 	import Chart from "chart.js/auto";
 	import Colors from "tailwindcss/colors";
 	import { goto } from "$app/navigation";
-	import { base } from "$app/paths";
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
 	import FriendCards from "$lib/FriendCards";
-	import IndexError from "$lib/IndexError.svelte";
 	import { m } from "$lib/paraglide/messages.js";
-	import {
-		deLocalizeUrl,
-		getLocale,
-		localizeHref,
-	} from "$lib/paraglide/runtime";
+	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
 	import { getRarity, localizedRarity } from "$lib/rarity";
 	import Transition from "$lib/Transition.svelte";
 	import TransitionWrapper from "$lib/TransitionWrapper.svelte";
@@ -489,8 +483,7 @@
 						<FriendCards
 							secondary
 							hideLocked
-							allAchievements={friendsWithAchievement}
-							targetAchievement={achievement}
+							data={friendsWithAchievement}
 						/>
 					</div>
 				</Transition>

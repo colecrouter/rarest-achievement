@@ -13,6 +13,7 @@
 		},
 		"lib": ["ESNext", "DOM"],
 		"types": ["@cloudflare/workers-types", "node"],
+		"skipLibCheck": true,
 		"noErrorTruncation": true
 	}
 }

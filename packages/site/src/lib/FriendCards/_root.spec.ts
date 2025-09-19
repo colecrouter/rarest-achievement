@@ -1,31 +1,33 @@
 import { Attempt, type SteamUserAchievement } from "@project/lib";
-import {
-	makeApp,
-	makeAppAchievement,
-	makeLockedUserAchievement,
-	makeUnlockedUserAchievement,
-	makeUser,
-} from "@project/lib/test";
+import { makeApp, makeLockedUserAchievement, makeUnlockedUserAchievement, makeUser } from "@project/lib/test";
 import { render, screen } from "@testing-library/svelte";
 import { tick } from "svelte";
 import { describe, expect, it } from "vitest";
 import Root from "./_root.svelte";
 
 describe("FriendCards/_root", () => {
+	type FriendEntry = {
+		totalCount: number;
+		unlockedCount: number;
+		achievement: SteamUserAchievement | undefined;
+	};
 	it("renders friend cards when achievements present", async () => {
 		// Create test data using our helpers
 		const app = makeApp(10, "Test Game");
 		const user1 = makeUser("u1");
 		const user2 = makeUser("u2");
 
-		const targetAchievement = makeAppAchievement(app, "A", "Achievement A", 50);
 		const achievement1 = makeUnlockedUserAchievement(app, user1, "A", "Achievement A", 50);
 		const achievement2 = makeUnlockedUserAchievement(app, user2, "B", "Achievement B", 30);
 
 		render(Root, {
 			props: {
-				allAchievements: Promise.resolve(Attempt.ok([achievement1, achievement2])),
-				targetAchievement: Promise.resolve(targetAchievement),
+				data: Promise.resolve(
+					Attempt.ok<FriendEntry[]>([
+						{ totalCount: 100, unlockedCount: 10, achievement: achievement1 },
+						{ totalCount: 100, unlockedCount: 20, achievement: achievement2 },
+					]),
+				),
 			},
 		});
 
@@ -41,15 +43,17 @@ describe("FriendCards/_root", () => {
 		const app = makeApp(10, "Test Game");
 		const user1 = makeUser("u1");
 		const user2 = makeUser("u2");
-
-		const targetAchievement = makeAppAchievement(app, "A", "Achievement A", 50);
 		const achievement1 = makeLockedUserAchievement(app, user1, "A", "Achievement A", 50);
 		const achievement2 = makeUnlockedUserAchievement(app, user2, "A", "Achievement A", 50);
 
 		render(Root, {
 			props: {
-				allAchievements: Promise.resolve(Attempt.ok([achievement1, achievement2])),
-				targetAchievement: Promise.resolve(targetAchievement),
+				data: Promise.resolve(
+					Attempt.ok<FriendEntry[]>([
+						{ totalCount: 100, unlockedCount: 5, achievement: achievement1 },
+						{ totalCount: 100, unlockedCount: 50, achievement: achievement2 },
+					]),
+				),
 				hideLocked: true,
 			},
 		});
@@ -66,15 +70,17 @@ describe("FriendCards/_root", () => {
 		const app = makeApp(10, "Test Game");
 		const user1 = makeUser("u1");
 		const user2 = makeUser("u2");
-
-		const targetAchievement = makeAppAchievement(app, "A", "Achievement A", 50);
 		const achievement1 = makeLockedUserAchievement(app, user1, "A", "Achievement A", 50);
 		const achievement2 = makeLockedUserAchievement(app, user2, "A", "Achievement A", 50);
 
 		render(Root, {
 			props: {
-				allAchievements: Promise.resolve(Attempt.ok([achievement1, achievement2])),
-				targetAchievement: Promise.resolve(targetAchievement),
+				data: Promise.resolve(
+					Attempt.ok<FriendEntry[]>([
+						{ totalCount: 100, unlockedCount: 0, achievement: achievement1 },
+						{ totalCount: 100, unlockedCount: 0, achievement: achievement2 },
+					]),
+				),
 				hideLocked: true,
 			},
 		});
@@ -89,15 +95,17 @@ describe("FriendCards/_root", () => {
 		const app = makeApp(10, "Test Game");
 		const user1 = makeUser("u1");
 		const user2 = makeUser("u2");
-
-		const targetAchievement = makeAppAchievement(app, "A", "Achievement A", 50);
 		const achievement1 = makeLockedUserAchievement(app, user1, "A", "Achievement A", 50);
 		const achievement2 = makeUnlockedUserAchievement(app, user2, "A", "Achievement A", 50);
 
 		render(Root, {
 			props: {
-				allAchievements: Promise.resolve(Attempt.ok([achievement1, achievement2])),
-				targetAchievement: Promise.resolve(targetAchievement),
+				data: Promise.resolve(
+					Attempt.ok<FriendEntry[]>([
+						{ totalCount: 100, unlockedCount: 1, achievement: achievement1 },
+						{ totalCount: 100, unlockedCount: 2, achievement: achievement2 },
+					]),
+				),
 				hideLocked: false,
 			},
 		});
@@ -111,7 +119,7 @@ describe("FriendCards/_root", () => {
 	it("shows sign in form when allAchievements is null", async () => {
 		render(Root, {
 			props: {
-				allAchievements: Promise.resolve(null),
+				data: Promise.resolve(null),
 			},
 		});
 
@@ -124,7 +132,7 @@ describe("FriendCards/_root", () => {
 		const error = new Error("Failed to load achievements");
 		render(Root, {
 			props: {
-				allAchievements: Promise.resolve(Attempt.fail<SteamUserAchievement[]>(error)),
+				data: Promise.resolve(Attempt.fail<FriendEntry[]>(error)),
 			},
 		});
 

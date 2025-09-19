@@ -446,7 +446,7 @@
 		<h2 class="mb-6 text-2xl font-bold">
 			{m.gamePageFriendsWhoPlayTitle()}
 		</h2>
-		<FriendCards allAchievements={data.friendsWithAchievement} />
+		<FriendCards data={data.friendsWithAchievement} />
 	</div>
 
 	<!-- Similar Games -->

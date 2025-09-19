@@ -1,4 +1,5 @@
 import { getLocale } from "$lib/paraglide/runtime.js";
+import { Attempt, type SteamUser } from "@project/lib";
 
 export const load = async ({ parent, locals }) => {
 	const { app } = await parent();
@@ -27,59 +28,78 @@ export const load = async ({ parent, locals }) => {
 		const oneYearAgo = new Date();
 		oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-		// Fetch achievements for each friend who owns the game
-		const result = await locals.vault.userAchievements
+		// Fetch achievements for each friend who owns the game (to discover friend users)
+		const achievementsAttempt = await locals.vault.userAchievements
 			.compose()
 			.withLanguage(locale)
 			.withAppIds(app.id)
 			.withFriendsOf(locals.steamUser.id)
-			.build({ limit: 10000 }); // TODO
+			.build({ limit: 10000 }); // TODO: cap sensibly
 
-		const filteredPrivateOrBot = result.map((d) =>
-			d
-				.filter((item) => {
-					const u = item.user;
-					// If there is no user attached (fallback from non-owner view), include the item.
-					if (!u) return true;
-					return (
-						u.lastLoggedIn &&
-						u.lastLoggedIn >= oneMonthAgo &&
-						u.created &&
-						u.created < oneYearAgo &&
-						!u.private
-					);
-				})
-				.sort((a, b) => {
-					// Sort by last logged in first (safe when user may be undefined)
-					const aLast = a.user?.lastLoggedIn ?? new Date(0);
-					const bLast = b.user?.lastLoggedIn ?? new Date(0);
-					return bLast.getTime() - aLast.getTime();
-				}),
+		// Build a distinct set of users from the achievements
+		// Narrow to items with a user and collect unique users by id
+		type Item = (typeof achievementsAttempt.data)[number];
+		const withUser = achievementsAttempt.data.filter(
+			(a): a is Item & { user: NonNullable<Item["user"]> } => a.user !== undefined,
 		);
+		const distinctUsers = new Map(withUser.map((a) => [a.user.id, a.user] as const));
 
-		// Group only items that have an associated user (skip fallback/global items)
-		// Use a type guard so TypeScript understands user is present after filtering.
-		const usersWith = filteredPrivateOrBot.data.filter(
-			(
-				u,
-			): u is (typeof filteredPrivateOrBot.data)[number] & {
-				user: NonNullable<(typeof filteredPrivateOrBot.data)[number]["user"]>;
-			} => !!u.user,
-		);
-		const grouped = Map.groupBy(usersWith, (u) => u.user.id);
-		const usersWhoHaventPlayed = new Set(
-			grouped
-				.entries()
-				// We could try filtering by playtime, but it's not reliable for my acct due to API key belonging to me
-				// In practice, either or both is *probably* fine
-				.filter(([, ach]) => ach.every((a) => !a.unlocked))
-				.map(([userId]) => userId),
-		);
+		// Filter users: active recently, older than a year, not private
+		const filteredUsers = distinctUsers
+			.values()
+			.filter((u) => u !== undefined)
+			.filter(
+				(u) =>
+					u.lastLoggedIn &&
+					u.lastLoggedIn >= oneMonthAgo &&
+					u.created &&
+					u.created < oneYearAgo &&
+					!u.private,
+			)
+			.toArray()
+			.sort((a, b) => {
+				const aLast = a?.lastLoggedIn ?? new Date(0);
+				const bLast = b?.lastLoggedIn ?? new Date(0);
+				return bLast.getTime() - aLast.getTime();
+			});
 
-		return filteredPrivateOrBot.map((achievements) =>
-			// Keep items without a user (fallback) and exclude users who haven't played
-			achievements.filter((a) => !(a.user && usersWhoHaventPlayed.has(a.user.id))),
+		// Count unlocked achievements per user (memory-safe)
+		const unlockedCountsAttempt = await Attempt.all(
+			filteredUsers.map((user) =>
+				locals.vault.userAchievements
+					.compose()
+					.withUserIds(user.id)
+					.withAppIds(app.id)
+					.withUnlockedStatus(true)
+					.count()
+					.then((a) => [user, a.data ?? 0] as const),
+			),
 		);
+		const unlockedEntries: Array<readonly [SteamUser, number]> = [];
+		for (const e of unlockedCountsAttempt.data ?? []) {
+			if (e?.[0] && typeof e?.[1] === "number") {
+				unlockedEntries.push(e as readonly [SteamUser, number]);
+			}
+		}
+		const unlockedCounts = new Map<SteamUser, number>(unlockedEntries);
+
+		// Total achievement count for the app (shared for all rows)
+		const totalCountAttempt = await locals.vault.appAchievements.compose().withAppIds(app.id).count();
+
+		// Build summaries using a representative achievement per user
+		const summaries = filteredUsers.map((user) => {
+			const representative = achievementsAttempt.data.find((a) => a.user?.id === user.id);
+			return {
+				totalCount: totalCountAttempt.data ?? 0,
+				unlockedCount: unlockedCounts.get(user) ?? 0,
+				achievement: representative,
+			};
+		});
+
+		return achievementsAttempt
+			.and(unlockedCountsAttempt)
+			.and(totalCountAttempt)
+			.map(() => summaries);
 	})();
 
 	return {

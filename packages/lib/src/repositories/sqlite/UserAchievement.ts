@@ -339,11 +339,11 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			}
 
 			const combinedError = resultsAttempt.error || (appAchResult?.error ?? null);
-			return new ComposableQueryResult(finalData, (options.cursor || 0) + finalData.length, combinedError);
+			return createQueryResult(finalData, (options.cursor || 0) + finalData.length, combinedError);
 		}
 
 		const combinedError = resultsAttempt.error || ensureAttempt.error || null;
-		return new ComposableQueryResult(
+		return createQueryResult(
 			resultsAttempt.hasData() ? resultsAttempt.data : [],
 			(options.cursor || 0) + (resultsAttempt.hasData() ? resultsAttempt.data.length : 0),
 			combinedError,
@@ -642,7 +642,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			);
 		}
 
-		// TODO I have no idea what's going on here but it smells weird
+		// Order candidates: prefer intersection first, then remaining to bound early work
 		const pageSet = new Set(pageAppIds);
 		const candidateSet = new Set(candidateBase);
 		const intersection = pageSet.intersection(candidateSet);
@@ -1244,14 +1244,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Fetch all user achievements concurrently with partial result support
 		console.debug(`[UserAchievementRepository] Requesting ${missingData.length} entries`);
-		// console.log(missingData[0]?.user_id);
-		// const firstMissing = missingData[0];
-		// if (firstMissing) {
-		// 	const {
-		// 		response: { players },
-		// 	} = await this.steamApi.getPlayerSummaries([firstMissing.user_id]);
-		// 	console.log(players[0]);
-		// }
 		const achievementsResult = await Attempt.all(missingData.map((row) => fetchUserAchievements(row)));
 
 		// Collect all achievement data from successful fetches

@@ -224,6 +224,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		// We need to redeclare because I guess "with" needs to be applied before select
 		if (this.ctes.length > 0) {
 			query = this.db
+
 				.with(...this.ctes)
 				.select({ apps: apps })
 				.from(apps)
@@ -777,26 +778,17 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		const fetchAppData = async (id: number) => {
 			const [appDetails, achievementMeta, achievementStats] = await Promise.all([
 				this.steamStoreApi.getAppDetails(id, { l: lang }).then((res) => Object.values(res)[0]?.data || null),
-				this.fetchAchievementMetaWithFallbackDetection(id, lang).catch((_err) => {
-					// Suppress non-build/count warnings per logging standard
-					return null;
+				this.fetchAchievementMetaWithFallbackDetection(id, lang),
+				this.steamApi.getGlobalAchievementPercentagesForApp({ gameid: id }).then((statsResponse) => {
+					if (statsResponse?.achievementpercentages?.achievements) {
+						return statsResponse.achievementpercentages.achievements.map((ach) => ({
+							app_id: id,
+							ach_id: ach.name,
+							percent: ach.percent,
+						}));
+					}
+					return [];
 				}),
-				this.steamApi
-					.getGlobalAchievementPercentagesForApp({ gameid: id })
-					.then((statsResponse) => {
-						if (statsResponse?.achievementpercentages?.achievements) {
-							return statsResponse.achievementpercentages.achievements.map((ach) => ({
-								app_id: id,
-								ach_id: ach.name,
-								percent: ach.percent,
-							}));
-						}
-						return [];
-					})
-					.catch((_err) => {
-						// Suppress non-build/count warnings per logging standard
-						return [];
-					}),
 			]);
 
 			return {
@@ -808,7 +800,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		};
 
 		if (!this.unlockedAtMode) {
-			// Original behavior (accumulate then insert). Benefit from global FETCH_LIMIT=5 already.
 			// Fetch missing apps (comprehensive)
 			const attempt = await Attempt.all(appIds.map((id) => fetchAppData(id)));
 
@@ -903,108 +894,109 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				);
 			}
 
-			return attempt.map(() => undefined);
+			// Ensure any upstream API error is surfaced to the caller
+			return Attempt.from(undefined, attempt.error ?? null);
 		}
 
 		// Streaming micro-batch variant for unlockedAtMode
-		// Streaming unlocked_at mode
+		// Capture Steam client errors via Attempt.try; allow DB errors to propagate.
 		let firstError: Error | null = null;
 
 		for (const id of appIds) {
-			try {
-				const data = await fetchAppData(id);
-				// app record
-				const appData = [
-					{
-						lang,
-						id: data.appId,
-						data: data.appDetails,
-					},
-				];
-				await safeInsert(this.db, appData, (chunk) =>
+			// Fetch remote data with error capture
+			// fetchAppData may reject on API errors (e.g., rate limiting); capture as Partial and continue
+			const dataAttempt = await Attempt.try(() => fetchAppData(id));
+			if (dataAttempt.error || dataAttempt.data == null) {
+				if (!firstError && dataAttempt.error) firstError = dataAttempt.error;
+				// Skip inserts for this app and continue
+				await Promise.resolve();
+				continue;
+			}
+			const data = dataAttempt.data;
+
+			// app record (DB operations must be allowed to throw)
+			const appData = [
+				{
+					lang,
+					id: data.appId,
+					data: data.appDetails,
+				},
+			];
+			await safeInsert(this.db, appData, (chunk) =>
+				this.db
+					.insert(apps)
+					.values(chunk)
+					.onConflictDoUpdate({
+						target: [apps.id, apps.lang],
+						set: { data: excluded(apps.data), updated_at: new Date() },
+					}),
+			);
+
+			// stats (language-agnostic)
+			const stats = (data.achievementStats || []).filter((s) => s !== undefined);
+			if (stats.length > 0) {
+				await safeInsert(this.db, stats, (chunk) =>
 					this.db
-						.insert(apps)
+						.insert(achievementsStats)
 						.values(chunk)
 						.onConflictDoUpdate({
-							target: [apps.id, apps.lang],
-							set: { data: excluded(apps.data), updated_at: new Date() },
+							target: [achievementsStats.app_id, achievementsStats.ach_id],
+							set: { percent: excluded(achievementsStats.percent), updated_at: new Date() },
 						}),
 				);
+			}
 
-				// stats (language-agnostic)
-				const stats = (data.achievementStats || []).filter((s) => s !== undefined);
-				if (stats.length > 0) {
-					await safeInsert(this.db, stats, (chunk) =>
-						this.db
-							.insert(achievementsStats)
-							.values(chunk)
-							.onConflictDoUpdate({
-								target: [achievementsStats.app_id, achievementsStats.ach_id],
-								set: { percent: excluded(achievementsStats.percent), updated_at: new Date() },
-							}),
-					);
-					// stats inserted
-				}
-
-				// meta
-				const metas: Array<{
-					app_id: number;
-					ach_id: string;
-					display_name: string;
-					default_value: number;
-					description?: string;
-					icon: string;
-					icon_gray: string;
-					hidden: number;
-					lang: APILanguageCode;
-				}> = [];
-				const meta = data.achievementMeta;
-				if (meta && meta !== null) {
+			// meta
+			const metas: Array<{
+				app_id: number;
+				ach_id: string;
+				display_name: string;
+				default_value: number;
+				description?: string;
+				icon: string;
+				icon_gray: string;
+				hidden: number;
+				lang: APILanguageCode;
+			}> = [];
+			const meta = data.achievementMeta;
+			if (meta && meta !== null) {
+				metas.push(
+					...meta.requested.map((m) => ({
+						...m,
+						lang,
+					})),
+				);
+				if (lang !== "english" && meta.english) {
 					metas.push(
-						...meta.requested.map((m) => ({
+						...meta.english.map((m) => ({
 							...m,
-							lang,
+							lang: "english" as const,
 						})),
 					);
-					if (lang !== "english" && meta.english) {
-						metas.push(
-							...meta.english.map((m) => ({
-								...m,
-								lang: "english" as const,
-							})),
-						);
-					}
 				}
-				if (metas.length > 0) {
-					await safeInsert(this.db, metas, (chunk) =>
-						this.db
-							.insert(achievementsMeta)
-							.values(chunk)
-							.onConflictDoUpdate({
-								target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
-								set: {
-									display_name: excluded(achievementsMeta.display_name),
-									default_value: excluded(achievementsMeta.default_value),
-									description: excluded(achievementsMeta.description),
-									icon: excluded(achievementsMeta.icon),
-									icon_gray: excluded(achievementsMeta.icon_gray),
-									hidden: excluded(achievementsMeta.hidden),
-								},
-							}),
-					);
-					// meta inserted
-				}
-
-				// processed app
-			} catch (err) {
-				if (!firstError) firstError = err as Error;
+			}
+			if (metas.length > 0) {
+				await safeInsert(this.db, metas, (chunk) =>
+					this.db
+						.insert(achievementsMeta)
+						.values(chunk)
+						.onConflictDoUpdate({
+							target: [achievementsMeta.app_id, achievementsMeta.ach_id, achievementsMeta.lang],
+							set: {
+								display_name: excluded(achievementsMeta.display_name),
+								default_value: excluded(achievementsMeta.default_value),
+								description: excluded(achievementsMeta.description),
+								icon: excluded(achievementsMeta.icon),
+								icon_gray: excluded(achievementsMeta.icon_gray),
+								hidden: excluded(achievementsMeta.hidden),
+							},
+						}),
+				);
 			}
 
 			// Yield between apps so the global fetch limiter can schedule other work
 			await Promise.resolve();
 		}
-
-		// debug counters removed
 
 		return Attempt.from(undefined, firstError);
 	}

@@ -226,7 +226,7 @@ class FriendsQueryComposer<WithOwnedApps extends boolean = false>
 
 		// Get users for friends via subquery (avoids parameter explosion & intermediate arrays)
 		const sortMethod = options.sort?.method === "friend_since" ? friends.friend_since : friends.friend_id;
-		const sortDirection = options.sort?.direction !== "desc" ? desc : asc;
+		const sortDirection = options.sort?.direction === "desc" ? desc : asc;
 
 		// Create a typed subquery for the friend user IDs we need (avoids parameter explosion)
 		const friendUserIdsSubquery = this.db

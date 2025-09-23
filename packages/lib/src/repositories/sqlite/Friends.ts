@@ -189,25 +189,26 @@ class FriendsQueryComposer<WithOwnedApps extends boolean = false>
 					);
 				}
 
-				// Now ensure friend users exist using subquery from friends table (avoids parameter explosion)
-				if (allFriendIds.size > 0) {
-					// Create a typed subquery for friend user IDs (drizzle CTE) to satisfy UserRepository type expectations
-					const friendUserIdsSubquery = this.db
-						.selectDistinct({ id: friends.friend_id })
-						.from(friends)
-						.where(inArray(friends.user_id, Array.from(this.userIds)))
-						.as("required_users");
-
-					const friendUserComposer = this.userRepository
-						.compose()
-						// Cast to RequiredSubquery to satisfy SubqueryConsumer method type
-						.withRequiredEntitySubquery("user", friendUserIdsSubquery);
-					if (this.freshnessCutoff) friendUserComposer.withCutoff(this.freshnessCutoff);
-					const friendUsersResult = await friendUserComposer.ensureDataExists();
-					// Suppress non-build/count warnings per logging standard
-					combined = combined.and(friendUsersResult.map(() => undefined));
-				}
+				// We defer friend user ensure to a unified path below
 			}
+		}
+
+		// Always ensure friend user profiles exist via subquery, regardless of friendship edge freshness.
+		// This avoids the case where friendships exist but user profiles were never fetched or are stale.
+		{
+			const friendUserIdsSubquery = this.db
+				.selectDistinct({ id: friends.friend_id })
+				.from(friends)
+				.where(inArray(friends.user_id, Array.from(this.userIds)))
+				.as("required_users");
+
+			const friendUserComposer = this.userRepository
+				.compose()
+				.withRequiredEntitySubquery("user", friendUserIdsSubquery);
+			if (this.freshnessCutoff) friendUserComposer.withCutoff(this.freshnessCutoff);
+			const friendUsersResult = await friendUserComposer.ensureDataExists();
+			// Suppress non-build/count warnings per logging standard
+			combined = combined.and(friendUsersResult.map(() => undefined));
 		}
 		return combined;
 	}

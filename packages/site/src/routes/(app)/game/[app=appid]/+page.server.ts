@@ -31,6 +31,7 @@ export const load = async ({ parent, locals }) => {
 		// Fetch achievements for each friend who owns the game (to discover friend users)
 		const achievementsAttempt = await locals.vault.userAchievements
 			.compose()
+			.withCutoff(oneMonthAgo)
 			.withLanguage(locale)
 			.withAppIds(app.id)
 			.withFriendsOf(locals.steamUser.id)

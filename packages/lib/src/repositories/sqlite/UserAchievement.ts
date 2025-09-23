@@ -298,6 +298,24 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 		// If we got no results but the caller requested a specific app (e.g. viewing a single game page),
 		// fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
 		// non-owners still see the app's achievements (mirrors anonymous behavior).
+		//
+		// Fallback semantics:
+		// - Trigger: results are empty AND the composition narrowed by explicit appIds.
+		// - Action: fetch app achievements via AppAchievementRepository and map to SteamUserAchievement with
+		//   userStats=null (unlocked=null). This allows the UI to render achievements even when the user/friend
+		//   does not have an owned_games row for the app.
+		// - Primary user: if a specific userId or friendsOf(userId) was provided, we attempt to attach that
+		//   user object (profile only) to the returned items; otherwise user may be undefined. This does not
+		//   imply ownership or unlocks.
+		//
+		// Why this matters:
+		// - Strict JOINs against owned_games are intentional to avoid parameter explosion and to respect
+		//   ownership semantics. However, in real deployments partial/stale data can temporarily omit an
+		//   owned_games row (e.g., friends fetched without their library). The fallback ensures the page remains
+		//   useful instead of appearing blank.
+		// - When a freshness cutoff is supplied upstream (withCutoff), the ensure layer should re-fetch the
+		//   missing friend profile + owned games, at which point the direct JOIN path yields proper results and
+		//   this fallback typically will not execute.
 		if (resultsAttempt.hasData() && resultsAttempt.data.length === 0 && this.appIds.size > 0) {
 			const appIds = Array.from(this.appIds);
 			// Fetch app achievements

@@ -29,11 +29,16 @@ type UserSortMethod = "id";
 // Precise CTE type for "required users" subquery (selects a single "id" column)
 type RequiredUsersSubquery = WithSubqueryWithSelection<{ id: typeof users.id }, string>;
 
-class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryConsumer<SteamUser, UserSortMethod> {
+class UserQueryComposer<WithOwnedApps extends boolean = false>
+	extends RequiredEntityStore<"user">
+	implements SubqueryConsumer<SteamUser<WithOwnedApps>, UserSortMethod>
+{
 	private userIds = new Set<string>();
 	private requiredUserSubquery?: RequiredUsersSubquery;
 	/** If set, treat rows with updated_at older than this Date as missing */
 	private freshnessCutoff: Date | undefined;
+	/** Whether to hydrate ownedGames for returned users */
+	private includeOwnedGames: boolean = false;
 
 	constructor(
 		private db: ProjectDB,
@@ -79,9 +84,23 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 	}
 
 	/**
+	 * Control whether owned games should be hydrated for users.
+	 * Set to false for lightweight profile lookups to avoid the large ownedGames join.
+	 */
+	// Discriminated builder: when called, narrows the composer to include owned games
+	withOwnedApps(this: UserQueryComposer<false>): UserQueryComposer<true>;
+	withOwnedApps(this: UserQueryComposer<boolean>): UserQueryComposer<boolean> {
+		this.includeOwnedGames = true;
+		// Cast is safe: once includeOwnedGames is enabled, caller should treat composer as <true>
+		return this as unknown as UserQueryComposer<true>;
+	}
+
+	/**
 	 * Build and execute the composed query
 	 */
-	async build(options: ComposableQueryOptions<UserSortMethod> = {}): Promise<ComposableQueryResult<SteamUser>> {
+	async build(
+		options: ComposableQueryOptions<UserSortMethod> = {},
+	): Promise<ComposableQueryResult<SteamUser<WithOwnedApps>>> {
 		// Ensure data exists first
 		const ensureResult = await this.ensureDataExists();
 		if (ensureResult.error)
@@ -309,7 +328,9 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 	/**
 	 * Execute the primary (direct) user query for current composition state.
 	 */
-	private async executeDirectQuery(options: ComposableQueryOptions<UserSortMethod>): Promise<SteamUser[]> {
+	private async executeDirectQuery(
+		options: ComposableQueryOptions<UserSortMethod>,
+	): Promise<SteamUser<WithOwnedApps>[]> {
 		const sortDir = options.sort?.direction === "desc" ? desc : asc;
 		const sortMethod = users.id; // Only supported sort currently
 
@@ -328,6 +349,14 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 		const userRows = await userQuery;
 		if (userRows.length === 0) return [];
 
+		// Fast path: profiles only
+		if (!this.includeOwnedGames) {
+			return userRows.map(
+				({ data }) => new SteamUser<false>({ data, ownedApps: undefined as never }),
+			) as unknown as SteamUser<WithOwnedApps>[];
+		}
+
+		// Owned games path: collect per-user arrays
 		let userIdsSubquery = this.db.select({ id: users.id }).from(users).orderBy(sortDir(sortMethod)).$dynamic();
 		if (this.userIds.size > 0) userIdsSubquery = userIdsSubquery.where(inArray(users.id, Array.from(this.userIds)));
 		if (options.limit !== undefined) userIdsSubquery = userIdsSubquery.limit(options.limit);
@@ -345,31 +374,30 @@ class UserQueryComposer extends RequiredEntityStore<"user"> implements SubqueryC
 			.where(inArray(ownedGames.user_id, userIdsSubquery))
 			.orderBy(asc(ownedGames.user_id), asc(ownedGames.app_id));
 
-		const userMap = new Map<string, { data: SteamUserRaw; ownedApps: OwnedGame<false>[] }>();
-		for (const row of userRows) {
-			userMap.set(row.id, { data: row.data, ownedApps: [] });
-		}
+		const map = new Map<string, { data: SteamUserRaw; games: OwnedGame<false>[] }>();
+		for (const row of userRows) map.set(row.id, { data: row.data, games: [] });
 		for (const game of ownedGamesRows) {
-			const entry = userMap.get(game.user_id);
-			if (entry) {
-				entry.ownedApps.push({
-					appid: game.app_id,
-					playtime_forever: game.playtime_total_minutes ?? undefined,
-					playtime_2weeks: game.playtime_2w_minutes ?? undefined,
-					rtime_last_played: game.last_played_at ? game.last_played_at.getTime() / 1000 : undefined,
-				});
-			}
+			const entry = map.get(game.user_id);
+			if (!entry) continue;
+			entry.games.push({
+				appid: game.app_id,
+				playtime_forever: game.playtime_total_minutes ?? undefined,
+				playtime_2weeks: game.playtime_2w_minutes ?? undefined,
+				rtime_last_played: game.last_played_at ? game.last_played_at.getTime() / 1000 : undefined,
+			});
 		}
 
-		return userMap
-			.values()
-			.map(({ data, ownedApps }) => new SteamUser({ data, ownedApps }))
-			.toArray();
+		return Array.from(
+			map.values(),
+			({ data, games }) => new SteamUser<true>({ data, ownedApps: games }),
+		) as unknown as SteamUser<WithOwnedApps>[];
 	}
 }
 
 export class UserRepository
-	implements Repository<SteamUser, UserSortMethod>, ComposableRepository<SteamUser, UserSortMethod, UserQueryComposer>
+	implements
+		Repository<SteamUser<false>, UserSortMethod>,
+		ComposableRepository<SteamUser<false>, UserSortMethod, UserQueryComposer<false>>
 {
 	constructor(
 		private sqlite: ProjectDB,
@@ -379,7 +407,7 @@ export class UserRepository
 	/**
 	 * Create a new composable query builder
 	 */
-	compose(): UserQueryComposer {
-		return new UserQueryComposer(this.sqlite, this.steamApi);
+	compose(): UserQueryComposer<false> {
+		return new UserQueryComposer<false>(this.sqlite, this.steamApi);
 	}
 }

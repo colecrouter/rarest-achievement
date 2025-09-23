@@ -4,9 +4,9 @@ import { SteamUser, type SteamUserRaw } from "./SteamUser";
 
 type Raw = GetFriendsListResponse["friendslist"]["friends"][number];
 
-export class SteamFriendUser extends SteamUser {
+export class SteamFriendUser<WithOwnedApps extends boolean = boolean> extends SteamUser<WithOwnedApps> {
 	#friendData: Raw;
-	#friend: SteamUser;
+	#friend: SteamUser<false>;
 
 	constructor({
 		data,
@@ -15,21 +15,21 @@ export class SteamFriendUser extends SteamUser {
 		friend,
 	}: {
 		data: SteamUserRaw;
-		ownedApps: OwnedGame<false>[];
+		ownedApps: WithOwnedApps extends true ? OwnedGame<false>[] : never;
 		friendData: Raw;
-		friend: SteamUser;
+		friend: SteamUser<false>;
 	}) {
 		super({ data, ownedApps });
 		this.#friendData = friendData;
 		this.#friend = friend;
 	}
 
-	serialize() {
+	serialize(): ConstructorParameters<typeof SteamFriendUser<WithOwnedApps>>[0] {
 		return {
 			...super.serialize(),
 			friendData: this.#friendData,
 			friend: this.#friend,
-		} satisfies ConstructorParameters<typeof SteamFriendUser>[0];
+		};
 	}
 
 	get friend() {

@@ -132,3 +132,9 @@ export function searchTerms(column: StringColumnLike, search: string): SQL {
 	const conditions = terms.map((term) => like(lower(column), `%${term}%`));
 	return and(...conditions) ?? sql`1=1`; // All terms must match
 }
+
+/**
+ * Lightweight debug helper to log how many rows were returned by a DB call.
+ * Use sparingly in hot paths; logs are prefixed for easy filtering in production.
+ */
+// debug logging helper removed

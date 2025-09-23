@@ -1,6 +1,6 @@
 import { asc, countDistinct, desc, eq, gte, inArray } from "drizzle-orm";
 import { Attempt, type AttemptStatus, friends, ownedGames, type ProjectDB, users } from "../..";
-import { SteamFriendUser } from "../../models";
+import { SteamFriendUser, SteamUser } from "../../models";
 import type { SteamUserRaw } from "../../models/SteamUser";
 import type { SteamAuthenticatedAPIClient } from "../api/steampowered/client";
 import {
@@ -16,10 +16,16 @@ import { safeInsert } from "./utils";
 
 type FriendsSortMethod = "id" | "friend_since";
 
-class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSortMethod> {
+class FriendsQueryComposer<WithOwnedApps extends boolean = false>
+	implements QueryComposer<SteamFriendUser<WithOwnedApps>, FriendsSortMethod>
+{
 	private userIds = new Set<string>();
 	/** Optional freshness cutoff for friend relationship & user freshness propagation */
 	private freshnessCutoff: Date | undefined;
+	/** Optional app filter: when set, only include friends who own this app (filters ownedGames join). */
+	private appIdFilter: number | undefined;
+	/** Whether to hydrate owned games for friend users */
+	private includeOwnedGames: boolean = false;
 
 	constructor(
 		private db: ProjectDB,
@@ -48,12 +54,25 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 		return this;
 	}
 
+	/** Filter to friends who own a specific app. Reduces row counts by filtering the ownedGames join. */
+	withAppId(appId: number): this {
+		this.appIdFilter = appId;
+		return this;
+	}
+
+	// Discriminated builder: enable owned games hydration for friend users
+	withOwnedGames(this: FriendsQueryComposer<false>): FriendsQueryComposer<true>;
+	withOwnedGames(this: FriendsQueryComposer<boolean>): FriendsQueryComposer<boolean> {
+		this.includeOwnedGames = true;
+		return this as unknown as FriendsQueryComposer<true>;
+	}
+
 	/**
 	 * Build and execute the composed query
 	 */
 	async build(
 		options: ComposableQueryOptions<FriendsSortMethod> = {},
-	): Promise<ComposableQueryResult<SteamFriendUser>> {
+	): Promise<ComposableQueryResult<SteamFriendUser<WithOwnedApps>>> {
 		// Ensure data exists first (non-fatal on partial failure)
 		const ensureAttempt = await this.ensureDataExists();
 		if (ensureAttempt.error)
@@ -96,8 +115,9 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 
 	/**
 	 * Ensure friend data exists in the database, fetching from API if needed
+	 * Note: public so other repositories can ensure without selecting large friend result sets.
 	 */
-	private async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
+	async ensureDataExists(): Promise<Attempt<void, AttemptStatus>> {
 		if (this.userIds.size === 0) return Attempt.ok(undefined);
 
 		const ids = Array.from(this.userIds);
@@ -195,7 +215,9 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 	/**
 	 * Execute the main friends query
 	 */
-	private async executeDirectQuery(options: ComposableQueryOptions<FriendsSortMethod>): Promise<SteamFriendUser[]> {
+	private async executeDirectQuery(
+		options: ComposableQueryOptions<FriendsSortMethod>,
+	): Promise<SteamFriendUser<WithOwnedApps>[]> {
 		if (this.userIds.size === 0) {
 			return [];
 		}
@@ -220,31 +242,70 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 			.ensureDataExists();
 		// Suppress non-build/count warnings per logging standard
 
-		// Fetch original users for mapping
-		const originalUsersResponse = await this.userRepository
-			.compose()
-			.withUserIds(ids)
-			.build({
-				sort: { method: "id", direction: "asc" },
-				limit: ids.length,
-			});
-
-		if (!originalUsersResponse.data) {
-			return [];
-		}
-
-		const originalUsersMap = new Map(originalUsersResponse.data.map((u) => [u.serialize().data.steamid, u]));
+		// Fetch original users for mapping (profiles only, avoid heavy ownedGames join)
+		const userRows = await this.db
+			.select({ id: users.id, data: users.data })
+			.from(users)
+			.where(inArray(users.id, ids));
+		const originalUsersMap = new Map(
+			userRows.map((row) => [
+				row.id,
+				new SteamUser<false>({ data: row.data as SteamUserRaw, ownedApps: undefined as never }),
+			]),
+		);
 
 		// Build main query with pagination and owned games in a single query to avoid parameter explosion
 		// Use SQL-level pagination instead of application-level pagination
-		const friendsWithGamesQuery = this.db
+		// Base selection without owned games columns
+		let friendsBaseQuery = this.db
 			.select({
 				userId: friends.user_id,
 				friendId: users.id,
 				userData: users.data,
 				friendSince: friends.friend_since,
 				updatedAt: users.updated_at,
-				// Owned games data
+			})
+			.from(friends)
+			.innerJoin(users, eq(users.id, friends.friend_id))
+			.where(inArray(friends.user_id, ids))
+			.orderBy(sortDirection(sortMethod))
+			.limit(options.limit || 1000)
+			.offset(options.cursor || 0)
+			.$dynamic();
+
+		if (this.appIdFilter !== undefined) {
+			// Restrict to owners of the app via INNER JOIN, but do not select ownedGames columns unless hydrating
+			friendsBaseQuery = friendsBaseQuery
+				.innerJoin(ownedGames, eq(ownedGames.user_id, friends.friend_id))
+				.where(eq(ownedGames.app_id, this.appIdFilter));
+		}
+
+		if (!this.includeOwnedGames) {
+			const rows = await friendsBaseQuery;
+			return rows.map((row) => {
+				const originalUser = originalUsersMap.get(row.userId);
+				if (!originalUser) throw new Error(`Original user ${row.userId} missing`);
+				return new SteamFriendUser<false>({
+					data: row.userData as SteamUserRaw,
+					ownedApps: undefined as never,
+					friend: originalUser,
+					friendData: {
+						steamid: row.friendId,
+						relationship: "friend",
+						friend_since: Math.floor(row.friendSince.getTime() / 1000),
+					},
+				});
+			}) as unknown as SteamFriendUser<WithOwnedApps>[];
+		}
+
+		// Owned games hydration path: select owned games columns via LEFT JOIN
+		let friendsWithGamesQuery = this.db
+			.select({
+				userId: friends.user_id,
+				friendId: users.id,
+				userData: users.data,
+				friendSince: friends.friend_since,
+				updatedAt: users.updated_at,
 				gameUserId: ownedGames.user_id,
 				appId: ownedGames.app_id,
 				playtime2weeks: ownedGames.playtime_2w_minutes,
@@ -257,7 +318,13 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 			.where(inArray(friends.user_id, ids))
 			.orderBy(sortDirection(sortMethod))
 			.limit(options.limit || 1000)
-			.offset(options.cursor || 0);
+			.offset(options.cursor || 0)
+			.$dynamic();
+
+		// If filtering by app, restrict to ownedGames for that app (acts like an inner join to owners)
+		if (this.appIdFilter !== undefined) {
+			friendsWithGamesQuery = friendsWithGamesQuery.where(eq(ownedGames.app_id, this.appIdFilter));
+		}
 
 		const allRows = await friendsWithGamesQuery;
 
@@ -317,26 +384,26 @@ class FriendsQueryComposer implements QueryComposer<SteamFriendUser, FriendsSort
 				rtime_last_played: game.rtimeLastPlayed ? Math.floor(game.rtimeLastPlayed.getTime() / 1000) : undefined,
 			}));
 
-			return new SteamFriendUser({
-				data: row.userData,
+			return new SteamFriendUser<true>({
+				data: row.userData as SteamUserRaw,
 				ownedApps,
 				friend: originalUser,
 				friendData: {
 					steamid: row.friendId,
 					relationship: "friend",
-					friend_since: row.friendSince.getTime(),
+					friend_since: Math.floor(row.friendSince.getTime() / 1000),
 				},
 			});
 		});
 
-		return items;
+		return items as unknown as SteamFriendUser<WithOwnedApps>[];
 	}
 }
 
 export class FriendsRepository
 	implements
-		Repository<SteamFriendUser, FriendsSortMethod>,
-		ComposableRepository<SteamFriendUser, FriendsSortMethod, FriendsQueryComposer>
+		Repository<SteamFriendUser<false>, FriendsSortMethod>,
+		ComposableRepository<SteamFriendUser<false>, FriendsSortMethod, FriendsQueryComposer<false>>
 {
 	constructor(
 		private sqlite: ProjectDB,
@@ -347,7 +414,7 @@ export class FriendsRepository
 	/**
 	 * Create a new composable query builder
 	 */
-	compose(): FriendsQueryComposer {
-		return new FriendsQueryComposer(this.sqlite, this.steamApi, this.userRepository);
+	compose(): FriendsQueryComposer<false> {
+		return new FriendsQueryComposer<false>(this.sqlite, this.steamApi, this.userRepository);
 	}
 }

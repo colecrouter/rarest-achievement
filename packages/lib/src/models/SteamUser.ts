@@ -6,26 +6,26 @@ import { SteamOwnedGame } from "./SteamOwnedGame";
 
 export type SteamUserRaw = GetPlayerSummariesResponse["response"]["players"][number];
 
-export class SteamUser {
+export class SteamUser<WithOwnedApps extends boolean = boolean> {
 	#player: SteamUserRaw;
-	#ownedApps: OwnedGame<false>[];
+	#ownedApps: WithOwnedApps extends true ? OwnedGame<false>[] : never;
 
 	constructor({
 		data,
 		ownedApps,
 	}: {
 		data: SteamUserRaw;
-		ownedApps: OwnedGame<false>[];
+		ownedApps: WithOwnedApps extends true ? OwnedGame<false>[] : never;
 	}) {
 		this.#player = data;
 		this.#ownedApps = ownedApps;
 	}
 
-	serialize(): ConstructorParameters<typeof SteamUser>[0] {
+	serialize(): ConstructorParameters<typeof SteamUser<WithOwnedApps>>[0] {
 		return {
 			data: this.#player,
 			ownedApps: this.#ownedApps,
-		} satisfies ConstructorParameters<typeof SteamUser>[0];
+		} satisfies ConstructorParameters<typeof SteamUser<WithOwnedApps>>[0];
 	}
 
 	get id() {
@@ -70,7 +70,7 @@ export class SteamUser {
 	}
 
 	get ownedApps() {
-		return this.#ownedApps.map((app) => new SteamOwnedGame({ owned: app }));
+		return (this.#ownedApps ?? []).map((app) => new SteamOwnedGame({ owned: app }));
 	}
 }
 

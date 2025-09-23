@@ -100,6 +100,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		}
 
 		const rows = await query;
+		// debug: removed row count logging
 		const count = rows[0]?.count ?? 0;
 		return ensureAttempt.map(() => count);
 	}
@@ -123,11 +124,9 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 			return createQueryResult([], 0, null);
 		}
 
-		// This path doesn't actually fetch its own data, so no API calls/try-catch needed
-		// Just return the result of the Apps ensure operation
-		return await composer.build({
-			sort: { method: "id", direction: "asc" },
-		});
+		// Ensure apps exist without hydrating full SteamApp objects to keep memory usage low
+		const attempt = await composer.ensureDataExists();
+		return createQueryResult<SteamApp>([], 0, attempt.error);
 	}
 
 	/**
@@ -193,6 +192,7 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 		}
 
 		const data = await query;
+		// debug: removed row count logging
 
 		// Map results to SteamAppAchievement objects
 		const achievements = data
@@ -272,7 +272,9 @@ class AppAchievementQueryComposer extends BaseAchievementQueryComposer<SteamAppA
 				limit: 1000,
 				sort: { method: "id", direction: "asc" },
 			});
-		return bySub.data || [];
+		const apps = bySub.data || [];
+		// debug: removed row count logging
+		return apps;
 	}
 
 	/**

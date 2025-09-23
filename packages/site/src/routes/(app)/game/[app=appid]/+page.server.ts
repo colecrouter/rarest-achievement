@@ -1,5 +1,5 @@
-import { getLocale } from "$lib/paraglide/runtime.js";
 import { Attempt, type SteamUser } from "@project/lib";
+import { getLocale } from "$lib/paraglide/runtime.js";
 
 export const load = async ({ parent, locals }) => {
 	const { app } = await parent();
@@ -34,7 +34,8 @@ export const load = async ({ parent, locals }) => {
 			.withLanguage(locale)
 			.withAppIds(app.id)
 			.withFriendsOf(locals.steamUser.id)
-			.build({ limit: 10000 }); // TODO: cap sensibly
+			.withUnlockedStatus(true)
+			.build({ limit: 1500 }); // reduced cap; adjust if needed based on telemetry
 
 		// Build a distinct set of users from the achievements
 		// Narrow to items with a user and collect unique users by id

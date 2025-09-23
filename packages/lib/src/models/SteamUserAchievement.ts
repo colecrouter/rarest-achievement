@@ -12,9 +12,9 @@ export type SteamUserAchievementRawStats = NonNullable<
 	GetPlayerAchievementsResponse<undefined>
 >["playerstats"]["achievements"][number];
 
-export class SteamUserAchievement extends SteamAppAchievement {
+export class SteamUserAchievement<WithOwnedApps extends boolean = boolean> extends SteamAppAchievement {
 	#userStats: SteamUserAchievementRawStats | null;
-	#user?: SteamUser;
+	#user?: SteamUser<WithOwnedApps>;
 
 	constructor({
 		app,
@@ -28,7 +28,7 @@ export class SteamUserAchievement extends SteamAppAchievement {
 		meta: SteamAchievementRawMeta;
 		globalStats: SteamAchievementRawGlobalStats;
 		lang: APILanguageCode;
-		user?: SteamUser;
+		user?: SteamUser<WithOwnedApps>;
 		userStats: SteamUserAchievementRawStats | null;
 	}) {
 		super({ app, meta, globalStats, lang });
@@ -36,7 +36,7 @@ export class SteamUserAchievement extends SteamAppAchievement {
 		this.#userStats = userStats;
 	}
 
-	serialize(): ConstructorParameters<typeof SteamUserAchievement>[0] {
+	serialize(): ConstructorParameters<typeof SteamUserAchievement<WithOwnedApps>>[0] {
 		const base = super.serialize();
 		return { ...base, user: this.#user, userStats: this.#userStats };
 	}

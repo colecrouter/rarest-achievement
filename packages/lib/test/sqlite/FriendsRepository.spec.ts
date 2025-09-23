@@ -245,6 +245,7 @@ describe("FriendsRepository - SQLite (in-memory)", () => {
 		const result = await repo
 			.compose()
 			.withUserIds(main)
+			.withOwnedGames()
 			.build({ sort: { method: "id", direction: "asc" } });
 
 		const byId = new Map(result.data.map((f) => [f.id, f]));

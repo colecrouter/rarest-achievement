@@ -21,5 +21,5 @@ export function makeUser(
 
 	const ownedApps = owned_overrides.map(([appid, includeAppInfo]) => makeOwnedGame(appid, includeAppInfo));
 
-	return new SteamUser({ data, ownedApps });
+	return new SteamUser<true>({ data, ownedApps });
 }

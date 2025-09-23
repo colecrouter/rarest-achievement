@@ -937,7 +937,10 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			// Ensuring friends data for requesting user
 			const friendsComposer = this.friendsRepository.compose().withUserIds(this.friendsOfUserId);
 			if (this.freshnessCutoff) friendsComposer.withCutoff(this.freshnessCutoff);
-			friendsResult = await friendsComposer.build({ limit: 1000 }); // Get up to 1000 friends
+			// Ensure friend relationships/users without selecting 1000+ joined rows
+			const friendsEnsureAttempt = await friendsComposer.ensureDataExists();
+			// Mirror previous shape (optional) by creating a minimal ComposableQueryResult carrying the error
+			friendsResult = new ComposableQueryResult<SteamFriendUser>([], 0, friendsEnsureAttempt.error);
 
 			// Suppress non-build/count warnings per logging standard
 
@@ -986,7 +989,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 		// Include friends result if it exists
 		if (friendsResult) {
-			finalResult = finalResult.and(friendsResult.map(() => undefined)); // Convert to void for combination
+			finalResult = finalResult.and(Attempt.from(undefined, friendsResult.error));
 		}
 
 		return finalResult;
@@ -1310,7 +1313,8 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			.withUnlockedAtMode(this.ensurePolicy?.mode === "unlocked_at");
 		// Intentionally don't check for app freshness
 		// if (this.freshnessCutoff) appDataComposer.withCutoff(this.freshnessCutoff);
-		const appDataResult = await appDataComposer.build();
+		// Ensure only; avoid selecting potentially hundreds of app rows
+		const appDataResult = await appDataComposer.ensureDataExists();
 
 		if (appDataResult.error) {
 			console.warn(

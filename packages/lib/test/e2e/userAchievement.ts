@@ -38,7 +38,7 @@ export function makeUserAchievementStats(
  */
 export function makeUserAchievement(
 	app: SteamApp,
-	user: SteamUser,
+	user: SteamUser<true>,
 	achievementName = `ACH_${Math.floor(Math.random() * 10000)}`,
 	displayName = `Achievement ${achievementName}`,
 	percent = Math.random() * 100,
@@ -71,7 +71,7 @@ export function makeUserAchievement(
  */
 export function makeLockedUserAchievement(
 	app: SteamApp,
-	user: SteamUser,
+	user: SteamUser<true>,
 	achievementName = `ACH_${Math.floor(Math.random() * 10000)}`,
 	displayName = `Achievement ${achievementName}`,
 	percent = Math.random() * 100,
@@ -86,7 +86,7 @@ export function makeLockedUserAchievement(
  */
 export function makeUnlockedUserAchievement(
 	app: SteamApp,
-	user: SteamUser,
+	user: SteamUser<true>,
 	achievementName = `ACH_${Math.floor(Math.random() * 10000)}`,
 	displayName = `Achievement ${achievementName}`,
 	percent = Math.random() * 100,

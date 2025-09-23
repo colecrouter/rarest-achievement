@@ -4,6 +4,26 @@ import { Attempt, AttemptStatus } from "../error";
 import type { LanguageCode } from "../lang";
 export type SortDirection = "asc" | "desc";
 
+/*
+	Query composers and composable repositories.
+
+	These are meant to be used as building blocks for more complex queries,
+	without causing parameter explosion or complex method signatures. Repository behavior must follow a very specific pattern:
+
+	1. A repository exposes a `compose()` method that returns a new composer instance.
+	2. A composer exposes chainable `withX()` methods to add filters and options.
+	3. A composer exposes a `build()` method that executes the query and returns results.
+
+	The `build()` method *must* follow a very specific pattern:
+	- Similar API calls should be concurrent.
+	- Errors throw by Steam clients **must** be caught & wrapped in an `Attempt`
+	  - If data fetching fails, `AttemptStatus.Partial` must be used (indicating partial data)
+	  - The first error *must* be carried forward & not discarded (`Attempt` has helpers for this)
+	- Other errors (e.g. SQLite errors) must *not* be caught, and should propagate normally
+	- Errors should be throw in invalid states, but not in cases that could be a result of partial data (as per above)
+	- `build()` must peek the result for an error and log it
+*/
+
 /**
  * Sort configuration for composable queries
  */

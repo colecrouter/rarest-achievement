@@ -13,7 +13,7 @@ import type { Handle, HandleFetch } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
 import { dev } from "$app/environment";
-import { GOOGLE_API_KEY, STEAM_API_KEY } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 import { Limiter } from "./lib/limiter";
 
@@ -33,7 +33,7 @@ const authHandle: Handle = async ({ event, resolve }) => {
 	const fetchManager = new FetchManager();
 	setFetchManager(fetchManager);
 
-	event.locals.steamClient = new SteamAuthenticatedAPIClient(STEAM_API_KEY);
+	event.locals.steamClient = new SteamAuthenticatedAPIClient(env.STEAM_API_KEY);
 	event.locals.steamStoreClient = SteamStoreAPIClient;
 	event.locals.steamCommunityClient = SteamCommunityAPIClient;
 
@@ -59,7 +59,7 @@ const authHandle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Initialize the TranslateClient
-	event.locals.translateClient = new TranslateClient(GOOGLE_API_KEY);
+	event.locals.translateClient = new TranslateClient(env.GOOGLE_API_KEY);
 	event.locals.miscCache = event.platform.env.STEAM_CACHE;
 
 	return resolve(event);

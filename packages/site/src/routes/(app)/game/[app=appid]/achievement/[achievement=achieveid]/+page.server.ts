@@ -1,5 +1,5 @@
 import { Attempt, SteamCommunityRepo, YouTubeRepository } from "@project/lib";
-import { GOOGLE_API_KEY } from "$env/static/private";
+import { env } from "$env/dynamic/private";
 import { getLocale } from "$lib/paraglide/runtime.js";
 
 export const load = async ({ parent, url, locals, platform }) => {
@@ -10,7 +10,7 @@ export const load = async ({ parent, url, locals, platform }) => {
 	if (!platform) throw new Error("No platform found");
 
 	const steamComRepo = new SteamCommunityRepo(platform.env.STEAM_CACHE, locals.steamCommunityClient);
-	const youtubeRepo = new YouTubeRepository(GOOGLE_API_KEY, platform.env.STEAM_CACHE, platform.env.AI);
+	const youtubeRepo = new YouTubeRepository(env.GOOGLE_API_KEY, platform.env.STEAM_CACHE, platform.env.AI);
 
 	const friendsWithAchievement = (async () => {
 		/*

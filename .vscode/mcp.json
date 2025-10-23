@@ -1,0 +1,16 @@
+{
+	"servers": {
+		"context7": {
+			"type": "http",
+			"url": "https://mcp.context7.com/mcp",
+			"headers": {
+				"CONTEXT7_API_KEY": "ctx7sk-84194035-b186-42c8-abe8-e55f3d4a5bdf"
+			}
+		},
+		"svelte": {
+			"type": "http",
+			"url": "https://mcp.svelte.dev/mcp"
+		}
+	},
+	"inputs": []
+}

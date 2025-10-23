@@ -1,19 +1,7 @@
 {
+	"extends": ["../../tsconfig.base.json"],
 	"compilerOptions": {
-		"moduleResolution": "bundler",
-		"noUncheckedIndexedAccess": true,
-		"target": "ESNext",
-		"module": "ESNext",
-		"strict": true,
-		"paths": {
-			"@models": ["./models"],
-			"@models/*": ["./models/*"],
-			"@config": ["./config"],
-			"@config/*": ["./config/*"]
-		},
-		"lib": ["ESNext", "DOM"],
-		"types": ["@cloudflare/workers-types", "node"],
-		"skipLibCheck": true,
-		"noErrorTruncation": true
-	}
+		"types": ["@cloudflare/workers-types", "node"]
+	},
+	"include": ["src"]
 }

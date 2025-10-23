@@ -122,7 +122,9 @@
 						localizeHref(
 							`/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
 						),
-						{ keepFocus: true },
+						{
+							keepFocus: true,
+						},
 					);
 				},
 				onHover(_, elements, chart) {

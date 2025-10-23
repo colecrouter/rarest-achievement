@@ -1,17 +1,7 @@
 {
+	"extends": ["../../tsconfig.base.json"],
 	"compilerOptions": {
-		"baseUrl": ".",
-		"allowJs": true,
-		"checkJs": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"resolveJsonModule": true,
-		"skipLibCheck": false,
-		"sourceMap": true,
-		"strict": true,
-		"moduleResolution": "bundler",
-		"noUncheckedIndexedAccess": true,
-		"target": "ESNext",
-		"module": "ESNext"
-	}
+		"types": ["@cloudflare/workers-types", "node"]
+	},
+	"include": ["src", "worker-configuration.d.ts"]
 }

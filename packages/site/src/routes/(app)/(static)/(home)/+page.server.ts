@@ -71,6 +71,7 @@ export const load = async ({ locals }) => {
 		showcase2: await getShowcaseAchievements(locals, locale),
 		stats: await getStats(locals),
 		featuredAchievements: await getRareAchievements(locals, locale),
+		random: [0, 0, 0].map(() => Math.floor(Math.random() * 500) + 500) as [number, number, number],
 	};
 };
 
@@ -167,9 +168,7 @@ const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
 		.orderBy(sql`RANDOM()`) // Randomly select 3 rare achievements
 		.limit(3);
 
-	type RareRow = (typeof rareRows)[number];
-
-	const appIds = rareRows.map((row: RareRow) => row.appId);
+	const appIds = rareRows.map((row) => row.appId);
 
 	const appsRes = await locals.steamCacheDB.select({ app: apps.data }).from(apps).where(inArray(apps.id, appIds));
 
@@ -178,7 +177,7 @@ const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
 		return new SteamApp({ data: a.app, lang, estimatedPlayers: 0 });
 	});
 
-	const constructedAchievements = rareRows.map((row: RareRow) => {
+	const constructedAchievements = rareRows.map((row) => {
 		const app = constructedApps.find((a) => a.id === row.appId);
 		if (!app) throw new Error(`App with ID ${row.appId} not found`);
 		return new SteamAppAchievement({

@@ -30,3 +30,5 @@ src/lib/paraglide
 
 venv
 # /packages/lib/steam_model.json
+
+tsconfig.tsbuildinfo

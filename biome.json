@@ -12,7 +12,7 @@
 		"indentStyle": "tab",
 		"indentWidth": 4,
 		"lineEnding": "lf",
-		"includes": ["**", "!**/*.svelte", "!**/*.css", "!**/*.html", "!**/steam_model"],
+		"includes": ["**", "!**/*.svelte", "!**/*.css", "!**/*.html", "!**/steam_model.json"],
 		"lineWidth": 120
 	},
 	"linter": {
@@ -44,6 +44,15 @@
 					"suspicious": {
 						"noUnknownAtRules": "off"
 					}
+				}
+			}
+		},
+		{
+			"includes": [".vscode/**/*.json"],
+			"json": {
+				"parser": {
+					"allowComments": true,
+					"allowTrailingCommas": true
 				}
 			}
 		}

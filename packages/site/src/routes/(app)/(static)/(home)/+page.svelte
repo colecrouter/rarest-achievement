@@ -65,7 +65,7 @@
 		icon: typeof Trophy;
 	}>;
 
-	const rotations = ["rotate-1", "-rotate-1", "rotate-1"];
+	const rotations = ["rotate-1", "-rotate-1", "rotate-1"] as const;
 
 	let tracked = $state<[number, number, number]>([0, 0, 0]);
 
@@ -76,6 +76,8 @@
 			data.stats.gameCount,
 		];
 	};
+
+	const cardRanks = [0, 1, 2] as const;
 
 	let exploreTarget = $state<HTMLElement | null>(null);
 
@@ -132,14 +134,14 @@
 								</h3>
 							</div>
 							<div class="space-y-4">
-								{#each [1, 2, 3] as rank}
+								{#each cardRanks as rank}
 									<div
 										class="card secondary flex items-center gap-3 p-3"
 									>
 										<div
 											class="bg-surface-800 text-primary-500 flex h-8 w-8 items-center justify-center rounded-full font-bold"
 										>
-											{rank}
+											{rank + 1}
 										</div>
 										<img
 											src="/placeholder.svg"
@@ -151,17 +153,14 @@
 										<div>
 											<div class="font-medium">
 												{m.homepageAchievementPlayer({
-													rank,
+													rank: rank + 1,
 												})}
 											</div>
 											<div
 												class="text-surface-300 text-xs"
 											>
 												{m.homepageRareAchievements({
-													count:
-														Math.floor(
-															Math.random() * 500,
-														) + 500,
+													count: data.random[rank],
 												})}
 											</div>
 										</div>

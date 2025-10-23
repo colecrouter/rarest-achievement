@@ -112,10 +112,13 @@ const getStats = async (locals: App.Locals) => {
 		achievementsIndexed?.achievementCount ?? 0,
 	];
 
+	const random = [0, 0, 0].map(() => Math.floor(Math.random() * 500) + 500) as [number, number, number];
+
 	return {
 		userCount,
 		gameCount,
 		achievementCount,
+		random,
 	};
 };
 

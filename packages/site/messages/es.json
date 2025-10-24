@@ -1,276 +1,516 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"aboutContactTitle": "Ponte en Contacto",
-	"aboutCtaDescription": "Únete a miles de jugadores que rastrean y comparten sus logros de juego con Steam Vault.",
-	"aboutDiscord": "Únete a Nuestro Discord",
-	"aboutFaqTitle": "Preguntas Frecuentes",
-	"aboutKeyFeaturesTitle": "Características Principales",
-	"aboutMissionParagraph1": "Steam Vault fue creado con un objetivo sencillo: permitir a los jugadores encontrar sus logros más raros en la plataforma.",
-	"aboutMissionParagraph2": "Los logros no son solo hitos; pueden representar horas de dedicación, aprendizaje, práctica y esfuerzo. Para la mayoría, nadie se dará cuenta, pero Steam Vault busca cambiar eso.",
-	"aboutMissionParagraph3": "Nuestra plataforma está diseñada para celebrar tu trayectoria en el mundo del gaming, permitiéndote ver tus logros bajo una nueva perspectiva. También te ofrecemos información y análisis para seguir impulsándote.",
-	"aboutMissionTitle": "Nuestra Misión",
-	"aboutPageHeroSubtitle": "Rastreando, mostrando y celebrando tus logros en videojuegos.",
-	"aboutPageHeroTitle": "Acerca de Steam Vault",
-	"aboutPageMetaDescription": "Conoce más sobre Steam Vault, nuestra misión y cómo ayudamos a los jugadores a rastrear sus logros.",
-	"aboutPageMetaTitle": "Steam Vault - Sobre Nosotros",
-	"aboutSocialText": "Síguenos en las redes sociales para actualizaciones, consejos y ser parte de nuestra creciente comunidad de cazadores de logros.",
-	"aboutTeamTitle": "Nuestro Equipo",
-	"achievementArticlesError": "Error al cargar las guías: {errorMessage}",
-	"achievementArticlesLoading": "Cargando consejos y guías...",
-	"achievementArticlesSteamCommunityDescription": "Guías oficiales de la Comunidad Steam para desbloquear este logro.",
-	"achievementArticlesSteamCommunityTitle": "Guías de la Comunidad Steam",
-	"achievementArticlesYouTubeDescription": "Tutoriales en video para desbloquear este logro.",
-	"achievementArticlesYouTubeTitle": "Guías en Video de YouTube",
-	"achievementDetails": "Detalles",
-	"achievementOfPlayers": "de jugadores",
-	"achievementOtherAchievementsDescription": "Tu progreso en todos los logros de este juego",
-	"achievementOtherAchievementsTitle": "Otros Logros en {appName}",
-	"achievementPageMetaDescription": "Desbloquea \"{achievementName}\" en {appName}—una hazaña que solo el {percentage}% de jugadores consigue. Consulta gráficos de rareza, compárate con amigos y lee las mejores guías en Steam Vault.",
-	"achievementPageMetaTitle": "{achievementName} - {appName}",
-	"achievementRarityComparisonDescription": "Cómo se compara \"{achievementName}\" con otros logros en {appName}",
-	"achievementRarityComparisonTitle": "Comparación de Rareza de Logros",
-	"achievementShareText": "Compartir",
-	"achievementTabArticles": "Consejos y Guías",
-	"achievementTabFriends": "Amigos",
-	"achievementTabStats": "Estadísticas",
-	"achievementThisAchievementLabel": "Este Logro",
-	"appPageMetaDescription": "Consulta todos los {achievementCount} logros en {appName}. Sigue tu progreso con gráficos interactivos y consulta guías en Steam Vault.",
-	"appPageMetaKeywords": "Steam, logros, {appName}, {appId}, {achievementCount}",
-	"appPageMetaTitle": "{appName} - Logros",
-	"chartAchievementsLabel": "Logros",
-	"chartAfterLabelSuffix": "% del total",
-	"ChartRarityCommon": "Común",
-	"ChartRarityRare": "Raro (<10%)",
-	"ChartRarityUltraRare": "Ultrararo (<5%)",
-	"ChartRarityUncommon": "Poco Común (<50%)",
-	"chartUnlockedAchievementsLabel": "Logros Desbloqueados",
-	"ctaTitle": "¿Listo para mostrar tus logros?",
-	"errorPageButtonBack": "Regresar",
-	"errorPageButtonHome": "Ir al Inicio",
-	"errorPageButtonReload": "Intentar de Nuevo",
-	"errorPageErrorCause": "Causa: {errorMessage}",
-	"errorPageErrorSuggestion": "Intenta recargar la página o volver al inicio",
-	"errorPageMessage": "Algo salió mal al cargar esta página. Nuestros ingenieros han sido notificados y están trabajando en una solución.",
-	"errorPageTitle": "Ups...",
-	"footerAbout": "Acerca de",
-	"footerCompanyName": "Steam Vault",
-	"footerPrivacy": "Privacidad",
-	"footerRights": "© {year} Steam Vault. Todos los derechos reservados.",
-	"footerSupport": "Soporte",
-	"footerTerms": "Términos",
-	"friendAchievementProgress": "Progreso del Logro",
-	"friendHoursPlayed": "Jugado {hours} horas",
-	"friendNoAchievementText": "Ningún amigo ha desbloqueado este logro aún.",
-	"friendSignInDescription": "Inicia sesión para ver qué amigos han desbloqueado este logro.",
-	"friendSignInTitle": "Inicia sesión para ver amigos",
-	"gamePageAchievementLeaderboardTitle": "Tabla de Líderes de Logros",
-	"gamePageAchievementProgressDescription": "Has desbloqueado {unlockedCount} de {totalCount} logros.",
-	"gamePageAchievementProgressTitle": "Progreso de Logros",
-	"gamePageDescriptionLabel": "Descripción",
-	"gamePageDeveloperLabel": "Desarrollador",
-	"gamePageFriendsWhoPlayTitle": "Amigos que Juegan",
-	"gamePageGameInformationTitle": "Información del Juego",
-	"gamePageNoRecentUnlocksDescription": "No has desbloqueado ningún logro recientemente.",
-	"gamePageNoRecentUnlocksTitle": "Sin Desbloqueos Recientes",
-	"gamePagePlayOnSteam": "Jugar en Steam",
-	"gamePagePublisherLabel": "Editor",
-	"gamePageRecentUnlocksTitle": "Desbloqueos Recientes",
-	"gamePageReleaseDateLabel": "Fecha de Lanzamiento",
-	"gamePageSignInCallToActionDescription": "Inicia sesión para ver tus desbloqueos recientes y progreso.",
-	"gamePageSignInCallToActionTitle": "Desbloquear Logros",
-	"gamePageViewOnSteamDB": "Ver en SteamDB",
-	"homepageAchievementPlayer": "Jugador {rank}",
-	"homepageComingSoon": "Próximamente",
-	"homepageCtaDescription": "Es gratis, solo inicia sesión con tu cuenta de Steam y comienza a rastrear tus logros.",
-	"homepageExploreDescription": "Encuentra logros para cada juego en tu biblioteca. ¡Ningún reto es demasiado grande!",
-	"homepageExploreTitle": "Explora Tus Logros",
-	"homepageFeaturedDescription": "Descubre algunos de los logros más raros desbloqueados por nuestros miembros.",
-	"homepageFeaturedTitle": "Logros Raros Destacados",
-	"homepageFeaturesDashboard": "Ir al Panel",
-	"homepageFeaturesLearnMore": "Más Información",
-	"homepageFeaturesSignIn": "Inicia Sesión Ahora",
-	"homepageFeaturesTitle": "¿Por Qué Usar Steam Vault?",
-	"homepageHeroDescription": "Rastrea y comparte tus logros más impresionantes. Compara tu rendimiento con otros jugadores en Steam Vault.",
-	"homepageHeroTitle": "Muestra Tus Logros Más Raros en Steam",
-	"homepageMetaDescription": "Rastrea, muestra y comparte tus logros más raros en Steam Vault.",
-	"homepageMetaTitle": "Steam Vault - Muestra Tus Logros",
-	"homepageRareAchievements": "{count} logros raros",
-	"homepageStatsIndexedGames": "Juegos Indexados",
-	"homepageStatsIndexedUsers": "Usuarios Indexados",
-	"homepageStatsTrackedAchievements": "Logros Rastreados",
-	"homepageTextCard1Description": "Consulta los logros de todos tus juegos en un solo lugar. Compara tu rendimiento con el de otros.",
-	"homepageTextCard1Title": "Rastrea Tus Logros",
-	"homepageTextCard2Description": "Descubre más juegos y logros. Encuentra guías, estadísticas y más.",
-	"homepageTextCard2Title": "Descubre Datos Clave",
-	"homepageTextCard3Description": "Encuentra a otros cazadores de logros, compara estadísticas y haz nuevos amigos.",
-	"homepageTextCard3Title": "Conecta Con Otros",
-	"homepageTopAchievementHunters": "Los Mejores Cazadores de Logros",
-	"homepageViewAll": "Ver Todo",
-	"layoutMetaKeywords": "Steam, logros, gaming, juegos, perfil, usuario, más raros, raros, estadísticas",
-	"legalAcknowledgmentText": "Al usar Steam Vault, reconoces haber leído y entendido nuestra Política de Privacidad y Términos de Servicio, y aceptas estar sujeto a ellos.",
-	"legalBreadcrumbsTitle": "Legal",
-	"legalContactEmail": "support@steamvault.info",
-	"legalContactHeading": "Contáctanos",
-	"legalContactIntro": "Si tienes alguna pregunta sobre nuestra Política de Privacidad o Términos de Servicio, contáctanos.",
-	"legalDisclaimerText": "Steam Vault no está asociado de ninguna manera con Valve Corporation. Todas las marcas registradas o de servicio son propiedad de sus respectivos dueños. Los activos registrados se usan bajo el principio de uso justo.",
-	"legalDisclaimerTitle": "Descargo de Responsabilidad",
-	"legalHeaderSubtitle": "Última actualización: 9 de abril de 2025",
-	"legalHeaderTitle": "Política de Privacidad y Términos de Servicio",
-	"legalPageMetaDescription": "Política de Privacidad y Términos de Servicio de Steam Vault.",
-	"legalPageMetaTitle": "Steam Vault - Legal",
-	"legalPrintButton": "Imprimir esta página",
-	"legalPrivacyBlockquote": "Esta Política de Privacidad describe cómo Steam Vault (\"nosotros\", \"nuestro\", o \"nos\") recopila, utiliza y comparte tu información personal cuando utilizas nuestro sitio web y servicios. Al usar Steam Vault, aceptas la recopilación y el uso de información conforme a esta política.",
-	"legalPrivacySectionChanges": "Cambios a esta Política de Privacidad",
-	"legalPrivacySectionChangesText": "Podemos actualizar esta Política de Privacidad. Revisa periódicamente para ver cambios.",
-	"legalPrivacySectionCookies": "Cookies y Tecnologías de Seguimiento",
-	"legalPrivacySectionCookiesText": "Utilizamos cookies y tecnologías similares para rastrear la actividad en nuestra plataforma. Rechazar cookies puede afectar tu experiencia.",
-	"legalPrivacySectionDataSecurity": "Seguridad de Datos",
-	"legalPrivacySectionDataSecurityText": "Implementamos medidas para proteger tu información personal, aunque ningún método es 100% seguro.",
-	"legalPrivacySectionHowWeUse": "Cómo Utilizamos Tu Información",
-	"legalPrivacySectionHowWeUseList": "Utilizamos la información para proporcionar, mantener y mejorar nuestros servicios, y para investigar y prevenir el uso fraudulento de nuestra plataforma.",
-	"legalPrivacySectionInformation": "Información que Recopilamos",
-	"legalPrivacySectionInformationList": "Recopilamos varios tipos de información de y sobre los usuarios de nuestra plataforma, incluyendo: Detalles de la Cuenta Steam, Datos de Uso e Información del Dispositivo.",
-	"legalPrivacySectionSharing": "Compartir Tu Información",
-	"legalPrivacySectionSharingList": "La información personal no se comparte con terceros, salvo por razones legales o para proteger derechos.",
-	"legalPrivacySectionYourRights": "Tus Derechos",
-	"legalPrivacySectionYourRightsList": "Tienes derechos como acceder, corregir, eliminar y oponerte al procesamiento de tu información personal.",
-	"legalTabsPrivacy": "Política de Privacidad",
-	"legalTabsTerms": "Términos de Servicio",
-	"legalTermsBlockquote": "Estos Términos de Servicio (“Términos”) rigen tu acceso y uso del sitio web y servicios de Steam Vault. Al utilizar nuestros servicios, aceptas estos Términos.",
-	"legalTermsSectionAcceptableUse": "Uso Aceptable",
-	"legalTermsSectionAcceptableUseText": "Aceptas usar nuestros servicios solo con fines legales y no participar en actividades prohibidas.",
-	"legalTermsSectionChanges": "Cambios a Estos Términos",
-	"legalTermsSectionChangesText": "Nos reservamos el derecho de modificar estos Términos en cualquier momento con previo aviso.",
-	"legalTermsSectionIntellectualProperty": "Derechos de Propiedad Intelectual",
-	"legalTermsSectionIntellectualPropertyText": "Nuestros servicios y contenidos son propiedad de Steam Vault o de sus licenciantes y están protegidos por leyes de propiedad intelectual.",
-	"legalTermsSectionLimitationOfLiability": "Limitación de Responsabilidad",
-	"legalTermsSectionLimitationOfLiabilityText": "En ningún caso Steam Vault o sus afiliados serán responsables por daños derivados del uso de nuestros servicios.",
-	"legalTermsSectionTermination": "Terminación",
-	"legalTermsSectionTerminationText": "Podemos suspender o terminar tu cuenta inmediatamente si violas estos Términos.",
-	"legalTermsSectionUserAccounts": "Cuentas de Usuario",
-	"legalTermsSectionUserAccountsText": "Accede a funciones específicas iniciando sesión con tu cuenta de Steam. Eres responsable de proteger tus credenciales de cuenta.",
-	"loadingScreenDescription1": "Durante el desarrollo de <i>Call of Duty 4: Modern Warfare</i> (2007), Infinity Ward estudió manuales reales de entrenamiento de fuerzas especiales, centrándose en la comunicación por radio, tácticas de movimiento y lenguaje corporal, para crear una experiencia cinematográfica pero tácticamente fundamentada.",
-	"loadingScreenDescription2": "En <i>Portal</i> (2007), a los jugadores se les promete un pastel literal, mientras que inconscientemente los conduce a su perdición. Esta promesa irónica se transformó rápidamente en un recordatorio icónico sobre incentivos vacíos en el marketing de juegos.",
-	"loadingScreenDescription3": "<i>Super Mario Bros.</i> (1985) incluía un enemigo rojo 'Koopa Troopa' no utilizado que tenía 2 vidas. El código filtrado de <i>Super Mario All-Stars</i> (1993) sugiere que esto fue planeado como el comportamiento predeterminado para todos los Koopa Troopas.",
-	"loadingScreenDescription4": "<i>GoldenEye 007</i> (1997) fue el primer juego en presentar un modo multijugador de disparos en primera persona en una consola. Estableció el estándar para los FPS en consolas, influyendo en innumerables títulos posteriores.",
-	"loadingScreenDescription5": "El <i>Legend of Zelda</i> original (1986) fue uno de los primeros juegos de consola en presentar un sistema de guardado con batería, permitiendo a los jugadores registrar su extenso progreso en un mundo abierto. Esta característica redefinió el diseño de los juegos de aventuras.",
-	"loadingScreenDescription6": "El nombre \"Zelda\" (de la franquicia <i>The Legend of Zelda</i>) se inspiró en Zelda Fitzgerald, esposa del autor F. Scott Fitzgerald, otorgando a la serie un título exótico y memorable.",
-	"loadingScreenDescription7": "El <i>Final Fantasy</i> original (1987) fue concebido como el último intento del desarrollador Square (posteriormente Square Enix) durante una crisis financiera. Irónicamente, su éxito inesperado no solo salvó a la compañía, sino que también sentó las bases para una de las franquicias de RPG más icónicas y duraderas.",
-	"loadingScreenTitle1": "Cambiar a tu pistola es más rápido que recargar!",
-	"loadingScreenTitle2": "¡El pastel es una mentira!",
-	"loadingScreenTitle3": "¡He pasado horas de mi vida, pisoteando... Koopas!",
-	"loadingScreenTitle4": "El nombre es Bond... James Bond",
-	"loadingScreenTitle5": "¡Es peligroso ir solo! ¡Toma esto!",
-	"loadingScreenTitle6": "¡Perdóname, Princesa!",
-	"loadingScreenTitle7": "No-tan Final Fantasy",
-	"navbarCompanyName": "Steam Vault",
-	"navbarLogin": "Iniciar Sesión",
-	"navbarLoginWithSteamHidden": "con Steam",
-	"navbarLogout": "Cerrar Sesión",
-	"podiumLabelFirst": "1er Lugar",
-	"podiumLabelSecond": "2º Lugar",
-	"podiumLabelThird": "3er Lugar",
-	"podiumPercentOfPlayers": "{percentage}% de jugadores",
-	"profileEditProfileButton": "Editar Perfil",
-	"profilePrivacyConcernsDescription": "Accedemos únicamente a tus datos de logros públicos para brindar nuestro servicio. Hacer públicos los detalles de tus juegos solo permite que otros vean tus juegos, logros y tiempo de juego.",
-	"profilePrivacyConcernsMore": "Para obtener más información sobre la configuración de privacidad de Steam, visita nuestro",
-	"profilePrivacyConcernsTitle": "¿Preocupaciones de Privacidad?",
-	"profilePrivacyLinkText": "página de privacidad",
-	"profilePrivacySettings": "Configuración de Privacidad",
-	"profilePrivate": "Este perfil es privado.",
-	"profileStep1Action": "Haz clic en",
-	"profileStep1Description": "Inicia sesión en Steam y navega a tu página de perfil. Puedes hacerlo haciendo clic en tu nombre de usuario en la barra superior de navegación.",
-	"profileStep1Title": "Paso 1: Ve a Tu Perfil de Steam",
-	"profileStep2Action": "Selecciona",
-	"profileStep2Description": "En la página de edición de perfil, encuentra y haz clic en la opción 'Configuración de Privacidad' en la barra lateral izquierda.",
-	"profileStep2Title": "Paso 2: Navega a Configuración de Privacidad",
-	"profileStep3AlertDescription": "Revisa cuidadosamente estos ajustes antes de cambiarlos.",
-	"profileStep3AlertTitle": "¡Mantente Seguro!",
-	"profileStep3Description": "En la página de Configuración de Privacidad, busca la sección 'Detalles del Juego' y configúrala en Público. También puedes configurar tu 'Lista de Amigos' como Pública para una mejor experiencia.",
-	"profileStep3Title": "Paso 3: Actualiza la Privacidad de Detalles del Juego",
-	"profileStep4Description": "Después de actualizar tus ajustes, puede tomar hasta 24 horas para que los cambios surtan efecto.",
-	"profileStep4Title": "Paso 4: Espera los Cambios",
-	"rarityCommon": "Común",
-	"rarityRare": "Raro",
-	"rarityUltraRare": "Ultrararo",
-	"rarityUncommon": "Poco Común",
-	"searchError": "Error: {message}",
-	"searching": "Buscando \"{query}\"...",
-	"searchMoreResults": "{count} resultados más...",
-	"searchNoMatches": "No se encontraron {type} para \"{query}\".",
-	"searchNoResults": "No se encontraron resultados para \"{query}\".",
-	"searchPlaceholder": "Ingresa un nombre de usuario, enlace de perfil o juego...",
-	"signIn": "Iniciar Sesión",
-	"splashAlertDescription": "Estamos enviando miles de solicitudes para obtener tus datos. Si consideras que está tardando demasiado, intenta recargar la página.",
-	"splashAlertTitle": "Esto puede tomar un momento...",
-	"loading": "Cargando...",
-	"splashSourceLabel": "Fuente:",
-	"statusHidden": "Oculto",
-	"statusLocked": "Bloqueado",
-	"statusUnlocked": "Desbloqueado",
-	"toolbarFilterAll": "Todo",
-	"toolbarFilterBy": "Filtrar por",
-	"toolbarFilterLocked": "Bloqueado",
-	"toolbarFilterUnlocked": "Desbloqueado",
-	"toolbarSearchPlaceholder": "Buscar logros...",
-	"toolbarSortBy": "Ordenar por",
-	"toolbarSortMethodRarity": "Rareza",
-	"toolbarSortMethodPlayerCount": "Cantidad de Jugadores",
-	"toolbarSortMethodUnlocked": "Desbloqueado",
-	"toolbarSortDirectionToggle": "Cambiar dirección de ordenamiento",
-	"indexErrorMessage": "Estamos indexando esta cuenta, por lo que puede faltar información. Por favor, vuelve más tarde.",
-	"indexErrorTitle": "Advertencia",
-	"userPageFaqPrivateAnswer": "Tu perfil de Steam tiene configuraciones de privacidad que impiden que otros lo vean. Para que Steam Vault pueda ver tus logros, necesitas hacer público tu perfil. Puedes hacerlo siguiendo las instrucciones a continuación.",
-	"userPageFaqPrivateQuestion": "¿Por qué es privado mi perfil?",
-	"userPageFaqPublicQuestion": "¿Cómo hago que mi perfil sea público?",
-	"userPageLeaderboardTitle": "Tabla de Líderes de Logros",
-	"userPageMetaDescription": "Consulta tus logros de Steam.",
-	"userPageMetaKeywords": "Steam, logros, usuario, {userId}, {displayName}",
-	"userPageMetaTitle": "{displayName} - Logros",
-	"userPageNoAchievements": "Aún no has desbloqueado logros.",
-	"userPageTitle": "Los Logros Más Raros de {displayName}",
-	"userTableAchievement": "Logro",
-	"userTableGame": "Juego",
-	"userTableRarity": "Rareza",
-	"userViewList": "Vista de Lista",
-	"userViewTable": "Vista de Cuadrícula",
-	"viewOnSteam": "Ver en Steam",
-	"aboutFaq": {
-		"question1": "¿Qué es Steam Vault?",
-		"answer1": "Steam Vault es una plataforma que te permite ver todos tus logros en Steam. Te ayudamos a encontrar tus logros más raros.",
-		"question2": "¿Por qué es especial Steam Vault?",
-		"answer2": "Debido a las estrictas directrices de la API de Steam, es difícil rastrear el progreso de logros para muchos usuarios en miles de juegos. Steam Vault busca cerrar esa brecha, recopilando la mayor cantidad de datos e información posible, y poniéndola a tu disposición (de forma gratuita).",
-		"question3": "¿Cómo conecto mi cuenta de Steam?",
-		"answer3": "Simplemente presiona el botón de inicio de sesión en la esquina superior derecha de la página. Conecta tu cuenta de Steam para empezar a rastrear tus logros.",
-		"question4": "¿Es Steam Vault gratuito?",
-		"answer4": "Steam Vault es completamente gratuito. No tiene funciones de pago. Nos financiamos únicamente mediante publicidad y donaciones.",
-		"question5": "¿Con qué frecuencia se actualizan los datos de logros?",
-		"answer5": "Nuestros datos se actualizan de manera sistemática para cumplir con las directrices de la API de Steam. Si sientes que tus datos no se actualizan regularmente, por favor contáctanos.",
-		"question6": "¿Puedo compartir mi perfil de logros con otros?",
-		"answer6": "Cada usuario tiene una página de perfil pública que se puede compartir mediante una URL única. También puedes generar tarjetas compartibles para logros individuales y publicarlas en redes sociales.",
-		"question7": "¿Cómo se calcula la rareza de los logros?",
-		"answer7": "La rareza de los logros se calcula en función de varios factores. El porcentaje proviene directamente de Steam, y se desconoce cómo se calcula esa cifra. Nuestro 'score' representa cuántas personas han desbloqueado el logro. Siempre estamos buscando nuevas formas de analizar y visualizar tus logros."
+	"about": {
+		"contactTitle": "Ponte en Contacto",
+		"ctaDescription": "Únete a miles de jugadores que rastrean y comparten sus logros de juego con Steam Vault.",
+		"discord": "Únete a Nuestro Discord",
+		"faq": {
+			"answer1": "Steam Vault es una plataforma que te permite ver todos tus logros en Steam. Te ayudamos a encontrar tus logros más raros.",
+			"answer2": "Debido a las estrictas directrices de la API de Steam, es difícil rastrear el progreso de logros para muchos usuarios en miles de juegos. Steam Vault busca cerrar esa brecha, recopilando la mayor cantidad de datos e información posible, y poniéndola a tu disposición (de forma gratuita).",
+			"answer3": "Simplemente presiona el botón de inicio de sesión en la esquina superior derecha de la página. Conecta tu cuenta de Steam para empezar a rastrear tus logros.",
+			"answer4": "Steam Vault es completamente gratuito. No tiene funciones de pago. Nos financiamos únicamente mediante publicidad y donaciones.",
+			"answer5": "Nuestros datos se actualizan de manera sistemática para cumplir con las directrices de la API de Steam. Si sientes que tus datos no se actualizan regularmente, por favor contáctanos.",
+			"answer6": "Cada usuario tiene una página de perfil pública que se puede compartir mediante una URL única. También puedes generar tarjetas compartibles para logros individuales y publicarlas en redes sociales.",
+			"answer7": "La rareza de los logros se calcula en función de varios factores. El porcentaje proviene directamente de Steam, y se desconoce cómo se calcula esa cifra. Nuestro 'score' representa cuántas personas han desbloqueado el logro. Siempre estamos buscando nuevas formas de analizar y visualizar tus logros.",
+			"question1": "¿Qué es Steam Vault?",
+			"question2": "¿Por qué es especial Steam Vault?",
+			"question3": "¿Cómo conecto mi cuenta de Steam?",
+			"question4": "¿Es Steam Vault gratuito?",
+			"question5": "¿Con qué frecuencia se actualizan los datos de logros?",
+			"question6": "¿Puedo compartir mi perfil de logros con otros?",
+			"question7": "¿Cómo se calcula la rareza de los logros?",
+			"title": "Preguntas Frecuentes"
+		},
+		"features": {
+			"feature1": {
+				"description": "Nuestra plataforma refresca periódicamente los datos de tus logros, garantizando que siempre tengas la información más actualizada.",
+				"shortDescription": "Sincroniza y actualiza automáticamente tus logros en Steam.",
+				"title": "Rastreo de Logros"
+			},
+			"feature2": {
+				"description": "Siempre buscamos nuevas formas de analizar y visualizar tus logros. Nuestra función de análisis de rareza te ayuda a identificar los logros más difíciles de desbloquear.",
+				"shortDescription": "Descubre tus logros más raros e impresionantes en videojuegos.",
+				"title": "Análisis de Rareza"
+			},
+			"feature3": {
+				"description": "Encuentra automáticamente los logros de tus amigos y compara tu progreso. Comparte tus logros en redes sociales y presume de tu destreza en videojuegos.",
+				"shortDescription": "Conecta con amigos y compara tu progreso en logros.",
+				"title": "Funciones Sociales"
+			},
+			"title": "Características Principales"
+		},
+		"hero": {
+			"subtitle": "Rastreando, mostrando y celebrando tus logros en videojuegos.",
+			"title": "Acerca de Steam Vault"
+		},
+		"meta": {
+			"description": "Conoce más sobre Steam Vault, nuestra misión y cómo ayudamos a los jugadores a rastrear sus logros.",
+			"title": "Steam Vault - Sobre Nosotros"
+		},
+		"mission": {
+			"paragraph1": "Steam Vault fue creado con un objetivo sencillo: permitir a los jugadores encontrar sus logros más raros en la plataforma.",
+			"paragraph2": "Los logros no son solo hitos; pueden representar horas de dedicación, aprendizaje, práctica y esfuerzo. Para la mayoría, nadie se dará cuenta, pero Steam Vault busca cambiar eso.",
+			"paragraph3": "Nuestra plataforma está diseñada para celebrar tu trayectoria en el mundo del gaming, permitiéndote ver tus logros bajo una nueva perspectiva. También te ofrecemos información y análisis para seguir impulsándote.",
+			"title": "Nuestra Misión"
+		},
+		"socialText": "Síguenos en las redes sociales para actualizaciones, consejos y ser parte de nuestra creciente comunidad de cazadores de logros.",
+		"team": {
+			"title": "Nuestro Equipo"
+		}
 	},
-	"aboutFeatures": {
-		"feature1": {
-			"title": "Rastreo de Logros",
-			"shortDescription": "Sincroniza y actualiza automáticamente tus logros en Steam.",
-			"description": "Nuestra plataforma refresca periódicamente los datos de tus logros, garantizando que siempre tengas la información más actualizada."
+	"achievement": {
+		"articles": {
+			"error": "Error al cargar las guías: {errorMessage}",
+			"loading": "Cargando consejos y guías...",
+			"notFound": "No se encontraron guías relevantes… ¡Alguien debería hacer una!",
+			"steamCommunity": {
+				"description": "Guías oficiales de la Comunidad Steam para desbloquear este logro.",
+				"title": "Guías de la Comunidad Steam"
+			},
+			"youtube": {
+				"description": "Tutoriales en video para desbloquear este logro.",
+				"title": "Guías en Video de YouTube"
+			}
 		},
-		"feature2": {
-			"title": "Análisis de Rareza",
-			"shortDescription": "Descubre tus logros más raros e impresionantes en videojuegos.",
-			"description": "Siempre buscamos nuevas formas de analizar y visualizar tus logros. Nuestra función de análisis de rareza te ayuda a identificar los logros más difíciles de desbloquear."
+		"details": "Detalles",
+		"meta": {
+			"description": "Desbloquea \"{achievementName}\" en {appName}—una hazaña que solo el {percentage}% de jugadores consigue. Consulta gráficos de rareza, compárate con amigos y lee las mejores guías en Steam Vault.",
+			"title": "{achievementName} - {appName}"
 		},
-		"feature3": {
-			"title": "Funciones Sociales",
-			"shortDescription": "Conecta con amigos y compara tu progreso en logros.",
-			"description": "Encuentra automáticamente los logros de tus amigos y compara tu progreso. Comparte tus logros en redes sociales y presume de tu destreza en videojuegos."
+		"ofPlayers": "de jugadores",
+		"otherAchievements": {
+			"description": "Tu progreso en todos los logros de este juego",
+			"title": "Otros Logros en {appName}"
+		},
+		"rarityComparison": {
+			"description": "Cómo se compara \"{achievementName}\" con otros logros en {appName}",
+			"title": "Comparación de Rareza de Logros"
+		},
+		"shareText": "Compartir",
+		"tabs": {
+			"articles": "Consejos y Guías",
+			"friends": "Amigos",
+			"stats": "Estadísticas"
+		},
+		"thisAchievement": {
+			"label": "Este Logro"
+		}
+	},
+	"app": {
+		"meta": {
+			"description": "Consulta todos los {achievementCount} logros en {appName}. Sigue tu progreso con gráficos interactivos y consulta guías en Steam Vault.",
+			"keywords": "Steam, logros, {appName}, {appId}, {achievementCount}",
+			"title": "{appName} - Logros"
+		}
+	},
+	"auth": {
+		"signIn": "Iniciar Sesión"
+	},
+	"chart": {
+		"achievements": {
+			"label": "Logros"
+		},
+		"after": {
+			"label": {
+				"suffix": "% del total"
+			}
+		},
+		"rarity": {
+			"common": "Común",
+			"rare": "Raro (<10%)",
+			"ultraRare": "Ultrararo (<5%)",
+			"uncommon": "Poco Común (<50%)"
+		},
+		"unlockedAchievements": {
+			"label": "Logros Desbloqueados"
+		}
+	},
+	"error": {
+		"page": {
+			"button": {
+				"back": "Regresar",
+				"home": "Ir al Inicio",
+				"reload": "Intentar de Nuevo"
+			},
+			"error": {
+				"cause": "Causa: {errorMessage}",
+				"suggestion": "Intenta recargar la página o volver al inicio"
+			},
+			"message": "Algo salió mal al cargar esta página. Nuestros ingenieros han sido notificados y están trabajando en una solución.",
+			"title": "Ups..."
+		}
+	},
+	"footer": {
+		"about": "Acerca de",
+		"companyName": "Steam Vault",
+		"privacy": "Privacidad",
+		"rights": "© {year} Steam Vault. Todos los derechos reservados.",
+		"support": "Soporte",
+		"terms": "Términos"
+	},
+	"friend": {
+		"achievementProgress": "Progreso del Logro",
+		"hoursPlayed": "Jugado {hours} horas",
+		"noAchievement": {
+			"text": "Ningún amigo ha desbloqueado este logro aún."
+		},
+		"signIn": {
+			"description": "Inicia sesión para ver qué amigos han desbloqueado este logro.",
+			"title": "Inicia sesión para ver amigos"
+		}
+	},
+	"game": {
+		"achievementLeaderboard": {
+			"title": "Tabla de Líderes de Logros"
+		},
+		"achievementProgress": {
+			"description": "Has desbloqueado {unlockedCount} de {totalCount} logros.",
+			"title": "Progreso de Logros"
+		},
+		"description": {
+			"label": "Descripción"
+		},
+		"developer": {
+			"label": "Desarrollador"
+		},
+		"friendsWhoPlay": {
+			"title": "Amigos que Juegan"
+		},
+		"gameInformation": {
+			"title": "Información del Juego"
+		},
+		"noRecentUnlocks": {
+			"description": "No has desbloqueado ningún logro recientemente.",
+			"title": "Sin Desbloqueos Recientes"
+		},
+		"playOnSteam": "Jugar en Steam",
+		"publisher": {
+			"label": "Editor"
+		},
+		"recentUnlocks": {
+			"title": "Desbloqueos Recientes"
+		},
+		"releaseDate": {
+			"label": "Fecha de Lanzamiento"
+		},
+		"signInCallToAction": {
+			"description": "Inicia sesión para ver tus desbloqueos recientes y progreso.",
+			"title": "Desbloquear Logros"
+		},
+		"viewOnSteam": "Ver en Steam",
+		"viewOnSteamDB": "Ver en SteamDB"
+	},
+	"home": {
+		"achievement": {
+			"player": "Jugador {rank}"
+		},
+		"comingSoon": "Próximamente",
+		"cta": {
+			"description": "Es gratis, solo inicia sesión con tu cuenta de Steam y comienza a rastrear tus logros.",
+			"title": "¿Listo para mostrar tus logros?"
+		},
+		"explore": {
+			"description": "Encuentra logros para cada juego en tu biblioteca. ¡Ningún reto es demasiado grande!",
+			"title": "Explora Tus Logros"
+		},
+		"featured": {
+			"description": "Descubre algunos de los logros más raros desbloqueados por nuestros miembros.",
+			"title": "Logros Raros Destacados"
+		},
+		"features": {
+			"dashboard": "Ir al Panel",
+			"learnMore": "Más Información",
+			"signIn": "Inicia Sesión Ahora",
+			"title": "¿Por Qué Usar Steam Vault?"
+		},
+		"hero": {
+			"description": "Rastrea y comparte tus logros más impresionantes. Compara tu rendimiento con otros jugadores en Steam Vault.",
+			"title": "Muestra Tus Logros Más Raros en Steam"
+		},
+		"meta": {
+			"description": "Rastrea, muestra y comparte tus logros más raros en Steam Vault.",
+			"title": "Steam Vault - Muestra Tus Logros"
+		},
+		"rareAchievements": "{count} logros raros",
+		"stats": {
+			"indexedGames": "Juegos Indexados",
+			"indexedUsers": "Usuarios Indexados",
+			"trackedAchievements": "Logros Rastreados"
+		},
+		"textCard1": {
+			"description": "Consulta los logros de todos tus juegos en un solo lugar. Compara tu rendimiento con el de otros.",
+			"title": "Rastrea Tus Logros"
+		},
+		"textCard2": {
+			"description": "Descubre más juegos y logros. Encuentra guías, estadísticas y más.",
+			"title": "Descubre Datos Clave"
+		},
+		"textCard3": {
+			"description": "Encuentra a otros cazadores de logros, compara estadísticas y haz nuevos amigos.",
+			"title": "Conecta Con Otros"
+		},
+		"topAchievementHunters": "Los Mejores Cazadores de Logros",
+		"viewAll": "Ver Todo"
+	},
+	"index": {
+		"error": {
+			"message": "Estamos indexando esta cuenta, por lo que puede faltar información. Por favor, vuelve más tarde.",
+			"title": "Advertencia"
+		}
+	},
+	"layout": {
+		"meta": {
+			"keywords": "Steam, logros, gaming, juegos, perfil, usuario, más raros, raros, estadísticas"
+		}
+	},
+	"legal": {
+		"acknowledgment": {
+			"text": "Al usar Steam Vault, reconoces haber leído y entendido nuestra Política de Privacidad y Términos de Servicio, y aceptas estar sujeto a ellos."
+		},
+		"breadcrumbs": {
+			"title": "Legal"
+		},
+		"contact": {
+			"email": "support@steamvault.info",
+			"heading": "Contáctanos",
+			"intro": "Si tienes alguna pregunta sobre nuestra Política de Privacidad o Términos de Servicio, contáctanos."
+		},
+		"disclaimer": {
+			"text": "Steam Vault no está asociado de ninguna manera con Valve Corporation. Todas las marcas registradas o de servicio son propiedad de sus respectivos dueños. Los activos registrados se usan bajo el principio de uso justo.",
+			"title": "Descargo de Responsabilidad"
+		},
+		"header": {
+			"subtitle": "Última actualización: 9 de abril de 2025",
+			"title": "Política de Privacidad y Términos de Servicio"
+		},
+		"meta": {
+			"description": "Política de Privacidad y Términos de Servicio de Steam Vault.",
+			"title": "Steam Vault - Legal"
+		},
+		"print": {
+			"button": "Imprimir esta página"
+		},
+		"privacy": {
+			"blockquote": "Esta Política de Privacidad describe cómo Steam Vault (\"nosotros\", \"nuestro\", o \"nos\") recopila, utiliza y comparte tu información personal cuando utilizas nuestro sitio web y servicios. Al usar Steam Vault, aceptas la recopilación y el uso de información conforme a esta política.",
+			"sections": {
+				"changes": {
+					"text": "Podemos actualizar esta Política de Privacidad. Revisa periódicamente para ver cambios.",
+					"title": "Cambios a esta Política de Privacidad"
+				},
+				"cookies": {
+					"text": "Utilizamos cookies y tecnologías similares para rastrear la actividad en nuestra plataforma. Rechazar cookies puede afectar tu experiencia.",
+					"title": "Cookies y Tecnologías de Seguimiento"
+				},
+				"dataSecurity": {
+					"text": "Implementamos medidas para proteger tu información personal, aunque ningún método es 100% seguro.",
+					"title": "Seguridad de Datos"
+				},
+				"howWeUse": {
+					"list": "Utilizamos la información para proporcionar, mantener y mejorar nuestros servicios, y para investigar y prevenir el uso fraudulento de nuestra plataforma.",
+					"title": "Cómo Utilizamos Tu Información"
+				},
+				"information": {
+					"list": "Recopilamos varios tipos de información de y sobre los usuarios de nuestra plataforma, incluyendo: Detalles de la Cuenta Steam, Datos de Uso e Información del Dispositivo.",
+					"title": "Información que Recopilamos"
+				},
+				"sharing": {
+					"list": "La información personal no se comparte con terceros, salvo por razones legales o para proteger derechos.",
+					"title": "Compartir Tu Información"
+				},
+				"yourRights": {
+					"list": "Tienes derechos como acceder, corregir, eliminar y oponerte al procesamiento de tu información personal.",
+					"title": "Tus Derechos"
+				}
+			}
+		},
+		"tabs": {
+			"privacy": "Política de Privacidad",
+			"terms": "Términos de Servicio"
+		},
+		"terms": {
+			"blockquote": "Estos Términos de Servicio (“Términos”) rigen tu acceso y uso del sitio web y servicios de Steam Vault. Al utilizar nuestros servicios, aceptas estos Términos.",
+			"sections": {
+				"acceptableUse": {
+					"text": "Aceptas usar nuestros servicios solo con fines legales y no participar en actividades prohibidas.",
+					"title": "Uso Aceptable"
+				},
+				"changes": {
+					"text": "Nos reservamos el derecho de modificar estos Términos en cualquier momento con previo aviso.",
+					"title": "Cambios a Estos Términos"
+				},
+				"intellectualProperty": {
+					"text": "Nuestros servicios y contenidos son propiedad de Steam Vault o de sus licenciantes y están protegidos por leyes de propiedad intelectual.",
+					"title": "Derechos de Propiedad Intelectual"
+				},
+				"limitationOfLiability": {
+					"text": "En ningún caso Steam Vault o sus afiliados serán responsables por daños derivados del uso de nuestros servicios.",
+					"title": "Limitación de Responsabilidad"
+				},
+				"termination": {
+					"text": "Podemos suspender o terminar tu cuenta inmediatamente si violas estos Términos.",
+					"title": "Terminación"
+				},
+				"userAccounts": {
+					"text": "Accede a funciones específicas iniciando sesión con tu cuenta de Steam. Eres responsable de proteger tus credenciales de cuenta.",
+					"title": "Cuentas de Usuario"
+				}
+			}
+		}
+	},
+	"loading": {
+		"alert": {
+			"description": "Estamos enviando miles de solicitudes para obtener tus datos. Si consideras que está tardando demasiado, intenta recargar la página.",
+			"title": "Esto puede tomar un momento..."
+		},
+		"source": "Fuente:",
+		"title": "Cargando..."
+	},
+	"loadingScreen": {
+		"description1": "Durante el desarrollo de <i>Call of Duty 4: Modern Warfare</i> (2007), Infinity Ward estudió manuales reales de entrenamiento de fuerzas especiales, centrándose en la comunicación por radio, tácticas de movimiento y lenguaje corporal, para crear una experiencia cinematográfica pero tácticamente fundamentada.",
+		"description2": "En <i>Portal</i> (2007), a los jugadores se les promete un pastel literal, mientras que inconscientemente los conduce a su perdición. Esta promesa irónica se transformó rápidamente en un recordatorio icónico sobre incentivos vacíos en el marketing de juegos.",
+		"description3": "<i>Super Mario Bros.</i> (1985) incluía un enemigo rojo 'Koopa Troopa' no utilizado que tenía 2 vidas. El código filtrado de <i>Super Mario All-Stars</i> (1993) sugiere que esto fue planeado como el comportamiento predeterminado para todos los Koopa Troopas.",
+		"description4": "<i>GoldenEye 007</i> (1997) fue el primer juego en presentar un modo multijugador de disparos en primera persona en una consola. Estableció el estándar para los FPS en consolas, influyendo en innumerables títulos posteriores.",
+		"description5": "El <i>Legend of Zelda</i> original (1986) fue uno de los primeros juegos de consola en presentar un sistema de guardado con batería, permitiendo a los jugadores registrar su extenso progreso en un mundo abierto. Esta característica redefinió el diseño de los juegos de aventuras.",
+		"description6": "El nombre \"Zelda\" (de la franquicia <i>The Legend of Zelda</i>) se inspiró en Zelda Fitzgerald, esposa del autor F. Scott Fitzgerald, otorgando a la serie un título exótico y memorable.",
+		"description7": "El <i>Final Fantasy</i> original (1987) fue concebido como el último intento del desarrollador Square (posteriormente Square Enix) durante una crisis financiera. Irónicamente, su éxito inesperado no solo salvó a la compañía, sino que también sentó las bases para una de las franquicias de RPG más icónicas y duraderas.",
+		"title1": "Cambiar a tu pistola es más rápido que recargar!",
+		"title2": "¡El pastel es una mentira!",
+		"title3": "¡He pasado horas de mi vida, pisoteando... Koopas!",
+		"title4": "El nombre es Bond... James Bond",
+		"title5": "¡Es peligroso ir solo! ¡Toma esto!",
+		"title6": "¡Perdóname, Princesa!",
+		"title7": "No-tan Final Fantasy"
+	},
+	"navbar": {
+		"companyName": "Steam Vault",
+		"login": {
+			"login": "Login",
+			"withSteamHidden": "con Steam"
+		},
+		"logout": "Cerrar Sesión"
+	},
+	"podium": {
+		"label": {
+			"first": "1er Lugar",
+			"second": "2º Lugar",
+			"third": "3er Lugar"
+		},
+		"percentOfPlayers": "{percentage}% de jugadores"
+	},
+	"profile": {
+		"editProfile": {
+			"button": "Editar Perfil"
+		},
+		"privacy": {
+			"concerns": {
+				"description": "Accedemos únicamente a tus datos de logros públicos para brindar nuestro servicio. Hacer públicos los detalles de tus juegos solo permite que otros vean tus juegos, logros y tiempo de juego.",
+				"more": "Para obtener más información sobre la configuración de privacidad de Steam, visita nuestro",
+				"title": "¿Preocupaciones de Privacidad?"
+			},
+			"linkText": "página de privacidad",
+			"settings": "Configuración de Privacidad"
+		},
+		"private": "Este perfil es privado.",
+		"steps": {
+			"step1": {
+				"action": "Haz clic en",
+				"description": "Inicia sesión en Steam y navega a tu página de perfil. Puedes hacerlo haciendo clic en tu nombre de usuario en la barra superior de navegación.",
+				"title": "Paso 1: Ve a Tu Perfil de Steam"
+			},
+			"step2": {
+				"action": "Selecciona",
+				"description": "En la página de edición de perfil, encuentra y haz clic en la opción 'Configuración de Privacidad' en la barra lateral izquierda.",
+				"title": "Paso 2: Navega a Configuración de Privacidad"
+			},
+			"step3": {
+				"alert": {
+					"description": "Revisa cuidadosamente estos ajustes antes de cambiarlos.",
+					"title": "¡Mantente Seguro!"
+				},
+				"description": "En la página de Configuración de Privacidad, busca la sección 'Detalles del Juego' y configúrala en Público. También puedes configurar tu 'Lista de Amigos' como Pública para una mejor experiencia.",
+				"title": "Paso 3: Actualiza la Privacidad de Detalles del Juego"
+			},
+			"step4": {
+				"description": "Después de actualizar tus ajustes, puede tomar hasta 24 horas para que los cambios surtan efecto.",
+				"title": "Paso 4: Espera los Cambios"
+			}
+		}
+	},
+	"rarity": {
+		"common": "Común",
+		"rare": "Raro",
+		"ultraRare": "Ultrararo",
+		"uncommon": "Poco Común"
+	},
+	"search": {
+		"error": "Error: {message}",
+		"moreResults": "{count} resultados más...",
+		"noMatches": "No se encontraron {type} para \"{query}\".",
+		"noResults": "No se encontraron resultados para \"{query}\".",
+		"placeholder": "Ingresa un nombre de usuario, enlace de perfil o juego...",
+		"searching": "Buscando \"{query}\"..."
+	},
+	"status": {
+		"hidden": "Oculto",
+		"locked": "Bloqueado",
+		"unlocked": "Desbloqueado"
+	},
+	"toolbar": {
+		"filter": {
+			"all": "Todo",
+			"by": "Filtrar por",
+			"locked": "Bloqueado",
+			"unlocked": "Desbloqueado"
+		},
+		"search": {
+			"placeholder": "Buscar logros..."
+		},
+		"sort": {
+			"by": "Ordenar por",
+			"direction": {
+				"toggle": "Cambiar dirección de ordenamiento"
+			},
+			"method": {
+				"playerCount": "Cantidad de Jugadores",
+				"rarity": "Rareza",
+				"unlocked": "Desbloqueado"
+			}
 		}
 	},
 	"translation": {
-		"show": "Mostrar traducción automática",
-		"hide": "Mostrar texto original"
+		"hide": "Mostrar texto original",
+		"show": "Mostrar traducción automática"
 	},
-	"achievementArticlesNotFound": "No se encontraron guías relevantes… ¡Alguien debería hacer una!"
+	"user": {
+		"page": {
+			"faq": {
+				"private": {
+					"answer": "Tu perfil de Steam tiene configuraciones de privacidad que impiden que otros lo vean. Para que Steam Vault pueda ver tus logros, necesitas hacer público tu perfil. Puedes hacerlo siguiendo las instrucciones a continuación.",
+					"question": "¿Por qué es privado mi perfil?"
+				},
+				"public": {
+					"question": "¿Cómo hago que mi perfil sea público?"
+				}
+			},
+			"leaderboard": {
+				"title": "Tabla de Líderes de Logros"
+			},
+			"meta": {
+				"description": "Consulta tus logros de Steam.",
+				"keywords": "Steam, logros, usuario, {userId}, {displayName}",
+				"title": "{displayName} - Logros"
+			},
+			"noAchievements": "Aún no has desbloqueado logros.",
+			"title": "Los Logros Más Raros de {displayName}"
+		},
+		"table": {
+			"achievement": "Logro",
+			"game": "Juego",
+			"rarity": "Rareza"
+		},
+		"view": {
+			"list": "Vista de Lista",
+			"table": "Vista de Cuadrícula"
+		}
+	}
 }

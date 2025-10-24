@@ -1,275 +1,515 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"homepageMetaTitle": "Steam Vault - Mettez en valeur vos succès",
-	"homepageMetaDescription": "Suivez, affichez et partagez vos succès les plus rares sur Steam Vault.",
-	"homepageHeroTitle": "Mettez en valeur vos succès les plus rares sur Steam",
-	"homepageHeroDescription": "Suivez et partagez vos exploits gaming les plus impressionnants. Comparez-vous aux autres joueurs avec Steam Vault.",
-	"homepageStatsTrackedAchievements": "Succès suivis",
-	"homepageStatsIndexedUsers": "Utilisateurs indexés",
-	"homepageStatsIndexedGames": "Jeux indexés",
-	"homepageExploreTitle": "Explorez vos succès",
-	"homepageExploreDescription": "Découvrez les succès pour chaque jeu de votre bibliothèque. Aucun défi n'est trop grand !",
-	"homepageFeaturedTitle": "Succès Rares en Vedette",
-	"homepageFeaturedDescription": "Découvrez certains des succès les plus rares débloqués par les membres de notre communauté.",
-	"homepageFeaturesTitle": "Pourquoi utiliser Steam Vault ?",
-	"homepageFeaturesSignIn": "Connectez-vous maintenant",
-	"homepageFeaturesDashboard": "Aller au Tableau de Bord",
-	"homepageFeaturesLearnMore": "En savoir plus",
-	"homepageCtaDescription": "C'est gratuit, connectez-vous simplement avec votre compte Steam et commencez à suivre vos succès.",
-	"homepageTopAchievementHunters": "Top chasseurs de succès",
-	"homepageAchievementPlayer": "Joueur {rank}",
-	"homepageRareAchievements": "{count} succès rares",
-	"homepageViewAll": "Voir tout",
-	"homepageComingSoon": "À venir",
-	"homepageTextCard1Title": "Suivez vos succès",
-	"homepageTextCard1Description": "Consultez les succès de tous vos jeux en un seul endroit. Comparez-vous aux autres.",
-	"homepageTextCard2Title": "Aperçus clés",
-	"homepageTextCard2Description": "Découvrez plus de jeux et de succès. Trouvez des guides, des stats et plus encore.",
-	"homepageTextCard3Title": "Connectez-vous avec d'autres",
-	"homepageTextCard3Description": "Trouvez d'autres chasseurs de succès, comparez vos stats et faites-vous de nouveaux amis.",
-	"aboutPageHeroTitle": "À propos de Steam Vault",
-	"aboutPageHeroSubtitle": "Suivez, affichez et célébrez vos exploits gaming.",
-	"profileStep1Title": "Étape 1 : Accédez à votre profil Steam",
-	"profileStep1Description": "Connectez-vous à Steam et rendez-vous sur votre page de profil. Vous pouvez le faire en cliquant sur votre nom d'utilisateur dans la barre de navigation en haut.",
-	"profileStep1Action": "Cliquez sur",
-	"profileEditProfileButton": "Modifier le profil",
-	"profileStep2Title": "Étape 2 : Accédez aux paramètres de confidentialité",
-	"profileStep2Description": "Dans la page d'édition du profil, trouvez et cliquez sur l'option 'Paramètres de confidentialité' dans la barre latérale gauche.",
-	"profileStep2Action": "Sélectionnez",
-	"profilePrivacySettings": "Paramètres de Confidentialité",
-	"profileStep3Title": "Étape 3 : Mettez à jour la confidentialité de vos détails de jeu",
-	"profileStep3Description": "Dans la page des paramètres de confidentialité, repérez la section 'Détails du jeu' et définissez-la sur Public. Vous pouvez également définir votre 'Liste d'amis' sur Public pour une meilleure expérience.",
-	"profileStep3AlertTitle": "Restez en sécurité !",
-	"profileStep3AlertDescription": "Vérifiez attentivement ces paramètres avant de les modifier.",
-	"profileStep4Title": "Étape 4 : Patientez pour les modifications",
-	"profileStep4Description": "Après avoir mis à jour vos paramètres, cela peut prendre jusqu'à 24 heures pour que les modifications prennent effet.",
-	"profilePrivacyConcernsTitle": "Problèmes de confidentialité ?",
-	"profilePrivacyConcernsDescription": "Nous accédons uniquement à vos données de succès publiques pour fournir notre service. Rendre vos détails de jeu publics permet uniquement aux autres de voir vos jeux, succès et temps de jeu.",
-	"profilePrivacyConcernsMore": "Pour plus d'informations sur les paramètres de confidentialité de Steam, visitez notre",
-	"profilePrivacyLinkText": "page de confidentialité",
-	"legalPageMetaDescription": "Politique de Confidentialité et Conditions d'Utilisation pour Steam Vault.",
-	"legalBreadcrumbsTitle": "Légal",
-	"legalHeaderTitle": "Politique de Confidentialité & Conditions d'Utilisation",
-	"legalHeaderSubtitle": "Dernière mise à jour : 9 avril 2025",
-	"legalDisclaimerTitle": "Avertissement",
-	"legalDisclaimerText": "Steam Vault n'est en aucun cas associé à Valve Corporation. Toutes les marques déposées ou marques de service sont la propriété de leurs détenteurs respectifs. Tous les éléments enregistrés sont utilisés selon le principe de l'utilisation équitable.",
-	"legalTabsPrivacy": "Politique de Confidentialité",
-	"legalTabsTerms": "Conditions d'Utilisation",
-	"legalPrivacyBlockquote": "La présente Politique de Confidentialité décrit comment Steam Vault (\"nous\", \"notre\", ou \"nos\") collecte, utilise et partage vos informations personnelles lorsque vous utilisez notre site et nos services. En utilisant Steam Vault, vous acceptez la collecte et l'utilisation de ces informations conformément à cette politique.",
-	"legalPrivacySectionInformation": "Informations que nous collectons",
-	"legalPrivacySectionInformationList": "Nous collectons divers types d'informations sur et auprès des utilisateurs de notre plateforme, notamment : les détails de votre compte Steam, les données d'utilisation et les informations sur votre appareil.",
-	"legalPrivacySectionHowWeUse": "Comment nous utilisons vos informations",
-	"legalPrivacySectionHowWeUseList": "Nous utilisons ces informations pour fournir, maintenir et améliorer nos services, et pour enquêter et prévenir tout usage frauduleux de notre plateforme.",
-	"legalPrivacySectionSharing": "Partage de vos informations",
-	"legalPrivacySectionSharingList": "Les informations personnelles ne sont pas partagées avec des tiers, sauf pour des raisons légales ou pour protéger nos droits.",
-	"legalPrivacySectionDataSecurity": "Sécurité des données",
-	"legalPrivacySectionDataSecurityText": "Nous mettons en œuvre des mesures pour protéger vos informations personnelles, bien qu'aucune méthode ne soit infaillible.",
-	"legalPrivacySectionYourRights": "Vos droits",
-	"legalPrivacySectionYourRightsList": "Vous pouvez avoir des droits tels que l'accès, la correction, la suppression et l'opposition au traitement de vos informations personnelles.",
-	"legalPrivacySectionCookies": "Cookies et technologies de suivi",
-	"legalPrivacySectionCookiesText": "Nous utilisons des cookies et technologies similaires pour suivre l'activité sur notre plateforme. Le refus des cookies peut affecter votre expérience.",
-	"legalPrivacySectionChanges": "Modifications de cette Politique de Confidentialité",
-	"legalPrivacySectionChangesText": "Nous pouvons mettre à jour cette Politique de Confidentialité. Veuillez la consulter régulièrement pour prendre connaissance des modifications.",
-	"legalTermsBlockquote": "Les présentes Conditions d'Utilisation (\"Conditions\") régissent votre accès et utilisation du site et des services de Steam Vault. En utilisant nos services, vous acceptez ces Conditions.",
-	"legalTermsSectionUserAccounts": "Comptes Utilisateurs",
-	"legalTermsSectionUserAccountsText": "Accédez à certaines fonctionnalités en vous connectant avec votre compte Steam. Vous êtes responsable de la protection de vos identifiants de connexion.",
-	"legalTermsSectionAcceptableUse": "Utilisation Acceptable",
-	"legalTermsSectionAcceptableUseText": "Vous vous engagez à utiliser nos services uniquement à des fins légales et à ne pas vous livrer à des activités interdites.",
-	"legalTermsSectionIntellectualProperty": "Droits de Propriété Intellectuelle",
-	"legalTermsSectionIntellectualPropertyText": "Nos services et contenus sont la propriété de Steam Vault ou de ses concédants et sont protégés par les lois sur la propriété intellectuelle.",
-	"legalTermsSectionLimitationOfLiability": "Limitation de Responsabilité",
-	"legalTermsSectionLimitationOfLiabilityText": "En aucun cas Steam Vault ou ses affiliés ne pourront être tenus responsables des dommages résultant de votre utilisation de nos services.",
-	"legalTermsSectionTermination": "Résiliation",
-	"legalTermsSectionTerminationText": "Nous pouvons suspendre ou résilier immédiatement votre compte si vous violez ces Conditions.",
-	"legalTermsSectionChanges": "Modifications de ces Conditions",
-	"legalTermsSectionChangesText": "Nous nous réservons le droit de modifier ces Conditions à tout moment moyennant un préavis.",
-	"legalContactHeading": "Contactez-nous",
-	"legalPrintButton": "Imprimer cette page",
-	"legalAcknowledgmentText": "En utilisant Steam Vault, vous reconnaissez avoir lu et compris notre Politique de Confidentialité et nos Conditions d'Utilisation, et acceptez d'en être lié.",
-	"appPageMetaTitle": "{appName} - Succès",
-	"appPageMetaDescription": "Consultez les {achievementCount} succès dans {appName}. Suivez votre progression avec des graphiques interactifs et consultez les guides sur Steam Vault.",
-	"gamePageAchievementProgressTitle": "Progression des succès",
-	"gamePageAchievementProgressDescription": "Vous avez débloqué {unlockedCount} sur {totalCount} succès.",
-	"gamePageRecentUnlocksTitle": "Succès Récents",
-	"gamePageNoRecentUnlocksTitle": "Aucun succès récent",
-	"gamePageNoRecentUnlocksDescription": "Vous n'avez récemment débloqué aucun succès.",
-	"gamePageSignInCallToActionTitle": "Débloquez des succès",
-	"gamePageSignInCallToActionDescription": "Connectez-vous pour voir vos succès récents et votre progression.",
-	"gamePageGameInformationTitle": "Informations sur le jeu",
-	"gamePageDeveloperLabel": "Développeur",
-	"gamePagePublisherLabel": "Éditeur",
-	"gamePageReleaseDateLabel": "Date de sortie",
-	"gamePageDescriptionLabel": "Description",
-	"gamePageAchievementLeaderboardTitle": "Classement des succès",
-	"gamePageFriendsWhoPlayTitle": "Amis qui jouent",
-	"gamePagePlayOnSteam": "Jouer sur Steam",
-	"gamePageViewOnSteamDB": "Voir sur SteamDB",
-	"chartAchievementsLabel": "Succès",
-	"chartUnlockedAchievementsLabel": "Succès Débloqués",
-	"chartAfterLabelSuffix": "% du total",
-	"aboutMissionTitle": "Notre Mission",
-	"aboutMissionParagraph1": "Steam Vault a été créé dans un but simple : permettre aux joueurs de découvrir leurs succès les plus rares sur la plateforme.",
-	"aboutMissionParagraph2": "Les succès ne sont pas toujours de simples étapes ; ils peuvent représenter des heures de dévouement, d'apprentissage, de pratique et de grind. Pour la plupart des gens, personne ne remarquera jamais cela. Steam Vault vise à changer cela.",
-	"aboutMissionParagraph3": "Notre plateforme a été conçue pour mettre en valeur votre parcours gaming, vous permettant de voir vos succès sous un nouveau jour. Nous souhaitons également vous fournir des éclairages et d'autres informations pour vous inspirer.",
-	"aboutKeyFeaturesTitle": "Principales Fonctionnalités",
-	"aboutTeamTitle": "Notre Équipe",
-	"aboutFaqTitle": "Questions fréquentes",
-	"aboutContactTitle": "Entrer en contact",
-	"aboutSocialText": "Suivez-nous sur les réseaux sociaux pour des mises à jour, des conseils et pour rejoindre notre communauté grandissante de pisteurs de succès.",
-	"aboutCtaDescription": "Rejoignez des milliers de joueurs qui suivent et partagent leurs exploits sur Steam Vault.",
-	"achievementTabStats": "Statistiques",
-	"achievementTabFriends": "Amis",
-	"achievementTabArticles": "Conseils & Guides",
-	"achievementRarityComparisonTitle": "Comparaison de la rareté du succès",
-	"achievementRarityComparisonDescription": "Comparaison de \"{achievementName}\" avec les autres succès de {appName}",
-	"achievementOtherAchievementsTitle": "Autres succès dans {appName}",
-	"achievementOtherAchievementsDescription": "Votre progression sur tous les succès de ce jeu",
-	"achievementArticlesLoading": "Chargement des conseils & guides...",
-	"achievementArticlesError": "Erreur lors du chargement des guides : {errorMessage}",
-	"achievementOfPlayers": "des joueurs",
-	"achievementShareText": "Partager",
-	"podiumLabelFirst": "1ère Place",
-	"podiumLabelSecond": "2ème Place",
-	"podiumLabelThird": "3ème Place",
-	"podiumPercentOfPlayers": "{percentage}% des joueurs",
-	"userPageTitle": "Les succès les plus rares de {displayName}",
-	"userPageNoAchievements": "Aucun succès débloqué pour le moment.",
-	"userPageLeaderboardTitle": "Classement des succès",
-	"userViewTable": "Vue en grille",
-	"userViewList": "Vue en liste",
-	"userTableAchievement": "Succès",
-	"userTableGame": "Jeu",
-	"userTableRarity": "Rareté",
-	"achievementDetails": "Détails",
-	"friendSignInTitle": "Connectez-vous pour voir vos amis",
-	"friendSignInDescription": "Connectez-vous pour voir quels amis ont débloqué ce succès.",
-	"friendNoAchievementText": "Aucun ami n'a encore débloqué ce succès.",
-	"friendHoursPlayed": "{hours} heures jouées",
-	"friendAchievementProgress": "Progression du succès",
-	"footerCompanyName": "Steam Vault",
-	"footerAbout": "À propos",
-	"footerSupport": "Support",
-	"footerPrivacy": "Confidentialité",
-	"footerTerms": "Conditions",
-	"footerRights": "© {year} Steam Vault. Tous droits réservés.",
-	"navbarCompanyName": "Steam Vault",
-	"navbarLogin": "Connexion",
-	"navbarLogout": "Déconnexion",
-	"searchPlaceholder": "Entrez un nom d'utilisateur, un lien vers un profil ou un jeu...",
-	"searching": "Recherche de \"{query}\"...",
-	"searchError": "Erreur : {message}",
-	"searchMoreResults": "Encore {count} résultats...",
-	"searchNoMatches": "Aucun {type} trouvé pour \"{query}\".",
-	"searchNoResults": "Aucun résultat trouvé pour \"{query}\".",
-	"aboutPageMetaTitle": "Steam Vault - À propos de nous",
-	"legalPageMetaTitle": "Steam Vault - Légal",
-	"ctaTitle": "Prêt à afficher vos exploits ?",
-	"viewOnSteam": "Voir sur Steam",
-	"statusLocked": "Verrouillé",
-	"signIn": "Se Connecter",
-	"statusUnlocked": "Débloqué",
-	"aboutPageMetaDescription": "Découvrez-en plus sur Steam Vault, notre objectif et comment nous aidons les joueurs à suivre leurs exploits.",
-	"navbarLoginWithSteamHidden": "avec Steam",
-	"profilePrivate": "Ce profil est privé.",
-	"userPageMetaDescription": "Consultez vos succès Steam.",
-	"userPageMetaKeywords": "Steam, succès, utilisateur, {userId}, {displayName}",
-	"userPageMetaTitle": "{displayName} - Succès",
-	"rarityCommon": "Commun",
-	"rarityUncommon": "Peu commun",
-	"rarityRare": "Rare",
-	"rarityUltraRare": "Ultra Rare",
-	"achievementArticlesSteamCommunityTitle": "Guides de la Steam Community",
-	"achievementArticlesSteamCommunityDescription": "Guides officiels de la Steam Community pour débloquer ce succès.",
-	"achievementArticlesYouTubeTitle": "Guides vidéo YouTube",
-	"achievementArticlesYouTubeDescription": "Tutoriels vidéo utiles pour débloquer ce succès.",
-	"achievementPageMetaTitle": "{achievementName} - {appName}",
-	"achievementPageMetaDescription": "Débloquez \"{achievementName}\" dans {appName} — un exploit réalisé par seulement {percentage}% des joueurs. Consultez les graphiques de rareté, comparez-vous à vos amis et lisez les meilleurs guides sur Steam Vault.",
-	"achievementThisAchievementLabel": "Ce succès",
-	"loadingScreenTitle1": "Changer d'arme est plus rapide que de recharger !",
-	"loadingScreenDescription1": "Lors du développement de <i>Call of Duty 4 : Modern Warfare</i> (2007), Infinity Ward s'est inspiré de manuels réels d'entraînement des forces spéciales, se concentrant sur les communications radio, les tactiques de mouvement et le langage corporel pour créer une expérience à la fois cinématographique et tactiquement précise.",
-	"loadingScreenTitle2": "Le gâteau, c’est du bluff !",
-	"loadingScreenDescription2": "Dans <i>Portal</i> (2007), les joueurs se voient promettre un gâteau littéral, tout en étant conduits dans un piège fatal. Cette promesse ironiquement lancée est rapidement devenue un symbole des incitations vides dans le marketing des jeux.",
-	"loadingScreenTitle3": "J'ai passé des heures à écraser... des Koopas !",
-	"loadingScreenDescription3": "Dans <i>Super Mario Bros.</i> (1985), un ennemi rouge non utilisé, le \"Koopa Troopa\" doté de 2 vies, était présent. Des codes divulgués pour <i>Super Mario All-Stars</i> (1993) suggèrent que ce comportement était prévu par défaut pour tous les Koopa Troopas.",
-	"loadingScreenTitle4": "Le nom, c'est Bond... James Bond",
-	"loadingScreenDescription4": "<i>GoldenEye 007</i> (1997) fut le premier jeu à proposer un mode multijoueur en vue à la première personne sur console, établissant la référence pour les FPS sur console.",
-	"loadingScreenTitle5": "Il est dangereux de partir seul ! Prenez ça !",
-	"loadingScreenDescription5": "L'original <i>La Légende de Zelda</i> (1986) fut l'un des premiers jeux de console à introduire un système de sauvegarde sur batterie, permettant aux joueurs d'enregistrer leur progression dans un vaste monde ouvert et redéfinissant le design des jeux d'aventure.",
-	"loadingScreenTitle6": "Excusez-moi, Princesse !",
-	"loadingScreenDescription6": "Le nom « Zelda » (de la franchise <i>La Légende de Zelda</i>) a été inspiré par Zelda Fitzgerald, l'épouse de F. Scott Fitzgerald, conférant à la série une appellation exotique et mémorable.",
-	"loadingScreenTitle7": "Un Final Fantasy pas si final",
-	"loadingScreenDescription7": "Le <i>Final Fantasy</i> original (1987) a été conçu comme le dernier recours de Square (plus tard Square Enix) lors d'une crise financière. Ironiquement, son succès inattendu a non seulement sauvé l'entreprise, mais a également jeté les bases de l'une des franchises RPG les plus emblématiques.",
-	"layoutMetaKeywords": "Steam, succès, gaming, jeux, profil, utilisateur, les plus rares, rares, stats",
-	"appPageMetaKeywords": "Steam, succès, {appName}, {appId}, {achievementCount}",
-	"indexErrorMessage": "Nous sommes encore en train d'indexer ce compte, certaines informations pourraient être manquantes. Veuillez vérifier ultérieurement.",
-	"indexErrorTitle": "Avertissement",
-	"aboutDiscord": "Rejoignez notre Discord",
-	"legalContactIntro": "Si vous avez des questions concernant notre Politique de Confidentialité ou nos Conditions d'Utilisation, veuillez nous contacter.",
-	"ChartRarityCommon": "Commun",
-	"ChartRarityRare": "Rare (<10%)",
-	"ChartRarityUltraRare": "Ultra Rare (<5%)",
-	"ChartRarityUncommon": "Peu Commun (<50%)",
-	"errorPageButtonBack": "Retourner",
-	"errorPageButtonHome": "Accueil",
-	"errorPageButtonReload": "Réessayer",
-	"errorPageErrorCause": "Cause : {errorMessage}",
-	"errorPageErrorSuggestion": "Essayez de recharger la page ou de revenir à l'accueil",
-	"errorPageMessage": "Quelque chose s'est mal passé lors du chargement de cette page. Nos ingénieurs ont été informés et travaillent à une solution.",
-	"errorPageTitle": "Oups...",
-	"splashAlertDescription": "Nous lançons des milliers de requêtes pour récupérer vos données. Si cela vous semble long, essayez de recharger la page.",
-	"splashAlertTitle": "Cela pourrait prendre une minute...",
-	"loading": "Chargement...",
-	"splashSourceLabel": "Source:",
-	"statusHidden": "Caché",
-	"toolbarFilterAll": "Tous",
-	"toolbarFilterBy": "Filtrer par",
-	"toolbarFilterLocked": "Verrouillé",
-	"toolbarFilterUnlocked": "Débloqué",
-	"toolbarSearchPlaceholder": "Rechercher un succès...",
-	"toolbarSortBy": "Trier par",
-	"toolbarSortMethodRarity": "Rareté",
-	"toolbarSortMethodPlayerCount": "Nombre de joueurs",
-	"toolbarSortMethodUnlocked": "Débloqué",
-	"toolbarSortDirectionToggle": "Inverser l'ordre de tri",
-	"userPageFaqPrivateAnswer": "Votre profil Steam est configuré comme privé, empêchant ainsi aux autres de le voir. Pour que Steam Vault puisse consulter vos succès, vous devez rendre votre profil public. Vous pouvez suivre les instructions ci-dessous.",
-	"userPageFaqPrivateQuestion": "Pourquoi mon profil est-il privé ?",
-	"userPageFaqPublicQuestion": "Comment rendre mon profil public ?",
-	"aboutFaq": {
-		"question1": "Qu'est-ce que Steam Vault ?",
-		"answer1": "Steam Vault est une plateforme qui vous permet de visualiser tous vos succès Steam. Nous vous aidons à découvrir vos succès les plus rares.",
-		"question2": "Qu'est-ce qui rend Steam Vault unique ?",
-		"answer2": "En raison des règles strictes de l'API de Steam, il est difficile de suivre la progression des succès pour de nombreux utilisateurs, sur des milliers de jeux. Steam Vault vise à combler cette lacune tout en collectant un maximum de données et d'informations, et à vous les fournir gratuitement.",
-		"question3": "Comment connecter mon compte Steam ?",
-		"answer3": "Appuyez simplement sur le bouton de connexion en haut à droite de la page. Connectez votre compte Steam pour commencer à suivre vos succès.",
-		"question4": "Steam Vault est-il gratuit ?",
-		"answer4": "Steam Vault est entièrement gratuit. Il n'y a aucune fonctionnalité payante. Nous sommes financés exclusivement par la publicité et les dons.",
-		"question5": "À quelle fréquence les données des succès sont-elles mises à jour ?",
-		"answer5": "Nos données sont mises à jour de manière systématique pour respecter les directives de l'API de Steam. Si vous pensez que vos données ne se rafraîchissent pas régulièrement, veuillez nous contacter.",
-		"question6": "Puis-je partager mon profil de succès avec d'autres ?",
-		"answer6": "Chaque utilisateur dispose d'une page de profil publique que vous pouvez partager via une URL unique. Vous pouvez également générer des cartes à partager pour des succès individuels sur les réseaux sociaux.",
-		"question7": "Comment la rareté des succès est-elle calculée ?",
-		"answer7": "La rareté est calculée en fonction de plusieurs facteurs. La statistique \"percentage\" provient directement de Steam, et le mode de calcul reste inconnu. Notre \"score\" représente le nombre de personnes ayant débloqué le succès. Il est estimé en fonction du nombre approximatif de joueurs. Nous recherchons toujours de nouvelles méthodes pour analyser et visualiser vos succès."
+	"about": {
+		"contactTitle": "Entrer en contact",
+		"ctaDescription": "Rejoignez des milliers de joueurs qui suivent et partagent leurs exploits sur Steam Vault.",
+		"discord": "Rejoignez notre Discord",
+		"faq": {
+			"answer1": "Steam Vault est une plateforme qui vous permet de visualiser tous vos succès Steam. Nous vous aidons à découvrir vos succès les plus rares.",
+			"answer2": "En raison des règles strictes de l'API de Steam, il est difficile de suivre la progression des succès pour de nombreux utilisateurs, sur des milliers de jeux. Steam Vault vise à combler cette lacune tout en collectant un maximum de données et d'informations, et à vous les fournir gratuitement.",
+			"answer3": "Appuyez simplement sur le bouton de connexion en haut à droite de la page. Connectez votre compte Steam pour commencer à suivre vos succès.",
+			"answer4": "Steam Vault est entièrement gratuit. Il n'y a aucune fonctionnalité payante. Nous sommes financés exclusivement par la publicité et les dons.",
+			"answer5": "Nos données sont mises à jour de manière systématique pour respecter les directives de l'API de Steam. Si vous pensez que vos données ne se rafraîchissent pas régulièrement, veuillez nous contacter.",
+			"answer6": "Chaque utilisateur dispose d'une page de profil publique que vous pouvez partager via une URL unique. Vous pouvez également générer des cartes à partager pour des succès individuels sur les réseaux sociaux.",
+			"answer7": "La rareté est calculée en fonction de plusieurs facteurs. La statistique \"percentage\" provient directement de Steam, et le mode de calcul reste inconnu. Notre \"score\" représente le nombre de personnes ayant débloqué le succès. Il est estimé en fonction du nombre approximatif de joueurs. Nous recherchons toujours de nouvelles méthodes pour analyser et visualiser vos succès.",
+			"question1": "Qu'est-ce que Steam Vault ?",
+			"question2": "Qu'est-ce qui rend Steam Vault unique ?",
+			"question3": "Comment connecter mon compte Steam ?",
+			"question4": "Steam Vault est-il gratuit ?",
+			"question5": "À quelle fréquence les données des succès sont-elles mises à jour ?",
+			"question6": "Puis-je partager mon profil de succès avec d'autres ?",
+			"question7": "Comment la rareté des succès est-elle calculée ?",
+			"title": "Questions fréquentes"
+		},
+		"features": {
+			"feature1": {
+				"description": "Notre plateforme actualise périodiquement vos données de succès, pour vous garantir les informations les plus récentes.",
+				"shortDescription": "Synchronisez et mettez à jour automatiquement les succès sur Steam.",
+				"title": "Suivi des succès"
+			},
+			"feature2": {
+				"description": "Nous recherchons constamment de nouvelles façons d'analyser et de visualiser vos succès. Notre fonctionnalité d'analyse de rareté vous aide à identifier les succès les plus difficiles à débloquer.",
+				"shortDescription": "Découvrez vos succès les plus rares et les plus impressionnants.",
+				"title": "Analyse de rareté"
+			},
+			"feature3": {
+				"description": "Trouvez automatiquement les succès de vos amis et comparez vos progrès. Partagez vos succès sur les réseaux sociaux et montrez votre maîtrise du jeu.",
+				"shortDescription": "Connectez-vous avec vos amis et comparez votre progression en termes de succès.",
+				"title": "Fonctionnalités sociales"
+			},
+			"title": "Principales Fonctionnalités"
+		},
+		"hero": {
+			"subtitle": "Suivez, affichez et célébrez vos exploits gaming.",
+			"title": "À propos de Steam Vault"
+		},
+		"meta": {
+			"description": "Découvrez-en plus sur Steam Vault, notre objectif et comment nous aidons les joueurs à suivre leurs exploits.",
+			"title": "Steam Vault - À propos de nous"
+		},
+		"mission": {
+			"paragraph1": "Steam Vault a été créé dans un but simple : permettre aux joueurs de découvrir leurs succès les plus rares sur la plateforme.",
+			"paragraph2": "Les succès ne sont pas toujours de simples étapes ; ils peuvent représenter des heures de dévouement, d'apprentissage, de pratique et de grind. Pour la plupart des gens, personne ne remarquera jamais cela. Steam Vault vise à changer cela.",
+			"paragraph3": "Notre plateforme a été conçue pour mettre en valeur votre parcours gaming, vous permettant de voir vos succès sous un nouveau jour. Nous souhaitons également vous fournir des éclairages et d'autres informations pour vous inspirer.",
+			"title": "Notre Mission"
+		},
+		"socialText": "Suivez-nous sur les réseaux sociaux pour des mises à jour, des conseils et pour rejoindre notre communauté grandissante de pisteurs de succès.",
+		"team": {
+			"title": "Notre Équipe"
+		}
 	},
-	"aboutFeatures": {
-		"feature1": {
-			"title": "Suivi des succès",
-			"shortDescription": "Synchronisez et mettez à jour automatiquement les succès sur Steam.",
-			"description": "Notre plateforme actualise périodiquement vos données de succès, pour vous garantir les informations les plus récentes."
+	"achievement": {
+		"articles": {
+			"error": "Erreur lors du chargement des guides : {errorMessage}",
+			"loading": "Chargement des conseils & guides...",
+			"notFound": "Aucun guide pertinent trouvé… Quelqu’un devrait en créer un !",
+			"steamCommunity": {
+				"description": "Guides officiels de la Steam Community pour débloquer ce succès.",
+				"title": "Guides de la Steam Community"
+			},
+			"youtube": {
+				"description": "Tutoriels vidéo utiles pour débloquer ce succès.",
+				"title": "Guides vidéo YouTube"
+			}
 		},
-		"feature2": {
-			"title": "Analyse de rareté",
-			"shortDescription": "Découvrez vos succès les plus rares et les plus impressionnants.",
-			"description": "Nous recherchons constamment de nouvelles façons d'analyser et de visualiser vos succès. Notre fonctionnalité d'analyse de rareté vous aide à identifier les succès les plus difficiles à débloquer."
+		"details": "Détails",
+		"meta": {
+			"description": "Débloquez \"{achievementName}\" dans {appName} — un exploit réalisé par seulement {percentage}% des joueurs. Consultez les graphiques de rareté, comparez-vous à vos amis et lisez les meilleurs guides sur Steam Vault.",
+			"title": "{achievementName} - {appName}"
 		},
-		"feature3": {
-			"title": "Fonctionnalités sociales",
-			"shortDescription": "Connectez-vous avec vos amis et comparez votre progression en termes de succès.",
-			"description": "Trouvez automatiquement les succès de vos amis et comparez vos progrès. Partagez vos succès sur les réseaux sociaux et montrez votre maîtrise du jeu."
+		"ofPlayers": "des joueurs",
+		"otherAchievements": {
+			"description": "Votre progression sur tous les succès de ce jeu",
+			"title": "Autres succès dans {appName}"
+		},
+		"rarityComparison": {
+			"description": "Comparaison de \"{achievementName}\" avec les autres succès de {appName}",
+			"title": "Comparaison de la rareté du succès"
+		},
+		"shareText": "Partager",
+		"tabs": {
+			"articles": "Conseils & Guides",
+			"friends": "Amis",
+			"stats": "Statistiques"
+		},
+		"thisAchievement": {
+			"label": "Ce succès"
+		}
+	},
+	"app": {
+		"meta": {
+			"description": "Consultez les {achievementCount} succès dans {appName}. Suivez votre progression avec des graphiques interactifs et consultez les guides sur Steam Vault.",
+			"keywords": "Steam, succès, {appName}, {appId}, {achievementCount}",
+			"title": "{appName} - Succès"
+		}
+	},
+	"auth": {
+		"signIn": "Se Connecter"
+	},
+	"chart": {
+		"achievements": {
+			"label": "Succès"
+		},
+		"after": {
+			"label": {
+				"suffix": "% du total"
+			}
+		},
+		"rarity": {
+			"common": "Commun",
+			"rare": "Rare (<10%)",
+			"ultraRare": "Ultra Rare (<5%)",
+			"uncommon": "Peu Commun (<50%)"
+		},
+		"unlockedAchievements": {
+			"label": "Succès Débloqués"
+		}
+	},
+	"error": {
+		"page": {
+			"button": {
+				"back": "Retourner",
+				"home": "Accueil",
+				"reload": "Réessayer"
+			},
+			"error": {
+				"cause": "Cause : {errorMessage}",
+				"suggestion": "Essayez de recharger la page ou de revenir à l'accueil"
+			},
+			"message": "Quelque chose s'est mal passé lors du chargement de cette page. Nos ingénieurs ont été informés et travaillent à une solution.",
+			"title": "Oups..."
+		}
+	},
+	"footer": {
+		"about": "À propos",
+		"companyName": "Steam Vault",
+		"privacy": "Confidentialité",
+		"rights": "© {year} Steam Vault. Tous droits réservés.",
+		"support": "Support",
+		"terms": "Conditions"
+	},
+	"friend": {
+		"achievementProgress": "Progression du succès",
+		"hoursPlayed": "{hours} heures jouées",
+		"noAchievement": {
+			"text": "Aucun ami n'a encore débloqué ce succès."
+		},
+		"signIn": {
+			"description": "Connectez-vous pour voir quels amis ont débloqué ce succès.",
+			"title": "Connectez-vous pour voir vos amis"
+		}
+	},
+	"game": {
+		"achievementLeaderboard": {
+			"title": "Classement des succès"
+		},
+		"achievementProgress": {
+			"description": "Vous avez débloqué {unlockedCount} sur {totalCount} succès.",
+			"title": "Progression des succès"
+		},
+		"description": {
+			"label": "Description"
+		},
+		"developer": {
+			"label": "Développeur"
+		},
+		"friendsWhoPlay": {
+			"title": "Amis qui jouent"
+		},
+		"gameInformation": {
+			"title": "Informations sur le jeu"
+		},
+		"noRecentUnlocks": {
+			"description": "Vous n'avez récemment débloqué aucun succès.",
+			"title": "Aucun succès récent"
+		},
+		"playOnSteam": "Jouer sur Steam",
+		"publisher": {
+			"label": "Éditeur"
+		},
+		"recentUnlocks": {
+			"title": "Succès Récents"
+		},
+		"releaseDate": {
+			"label": "Date de sortie"
+		},
+		"signInCallToAction": {
+			"description": "Connectez-vous pour voir vos succès récents et votre progression.",
+			"title": "Débloquez des succès"
+		},
+		"viewOnSteam": "Voir sur Steam",
+		"viewOnSteamDB": "Voir sur SteamDB"
+	},
+	"home": {
+		"achievement": {
+			"player": "Joueur {rank}"
+		},
+		"comingSoon": "À venir",
+		"cta": {
+			"description": "C'est gratuit, connectez-vous simplement avec votre compte Steam et commencez à suivre vos succès.",
+			"title": "Prêt à afficher vos exploits ?"
+		},
+		"explore": {
+			"description": "Découvrez les succès pour chaque jeu de votre bibliothèque. Aucun défi n'est trop grand !",
+			"title": "Explorez vos succès"
+		},
+		"featured": {
+			"description": "Découvrez certains des succès les plus rares débloqués par les membres de notre communauté.",
+			"title": "Succès Rares en Vedette"
+		},
+		"features": {
+			"dashboard": "Aller au Tableau de Bord",
+			"learnMore": "En savoir plus",
+			"signIn": "Connectez-vous maintenant",
+			"title": "Pourquoi utiliser Steam Vault ?"
+		},
+		"hero": {
+			"description": "Suivez et partagez vos exploits gaming les plus impressionnants. Comparez-vous aux autres joueurs avec Steam Vault.",
+			"title": "Mettez en valeur vos succès les plus rares sur Steam"
+		},
+		"meta": {
+			"description": "Suivez, affichez et partagez vos succès les plus rares sur Steam Vault.",
+			"title": "Steam Vault - Mettez en valeur vos succès"
+		},
+		"rareAchievements": "{count} succès rares",
+		"stats": {
+			"indexedGames": "Jeux indexés",
+			"indexedUsers": "Utilisateurs indexés",
+			"trackedAchievements": "Succès suivis"
+		},
+		"textCard1": {
+			"description": "Consultez les succès de tous vos jeux en un seul endroit. Comparez-vous aux autres.",
+			"title": "Suivez vos succès"
+		},
+		"textCard2": {
+			"description": "Découvrez plus de jeux et de succès. Trouvez des guides, des stats et plus encore.",
+			"title": "Aperçus clés"
+		},
+		"textCard3": {
+			"description": "Trouvez d'autres chasseurs de succès, comparez vos stats et faites-vous de nouveaux amis.",
+			"title": "Connectez-vous avec d'autres"
+		},
+		"topAchievementHunters": "Top chasseurs de succès",
+		"viewAll": "Voir tout"
+	},
+	"index": {
+		"error": {
+			"message": "Nous sommes encore en train d'indexer ce compte, certaines informations pourraient être manquantes. Veuillez vérifier ultérieurement.",
+			"title": "Avertissement"
+		}
+	},
+	"layout": {
+		"meta": {
+			"keywords": "Steam, succès, gaming, jeux, profil, utilisateur, les plus rares, rares, stats"
+		}
+	},
+	"legal": {
+		"acknowledgment": {
+			"text": "En utilisant Steam Vault, vous reconnaissez avoir lu et compris notre Politique de Confidentialité et nos Conditions d'Utilisation, et acceptez d'en être lié."
+		},
+		"breadcrumbs": {
+			"title": "Légal"
+		},
+		"contact": {
+			"heading": "Contactez-nous",
+			"intro": "Si vous avez des questions concernant notre Politique de Confidentialité ou nos Conditions d'Utilisation, veuillez nous contacter."
+		},
+		"disclaimer": {
+			"text": "Steam Vault n'est en aucun cas associé à Valve Corporation. Toutes les marques déposées ou marques de service sont la propriété de leurs détenteurs respectifs. Tous les éléments enregistrés sont utilisés selon le principe de l'utilisation équitable.",
+			"title": "Avertissement"
+		},
+		"header": {
+			"subtitle": "Dernière mise à jour : 9 avril 2025",
+			"title": "Politique de Confidentialité & Conditions d'Utilisation"
+		},
+		"meta": {
+			"description": "Politique de Confidentialité et Conditions d'Utilisation pour Steam Vault.",
+			"title": "Steam Vault - Légal"
+		},
+		"print": {
+			"button": "Imprimer cette page"
+		},
+		"privacy": {
+			"blockquote": "La présente Politique de Confidentialité décrit comment Steam Vault (\"nous\", \"notre\", ou \"nos\") collecte, utilise et partage vos informations personnelles lorsque vous utilisez notre site et nos services. En utilisant Steam Vault, vous acceptez la collecte et l'utilisation de ces informations conformément à cette politique.",
+			"sections": {
+				"changes": {
+					"text": "Nous pouvons mettre à jour cette Politique de Confidentialité. Veuillez la consulter régulièrement pour prendre connaissance des modifications.",
+					"title": "Modifications de cette Politique de Confidentialité"
+				},
+				"cookies": {
+					"text": "Nous utilisons des cookies et technologies similaires pour suivre l'activité sur notre plateforme. Le refus des cookies peut affecter votre expérience.",
+					"title": "Cookies et technologies de suivi"
+				},
+				"dataSecurity": {
+					"text": "Nous mettons en œuvre des mesures pour protéger vos informations personnelles, bien qu'aucune méthode ne soit infaillible.",
+					"title": "Sécurité des données"
+				},
+				"howWeUse": {
+					"list": "Nous utilisons ces informations pour fournir, maintenir et améliorer nos services, et pour enquêter et prévenir tout usage frauduleux de notre plateforme.",
+					"title": "Comment nous utilisons vos informations"
+				},
+				"information": {
+					"list": "Nous collectons divers types d'informations sur et auprès des utilisateurs de notre plateforme, notamment : les détails de votre compte Steam, les données d'utilisation et les informations sur votre appareil.",
+					"title": "Informations que nous collectons"
+				},
+				"sharing": {
+					"list": "Les informations personnelles ne sont pas partagées avec des tiers, sauf pour des raisons légales ou pour protéger nos droits.",
+					"title": "Partage de vos informations"
+				},
+				"yourRights": {
+					"list": "Vous pouvez avoir des droits tels que l'accès, la correction, la suppression et l'opposition au traitement de vos informations personnelles.",
+					"title": "Vos droits"
+				}
+			}
+		},
+		"tabs": {
+			"privacy": "Politique de Confidentialité",
+			"terms": "Conditions d'Utilisation"
+		},
+		"terms": {
+			"blockquote": "Les présentes Conditions d'Utilisation (\"Conditions\") régissent votre accès et utilisation du site et des services de Steam Vault. En utilisant nos services, vous acceptez ces Conditions.",
+			"sections": {
+				"acceptableUse": {
+					"text": "Vous vous engagez à utiliser nos services uniquement à des fins légales et à ne pas vous livrer à des activités interdites.",
+					"title": "Utilisation Acceptable"
+				},
+				"changes": {
+					"text": "Nous nous réservons le droit de modifier ces Conditions à tout moment moyennant un préavis.",
+					"title": "Modifications de ces Conditions"
+				},
+				"intellectualProperty": {
+					"text": "Nos services et contenus sont la propriété de Steam Vault ou de ses concédants et sont protégés par les lois sur la propriété intellectuelle.",
+					"title": "Droits de Propriété Intellectuelle"
+				},
+				"limitationOfLiability": {
+					"text": "En aucun cas Steam Vault ou ses affiliés ne pourront être tenus responsables des dommages résultant de votre utilisation de nos services.",
+					"title": "Limitation de Responsabilité"
+				},
+				"termination": {
+					"text": "Nous pouvons suspendre ou résilier immédiatement votre compte si vous violez ces Conditions.",
+					"title": "Résiliation"
+				},
+				"userAccounts": {
+					"text": "Accédez à certaines fonctionnalités en vous connectant avec votre compte Steam. Vous êtes responsable de la protection de vos identifiants de connexion.",
+					"title": "Comptes Utilisateurs"
+				}
+			}
+		}
+	},
+	"loading": {
+		"alert": {
+			"description": "Nous lançons des milliers de requêtes pour récupérer vos données. Si cela vous semble long, essayez de recharger la page.",
+			"title": "Cela pourrait prendre une minute..."
+		},
+		"source": "Source:",
+		"title": "Chargement..."
+	},
+	"loadingScreen": {
+		"description1": "Lors du développement de <i>Call of Duty 4 : Modern Warfare</i> (2007), Infinity Ward s'est inspiré de manuels réels d'entraînement des forces spéciales, se concentrant sur les communications radio, les tactiques de mouvement et le langage corporel pour créer une expérience à la fois cinématographique et tactiquement précise.",
+		"description2": "Dans <i>Portal</i> (2007), les joueurs se voient promettre un gâteau littéral, tout en étant conduits dans un piège fatal. Cette promesse ironiquement lancée est rapidement devenue un symbole des incitations vides dans le marketing des jeux.",
+		"description3": "Dans <i>Super Mario Bros.</i> (1985), un ennemi rouge non utilisé, le \"Koopa Troopa\" doté de 2 vies, était présent. Des codes divulgués pour <i>Super Mario All-Stars</i> (1993) suggèrent que ce comportement était prévu par défaut pour tous les Koopa Troopas.",
+		"description4": "<i>GoldenEye 007</i> (1997) fut le premier jeu à proposer un mode multijoueur en vue à la première personne sur console, établissant la référence pour les FPS sur console.",
+		"description5": "L'original <i>La Légende de Zelda</i> (1986) fut l'un des premiers jeux de console à introduire un système de sauvegarde sur batterie, permettant aux joueurs d'enregistrer leur progression dans un vaste monde ouvert et redéfinissant le design des jeux d'aventure.",
+		"description6": "Le nom « Zelda » (de la franchise <i>La Légende de Zelda</i>) a été inspiré par Zelda Fitzgerald, l'épouse de F. Scott Fitzgerald, conférant à la série une appellation exotique et mémorable.",
+		"description7": "Le <i>Final Fantasy</i> original (1987) a été conçu comme le dernier recours de Square (plus tard Square Enix) lors d'une crise financière. Ironiquement, son succès inattendu a non seulement sauvé l'entreprise, mais a également jeté les bases de l'une des franchises RPG les plus emblématiques.",
+		"title1": "Changer d'arme est plus rapide que de recharger !",
+		"title2": "Le gâteau, c’est du bluff !",
+		"title3": "J'ai passé des heures à écraser... des Koopas !",
+		"title4": "Le nom, c'est Bond... James Bond",
+		"title5": "Il est dangereux de partir seul ! Prenez ça !",
+		"title6": "Excusez-moi, Princesse !",
+		"title7": "Un Final Fantasy pas si final"
+	},
+	"navbar": {
+		"companyName": "Steam Vault",
+		"login": {
+			"login": "Login",
+			"withSteamHidden": "avec Steam"
+		},
+		"logout": "Déconnexion"
+	},
+	"podium": {
+		"label": {
+			"first": "1ère Place",
+			"second": "2ème Place",
+			"third": "3ème Place"
+		},
+		"percentOfPlayers": "{percentage}% des joueurs"
+	},
+	"profile": {
+		"editProfile": {
+			"button": "Modifier le profil"
+		},
+		"privacy": {
+			"concerns": {
+				"description": "Nous accédons uniquement à vos données de succès publiques pour fournir notre service. Rendre vos détails de jeu publics permet uniquement aux autres de voir vos jeux, succès et temps de jeu.",
+				"more": "Pour plus d'informations sur les paramètres de confidentialité de Steam, visitez notre",
+				"title": "Problèmes de confidentialité ?"
+			},
+			"linkText": "page de confidentialité",
+			"settings": "Paramètres de Confidentialité"
+		},
+		"private": "Ce profil est privé.",
+		"steps": {
+			"step1": {
+				"action": "Cliquez sur",
+				"description": "Connectez-vous à Steam et rendez-vous sur votre page de profil. Vous pouvez le faire en cliquant sur votre nom d'utilisateur dans la barre de navigation en haut.",
+				"title": "Étape 1 : Accédez à votre profil Steam"
+			},
+			"step2": {
+				"action": "Sélectionnez",
+				"description": "Dans la page d'édition du profil, trouvez et cliquez sur l'option 'Paramètres de confidentialité' dans la barre latérale gauche.",
+				"title": "Étape 2 : Accédez aux paramètres de confidentialité"
+			},
+			"step3": {
+				"alert": {
+					"description": "Vérifiez attentivement ces paramètres avant de les modifier.",
+					"title": "Restez en sécurité !"
+				},
+				"description": "Dans la page des paramètres de confidentialité, repérez la section 'Détails du jeu' et définissez-la sur Public. Vous pouvez également définir votre 'Liste d'amis' sur Public pour une meilleure expérience.",
+				"title": "Étape 3 : Mettez à jour la confidentialité de vos détails de jeu"
+			},
+			"step4": {
+				"description": "Après avoir mis à jour vos paramètres, cela peut prendre jusqu'à 24 heures pour que les modifications prennent effet.",
+				"title": "Étape 4 : Patientez pour les modifications"
+			}
+		}
+	},
+	"rarity": {
+		"common": "Commun",
+		"rare": "Rare",
+		"ultraRare": "Ultra Rare",
+		"uncommon": "Peu commun"
+	},
+	"search": {
+		"error": "Erreur : {message}",
+		"moreResults": "Encore {count} résultats...",
+		"noMatches": "Aucun {type} trouvé pour \"{query}\".",
+		"noResults": "Aucun résultat trouvé pour \"{query}\".",
+		"placeholder": "Entrez un nom d'utilisateur, un lien vers un profil ou un jeu...",
+		"searching": "Recherche de \"{query}\"..."
+	},
+	"status": {
+		"hidden": "Caché",
+		"locked": "Verrouillé",
+		"unlocked": "Débloqué"
+	},
+	"toolbar": {
+		"filter": {
+			"all": "Tous",
+			"by": "Filtrer par",
+			"locked": "Verrouillé",
+			"unlocked": "Débloqué"
+		},
+		"search": {
+			"placeholder": "Rechercher un succès..."
+		},
+		"sort": {
+			"by": "Trier par",
+			"direction": {
+				"toggle": "Inverser l'ordre de tri"
+			},
+			"method": {
+				"playerCount": "Nombre de joueurs",
+				"rarity": "Rareté",
+				"unlocked": "Débloqué"
+			}
 		}
 	},
 	"translation": {
-		"show": "Afficher la traduction automatique",
-		"hide": "Afficher le texte original"
+		"hide": "Afficher le texte original",
+		"show": "Afficher la traduction automatique"
 	},
-	"achievementArticlesNotFound": "Aucun guide pertinent trouvé… Quelqu’un devrait en créer un !"
+	"user": {
+		"page": {
+			"faq": {
+				"private": {
+					"answer": "Votre profil Steam est configuré comme privé, empêchant ainsi aux autres de le voir. Pour que Steam Vault puisse consulter vos succès, vous devez rendre votre profil public. Vous pouvez suivre les instructions ci-dessous.",
+					"question": "Pourquoi mon profil est-il privé ?"
+				},
+				"public": {
+					"question": "Comment rendre mon profil public ?"
+				}
+			},
+			"leaderboard": {
+				"title": "Classement des succès"
+			},
+			"meta": {
+				"description": "Consultez vos succès Steam.",
+				"keywords": "Steam, succès, utilisateur, {userId}, {displayName}",
+				"title": "{displayName} - Succès"
+			},
+			"noAchievements": "Aucun succès débloqué pour le moment.",
+			"title": "Les succès les plus rares de {displayName}"
+		},
+		"table": {
+			"achievement": "Succès",
+			"game": "Jeu",
+			"rarity": "Rareté"
+		},
+		"view": {
+			"list": "Vue en liste",
+			"table": "Vue en grille"
+		}
+	}
 }

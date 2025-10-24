@@ -1,276 +1,516 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"aboutContactTitle": "聯繫我們",
-	"aboutCtaDescription": "加入千萬遊戲玩家，一起追蹤並分享在 Steam Vault 的遊戲成就。",
-	"aboutDiscord": "加入我們的 Discord",
-	"aboutFaqTitle": "常見問題",
-	"aboutKeyFeaturesTitle": "主要功能",
-	"aboutMissionParagraph1": "Steam Vault 的誕生只有一個簡單目標：讓玩家在平台上尋找最稀有的成就。",
-	"aboutMissionParagraph2": "成就不僅僅是里程碑；它們代表著無數小時的投入、學習、實踐與磨練。對大多數人而言，這些努力可能從未被注意，而 Steam Vault 正是為了改變這點。",
-	"aboutMissionParagraph3": "我們的平台旨在以全新視角展示你的遊戲旅程，讓你以不同眼光看待自己的成就，同時獲取激勵與更多資訊。",
-	"aboutMissionTitle": "我們的使命",
-	"aboutPageHeroSubtitle": "追蹤、展示並慶祝你的遊戲成就。",
-	"aboutPageHeroTitle": "關於 Steam Vault",
-	"aboutPageMetaDescription": "了解 Steam Vault、我們的目標以及如何協助玩家追蹤遊戲成就。",
-	"aboutPageMetaTitle": "Steam Vault - 關於我們",
-	"aboutSocialText": "關注我們的社群動態，獲取最新消息、技巧及加入不斷壯大的成就獵人社群。",
-	"aboutTeamTitle": "團隊成員",
-	"achievementArticlesError": "載入指南時出錯：{errorMessage}",
-	"achievementArticlesLoading": "正在載入攻略與指南...",
-	"achievementArticlesSteamCommunityDescription": "來自 Steam 社群的官方成就解鎖指南。",
-	"achievementArticlesSteamCommunityTitle": "Steam 社群指南",
-	"achievementArticlesYouTubeDescription": "針對成就解鎖的有用影片指南。",
-	"achievementArticlesYouTubeTitle": "YouTube 影片指南",
-	"achievementArticlesNotFound": "未找到相關攻略……該有人來補上！",
-	"achievementDetails": "細節",
-	"achievementOfPlayers": "的玩家",
-	"achievementOtherAchievementsDescription": "你在此遊戲中所有成就的進度",
-	"achievementOtherAchievementsTitle": "在 {appName} 中的其他成就",
-	"achievementPageMetaDescription": "在 {appName} 解鎖「{achievementName}」－僅有 {percentage}% 的玩家能達成。查看稀有度圖表、與好友比較並閱讀 Steam Vault 的頂級指南。",
-	"achievementPageMetaTitle": "{achievementName} - {appName}",
-	"achievementRarityComparisonDescription": "{achievementName} 與 {appName} 中其他成就的比較",
-	"achievementRarityComparisonTitle": "成就稀有度比較",
-	"achievementShareText": "分享",
-	"achievementTabArticles": "攻略與指南",
-	"achievementTabFriends": "好友",
-	"achievementTabStats": "統計",
-	"achievementThisAchievementLabel": "本成就",
-	"appPageMetaDescription": "查看 {appName} 中的全部 {achievementCount} 個成就。使用互動式圖表追蹤您的進度，並在 Steam Vault 上查看指南。",
-	"appPageMetaKeywords": "Steam, 成就, {appName}, {appId}, {achievementCount}",
-	"appPageMetaTitle": "{appName} - 成就",
-	"chartAchievementsLabel": "成就",
-	"chartAfterLabelSuffix": "佔總數的 %",
-	"ChartRarityCommon": "普通",
-	"ChartRarityRare": "稀有 (<10%)",
-	"ChartRarityUltraRare": "超稀有 (<5%)",
-	"ChartRarityUncommon": "不尋常 (<50%)",
-	"chartUnlockedAchievementsLabel": "已解鎖成就",
-	"ctaTitle": "準備好展示你的成就了嗎？",
-	"errorPageButtonBack": "返回",
-	"errorPageButtonHome": "回首頁",
-	"errorPageButtonReload": "再試一次",
-	"errorPageErrorCause": "原因：{errorMessage}",
-	"errorPageErrorSuggestion": "請嘗試重新載入頁面或返回首頁",
-	"errorPageMessage": "載入頁面時發生錯誤。我們的工程師已收到通知，正在處理。",
-	"errorPageTitle": "糟糕...",
-	"footerAbout": "關於我們",
-	"footerCompanyName": "Steam Vault",
-	"footerPrivacy": "隱私政策",
-	"footerRights": "© {year} Steam Vault. 版權所有。",
-	"footerSupport": "支援",
-	"footerTerms": "服務條款",
-	"friendAchievementProgress": "成就進度",
-	"friendHoursPlayed": "已遊玩 {hours} 小時",
-	"friendNoAchievementText": "目前尚無好友解鎖此成就。",
-	"friendSignInDescription": "登入查看你的好友是否也解鎖了此成就。",
-	"friendSignInTitle": "登入查看好友",
-	"gamePageAchievementLeaderboardTitle": "成就排行榜",
-	"gamePageAchievementProgressDescription": "你已解鎖 {totalCount} 個成就中的 {unlockedCount} 個。",
-	"gamePageAchievementProgressTitle": "成就進度",
-	"gamePageDescriptionLabel": "描述",
-	"gamePageDeveloperLabel": "開發者",
-	"gamePageFriendsWhoPlayTitle": "正在遊玩的好友",
-	"gamePageGameInformationTitle": "遊戲資訊",
-	"gamePageNoRecentUnlocksDescription": "你最近沒有解鎖任何成就。",
-	"gamePageNoRecentUnlocksTitle": "近期無解鎖",
-	"gamePagePlayOnSteam": "在 Steam 上遊玩",
-	"gamePagePublisherLabel": "發行商",
-	"gamePageRecentUnlocksTitle": "最近解鎖",
-	"gamePageReleaseDateLabel": "發行日期",
-	"gamePageSignInCallToActionDescription": "登入以查看你的最新解鎖及進度。",
-	"gamePageSignInCallToActionTitle": "解鎖成就",
-	"gamePageViewOnSteamDB": "在 SteamDB 查看",
-	"homepageAchievementPlayer": "玩家 {rank}",
-	"homepageComingSoon": "即將推出",
-	"homepageCtaDescription": "免費，僅需使用你的 Steam 帳號登入，即可開始追蹤成就。",
-	"homepageExploreDescription": "在你的遊戲庫中尋找各式成就，沒有任何挑戰是太難的！",
-	"homepageExploreTitle": "探索你的成就",
-	"homepageFeaturedDescription": "查看社群中一些最稀有成就的精彩展示。",
-	"homepageFeaturedTitle": "精選稀有成就",
-	"homepageFeaturesDashboard": "前往控制台",
-	"homepageFeaturesLearnMore": "了解更多",
-	"homepageFeaturesSignIn": "立即登入",
-	"homepageFeaturesTitle": "為何選擇 Steam Vault？",
-	"homepageHeroDescription": "追蹤並分享你最令人印象深刻的遊戲成就。看看自己與其他玩家的差距，盡在 Steam Vault。",
-	"homepageHeroTitle": "在 Steam 上展示你最稀有的成就",
-	"homepageMetaDescription": "在 Steam Vault 上追蹤、展示並分享您最稀有的成就。",
-	"homepageMetaTitle": "Steam Vault - 展示你的成就",
-	"homepageRareAchievements": "{count} 個稀有成就",
-	"homepageStatsIndexedGames": "索引遊戲",
-	"homepageStatsIndexedUsers": "索引用戶",
-	"homepageStatsTrackedAchievements": "追蹤成就",
-	"homepageTextCard1Description": "一目了然地查看你所有遊戲的成就，看看你與他人相比如何。",
-	"homepageTextCard1Title": "追蹤你的成就",
-	"homepageTextCard2Description": "發掘更多遊戲與成就，尋找攻略、統計數據及其他資訊。",
-	"homepageTextCard2Title": "獲得關鍵洞見",
-	"homepageTextCard3Description": "與其他成就獵人互動、比較數據並結識新朋友。",
-	"homepageTextCard3Title": "與他人聯繫",
-	"homepageTopAchievementHunters": "頂級成就獵人",
-	"homepageViewAll": "查看全部",
-	"layoutMetaKeywords": "Steam, 成就, 電玩, 遊戲, 個人資料, 玩家, 最稀有, 稀有, 統計",
-	"legalAcknowledgmentText": "使用 Steam Vault，即表示你已閱讀並理解我們的隱私政策與服務條款，並同意遵守。",
-	"legalBreadcrumbsTitle": "法律資訊",
-	"legalContactEmail": "support@steamvault.info",
-	"legalContactHeading": "聯絡我們",
-	"legalContactIntro": "如對隱私政策或服務條款有疑問，請隨時聯繫我們。",
-	"legalDisclaimerText": "Steam Vault 與 Valve Corporation 無關。所有註冊商標及服務標記均屬其各自所有者，所有資產皆屬合理使用。",
-	"legalDisclaimerTitle": "免責聲明",
-	"legalHeaderSubtitle": "最後更新：2025年4月9日",
-	"legalHeaderTitle": "隱私政策與服務條款",
-	"legalPageMetaDescription": "Steam Vault 的隱私政策與服務條款。",
-	"legalPageMetaTitle": "Steam Vault - 法律資訊",
-	"legalPrintButton": "列印此頁面",
-	"legalPrivacyBlockquote": "本隱私政策詳細說明 Steam Vault（以下稱「我們」）在您使用本網站及服務時如何收集、使用及分享您的個人資訊。使用本平台即表示您同意本政策。",
-	"legalPrivacySectionChanges": "隱私政策變更",
-	"legalPrivacySectionChangesText": "我們可能會更新此隱私政策。請定期查閱有無變更。",
-	"legalPrivacySectionCookies": "Cookies 與追蹤技術",
-	"legalPrivacySectionCookiesText": "我們使用 Cookies 及類似技術來追蹤平台活動，拒絕 Cookies 可能會影響您的使用體驗。",
-	"legalPrivacySectionDataSecurity": "數據安全",
-	"legalPrivacySectionDataSecurityText": "雖然我們採取多重措施保護您的個人資訊，但無一方法可達 100% 安全。",
-	"legalPrivacySectionHowWeUse": "我們如何使用您的資訊",
-	"legalPrivacySectionHowWeUseList": "我們利用資訊來提供、維護和改善服務，並調查防範詐騙行為。",
-	"legalPrivacySectionInformation": "我們收集的資訊",
-	"legalPrivacySectionInformationList": "我們從用戶那裡收集各類資訊，包括：Steam 帳戶資料、使用數據及設備資訊。",
-	"legalPrivacySectionSharing": "資訊分享",
-	"legalPrivacySectionSharingList": "除法律規定或為保護權益外，您的個人資訊不會與第三方共享。",
-	"legalPrivacySectionYourRights": "您的權利",
-	"legalPrivacySectionYourRightsList": "您可能擁有查詢、更正、刪除及反對處理個人資訊的權利。",
-	"legalTabsPrivacy": "隱私政策",
-	"legalTabsTerms": "服務條款",
-	"legalTermsBlockquote": "本服務條款（以下稱「條款」）規範您對 Steam Vault 網站及服務的使用。使用本平台即表示您同意條款內容。",
-	"legalTermsSectionAcceptableUse": "可接受使用",
-	"legalTermsSectionAcceptableUseText": "您同意僅將本服務用於合法目的，不進行任何違法行為。",
-	"legalTermsSectionChanges": "條款變更",
-	"legalTermsSectionChangesText": "我們保留隨時修改條款並事先通知的權利。",
-	"legalTermsSectionIntellectualProperty": "智慧財產權",
-	"legalTermsSectionIntellectualPropertyText": "本平台服務與內容屬於 Steam Vault 或授權方所有，並受智慧財產權保護。",
-	"legalTermsSectionLimitationOfLiability": "責任限制",
-	"legalTermsSectionLimitationOfLiabilityText": "Steam Vault 及其關聯單位對因使用服務而產生的任何損害不承擔責任。",
-	"legalTermsSectionTermination": "終止",
-	"legalTermsSectionTerminationText": "若您違反條款，我們有權立即暫停或終止您的帳戶。",
-	"legalTermsSectionUserAccounts": "用戶帳戶",
-	"legalTermsSectionUserAccountsText": "使用 Steam 帳號登入即可啟用部分功能，請妥善保管您的登入憑據。",
-	"loadingScreenDescription1": "在開發《使命召喚4：現代戰爭》（2007）期間，Infinity Ward 參考了真實特種部隊訓練手冊，專注於無線電溝通、戰術移動與肢體語言，打造出兼具電影感與戰術性的體驗。",
-	"loadingScreenDescription2": "在《Portal》（2007）中，玩家被許諾一個真實的蛋糕，但最終卻走向滅亡。這個諷刺承諾迅速成為遊戲市場上空泛激勵的經典象徵。",
-	"loadingScreenDescription3": "《超級瑪莉兄弟》（1985）中原有一個未使用的紅色「庫巴龜」敵人，其設定為擁有2條命。洩漏的《超級瑪莉全明星》（1993）程式碼暗示所有庫巴龜預設如此。",
-	"loadingScreenDescription4": "《黃金眼007》（1997）為主機首創的第一人稱射擊多人模式遊戲，其標桿效應影響後續無數主機 FPS 作品。",
-	"loadingScreenDescription5": "原始《薩爾達傳說》（1986）為首批引入電池備份存檔系統的主機遊戲之一，使玩家能在龐大開放世界中保存遊戲進度，重新定義冒險遊戲設計。",
-	"loadingScreenDescription6": "《薩爾達傳說》一名中的“Zelda”取自薩爾達·菲茨傑拉德，令該系列獨具異國情調且令人難忘。",
-	"loadingScreenDescription7": "原始《最終幻想》（1987）被構想為 Square 在財務危機中的最後一搏，其意外成功不僅挽救公司，更奠定了經典 RPG 系列基石。",
-	"loadingScreenTitle1": "切換手槍比裝填子彈更快！",
-	"loadingScreenTitle2": "蛋糕是個騙局！",
-	"loadingScreenTitle3": "我花了數小時踩... 庫巴龜！",
-	"loadingScreenTitle4": "名字是邦德…詹姆斯邦德",
-	"loadingScreenTitle5": "獨自冒險太危險了！拿著這個！",
-	"loadingScreenTitle6": "拜託小心點，公主！",
-	"loadingScreenTitle7": "不算是最終幻想",
-	"navbarCompanyName": "Steam Vault",
-	"navbarLogin": "登入",
-	"navbarLoginWithSteamHidden": "使用 Steam",
-	"navbarLogout": "登出",
-	"podiumLabelFirst": "第一名",
-	"podiumLabelSecond": "第二名",
-	"podiumLabelThird": "第三名",
-	"podiumPercentOfPlayers": "佔 {percentage}% 的玩家",
-	"profileEditProfileButton": "編輯個人檔案",
-	"profilePrivacyConcernsDescription": "我們僅存取你的公開成就資料以提供服務。公開遊戲詳情只會讓他人看見你的遊戲、成就及遊玩時數。",
-	"profilePrivacyConcernsMore": "了解更多請拜訪我們的",
-	"profilePrivacyConcernsTitle": "隱私疑慮？",
-	"profilePrivacyLinkText": "隱私頁面",
-	"profilePrivacySettings": "隱私設定",
-	"profilePrivate": "此個人檔案為私密。",
-	"profileStep1Action": "點擊",
-	"profileStep1Description": "登入 Steam 並前往你的個人檔案頁面。點擊頂部導覽欄中的用戶名即可。",
-	"profileStep1Title": "步驟 1：前往你的 Steam 個人檔案",
-	"profileStep2Action": "選擇",
-	"profileStep2Description": "在編輯個人檔案頁面中，點擊左側邊欄的「隱私設定」選項。",
-	"profileStep2Title": "步驟 2：前往隱私設定",
-	"profileStep3AlertDescription": "更改前請仔細核對設定。",
-	"profileStep3AlertTitle": "保持安全！",
-	"profileStep3Description": "在隱私設定頁面中，找到「遊戲詳情」部分並將其設為公開。你也可以把「好友列表」設為公開以獲得更佳體驗。",
-	"profileStep3Title": "步驟 3：更新遊戲詳情隱私權",
-	"profileStep4Description": "更新設定後，可能需要最多 24 小時生效。",
-	"profileStep4Title": "步驟 4：等待變更生效",
-	"rarityCommon": "普通",
-	"rarityRare": "稀有",
-	"rarityUltraRare": "超稀有",
-	"rarityUncommon": "罕見",
-	"searchError": "錯誤：{message}",
-	"searching": "正在搜尋「{query}」...",
-	"searchMoreResults": "還有 {count} 個結果...",
-	"searchNoMatches": "未找到符合「{query}」的 {type}。",
-	"searchNoResults": "未找到「{query}」的結果。",
-	"searchPlaceholder": "輸入用戶名、檔案連結或遊戲...",
-	"signIn": "登入",
-	"splashAlertDescription": "我們正在發送數千個請求以取得您的資料。若覺得等待過久，請嘗試重新整理頁面。",
-	"splashAlertTitle": "這可能需要一點時間……",
-	"loading": "載入中……",
-	"splashSourceLabel": "來源：",
-	"statusHidden": "隱藏",
-	"statusLocked": "已鎖定",
-	"statusUnlocked": "已解鎖",
-	"toolbarFilterAll": "全部",
-	"toolbarFilterBy": "依據",
-	"toolbarFilterLocked": "已鎖定",
-	"toolbarFilterUnlocked": "已解鎖",
-	"toolbarSearchPlaceholder": "搜尋成就……",
-	"toolbarSortBy": "排序依據",
-	"toolbarSortMethodRarity": "稀有度",
-	"toolbarSortMethodPlayerCount": "玩家數量",
-	"toolbarSortMethodUnlocked": "解鎖時間",
-	"toolbarSortDirectionToggle": "切換排序方向",
-	"indexErrorMessage": "我們仍在索引該帳號，因此部分資訊可能缺失。請稍後再試。",
-	"indexErrorTitle": "警告",
-	"userPageFaqPrivateAnswer": "您的 Steam 個人檔案隱私設定阻止他人查看。為讓 Steam Vault 能讀取您的成就，請將個人檔案設為公開，依下列步驟操作。",
-	"userPageFaqPrivateQuestion": "為什麼我的個人檔案是私密的？",
-	"userPageFaqPublicQuestion": "如何將我的個人檔案設為公開？",
-	"userPageLeaderboardTitle": "成就排行榜",
-	"userPageMetaDescription": "查看您的 Steam 成就。",
-	"userPageMetaKeywords": "Steam, 成就, 用戶, {userId}, {displayName}",
-	"userPageMetaTitle": "{displayName} - 成就",
-	"userPageNoAchievements": "尚未解鎖任何成就。",
-	"userPageTitle": "{displayName} 的稀有成就",
-	"userTableAchievement": "成就",
-	"userTableGame": "遊戲",
-	"userTableRarity": "稀有度",
-	"userViewList": "列表模式",
-	"userViewTable": "網格模式",
-	"viewOnSteam": "在 Steam 上查看",
-	"aboutFaq": {
-		"question1": "什麼是 Steam Vault？",
-		"answer1": "Steam Vault 是一個幫助您查看 Steam 成就的平台，我們協助您找出最稀有的成就。",
-		"question2": "為何 Steam Vault 與眾不同？",
-		"answer2": "由於 Steam 嚴格的 API 規範，追蹤成千上萬玩家在眾多遊戲裡的成就進度非常困難。Steam Vault 致力於彌補這一缺口，並提供大量洞見，完全免費。",
-		"question3": "如何連接我的 Steam 帳號？",
-		"answer3": "只需點選頁面右上角的「登入」按鈕，連接您的 Steam 帳號即可開始追蹤成就。",
-		"question4": "Steam Vault 是免費的嗎？",
-		"answer4": "Steam Vault 完全免費使用，無任何收費功能。我們完全依靠廣告及捐款維持營運。",
-		"question5": "成就資料多久更新一次？",
-		"answer5": "我們定期更新資料以遵循 Steam API 指南，若您覺得更新不夠即時，歡迎與我們聯絡。",
-		"question6": "我可以分享我的成就檔案嗎？",
-		"answer6": "每個使用者皆有一個公開檔案頁面，可透過專屬 URL 分享。您也可以為單個成就生成分享卡片用於社群媒體。",
-		"question7": "成就稀有度如何計算？",
-		"answer7": "成就稀有度根據多項指標計算。Steam 提供的「百分比」具體計算方式不明，而我們的「分數」則大致反映解鎖該成就的玩家數。我們持續探索更好的呈現方式。"
+	"about": {
+		"contactTitle": "聯繫我們",
+		"ctaDescription": "加入千萬遊戲玩家，一起追蹤並分享在 Steam Vault 的遊戲成就。",
+		"discord": "加入我們的 Discord",
+		"faq": {
+			"answer1": "Steam Vault 是一個幫助您查看 Steam 成就的平台，我們協助您找出最稀有的成就。",
+			"answer2": "由於 Steam 嚴格的 API 規範，追蹤成千上萬玩家在眾多遊戲裡的成就進度非常困難。Steam Vault 致力於彌補這一缺口，並提供大量洞見，完全免費。",
+			"answer3": "只需點選頁面右上角的「登入」按鈕，連接您的 Steam 帳號即可開始追蹤成就。",
+			"answer4": "Steam Vault 完全免費使用，無任何收費功能。我們完全依靠廣告及捐款維持營運。",
+			"answer5": "我們定期更新資料以遵循 Steam API 指南，若您覺得更新不夠即時，歡迎與我們聯絡。",
+			"answer6": "每個使用者皆有一個公開檔案頁面，可透過專屬 URL 分享。您也可以為單個成就生成分享卡片用於社群媒體。",
+			"answer7": "成就稀有度根據多項指標計算。Steam 提供的「百分比」具體計算方式不明，而我們的「分數」則大致反映解鎖該成就的玩家數。我們持續探索更好的呈現方式。",
+			"question1": "什麼是 Steam Vault？",
+			"question2": "為何 Steam Vault 與眾不同？",
+			"question3": "如何連接我的 Steam 帳號？",
+			"question4": "Steam Vault 是免費的嗎？",
+			"question5": "成就資料多久更新一次？",
+			"question6": "我可以分享我的成就檔案嗎？",
+			"question7": "成就稀有度如何計算？",
+			"title": "常見問題"
+		},
+		"features": {
+			"feature1": {
+				"description": "我們的平台定期刷新您的成就數據，確保資訊始終最新。",
+				"shortDescription": "自動同步更新 Steam 成就。",
+				"title": "成就追蹤"
+			},
+			"feature2": {
+				"description": "我們持續尋找新方法分析與呈現成就，幫助您識別最具挑戰性的目標。",
+				"shortDescription": "發掘您最稀有且令人驕傲的成就。",
+				"title": "稀有度分析"
+			},
+			"feature3": {
+				"description": "自動發現好友成就並與您的數據比較，在社群中分享您的遊戲實力。",
+				"shortDescription": "與好友互動、比較成就進度。",
+				"title": "社交功能"
+			},
+			"title": "主要功能"
+		},
+		"hero": {
+			"subtitle": "追蹤、展示並慶祝你的遊戲成就。",
+			"title": "關於 Steam Vault"
+		},
+		"meta": {
+			"description": "了解 Steam Vault、我們的目標以及如何協助玩家追蹤遊戲成就。",
+			"title": "Steam Vault - 關於我們"
+		},
+		"mission": {
+			"paragraph1": "Steam Vault 的誕生只有一個簡單目標：讓玩家在平台上尋找最稀有的成就。",
+			"paragraph2": "成就不僅僅是里程碑；它們代表著無數小時的投入、學習、實踐與磨練。對大多數人而言，這些努力可能從未被注意，而 Steam Vault 正是為了改變這點。",
+			"paragraph3": "我們的平台旨在以全新視角展示你的遊戲旅程，讓你以不同眼光看待自己的成就，同時獲取激勵與更多資訊。",
+			"title": "我們的使命"
+		},
+		"socialText": "關注我們的社群動態，獲取最新消息、技巧及加入不斷壯大的成就獵人社群。",
+		"team": {
+			"title": "團隊成員"
+		}
 	},
-	"aboutFeatures": {
-		"feature1": {
-			"title": "成就追蹤",
-			"shortDescription": "自動同步更新 Steam 成就。",
-			"description": "我們的平台定期刷新您的成就數據，確保資訊始終最新。"
+	"achievement": {
+		"articles": {
+			"error": "載入指南時出錯：{errorMessage}",
+			"loading": "正在載入攻略與指南...",
+			"notFound": "未找到相關攻略……該有人來補上！",
+			"steamCommunity": {
+				"description": "來自 Steam 社群的官方成就解鎖指南。",
+				"title": "Steam 社群指南"
+			},
+			"youtube": {
+				"description": "針對成就解鎖的有用影片指南。",
+				"title": "YouTube 影片指南"
+			}
 		},
-		"feature2": {
-			"title": "稀有度分析",
-			"shortDescription": "發掘您最稀有且令人驕傲的成就。",
-			"description": "我們持續尋找新方法分析與呈現成就，幫助您識別最具挑戰性的目標。"
+		"details": "細節",
+		"meta": {
+			"description": "在 {appName} 解鎖「{achievementName}」－僅有 {percentage}% 的玩家能達成。查看稀有度圖表、與好友比較並閱讀 Steam Vault 的頂級指南。",
+			"title": "{achievementName} - {appName}"
 		},
-		"feature3": {
-			"title": "社交功能",
-			"shortDescription": "與好友互動、比較成就進度。",
-			"description": "自動發現好友成就並與您的數據比較，在社群中分享您的遊戲實力。"
+		"ofPlayers": "的玩家",
+		"otherAchievements": {
+			"description": "你在此遊戲中所有成就的進度",
+			"title": "在 {appName} 中的其他成就"
+		},
+		"rarityComparison": {
+			"description": "{achievementName} 與 {appName} 中其他成就的比較",
+			"title": "成就稀有度比較"
+		},
+		"shareText": "分享",
+		"tabs": {
+			"articles": "攻略與指南",
+			"friends": "好友",
+			"stats": "統計"
+		},
+		"thisAchievement": {
+			"label": "本成就"
+		}
+	},
+	"app": {
+		"meta": {
+			"description": "查看 {appName} 中的全部 {achievementCount} 個成就。使用互動式圖表追蹤您的進度，並在 Steam Vault 上查看指南。",
+			"keywords": "Steam, 成就, {appName}, {appId}, {achievementCount}",
+			"title": "{appName} - 成就"
+		}
+	},
+	"auth": {
+		"signIn": "登入"
+	},
+	"chart": {
+		"achievements": {
+			"label": "成就"
+		},
+		"after": {
+			"label": {
+				"suffix": "佔總數的 %"
+			}
+		},
+		"rarity": {
+			"common": "普通",
+			"rare": "稀有 (<10%)",
+			"ultraRare": "超稀有 (<5%)",
+			"uncommon": "不尋常 (<50%)"
+		},
+		"unlockedAchievements": {
+			"label": "已解鎖成就"
+		}
+	},
+	"error": {
+		"page": {
+			"button": {
+				"back": "返回",
+				"home": "回首頁",
+				"reload": "再試一次"
+			},
+			"error": {
+				"cause": "原因：{errorMessage}",
+				"suggestion": "請嘗試重新載入頁面或返回首頁"
+			},
+			"message": "載入頁面時發生錯誤。我們的工程師已收到通知，正在處理。",
+			"title": "糟糕..."
+		}
+	},
+	"footer": {
+		"about": "關於我們",
+		"companyName": "Steam Vault",
+		"privacy": "隱私政策",
+		"rights": "© {year} Steam Vault. 版權所有。",
+		"support": "支援",
+		"terms": "服務條款"
+	},
+	"friend": {
+		"achievementProgress": "成就進度",
+		"hoursPlayed": "已遊玩 {hours} 小時",
+		"noAchievement": {
+			"text": "目前尚無好友解鎖此成就。"
+		},
+		"signIn": {
+			"description": "登入查看你的好友是否也解鎖了此成就。",
+			"title": "登入查看好友"
+		}
+	},
+	"game": {
+		"achievementLeaderboard": {
+			"title": "成就排行榜"
+		},
+		"achievementProgress": {
+			"description": "你已解鎖 {totalCount} 個成就中的 {unlockedCount} 個。",
+			"title": "成就進度"
+		},
+		"description": {
+			"label": "描述"
+		},
+		"developer": {
+			"label": "開發者"
+		},
+		"friendsWhoPlay": {
+			"title": "正在遊玩的好友"
+		},
+		"gameInformation": {
+			"title": "遊戲資訊"
+		},
+		"noRecentUnlocks": {
+			"description": "你最近沒有解鎖任何成就。",
+			"title": "近期無解鎖"
+		},
+		"playOnSteam": "在 Steam 上遊玩",
+		"publisher": {
+			"label": "發行商"
+		},
+		"recentUnlocks": {
+			"title": "最近解鎖"
+		},
+		"releaseDate": {
+			"label": "發行日期"
+		},
+		"signInCallToAction": {
+			"description": "登入以查看你的最新解鎖及進度。",
+			"title": "解鎖成就"
+		},
+		"viewOnSteam": "在 Steam 上查看",
+		"viewOnSteamDB": "在 SteamDB 查看"
+	},
+	"home": {
+		"achievement": {
+			"player": "玩家 {rank}"
+		},
+		"comingSoon": "即將推出",
+		"cta": {
+			"description": "免費，僅需使用你的 Steam 帳號登入，即可開始追蹤成就。",
+			"title": "準備好展示你的成就了嗎？"
+		},
+		"explore": {
+			"description": "在你的遊戲庫中尋找各式成就，沒有任何挑戰是太難的！",
+			"title": "探索你的成就"
+		},
+		"featured": {
+			"description": "查看社群中一些最稀有成就的精彩展示。",
+			"title": "精選稀有成就"
+		},
+		"features": {
+			"dashboard": "前往控制台",
+			"learnMore": "了解更多",
+			"signIn": "立即登入",
+			"title": "為何選擇 Steam Vault？"
+		},
+		"hero": {
+			"description": "追蹤並分享你最令人印象深刻的遊戲成就。看看自己與其他玩家的差距，盡在 Steam Vault。",
+			"title": "在 Steam 上展示你最稀有的成就"
+		},
+		"meta": {
+			"description": "在 Steam Vault 上追蹤、展示並分享您最稀有的成就。",
+			"title": "Steam Vault - 展示你的成就"
+		},
+		"rareAchievements": "{count} 個稀有成就",
+		"stats": {
+			"indexedGames": "索引遊戲",
+			"indexedUsers": "索引用戶",
+			"trackedAchievements": "追蹤成就"
+		},
+		"textCard1": {
+			"description": "一目了然地查看你所有遊戲的成就，看看你與他人相比如何。",
+			"title": "追蹤你的成就"
+		},
+		"textCard2": {
+			"description": "發掘更多遊戲與成就，尋找攻略、統計數據及其他資訊。",
+			"title": "獲得關鍵洞見"
+		},
+		"textCard3": {
+			"description": "與其他成就獵人互動、比較數據並結識新朋友。",
+			"title": "與他人聯繫"
+		},
+		"topAchievementHunters": "頂級成就獵人",
+		"viewAll": "查看全部"
+	},
+	"index": {
+		"error": {
+			"message": "我們仍在索引該帳號，因此部分資訊可能缺失。請稍後再試。",
+			"title": "警告"
+		}
+	},
+	"layout": {
+		"meta": {
+			"keywords": "Steam, 成就, 電玩, 遊戲, 個人資料, 玩家, 最稀有, 稀有, 統計"
+		}
+	},
+	"legal": {
+		"acknowledgment": {
+			"text": "使用 Steam Vault，即表示你已閱讀並理解我們的隱私政策與服務條款，並同意遵守。"
+		},
+		"breadcrumbs": {
+			"title": "法律資訊"
+		},
+		"contact": {
+			"email": "support@steamvault.info",
+			"heading": "聯絡我們",
+			"intro": "如對隱私政策或服務條款有疑問，請隨時聯繫我們。"
+		},
+		"disclaimer": {
+			"text": "Steam Vault 與 Valve Corporation 無關。所有註冊商標及服務標記均屬其各自所有者，所有資產皆屬合理使用。",
+			"title": "免責聲明"
+		},
+		"header": {
+			"subtitle": "最後更新：2025年4月9日",
+			"title": "隱私政策與服務條款"
+		},
+		"meta": {
+			"description": "Steam Vault 的隱私政策與服務條款。",
+			"title": "Steam Vault - 法律資訊"
+		},
+		"print": {
+			"button": "列印此頁面"
+		},
+		"privacy": {
+			"blockquote": "本隱私政策詳細說明 Steam Vault（以下稱「我們」）在您使用本網站及服務時如何收集、使用及分享您的個人資訊。使用本平台即表示您同意本政策。",
+			"sections": {
+				"changes": {
+					"text": "我們可能會更新此隱私政策。請定期查閱有無變更。",
+					"title": "隱私政策變更"
+				},
+				"cookies": {
+					"text": "我們使用 Cookies 及類似技術來追蹤平台活動，拒絕 Cookies 可能會影響您的使用體驗。",
+					"title": "Cookies 與追蹤技術"
+				},
+				"dataSecurity": {
+					"text": "雖然我們採取多重措施保護您的個人資訊，但無一方法可達 100% 安全。",
+					"title": "數據安全"
+				},
+				"howWeUse": {
+					"list": "我們利用資訊來提供、維護和改善服務，並調查防範詐騙行為。",
+					"title": "我們如何使用您的資訊"
+				},
+				"information": {
+					"list": "我們從用戶那裡收集各類資訊，包括：Steam 帳戶資料、使用數據及設備資訊。",
+					"title": "我們收集的資訊"
+				},
+				"sharing": {
+					"list": "除法律規定或為保護權益外，您的個人資訊不會與第三方共享。",
+					"title": "資訊分享"
+				},
+				"yourRights": {
+					"list": "您可能擁有查詢、更正、刪除及反對處理個人資訊的權利。",
+					"title": "您的權利"
+				}
+			}
+		},
+		"tabs": {
+			"privacy": "隱私政策",
+			"terms": "服務條款"
+		},
+		"terms": {
+			"blockquote": "本服務條款（以下稱「條款」）規範您對 Steam Vault 網站及服務的使用。使用本平台即表示您同意條款內容。",
+			"sections": {
+				"acceptableUse": {
+					"text": "您同意僅將本服務用於合法目的，不進行任何違法行為。",
+					"title": "可接受使用"
+				},
+				"changes": {
+					"text": "我們保留隨時修改條款並事先通知的權利。",
+					"title": "條款變更"
+				},
+				"intellectualProperty": {
+					"text": "本平台服務與內容屬於 Steam Vault 或授權方所有，並受智慧財產權保護。",
+					"title": "智慧財產權"
+				},
+				"limitationOfLiability": {
+					"text": "Steam Vault 及其關聯單位對因使用服務而產生的任何損害不承擔責任。",
+					"title": "責任限制"
+				},
+				"termination": {
+					"text": "若您違反條款，我們有權立即暫停或終止您的帳戶。",
+					"title": "終止"
+				},
+				"userAccounts": {
+					"text": "使用 Steam 帳號登入即可啟用部分功能，請妥善保管您的登入憑據。",
+					"title": "用戶帳戶"
+				}
+			}
+		}
+	},
+	"loading": {
+		"alert": {
+			"description": "我們正在發送數千個請求以取得您的資料。若覺得等待過久，請嘗試重新整理頁面。",
+			"title": "這可能需要一點時間……"
+		},
+		"source": "來源：",
+		"title": "載入中..."
+	},
+	"loadingScreen": {
+		"description1": "在開發《使命召喚4：現代戰爭》（2007）期間，Infinity Ward 參考了真實特種部隊訓練手冊，專注於無線電溝通、戰術移動與肢體語言，打造出兼具電影感與戰術性的體驗。",
+		"description2": "在《Portal》（2007）中，玩家被許諾一個真實的蛋糕，但最終卻走向滅亡。這個諷刺承諾迅速成為遊戲市場上空泛激勵的經典象徵。",
+		"description3": "《超級瑪莉兄弟》（1985）中原有一個未使用的紅色「庫巴龜」敵人，其設定為擁有2條命。洩漏的《超級瑪莉全明星》（1993）程式碼暗示所有庫巴龜預設如此。",
+		"description4": "《黃金眼007》（1997）為主機首創的第一人稱射擊多人模式遊戲，其標桿效應影響後續無數主機 FPS 作品。",
+		"description5": "原始《薩爾達傳說》（1986）為首批引入電池備份存檔系統的主機遊戲之一，使玩家能在龐大開放世界中保存遊戲進度，重新定義冒險遊戲設計。",
+		"description6": "《薩爾達傳說》一名中的“Zelda”取自薩爾達·菲茨傑拉德，令該系列獨具異國情調且令人難忘。",
+		"description7": "原始《最終幻想》（1987）被構想為 Square 在財務危機中的最後一搏，其意外成功不僅挽救公司，更奠定了經典 RPG 系列基石。",
+		"title1": "切換手槍比裝填子彈更快！",
+		"title2": "蛋糕是個騙局！",
+		"title3": "我花了數小時踩... 庫巴龜！",
+		"title4": "名字是邦德…詹姆斯邦德",
+		"title5": "獨自冒險太危險了！拿著這個！",
+		"title6": "拜託小心點，公主！",
+		"title7": "不算是最終幻想"
+	},
+	"navbar": {
+		"companyName": "Steam Vault",
+		"login": {
+			"login": "Login",
+			"withSteamHidden": "使用 Steam"
+		},
+		"logout": "登出"
+	},
+	"podium": {
+		"label": {
+			"first": "第一名",
+			"second": "第二名",
+			"third": "第三名"
+		},
+		"percentOfPlayers": "佔 {percentage}% 的玩家"
+	},
+	"profile": {
+		"editProfile": {
+			"button": "編輯個人檔案"
+		},
+		"privacy": {
+			"concerns": {
+				"description": "我們僅存取你的公開成就資料以提供服務。公開遊戲詳情只會讓他人看見你的遊戲、成就及遊玩時數。",
+				"more": "了解更多請拜訪我們的",
+				"title": "隱私疑慮？"
+			},
+			"linkText": "隱私頁面",
+			"settings": "隱私設定"
+		},
+		"private": "此個人檔案為私密。",
+		"steps": {
+			"step1": {
+				"action": "點擊",
+				"description": "登入 Steam 並前往你的個人檔案頁面。點擊頂部導覽欄中的用戶名即可。",
+				"title": "步驟 1：前往你的 Steam 個人檔案"
+			},
+			"step2": {
+				"action": "選擇",
+				"description": "在編輯個人檔案頁面中，點擊左側邊欄的「隱私設定」選項。",
+				"title": "步驟 2：前往隱私設定"
+			},
+			"step3": {
+				"alert": {
+					"description": "更改前請仔細核對設定。",
+					"title": "保持安全！"
+				},
+				"description": "在隱私設定頁面中，找到「遊戲詳情」部分並將其設為公開。你也可以把「好友列表」設為公開以獲得更佳體驗。",
+				"title": "步驟 3：更新遊戲詳情隱私權"
+			},
+			"step4": {
+				"description": "更新設定後，可能需要最多 24 小時生效。",
+				"title": "步驟 4：等待變更生效"
+			}
+		}
+	},
+	"rarity": {
+		"common": "普通",
+		"rare": "稀有",
+		"ultraRare": "超稀有",
+		"uncommon": "罕見"
+	},
+	"search": {
+		"error": "錯誤：{message}",
+		"moreResults": "還有 {count} 個結果...",
+		"noMatches": "未找到符合「{query}」的 {type}。",
+		"noResults": "未找到「{query}」的結果。",
+		"placeholder": "輸入用戶名、檔案連結或遊戲...",
+		"searching": "正在搜尋「{query}」..."
+	},
+	"status": {
+		"hidden": "隱藏",
+		"locked": "已鎖定",
+		"unlocked": "已解鎖"
+	},
+	"toolbar": {
+		"filter": {
+			"all": "全部",
+			"by": "依據",
+			"locked": "已鎖定",
+			"unlocked": "已解鎖"
+		},
+		"search": {
+			"placeholder": "搜尋成就……"
+		},
+		"sort": {
+			"by": "排序依據",
+			"direction": {
+				"toggle": "切換排序方向"
+			},
+			"method": {
+				"playerCount": "玩家數量",
+				"rarity": "稀有度",
+				"unlocked": "解鎖時間"
+			}
 		}
 	},
 	"translation": {
-		"show": "顯示自動翻譯",
-		"hide": "顯示原文"
+		"hide": "顯示原文",
+		"show": "顯示自動翻譯"
+	},
+	"user": {
+		"page": {
+			"faq": {
+				"private": {
+					"answer": "您的 Steam 個人檔案隱私設定阻止他人查看。為讓 Steam Vault 能讀取您的成就，請將個人檔案設為公開，依下列步驟操作。",
+					"question": "為什麼我的個人檔案是私密的？"
+				},
+				"public": {
+					"question": "如何將我的個人檔案設為公開？"
+				}
+			},
+			"leaderboard": {
+				"title": "成就排行榜"
+			},
+			"meta": {
+				"description": "查看您的 Steam 成就。",
+				"keywords": "Steam, 成就, 用戶, {userId}, {displayName}",
+				"title": "{displayName} - 成就"
+			},
+			"noAchievements": "尚未解鎖任何成就。",
+			"title": "{displayName} 的稀有成就"
+		},
+		"table": {
+			"achievement": "成就",
+			"game": "遊戲",
+			"rarity": "稀有度"
+		},
+		"view": {
+			"list": "列表模式",
+			"table": "網格模式"
+		}
 	}
 }

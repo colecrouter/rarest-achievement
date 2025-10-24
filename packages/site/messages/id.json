@@ -1,276 +1,516 @@
 {
 	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"aboutContactTitle": "Hubungi Kami",
-	"aboutCtaDescription": "Bergabunglah dengan ribuan gamer yang melacak dan berbagi pencapaian permainan mereka melalui Steam Vault.",
-	"aboutDiscord": "Bergabung dengan Discord Kami",
-	"aboutFaqTitle": "Pertanyaan yang Sering Diajukan",
-	"aboutKeyFeaturesTitle": "Fitur Utama",
-	"aboutMissionParagraph1": "Steam Vault dibuat dengan tujuan sederhana: membantu gamer menemukan pencapaian terlangka mereka di seluruh platform.",
-	"aboutMissionParagraph2": "Pencapaian bukan hanya tonggak sejarah; mereka bisa mencerminkan jam dedikasi, belajar, latihan, dan kerja keras yang sering tak terperhatikan. Steam Vault hadir untuk mengubah hal itu.",
-	"aboutMissionParagraph3": "Platform kami dirancang untuk merayakan perjalanan gaming Anda, memungkinkan Anda melihat pencapaian dari perspektif baru. Kami juga menyediakan wawasan dan informasi pendukung lainnya.",
-	"aboutMissionTitle": "Misi Kami",
-	"aboutPageHeroSubtitle": "Melacak, menampilkan, dan merayakan pencapaian gaming Anda.",
-	"aboutPageHeroTitle": "Tentang Steam Vault",
-	"aboutPageMetaDescription": "Pelajari lebih lanjut tentang Steam Vault, misi kami, dan cara kami membantu gamer melacak pencapaian mereka.",
-	"aboutPageMetaTitle": "Steam Vault - Tentang Kami",
-	"aboutSocialText": "Ikuti kami di media sosial untuk pembaruan, tips, dan bergabung dengan komunitas pemburu pencapaian.",
-	"aboutTeamTitle": "Tim Kami",
-	"achievementArticlesError": "Kesalahan memuat panduan: {errorMessage}",
-	"achievementArticlesLoading": "Memuat tips & panduan...",
-	"achievementArticlesSteamCommunityDescription": "Panduan resmi dari Steam Community untuk membuka pencapaian ini.",
-	"achievementArticlesSteamCommunityTitle": "Panduan Steam Community",
-	"achievementArticlesYouTubeDescription": "Tutorial video yang berguna untuk membuka pencapaian ini.",
-	"achievementArticlesYouTubeTitle": "Panduan Video YouTube",
-	"achievementDetails": "Detail",
-	"achievementOfPlayers": "dari pemain",
-	"achievementOtherAchievementsDescription": "Progres Anda di semua pencapaian game ini",
-	"achievementOtherAchievementsTitle": "Pencapaian Lain di {appName}",
-	"achievementPageMetaDescription": "Buka \"{achievementName}\" di {appName}—prestasi yang hanya dicapai oleh {percentage}% pemain. Lihat grafik kelangkaan, bandingkan dengan teman, dan baca panduan terbaik di Steam Vault.",
-	"achievementPageMetaTitle": "{achievementName} - {appName}",
-	"achievementRarityComparisonDescription": "Perbandingan {achievementName} dengan pencapaian lain di {appName}",
-	"achievementRarityComparisonTitle": "Perbandingan Kelangkaan Pencapaian",
-	"achievementShareText": "Bagikan",
-	"achievementTabArticles": "Tips & Panduan",
-	"achievementTabFriends": "Teman",
-	"achievementTabStats": "Statistik",
-	"achievementThisAchievementLabel": "Pencapaian Ini",
-	"appPageMetaDescription": "Lihat semua {achievementCount} pencapaian di {appName}. Lacak kemajuan Anda dengan bagan interaktif dan lihat panduan di Steam Vault.",
-	"appPageMetaKeywords": "Steam, pencapaian, {appName}, {appId}, {achievementCount}",
-	"appPageMetaTitle": "{appName} - Pencapaian",
-	"chartAchievementsLabel": "Pencapaian",
-	"chartAfterLabelSuffix": "% dari total",
-	"ChartRarityCommon": "Umum",
-	"ChartRarityRare": "Langka (<10%)",
-	"ChartRarityUltraRare": "Ultra Langka (<5%)",
-	"ChartRarityUncommon": "Tidak Biasa (<50%)",
-	"chartUnlockedAchievementsLabel": "Pencapaian yang Terbuka",
-	"ctaTitle": "Siap Menampilkan Pencapaian Anda?",
-	"errorPageButtonBack": "Kembali",
-	"errorPageButtonHome": "Beranda",
-	"errorPageButtonReload": "Coba Lagi",
-	"errorPageErrorCause": "Penyebab: {errorMessage}",
-	"errorPageErrorSuggestion": "Coba muat ulang halaman atau kembali ke beranda",
-	"errorPageMessage": "Terjadi kesalahan saat memuat halaman ini. Teknisi kami telah diberitahu dan sedang mencari solusi.",
-	"errorPageTitle": "Ups...",
-	"footerAbout": "Tentang",
-	"footerCompanyName": "Steam Vault",
-	"footerPrivacy": "Privasi",
-	"footerRights": "© {year} Steam Vault. Seluruh hak dilindungi.",
-	"footerSupport": "Dukungan",
-	"footerTerms": "Ketentuan",
-	"friendAchievementProgress": "Progres Pencapaian",
-	"friendHoursPlayed": "{hours} jam bermain",
-	"friendNoAchievementText": "Belum ada teman yang membuka pencapaian ini.",
-	"friendSignInDescription": "Masuk untuk melihat teman mana yang telah membuka pencapaian ini.",
-	"friendSignInTitle": "Masuk untuk Melihat Teman",
-	"gamePageAchievementLeaderboardTitle": "Papan Peringkat Pencapaian",
-	"gamePageAchievementProgressDescription": "Anda telah membuka {unlockedCount} dari {totalCount} pencapaian.",
-	"gamePageAchievementProgressTitle": "Progres Pencapaian",
-	"gamePageDescriptionLabel": "Deskripsi",
-	"gamePageDeveloperLabel": "Pengembang",
-	"gamePageFriendsWhoPlayTitle": "Teman yang Bermain",
-	"gamePageGameInformationTitle": "Informasi Game",
-	"gamePageNoRecentUnlocksDescription": "Anda belum membuka pencapaian baru-baru ini.",
-	"gamePageNoRecentUnlocksTitle": "Tidak Ada Pembukaan Terbaru",
-	"gamePagePlayOnSteam": "Mainkan di Steam",
-	"gamePagePublisherLabel": "Penerbit",
-	"gamePageRecentUnlocksTitle": "Pembukaan Terbaru",
-	"gamePageReleaseDateLabel": "Tanggal Rilis",
-	"gamePageSignInCallToActionDescription": "Masuk untuk melihat pembukaan terbaru dan progres Anda.",
-	"gamePageSignInCallToActionTitle": "Buka Pencapaian",
-	"gamePageViewOnSteamDB": "Lihat di SteamDB",
-	"homepageAchievementPlayer": "Pemain {rank}",
-	"homepageComingSoon": "Segera Hadir",
-	"homepageCtaDescription": "Gratis, cukup masuk dengan akun Steam Anda dan mulai lacak pencapaian Anda.",
-	"homepageExploreDescription": "Temukan pencapaian untuk setiap game dalam perpustakaan Anda. Tak ada tantangan yang terlalu besar!",
-	"homepageExploreTitle": "Jelajahi Pencapaian Anda",
-	"homepageFeaturedDescription": "Lihat beberapa pencapaian terlangka yang dibuka oleh anggota komunitas kami.",
-	"homepageFeaturedTitle": "Pencapaian Langka Unggulan",
-	"homepageFeaturesDashboard": "Ke Dashboard",
-	"homepageFeaturesLearnMore": "Pelajari Lebih Lanjut",
-	"homepageFeaturesSignIn": "Masuk Sekarang",
-	"homepageFeaturesTitle": "Mengapa Pakai Steam Vault?",
-	"homepageHeroDescription": "Lacak dan bagikan pencapaian gaming Anda yang paling mengesankan. Bandingkan dengan pemain lain melalui Steam Vault.",
-	"homepageHeroTitle": "Tampilkan Pencapaian Terlangka Anda di Steam",
-	"homepageMetaDescription": "Lacak, tampilkan, dan bagikan pencapaian terlangka Anda di Steam Vault.",
-	"homepageMetaTitle": "Steam Vault - Tampilkan Pencapaian Anda",
-	"homepageRareAchievements": "{count} pencapaian langka",
-	"homepageStatsIndexedGames": "Game Terindeks",
-	"homepageStatsIndexedUsers": "Pengguna Terindeks",
-	"homepageStatsTrackedAchievements": "Pencapaian yang Dilacak",
-	"homepageTextCard1Description": "Lihat pencapaian semua game Anda dalam satu tempat. Bandingkan dengan orang lain.",
-	"homepageTextCard1Title": "Lacak Pencapaian Anda",
-	"homepageTextCard2Description": "Temukan lebih banyak game & pencapaian. Cari panduan, statistik, dan lainnya.",
-	"homepageTextCard2Title": "Temukan Wawasan Utama",
-	"homepageTextCard3Description": "Temukan pemburu pencapaian lain, bandingkan statistik, dan buat teman baru.",
-	"homepageTextCard3Title": "Terhubung dengan Orang Lain",
-	"homepageTopAchievementHunters": "Pemburu Pencapaian Teratas",
-	"homepageViewAll": "Lihat Semua",
-	"layoutMetaKeywords": "Steam, pencapaian, gaming, game, profil, pengguna, terlangka, langka, statistik",
-	"legalAcknowledgmentText": "Dengan menggunakan Steam Vault, Anda menyatakan telah membaca dan memahami Kebijakan Privasi serta Syarat Layanan kami, dan setuju mengikutilah.",
-	"legalBreadcrumbsTitle": "Legal",
-	"legalContactEmail": "support@steamvault.info",
-	"legalContactHeading": "Hubungi Kami",
-	"legalContactIntro": "Jika Anda memiliki pertanyaan tentang Kebijakan Privasi atau Syarat Layanan kami, silakan hubungi kami.",
-	"legalDisclaimerText": "Steam Vault tidak berafiliasi dengan Valve Corporation. Semua merek dagang atau tanda layanan terdaftar adalah milik pemilik masing-masing. Semua aset yang terdaftar digunakan sesuai dengan prinsip fair use.",
-	"legalDisclaimerTitle": "Penafian",
-	"legalHeaderSubtitle": "Diperbarui terakhir: 9 April 2025",
-	"legalHeaderTitle": "Kebijakan Privasi & Syarat Layanan",
-	"legalPageMetaDescription": "Kebijakan Privasi dan Syarat Layanan untuk Steam Vault.",
-	"legalPageMetaTitle": "Steam Vault - Legal",
-	"legalPrintButton": "Cetak Halaman Ini",
-	"legalPrivacyBlockquote": "Kebijakan Privasi ini menjelaskan bagaimana Steam Vault (\"kami\", \"milik kami\") mengumpulkan, menggunakan, dan membagikan informasi pribadi Anda saat Anda menggunakan situs dan layanan kami. Dengan menggunakan Steam Vault, Anda menyetujui pengumpulan dan penggunaan informasi sesuai kebijakan ini.",
-	"legalPrivacySectionChanges": "Perubahan pada Kebijakan Privasi Ini",
-	"legalPrivacySectionChangesText": "Kami dapat memperbarui Kebijakan Privasi ini. Silakan periksa secara berkala untuk melihat perubahan.",
-	"legalPrivacySectionCookies": "Cookies dan Teknologi Pelacakan",
-	"legalPrivacySectionCookiesText": "Kami menggunakan cookies dan teknologi serupa untuk melacak aktivitas di platform kami. Menolak cookies dapat memengaruhi pengalaman Anda.",
-	"legalPrivacySectionDataSecurity": "Keamanan Data",
-	"legalPrivacySectionDataSecurityText": "Kami menerapkan langkah-langkah untuk melindungi informasi pribadi Anda, meskipun tak ada metode yang 100% aman.",
-	"legalPrivacySectionHowWeUse": "Cara Kami Menggunakan Informasi Anda",
-	"legalPrivacySectionHowWeUseList": "Kami menggunakan informasi untuk menyediakan, memelihara, dan meningkatkan layanan kami, serta menyelidiki dan mencegah penggunaan yang tidak sah.",
-	"legalPrivacySectionInformation": "Informasi yang Kami Kumpulkan",
-	"legalPrivacySectionInformationList": "Kami mengumpulkan berbagai jenis informasi dari dan tentang pengguna platform kami, termasuk: Detail Akun Steam, Data Penggunaan, dan Informasi Perangkat.",
-	"legalPrivacySectionSharing": "Membagikan Informasi Anda",
-	"legalPrivacySectionSharingList": "Informasi pribadi tidak dibagikan dengan pihak ketiga kecuali untuk alasan hukum atau untuk melindungi hak.",
-	"legalPrivacySectionYourRights": "Hak-Hak Anda",
-	"legalPrivacySectionYourRightsList": "Anda mungkin memiliki hak untuk mengakses, memperbaiki, menghapus, dan menolak pemrosesan informasi pribadi Anda.",
-	"legalTabsPrivacy": "Kebijakan Privasi",
-	"legalTabsTerms": "Syarat Layanan",
-	"legalTermsBlockquote": "Syarat Layanan ini (\"Syarat\") mengatur akses dan penggunaan situs dan layanan Steam Vault. Dengan menggunakan layanan kami, Anda menyetujui Syarat ini.",
-	"legalTermsSectionAcceptableUse": "Penggunaan yang Diperbolehkan",
-	"legalTermsSectionAcceptableUseText": "Anda setuju untuk menggunakan layanan kami hanya untuk tujuan yang sah dan tidak melakukan aktivitas terlarang.",
-	"legalTermsSectionChanges": "Perubahan pada Syarat Ini",
-	"legalTermsSectionChangesText": "Kami berhak mengubah Syarat ini kapan saja dengan pemberitahuan.",
-	"legalTermsSectionIntellectualProperty": "Hak Kekayaan Intelektual",
-	"legalTermsSectionIntellectualPropertyText": "Layanan dan konten kami dimiliki oleh Steam Vault atau pemberi lisensinya dan dilindungi undang-undang kekayaan intelektual.",
-	"legalTermsSectionLimitationOfLiability": "Batasan Tanggung Jawab",
-	"legalTermsSectionLimitationOfLiabilityText": "Dalam keadaan apa pun, Steam Vault atau afiliasinya tidak akan bertanggung jawab atas kerusakan yang timbul dari penggunaan layanan kami.",
-	"legalTermsSectionTermination": "Penghentian",
-	"legalTermsSectionTerminationText": "Kami dapat menangguhkan atau mengakhiri akun Anda segera jika Anda melanggar Syarat ini.",
-	"legalTermsSectionUserAccounts": "Akun Pengguna",
-	"legalTermsSectionUserAccountsText": "Dapatkan akses ke fitur tertentu dengan masuk menggunakan akun Steam Anda. Anda bertanggung jawab menjaga kerahasiaan kredensial akun Anda.",
-	"loadingScreenDescription1": "Saat mengembangkan <i>Call of Duty 4: Modern Warfare</i> (2007), Infinity Ward mempelajari manual pelatihan pasukan khusus, fokus pada komunikasi radio, taktik pergerakan, dan bahasa tubuh, untuk menciptakan pengalaman sinematik sekaligus nyata.",
-	"loadingScreenDescription2": "Dalam <i>Portal</i> (2007), pemain dijanjikan kue sungguhan, meskipun secara tidak sadar mengarah pada kejatuhan. Janji sarkastik ini segera menjadi pengingat ikonik tentang insentif kosong dalam pemasaran game.",
-	"loadingScreenDescription3": "<i>Super Mario Bros.</i> (1985) menyertakan musuh merah \"Koopa Troopa\" yang tidak terpakai dengan 2 nyawa. Kode bocor untuk <i>Super Mario All-Stars</i> (1993) mengisyaratkan bahwa ini direncanakan sebagai perilaku default semua Koopa Troopa.",
-	"loadingScreenDescription4": "<i>GoldenEye 007</i> (1997) adalah game pertama yang menampilkan mode multiplayer FPS pada konsol. Game ini menetapkan standar untuk game FPS di konsol, mempengaruhi banyak judul berikutnya.",
-	"loadingScreenDescription5": "<i>Legend of Zelda</i> (1986) asli adalah salah satu game konsol pertama yang memperkenalkan sistem simpanan menggunakan baterai, memungkinkan pemain merekam progres ekstensif dalam dunia terbuka. Fitur ini mengubah cara rancangan game petualangan.",
-	"loadingScreenDescription6": "Nama \"Zelda\" (dari waralaba <i>The Legend of Zelda</i>) terinspirasi oleh Zelda Fitzgerald—istri penulis F. Scott Fitzgerald—memberikan seri ini judul yang eksotis dan berkesan.",
-	"loadingScreenDescription7": "<i>Final Fantasy</i> (1987) asli dikonsep sebagai upaya terakhir developer Square (kemudian Square Enix) saat krisis keuangan. Ironisnya, kesuksesannya yang tak terduga tidak hanya menyelamatkan perusahaan tetapi juga meletakkan dasar bagi salah satu franchise RPG paling ikonik dan abadi.",
-	"loadingScreenTitle1": "Berganti ke pistol lebih cepat daripada mengisi ulang!",
-	"loadingScreenTitle2": "Kue Itu Tipu Daya!",
-	"loadingScreenTitle3": "Aku Menghabiskan Berjam-jam, Menumbuk... Koopas!",
-	"loadingScreenTitle4": "Namaku Bond... James Bond",
-	"loadingScreenTitle5": "Berbahaya Pergi Sendirian! Ambillah Ini!",
-	"loadingScreenTitle6": "Maafkan Saya, Putri!",
-	"loadingScreenTitle7": "Final Fantasy yang Tidak Final",
-	"navbarCompanyName": "Steam Vault",
-	"navbarLogin": "Masuk",
-	"navbarLoginWithSteamHidden": "dengan Steam",
-	"navbarLogout": "Keluar",
-	"podiumLabelFirst": "Juara 1",
-	"podiumLabelSecond": "Juara 2",
-	"podiumLabelThird": "Juara 3",
-	"podiumPercentOfPlayers": "{percentage}% pemain",
-	"profileEditProfileButton": "Edit Profil",
-	"profilePrivacyConcernsDescription": "Kami hanya mengakses data pencapaian publik Anda untuk menyediakan layanan kami. Menjadikan detail game Anda publik hanya memungkinkan orang lain melihat game, pencapaian, dan waktu bermain Anda.",
-	"profilePrivacyConcernsMore": "Untuk informasi lebih lanjut tentang pengaturan privasi Steam, kunjungi",
-	"profilePrivacyConcernsTitle": "Masalah Privasi?",
-	"profilePrivacyLinkText": "halaman privasi",
-	"profilePrivacySettings": "Pengaturan Privasi",
-	"profilePrivate": "Profil ini bersifat privat.",
-	"profileStep1Action": "Klik",
-	"profileStep1Description": "Masuk ke Steam dan buka halaman profil Anda. Anda dapat melakukannya dengan mengklik nama pengguna di bilah navigasi atas.",
-	"profileStep1Title": "Langkah 1: Buka Profil Steam Anda",
-	"profileStep2Action": "Pilih",
-	"profileStep2Description": "Di halaman Edit Profil, temukan dan klik opsi 'Pengaturan Privasi' di sisi kiri.",
-	"profileStep2Title": "Langkah 2: Navigasi ke Pengaturan Privasi",
-	"profileStep3AlertDescription": "Tinjau pengaturan ini dengan cermat sebelum mengubahnya.",
-	"profileStep3AlertTitle": "Tetap Aman!",
-	"profileStep3Description": "Di halaman Pengaturan Privasi, cari bagian 'Detail Game' dan ubah ke Publik. Anda juga bisa mengatur 'Daftar Teman' ke Publik untuk pengalaman yang lebih baik.",
-	"profileStep3Title": "Langkah 3: Perbarui Privasi Detail Game Anda",
-	"profileStep4Description": "Setelah memperbarui pengaturan, tunggu hingga 24 jam agar perubahan diterapkan.",
-	"profileStep4Title": "Langkah 4: Tunggu Perubahan",
-	"rarityCommon": "Umum",
-	"rarityRare": "Langka",
-	"rarityUltraRare": "Ultra Langka",
-	"rarityUncommon": "Tidak Biasa",
-	"searchError": "Kesalahan: {message}",
-	"searching": "Mencari \"{query}\"...",
-	"searchMoreResults": "{count} hasil lainnya...",
-	"searchNoMatches": "Tidak ada {type} ditemukan untuk \"{query}\".",
-	"searchNoResults": "Tidak ditemukan hasil untuk \"{query}\".",
-	"searchPlaceholder": "Masukkan username, tautan profil, atau nama game...",
-	"signIn": "Masuk",
-	"splashAlertDescription": "Kami sedang mengirim ribuan permintaan untuk mendapatkan data Anda. Jika terasa lama, coba muat ulang halaman.",
-	"splashAlertTitle": "Mungkin Perlu Waktu Sedikit...",
-	"loading": "Memuat...",
-	"splashSourceLabel": "Sumber:",
-	"statusHidden": "Tersembunyi",
-	"statusLocked": "Terkunci",
-	"statusUnlocked": "Terbuka",
-	"toolbarFilterAll": "Semua",
-	"toolbarFilterBy": "Filter berdasarkan",
-	"toolbarFilterLocked": "Terkunci",
-	"toolbarFilterUnlocked": "Terbuka",
-	"toolbarSearchPlaceholder": "Cari pencapaian...",
-	"toolbarSortBy": "Urutkan berdasarkan",
-	"toolbarSortMethodRarity": "Kelangkaan",
-	"toolbarSortMethodPlayerCount": "Jumlah Pemain",
-	"toolbarSortMethodUnlocked": "Terbuka",
-	"toolbarSortDirectionToggle": "Balikkan arah urut",
-	"indexErrorMessage": "Kami masih mengindeks akun ini, jadi beberapa informasi mungkin belum tersedia. Silakan cek kembali nanti.",
-	"indexErrorTitle": "Peringatan",
-	"userPageFaqPrivateAnswer": "Profil Steam Anda memiliki pengaturan privasi yang mencegah orang lain melihatnya. Agar Steam Vault dapat melihat pencapaian Anda, jadikan profil Anda publik. Ikuti petunjuk di bawah.",
-	"userPageFaqPrivateQuestion": "Mengapa profil saya privat?",
-	"userPageFaqPublicQuestion": "Bagaimana cara membuat profil saya publik?",
-	"userPageLeaderboardTitle": "Papan Peringkat Pencapaian",
-	"userPageMetaDescription": "Lihat pencapaian Steam Anda.",
-	"userPageMetaKeywords": "Steam, pencapaian, pengguna, {userId}, {displayName}",
-	"userPageMetaTitle": "{displayName} - Pencapaian",
-	"userPageNoAchievements": "Belum ada pencapaian yang dibuka.",
-	"userPageTitle": "Pencapaian Terlangka {displayName}",
-	"userTableAchievement": "Pencapaian",
-	"userTableGame": "Game",
-	"userTableRarity": "Kelangkaan",
-	"userViewList": "Tampilan Daftar",
-	"userViewTable": "Tampilan Grid",
-	"viewOnSteam": "Lihat di Steam",
-	"aboutFaq": {
-		"question1": "Apa itu Steam Vault?",
-		"answer1": "Steam Vault adalah platform yang memungkinkan Anda melihat seluruh pencapaian di Steam. Kami membantu Anda menemukan pencapaian terlangka Anda.",
-		"question2": "Mengapa Steam Vault istimewa?",
-		"answer2": "Karena pedoman API Steam yang ketat, sulit untuk melacak progres pencapaian banyak pengguna di ribuan game. Steam Vault menjembatani kesenjangan tersebut sambil mengumpulkan data & wawasan sebanyak mungkin untuk Anda (gratis).",
-		"question3": "Bagaimana cara menghubungkan akun Steam saya?",
-		"answer3": "Cukup tekan tombol masuk di pojok kanan atas. Hubungkan akun Steam Anda untuk mulai melacak pencapaian.",
-		"question4": "Apakah Steam Vault gratis?",
-		"answer4": "Steam Vault sepenuhnya gratis digunakan. Tidak ada fitur berbayar. Kami didanai sepenuhnya oleh iklan dan donasi.",
-		"question5": "Seberapa sering data pencapaian diperbarui?",
-		"answer5": "Data kami diperbarui secara sistematis sesuai pedoman API Steam. Jika Anda merasa data belum diperbarui cukup sering, silakan hubungi kami.",
-		"question6": "Bisakah saya membagikan profil pencapaian saya dengan orang lain?",
-		"answer6": "Setiap pengguna memiliki halaman profil publik yang dapat dibagikan melalui URL unik. Anda juga dapat menghasilkan kartu yang dapat dibagikan untuk setiap pencapaian agar diposting di media sosial.",
-		"question7": "Bagaimana cara perhitungan kelangkaan pencapaian?",
-		"answer7": "Kelangkaan pencapaian dihitung berdasarkan beberapa faktor. Statistik \"percentage\" berasal langsung dari Steam, dan cara perhitungannya tidak diketahui. \"Score\" kami mencerminkan berapa banyak orang yang telah membuka pencapaian tersebut, dihitung dari perkiraan jumlah pemain game. Kami selalu mencari cara baru untuk menganalisis dan memvisualisasikan pencapaian Anda."
+	"about": {
+		"contactTitle": "Hubungi Kami",
+		"ctaDescription": "Bergabunglah dengan ribuan gamer yang melacak dan berbagi pencapaian permainan mereka melalui Steam Vault.",
+		"discord": "Bergabung dengan Discord Kami",
+		"faq": {
+			"answer1": "Steam Vault adalah platform yang memungkinkan Anda melihat seluruh pencapaian di Steam. Kami membantu Anda menemukan pencapaian terlangka Anda.",
+			"answer2": "Karena pedoman API Steam yang ketat, sulit untuk melacak progres pencapaian banyak pengguna di ribuan game. Steam Vault menjembatani kesenjangan tersebut sambil mengumpulkan data & wawasan sebanyak mungkin untuk Anda (gratis).",
+			"answer3": "Cukup tekan tombol masuk di pojok kanan atas. Hubungkan akun Steam Anda untuk mulai melacak pencapaian.",
+			"answer4": "Steam Vault sepenuhnya gratis digunakan. Tidak ada fitur berbayar. Kami didanai sepenuhnya oleh iklan dan donasi.",
+			"answer5": "Data kami diperbarui secara sistematis sesuai pedoman API Steam. Jika Anda merasa data belum diperbarui cukup sering, silakan hubungi kami.",
+			"answer6": "Setiap pengguna memiliki halaman profil publik yang dapat dibagikan melalui URL unik. Anda juga dapat menghasilkan kartu yang dapat dibagikan untuk setiap pencapaian agar diposting di media sosial.",
+			"answer7": "Kelangkaan pencapaian dihitung berdasarkan beberapa faktor. Statistik \"percentage\" berasal langsung dari Steam, dan cara perhitungannya tidak diketahui. \"Score\" kami mencerminkan berapa banyak orang yang telah membuka pencapaian tersebut, dihitung dari perkiraan jumlah pemain game. Kami selalu mencari cara baru untuk menganalisis dan memvisualisasikan pencapaian Anda.",
+			"question1": "Apa itu Steam Vault?",
+			"question2": "Mengapa Steam Vault istimewa?",
+			"question3": "Bagaimana cara menghubungkan akun Steam saya?",
+			"question4": "Apakah Steam Vault gratis?",
+			"question5": "Seberapa sering data pencapaian diperbarui?",
+			"question6": "Bisakah saya membagikan profil pencapaian saya dengan orang lain?",
+			"question7": "Bagaimana cara perhitungan kelangkaan pencapaian?",
+			"title": "Pertanyaan yang Sering Diajukan"
+		},
+		"features": {
+			"feature1": {
+				"description": "Platform kami secara berkala menyegarkan data pencapaian Anda sehingga Anda selalu mendapatkan informasi terbaru.",
+				"shortDescription": "Sinkronisasi dan pembaruan pencapaian secara otomatis di seluruh Steam.",
+				"title": "Pelacakan Pencapaian"
+			},
+			"feature2": {
+				"description": "Kami selalu mencari cara baru untuk menganalisis dan memvisualisasikan pencapaian Anda. Fitur analisis kelangkaan membantu mengungkap pencapaian paling sulit dibuka.",
+				"shortDescription": "Temukan pencapaian terlangka dan paling mengesankan dalam game Anda.",
+				"title": "Analisis Kelangkaan"
+			},
+			"feature3": {
+				"description": "Temukan pencapaian dari teman secara otomatis dan bandingkan progres Anda. Bagikan pencapaian Anda di media sosial dan pamerkan keahlian gaming Anda.",
+				"shortDescription": "Terhubung dengan teman-teman dan bandingkan progres pencapaian Anda.",
+				"title": "Fitur Sosial"
+			},
+			"title": "Fitur Utama"
+		},
+		"hero": {
+			"subtitle": "Melacak, menampilkan, dan merayakan pencapaian gaming Anda.",
+			"title": "Tentang Steam Vault"
+		},
+		"meta": {
+			"description": "Pelajari lebih lanjut tentang Steam Vault, misi kami, dan cara kami membantu gamer melacak pencapaian mereka.",
+			"title": "Steam Vault - Tentang Kami"
+		},
+		"mission": {
+			"paragraph1": "Steam Vault dibuat dengan tujuan sederhana: membantu gamer menemukan pencapaian terlangka mereka di seluruh platform.",
+			"paragraph2": "Pencapaian bukan hanya tonggak sejarah; mereka bisa mencerminkan jam dedikasi, belajar, latihan, dan kerja keras yang sering tak terperhatikan. Steam Vault hadir untuk mengubah hal itu.",
+			"paragraph3": "Platform kami dirancang untuk merayakan perjalanan gaming Anda, memungkinkan Anda melihat pencapaian dari perspektif baru. Kami juga menyediakan wawasan dan informasi pendukung lainnya.",
+			"title": "Misi Kami"
+		},
+		"socialText": "Ikuti kami di media sosial untuk pembaruan, tips, dan bergabung dengan komunitas pemburu pencapaian.",
+		"team": {
+			"title": "Tim Kami"
+		}
 	},
-	"aboutFeatures": {
-		"feature1": {
-			"title": "Pelacakan Pencapaian",
-			"shortDescription": "Sinkronisasi dan pembaruan pencapaian secara otomatis di seluruh Steam.",
-			"description": "Platform kami secara berkala menyegarkan data pencapaian Anda sehingga Anda selalu mendapatkan informasi terbaru."
+	"achievement": {
+		"articles": {
+			"error": "Kesalahan memuat panduan: {errorMessage}",
+			"loading": "Memuat tips & panduan...",
+			"notFound": "Tidak ada panduan yang relevan… Seseorang harus membuatnya!",
+			"steamCommunity": {
+				"description": "Panduan resmi dari Steam Community untuk membuka pencapaian ini.",
+				"title": "Panduan Steam Community"
+			},
+			"youtube": {
+				"description": "Tutorial video yang berguna untuk membuka pencapaian ini.",
+				"title": "Panduan Video YouTube"
+			}
 		},
-		"feature2": {
-			"title": "Analisis Kelangkaan",
-			"shortDescription": "Temukan pencapaian terlangka dan paling mengesankan dalam game Anda.",
-			"description": "Kami selalu mencari cara baru untuk menganalisis dan memvisualisasikan pencapaian Anda. Fitur analisis kelangkaan membantu mengungkap pencapaian paling sulit dibuka."
+		"details": "Detail",
+		"meta": {
+			"description": "Buka \"{achievementName}\" di {appName}—prestasi yang hanya dicapai oleh {percentage}% pemain. Lihat grafik kelangkaan, bandingkan dengan teman, dan baca panduan terbaik di Steam Vault.",
+			"title": "{achievementName} - {appName}"
 		},
-		"feature3": {
-			"title": "Fitur Sosial",
-			"shortDescription": "Terhubung dengan teman-teman dan bandingkan progres pencapaian Anda.",
-			"description": "Temukan pencapaian dari teman secara otomatis dan bandingkan progres Anda. Bagikan pencapaian Anda di media sosial dan pamerkan keahlian gaming Anda."
+		"ofPlayers": "dari pemain",
+		"otherAchievements": {
+			"description": "Progres Anda di semua pencapaian game ini",
+			"title": "Pencapaian Lain di {appName}"
+		},
+		"rarityComparison": {
+			"description": "Perbandingan {achievementName} dengan pencapaian lain di {appName}",
+			"title": "Perbandingan Kelangkaan Pencapaian"
+		},
+		"shareText": "Bagikan",
+		"tabs": {
+			"articles": "Tips & Panduan",
+			"friends": "Teman",
+			"stats": "Statistik"
+		},
+		"thisAchievement": {
+			"label": "Pencapaian Ini"
+		}
+	},
+	"app": {
+		"meta": {
+			"description": "Lihat semua {achievementCount} pencapaian di {appName}. Lacak kemajuan Anda dengan bagan interaktif dan lihat panduan di Steam Vault.",
+			"keywords": "Steam, pencapaian, {appName}, {appId}, {achievementCount}",
+			"title": "{appName} - Pencapaian"
+		}
+	},
+	"auth": {
+		"signIn": "Masuk"
+	},
+	"chart": {
+		"achievements": {
+			"label": "Pencapaian"
+		},
+		"after": {
+			"label": {
+				"suffix": "% dari total"
+			}
+		},
+		"rarity": {
+			"common": "Umum",
+			"rare": "Langka (<10%)",
+			"ultraRare": "Ultra Langka (<5%)",
+			"uncommon": "Tidak Biasa (<50%)"
+		},
+		"unlockedAchievements": {
+			"label": "Pencapaian yang Terbuka"
+		}
+	},
+	"error": {
+		"page": {
+			"button": {
+				"back": "Kembali",
+				"home": "Beranda",
+				"reload": "Coba Lagi"
+			},
+			"error": {
+				"cause": "Penyebab: {errorMessage}",
+				"suggestion": "Coba muat ulang halaman atau kembali ke beranda"
+			},
+			"message": "Terjadi kesalahan saat memuat halaman ini. Teknisi kami telah diberitahu dan sedang mencari solusi.",
+			"title": "Ups..."
+		}
+	},
+	"footer": {
+		"about": "Tentang",
+		"companyName": "Steam Vault",
+		"privacy": "Privasi",
+		"rights": "© {year} Steam Vault. Seluruh hak dilindungi.",
+		"support": "Dukungan",
+		"terms": "Ketentuan"
+	},
+	"friend": {
+		"achievementProgress": "Progres Pencapaian",
+		"hoursPlayed": "{hours} jam bermain",
+		"noAchievement": {
+			"text": "Belum ada teman yang membuka pencapaian ini."
+		},
+		"signIn": {
+			"description": "Masuk untuk melihat teman mana yang telah membuka pencapaian ini.",
+			"title": "Masuk untuk Melihat Teman"
+		}
+	},
+	"game": {
+		"achievementLeaderboard": {
+			"title": "Papan Peringkat Pencapaian"
+		},
+		"achievementProgress": {
+			"description": "Anda telah membuka {unlockedCount} dari {totalCount} pencapaian.",
+			"title": "Progres Pencapaian"
+		},
+		"description": {
+			"label": "Deskripsi"
+		},
+		"developer": {
+			"label": "Pengembang"
+		},
+		"friendsWhoPlay": {
+			"title": "Teman yang Bermain"
+		},
+		"gameInformation": {
+			"title": "Informasi Game"
+		},
+		"noRecentUnlocks": {
+			"description": "Anda belum membuka pencapaian baru-baru ini.",
+			"title": "Tidak Ada Pembukaan Terbaru"
+		},
+		"playOnSteam": "Mainkan di Steam",
+		"publisher": {
+			"label": "Penerbit"
+		},
+		"recentUnlocks": {
+			"title": "Pembukaan Terbaru"
+		},
+		"releaseDate": {
+			"label": "Tanggal Rilis"
+		},
+		"signInCallToAction": {
+			"description": "Masuk untuk melihat pembukaan terbaru dan progres Anda.",
+			"title": "Buka Pencapaian"
+		},
+		"viewOnSteam": "Lihat di Steam",
+		"viewOnSteamDB": "Lihat di SteamDB"
+	},
+	"home": {
+		"achievement": {
+			"player": "Pemain {rank}"
+		},
+		"comingSoon": "Segera Hadir",
+		"cta": {
+			"description": "Gratis, cukup masuk dengan akun Steam Anda dan mulai lacak pencapaian Anda.",
+			"title": "Siap Menampilkan Pencapaian Anda?"
+		},
+		"explore": {
+			"description": "Temukan pencapaian untuk setiap game dalam perpustakaan Anda. Tak ada tantangan yang terlalu besar!",
+			"title": "Jelajahi Pencapaian Anda"
+		},
+		"featured": {
+			"description": "Lihat beberapa pencapaian terlangka yang dibuka oleh anggota komunitas kami.",
+			"title": "Pencapaian Langka Unggulan"
+		},
+		"features": {
+			"dashboard": "Ke Dashboard",
+			"learnMore": "Pelajari Lebih Lanjut",
+			"signIn": "Masuk Sekarang",
+			"title": "Mengapa Pakai Steam Vault?"
+		},
+		"hero": {
+			"description": "Lacak dan bagikan pencapaian gaming Anda yang paling mengesankan. Bandingkan dengan pemain lain melalui Steam Vault.",
+			"title": "Tampilkan Pencapaian Terlangka Anda di Steam"
+		},
+		"meta": {
+			"description": "Lacak, tampilkan, dan bagikan pencapaian terlangka Anda di Steam Vault.",
+			"title": "Steam Vault - Tampilkan Pencapaian Anda"
+		},
+		"rareAchievements": "{count} pencapaian langka",
+		"stats": {
+			"indexedGames": "Game Terindeks",
+			"indexedUsers": "Pengguna Terindeks",
+			"trackedAchievements": "Pencapaian yang Dilacak"
+		},
+		"textCard1": {
+			"description": "Lihat pencapaian semua game Anda dalam satu tempat. Bandingkan dengan orang lain.",
+			"title": "Lacak Pencapaian Anda"
+		},
+		"textCard2": {
+			"description": "Temukan lebih banyak game & pencapaian. Cari panduan, statistik, dan lainnya.",
+			"title": "Temukan Wawasan Utama"
+		},
+		"textCard3": {
+			"description": "Temukan pemburu pencapaian lain, bandingkan statistik, dan buat teman baru.",
+			"title": "Terhubung dengan Orang Lain"
+		},
+		"topAchievementHunters": "Pemburu Pencapaian Teratas",
+		"viewAll": "Lihat Semua"
+	},
+	"index": {
+		"error": {
+			"message": "Kami masih mengindeks akun ini, jadi beberapa informasi mungkin belum tersedia. Silakan cek kembali nanti.",
+			"title": "Peringatan"
+		}
+	},
+	"layout": {
+		"meta": {
+			"keywords": "Steam, pencapaian, gaming, game, profil, pengguna, terlangka, langka, statistik"
+		}
+	},
+	"legal": {
+		"acknowledgment": {
+			"text": "Dengan menggunakan Steam Vault, Anda menyatakan telah membaca dan memahami Kebijakan Privasi serta Syarat Layanan kami, dan setuju mengikutilah."
+		},
+		"breadcrumbs": {
+			"title": "Legal"
+		},
+		"contact": {
+			"email": "support@steamvault.info",
+			"heading": "Hubungi Kami",
+			"intro": "Jika Anda memiliki pertanyaan tentang Kebijakan Privasi atau Syarat Layanan kami, silakan hubungi kami."
+		},
+		"disclaimer": {
+			"text": "Steam Vault tidak berafiliasi dengan Valve Corporation. Semua merek dagang atau tanda layanan terdaftar adalah milik pemilik masing-masing. Semua aset yang terdaftar digunakan sesuai dengan prinsip fair use.",
+			"title": "Penafian"
+		},
+		"header": {
+			"subtitle": "Diperbarui terakhir: 9 April 2025",
+			"title": "Kebijakan Privasi & Syarat Layanan"
+		},
+		"meta": {
+			"description": "Kebijakan Privasi dan Syarat Layanan untuk Steam Vault.",
+			"title": "Steam Vault - Legal"
+		},
+		"print": {
+			"button": "Cetak Halaman Ini"
+		},
+		"privacy": {
+			"blockquote": "Kebijakan Privasi ini menjelaskan bagaimana Steam Vault (\"kami\", \"milik kami\") mengumpulkan, menggunakan, dan membagikan informasi pribadi Anda saat Anda menggunakan situs dan layanan kami. Dengan menggunakan Steam Vault, Anda menyetujui pengumpulan dan penggunaan informasi sesuai kebijakan ini.",
+			"sections": {
+				"changes": {
+					"text": "Kami dapat memperbarui Kebijakan Privasi ini. Silakan periksa secara berkala untuk melihat perubahan.",
+					"title": "Perubahan pada Kebijakan Privasi Ini"
+				},
+				"cookies": {
+					"text": "Kami menggunakan cookies dan teknologi serupa untuk melacak aktivitas di platform kami. Menolak cookies dapat memengaruhi pengalaman Anda.",
+					"title": "Cookies dan Teknologi Pelacakan"
+				},
+				"dataSecurity": {
+					"text": "Kami menerapkan langkah-langkah untuk melindungi informasi pribadi Anda, meskipun tak ada metode yang 100% aman.",
+					"title": "Keamanan Data"
+				},
+				"howWeUse": {
+					"list": "Kami menggunakan informasi untuk menyediakan, memelihara, dan meningkatkan layanan kami, serta menyelidiki dan mencegah penggunaan yang tidak sah.",
+					"title": "Cara Kami Menggunakan Informasi Anda"
+				},
+				"information": {
+					"list": "Kami mengumpulkan berbagai jenis informasi dari dan tentang pengguna platform kami, termasuk: Detail Akun Steam, Data Penggunaan, dan Informasi Perangkat.",
+					"title": "Informasi yang Kami Kumpulkan"
+				},
+				"sharing": {
+					"list": "Informasi pribadi tidak dibagikan dengan pihak ketiga kecuali untuk alasan hukum atau untuk melindungi hak.",
+					"title": "Membagikan Informasi Anda"
+				},
+				"yourRights": {
+					"list": "Anda mungkin memiliki hak untuk mengakses, memperbaiki, menghapus, dan menolak pemrosesan informasi pribadi Anda.",
+					"title": "Hak-Hak Anda"
+				}
+			}
+		},
+		"tabs": {
+			"privacy": "Kebijakan Privasi",
+			"terms": "Syarat Layanan"
+		},
+		"terms": {
+			"blockquote": "Syarat Layanan ini (\"Syarat\") mengatur akses dan penggunaan situs dan layanan Steam Vault. Dengan menggunakan layanan kami, Anda menyetujui Syarat ini.",
+			"sections": {
+				"acceptableUse": {
+					"text": "Anda setuju untuk menggunakan layanan kami hanya untuk tujuan yang sah dan tidak melakukan aktivitas terlarang.",
+					"title": "Penggunaan yang Diperbolehkan"
+				},
+				"changes": {
+					"text": "Kami berhak mengubah Syarat ini kapan saja dengan pemberitahuan.",
+					"title": "Perubahan pada Syarat Ini"
+				},
+				"intellectualProperty": {
+					"text": "Layanan dan konten kami dimiliki oleh Steam Vault atau pemberi lisensinya dan dilindungi undang-undang kekayaan intelektual.",
+					"title": "Hak Kekayaan Intelektual"
+				},
+				"limitationOfLiability": {
+					"text": "Dalam keadaan apa pun, Steam Vault atau afiliasinya tidak akan bertanggung jawab atas kerusakan yang timbul dari penggunaan layanan kami.",
+					"title": "Batasan Tanggung Jawab"
+				},
+				"termination": {
+					"text": "Kami dapat menangguhkan atau mengakhiri akun Anda segera jika Anda melanggar Syarat ini.",
+					"title": "Penghentian"
+				},
+				"userAccounts": {
+					"text": "Dapatkan akses ke fitur tertentu dengan masuk menggunakan akun Steam Anda. Anda bertanggung jawab menjaga kerahasiaan kredensial akun Anda.",
+					"title": "Akun Pengguna"
+				}
+			}
+		}
+	},
+	"loading": {
+		"alert": {
+			"description": "Kami sedang mengirim ribuan permintaan untuk mendapatkan data Anda. Jika terasa lama, coba muat ulang halaman.",
+			"title": "Mungkin Perlu Waktu Sedikit..."
+		},
+		"source": "Sumber:",
+		"title": "Memuat..."
+	},
+	"loadingScreen": {
+		"description1": "Saat mengembangkan <i>Call of Duty 4: Modern Warfare</i> (2007), Infinity Ward mempelajari manual pelatihan pasukan khusus, fokus pada komunikasi radio, taktik pergerakan, dan bahasa tubuh, untuk menciptakan pengalaman sinematik sekaligus nyata.",
+		"description2": "Dalam <i>Portal</i> (2007), pemain dijanjikan kue sungguhan, meskipun secara tidak sadar mengarah pada kejatuhan. Janji sarkastik ini segera menjadi pengingat ikonik tentang insentif kosong dalam pemasaran game.",
+		"description3": "<i>Super Mario Bros.</i> (1985) menyertakan musuh merah \"Koopa Troopa\" yang tidak terpakai dengan 2 nyawa. Kode bocor untuk <i>Super Mario All-Stars</i> (1993) mengisyaratkan bahwa ini direncanakan sebagai perilaku default semua Koopa Troopa.",
+		"description4": "<i>GoldenEye 007</i> (1997) adalah game pertama yang menampilkan mode multiplayer FPS pada konsol. Game ini menetapkan standar untuk game FPS di konsol, mempengaruhi banyak judul berikutnya.",
+		"description5": "<i>Legend of Zelda</i> (1986) asli adalah salah satu game konsol pertama yang memperkenalkan sistem simpanan menggunakan baterai, memungkinkan pemain merekam progres ekstensif dalam dunia terbuka. Fitur ini mengubah cara rancangan game petualangan.",
+		"description6": "Nama \"Zelda\" (dari waralaba <i>The Legend of Zelda</i>) terinspirasi oleh Zelda Fitzgerald—istri penulis F. Scott Fitzgerald—memberikan seri ini judul yang eksotis dan berkesan.",
+		"description7": "<i>Final Fantasy</i> (1987) asli dikonsep sebagai upaya terakhir developer Square (kemudian Square Enix) saat krisis keuangan. Ironisnya, kesuksesannya yang tak terduga tidak hanya menyelamatkan perusahaan tetapi juga meletakkan dasar bagi salah satu franchise RPG paling ikonik dan abadi.",
+		"title1": "Berganti ke pistol lebih cepat daripada mengisi ulang!",
+		"title2": "Kue Itu Tipu Daya!",
+		"title3": "Aku Menghabiskan Berjam-jam, Menumbuk... Koopas!",
+		"title4": "Namaku Bond... James Bond",
+		"title5": "Berbahaya Pergi Sendirian! Ambillah Ini!",
+		"title6": "Maafkan Saya, Putri!",
+		"title7": "Final Fantasy yang Tidak Final"
+	},
+	"navbar": {
+		"companyName": "Steam Vault",
+		"login": {
+			"login": "Login",
+			"withSteamHidden": "dengan Steam"
+		},
+		"logout": "Keluar"
+	},
+	"podium": {
+		"label": {
+			"first": "Juara 1",
+			"second": "Juara 2",
+			"third": "Juara 3"
+		},
+		"percentOfPlayers": "{percentage}% pemain"
+	},
+	"profile": {
+		"editProfile": {
+			"button": "Edit Profil"
+		},
+		"privacy": {
+			"concerns": {
+				"description": "Kami hanya mengakses data pencapaian publik Anda untuk menyediakan layanan kami. Menjadikan detail game Anda publik hanya memungkinkan orang lain melihat game, pencapaian, dan waktu bermain Anda.",
+				"more": "Untuk informasi lebih lanjut tentang pengaturan privasi Steam, kunjungi",
+				"title": "Masalah Privasi?"
+			},
+			"linkText": "halaman privasi",
+			"settings": "Pengaturan Privasi"
+		},
+		"private": "Profil ini bersifat privat.",
+		"steps": {
+			"step1": {
+				"action": "Klik",
+				"description": "Masuk ke Steam dan buka halaman profil Anda. Anda dapat melakukannya dengan mengklik nama pengguna di bilah navigasi atas.",
+				"title": "Langkah 1: Buka Profil Steam Anda"
+			},
+			"step2": {
+				"action": "Pilih",
+				"description": "Di halaman Edit Profil, temukan dan klik opsi 'Pengaturan Privasi' di sisi kiri.",
+				"title": "Langkah 2: Navigasi ke Pengaturan Privasi"
+			},
+			"step3": {
+				"alert": {
+					"description": "Tinjau pengaturan ini dengan cermat sebelum mengubahnya.",
+					"title": "Tetap Aman!"
+				},
+				"description": "Di halaman Pengaturan Privasi, cari bagian 'Detail Game' dan ubah ke Publik. Anda juga bisa mengatur 'Daftar Teman' ke Publik untuk pengalaman yang lebih baik.",
+				"title": "Langkah 3: Perbarui Privasi Detail Game Anda"
+			},
+			"step4": {
+				"description": "Setelah memperbarui pengaturan, tunggu hingga 24 jam agar perubahan diterapkan.",
+				"title": "Langkah 4: Tunggu Perubahan"
+			}
+		}
+	},
+	"rarity": {
+		"common": "Umum",
+		"rare": "Langka",
+		"ultraRare": "Ultra Langka",
+		"uncommon": "Tidak Biasa"
+	},
+	"search": {
+		"error": "Kesalahan: {message}",
+		"moreResults": "{count} hasil lainnya...",
+		"noMatches": "Tidak ada {type} ditemukan untuk \"{query}\".",
+		"noResults": "Tidak ditemukan hasil untuk \"{query}\".",
+		"placeholder": "Masukkan username, tautan profil, atau nama game...",
+		"searching": "Mencari \"{query}\"..."
+	},
+	"status": {
+		"hidden": "Tersembunyi",
+		"locked": "Terkunci",
+		"unlocked": "Terbuka"
+	},
+	"toolbar": {
+		"filter": {
+			"all": "Semua",
+			"by": "Filter berdasarkan",
+			"locked": "Terkunci",
+			"unlocked": "Terbuka"
+		},
+		"search": {
+			"placeholder": "Cari pencapaian..."
+		},
+		"sort": {
+			"by": "Urutkan berdasarkan",
+			"direction": {
+				"toggle": "Balikkan arah urut"
+			},
+			"method": {
+				"playerCount": "Jumlah Pemain",
+				"rarity": "Kelangkaan",
+				"unlocked": "Terbuka"
+			}
 		}
 	},
 	"translation": {
-		"show": "Tampilkan terjemahan otomatis",
-		"hide": "Tampilkan teks asli"
+		"hide": "Tampilkan teks asli",
+		"show": "Tampilkan terjemahan otomatis"
 	},
-	"achievementArticlesNotFound": "Tidak ada panduan yang relevan… Seseorang harus membuatnya!"
+	"user": {
+		"page": {
+			"faq": {
+				"private": {
+					"answer": "Profil Steam Anda memiliki pengaturan privasi yang mencegah orang lain melihatnya. Agar Steam Vault dapat melihat pencapaian Anda, jadikan profil Anda publik. Ikuti petunjuk di bawah.",
+					"question": "Mengapa profil saya privat?"
+				},
+				"public": {
+					"question": "Bagaimana cara membuat profil saya publik?"
+				}
+			},
+			"leaderboard": {
+				"title": "Papan Peringkat Pencapaian"
+			},
+			"meta": {
+				"description": "Lihat pencapaian Steam Anda.",
+				"keywords": "Steam, pencapaian, pengguna, {userId}, {displayName}",
+				"title": "{displayName} - Pencapaian"
+			},
+			"noAchievements": "Belum ada pencapaian yang dibuka.",
+			"title": "Pencapaian Terlangka {displayName}"
+		},
+		"table": {
+			"achievement": "Pencapaian",
+			"game": "Game",
+			"rarity": "Kelangkaan"
+		},
+		"view": {
+			"list": "Tampilan Daftar",
+			"table": "Tampilan Grid"
+		}
+	}
 }

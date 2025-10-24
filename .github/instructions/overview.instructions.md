@@ -11,13 +11,17 @@ Steam Vault is an open-source project that attempts to provide meaningful info a
 
 ## Tool Calls
 
+### `context7`
+
+Included is a builtin tool called `context7`. It is a tool that contains _bleeding edge_ documentation for almost any library or framework available. It is **highly** recommended you use this tool whenever possible, instead of searching for other code in the project.
+
 ### `svelte`
 
 Included is a builtin tool called `svelte`. It provides access to the _latest_ Svelte 5 and SvelteKit documentation. You are highly encouraged to use this tool whenever working with Svelte or SvelteKit code.
 
-### `context7`
+### `i18n-json`
 
-Included is a builtin tool called `context7`. It is a tool that contains _bleeding edge_ documentation for almost any library or framework available. It is **highly** recommended to use this tool to look up documentation whenever interacting with external libraries or frameworks.
+Included is a custom MCP tool called `i18n-json`. It provides direct access to the localization files used in this project. You are strongly encouraged to use this tool whenever working with localization files.
 
 ### Problems
 

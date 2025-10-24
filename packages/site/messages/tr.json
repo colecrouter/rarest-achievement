@@ -143,6 +143,7 @@
 	"footer": {
 		"about": "Hakkında",
 		"companyName": "Steam Vault",
+		"languagePrompt": "Bu sayfayı başka bir dilde görüntüle",
 		"privacy": "Gizlilik",
 		"rights": "© {year} Steam Vault. Tüm hakları saklıdır.",
 		"support": "Destek",

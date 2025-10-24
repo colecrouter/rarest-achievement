@@ -9,7 +9,7 @@ This project uses [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-pa
 
 - Paraglide JS compiles files at build time
 - Do not manually edit localization files unless absolutely necessary; use the provided MCP tool instead.
-- Use `context7` to retrieve the documentation
+- Always use `context7` to retrieve the documentation. Do not start guessing when you are unsure. Do not start scanning for existing code to find examples.
 
 ## Basic Usage
 
@@ -25,7 +25,9 @@ console.log(m("yourTranslationKeyHere")); // Automatically translated!
 
 - `packages/site/messages`: Contains localization files for the main website.
 - `packages/site/project.inlang/settings.json`: Configuration file for localization settings.
-- `packages/site/src/lib/paraglide`: Compiled files **do not attempt to read these under any circumstances!**
+- `packages/site/src/lib/paraglide`: Compiled files **do not attempt to read these**
+
+**DO NOT READ ANYTHING IN `packages/site/src/lib/paraglide` UNDER ANY CIRCUMSTANCES!**
 
 ## Tools
 

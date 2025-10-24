@@ -143,6 +143,7 @@
 	"footer": {
 		"about": "关于我们",
 		"companyName": "Steam Vault",
+		"languagePrompt": "以其他语言查看此页面",
 		"privacy": "隐私政策",
 		"rights": "© {year} Steam Vault. 版权所有。",
 		"support": "支持",

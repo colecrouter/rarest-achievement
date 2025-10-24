@@ -143,6 +143,7 @@
 	"footer": {
 		"about": "О нас",
 		"companyName": "Steam Vault",
+		"languagePrompt": "Посмотреть эту страницу на другом языке",
 		"privacy": "Конфиденциальность",
 		"rights": "© {year} Steam Vault. Все права защищены.",
 		"support": "Поддержка",

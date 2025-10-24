@@ -9,10 +9,10 @@
 	<div class="space-y-12">
 		<!-- Step 1 -->
 		<section>
-			<h2 class="text-2xl">{m.profileStep1Title()}</h2>
+			<h2 class="text-2xl">{m["profile.steps.step1.title"]()}</h2>
 			<div class="p-6">
 				<p class="mb-6">
-					{m.profileStep1Description()}
+					{m["profile.steps.step1.description"]()}
 				</p>
 
 				<!-- Steam Profile UI Recreation -->
@@ -94,9 +94,9 @@
 				</div>
 
 				<p>
-					{m.profileStep1Action()}
+					{m["profile.steps.step1.action"]()}
 					<strong class="text-white"
-						>{m.profileEditProfileButton()}</strong
+						>{m["profile.editProfile.button"]()}</strong
 					>.
 				</p>
 			</div>
@@ -104,10 +104,10 @@
 
 		<!-- Step 2 -->
 		<section>
-			<h2 class="text-2xl">{m.profileStep2Title()}</h2>
+			<h2 class="text-2xl">{m["profile.steps.step2.title"]()}</h2>
 			<div class="p-6">
 				<p class="mb-6">
-					{m.profileStep2Description()}
+					{m["profile.steps.step2.description"]()}
 				</p>
 
 				<!-- Steam Edit Profile UI Recreation -->
@@ -159,18 +159,18 @@
 				</div>
 
 				<p>
-					{m.profileStep2Action()}
-					<strong>{m.profilePrivacySettings()}</strong>.
+					{m["profile.steps.step2.action"]()}
+					<strong>{m["profile.privacy.settings"]()}</strong>.
 				</p>
 			</div>
 		</section>
 
 		<!-- Step 3 -->
 		<section>
-			<h2 class="text-2xl">{m.profileStep3Title()}</h2>
+			<h2 class="text-2xl">{m["profile.steps.step3.title"]()}</h2>
 			<div class="p-6">
 				<p class="mb-6">
-					{m.profileStep3Description()}
+					{m["profile.steps.step3.description"]()}
 				</p>
 
 				<!-- Steam Privacy Settings UI Recreation -->
@@ -238,8 +238,10 @@
 					<Alert
 						color="warning"
 						icon={GlobeLock}
-						title={m.profileStep3AlertTitle()}
-						description={m.profileStep3AlertDescription()}
+						title={m["profile.steps.step3.alert.title"]()}
+						description={m[
+							"profile.steps.step3.alert.description"
+						]()}
 					/>
 				</div>
 			</div>
@@ -247,25 +249,25 @@
 
 		<!-- Step 4 -->
 		<section>
-			<h2 class="text-2xl">{m.profileStep4Title()}</h2>
+			<h2 class="text-2xl">{m["profile.steps.step4.title"]()}</h2>
 			<div class="p-6">
-				{m.profileStep4Description()}
+				{m["profile.steps.step4.description"]()}
 			</div>
 		</section>
 
 		<section>
-			<h2 class="text-2xl">{m.profilePrivacyConcernsTitle()}</h2>
+			<h2 class="text-2xl">{m["profile.privacy.concerns.title"]()}</h2>
 
 			<div class="p-6">
 				<p class="mb-2">
-					{m.profilePrivacyConcernsDescription()}
+					{m["profile.privacy.concerns.description"]()}
 				</p>
 				<p>
-					{m.profilePrivacyConcernsMore()}
+					{m["profile.privacy.concerns.more"]()}
 					<a
 						href={localizeHref("/legal")}
 						class="text-primary-500 hover:underline"
-						>{m.profilePrivacyLinkText()}</a
+						>{m["profile.privacy.linkText"]()}</a
 					>.
 				</p>
 			</div>

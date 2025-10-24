@@ -27,17 +27,17 @@
 	// Stats for the home page
 	const stats = [
 		{
-			label: m.homepageStatsTrackedAchievements(),
+			label: m["home.stats.trackedAchievements"](),
 			value: data.stats.achievementCount,
 			icon: Trophy,
 		},
 		{
-			label: m.homepageStatsIndexedUsers(),
+			label: m["home.stats.indexedUsers"](),
 			value: data.stats.userCount,
 			icon: Users,
 		},
 		{
-			label: m.homepageStatsIndexedGames(),
+			label: m["home.stats.indexedGames"](),
 			value: data.stats.gameCount,
 			icon: TrendingUp,
 		},
@@ -45,18 +45,18 @@
 
 	const textCards = [
 		{
-			title: m.homepageTextCard1Title(),
-			description: m.homepageTextCard1Description(),
+			title: m["home.textCard1.title"](),
+			description: m["home.textCard1.description"](),
 			icon: Award,
 		},
 		{
-			title: m.homepageTextCard2Title(),
-			description: m.homepageTextCard2Description(),
+			title: m["home.textCard2.title"](),
+			description: m["home.textCard2.description"](),
 			icon: Search,
 		},
 		{
-			title: m.homepageTextCard3Title(),
-			description: m.homepageTextCard3Description(),
+			title: m["home.textCard3.title"](),
+			description: m["home.textCard3.description"](),
 			icon: Users,
 		},
 	] satisfies Array<{
@@ -87,12 +87,12 @@
 </script>
 
 <svelte:head>
-	<title>{m.homepageMetaTitle()}</title>
-	<meta name="description" content={m.homepageMetaDescription()} />
-	<meta name="keywords" content={m.layoutMetaKeywords()} />
+	<title>{m["home.meta.title"]()}</title>
+	<meta name="description" content={m["home.meta.description"]()} />
+	<meta name="keywords" content={m["layout.meta.keywords"]()} />
 
-	<meta property="og:title" content={m.homepageMetaTitle()} />
-	<meta property="og:description" content={m.homepageMetaDescription()} />
+	<meta property="og:title" content={m["home.meta.title"]()} />
+	<meta property="og:description" content={m["home.meta.description"]()} />
 	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
 </svelte:head>
 
@@ -108,10 +108,10 @@
 						<h1
 							class="text-4xl leading-tight font-bold md:text-5xl lg:text-6xl"
 						>
-							{m.homepageHeroTitle()}
+							{m["home.hero.title"]()}
 						</h1>
 						<p class="max-w-lg text-lg">
-							{m.homepageHeroDescription()}
+							{m["home.hero.description"]()}
 						</p>
 						{@render buttons()}
 					</div>
@@ -130,7 +130,7 @@
 							<div class="mb-6 flex items-center gap-4">
 								<Trophy class="text-primary-500 h-8 w-8" />
 								<h3 class="text-xl font-bold">
-									{m.homepageTopAchievementHunters()}
+									{m["home.topAchievementHunters"]()}
 								</h3>
 							</div>
 							<div class="space-y-4">
@@ -152,14 +152,14 @@
 										/>
 										<div>
 											<div class="font-medium">
-												{m.homepageAchievementPlayer({
+												{m["home.achievement.player"]({
 													rank: rank + 1,
 												})}
 											</div>
 											<div
 												class="text-surface-300 text-xs"
 											>
-												{m.homepageRareAchievements({
+												{m["home.rareAchievements"]({
 													count: data.random[rank],
 												})}
 											</div>
@@ -184,10 +184,10 @@
 		<div class="container mx-auto md:flex md:flex-row-reverse">
 			<div class="p-4 text-center md:flex md:flex-col md:justify-center">
 				<h2 class="mb-8 text-3xl font-bold">
-					{m.homepageExploreTitle()}
+					{m["home.explore.title"]()}
 				</h2>
 				<p>
-					{m.homepageExploreDescription()}
+					{m["home.explore.description"]()}
 				</p>
 			</div>
 			<div
@@ -271,22 +271,22 @@
 			>
 				<div>
 					<h2 class="mb-2 text-3xl font-bold">
-						{m.homepageFeaturedTitle()}
+						{m["home.featured.title"]()}
 					</h2>
 					<p class="text-surface-300 max-w-2xl">
-						{m.homepageFeaturedDescription()}
+						{m["home.featured.description"]()}
 					</p>
 				</div>
 				<button
 					class="btn preset-outlined-surface-500 relative mt-4 flex items-center gap-2 rounded"
 					disabled
 				>
-					{m.homepageViewAll()}
+					{m["home.viewAll"]()}
 					<ChevronRight class="ml-2 h-4 w-4" />
 					<span
 						class="badge preset-filled-primary-500 absolute -top-4 -right-4"
 					>
-						{m.homepageComingSoon()}
+						{m["home.comingSoon"]()}
 					</span>
 				</button>
 			</div>
@@ -303,7 +303,7 @@
 	<section class="bg-surface-900/30 py-16">
 		<div class="container mx-auto px-4">
 			<h2 class="mb-12 text-center text-3xl font-bold">
-				{m.homepageFeaturesTitle()}
+				{m["home.features.title"]()}
 			</h2>
 			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
 				{#each textCards as card}
@@ -328,10 +328,10 @@
 				class="border-surface-700 from-surface-800 to-surface-900 card bg-gradient-to-r p-8 text-center md:p-12"
 			>
 				<h2 class="mb-4 text-3xl font-bold md:text-4xl">
-					{m.ctaTitle()}
+					{m["home.cta.title"]()}
 				</h2>
 				<p class="text-surface-300 mx-auto mb-8 max-w-2xl">
-					{m.homepageCtaDescription()}
+					{m["home.cta.description"]()}
 				</p>
 				<div class="flex justify-center">
 					{@render buttons()}
@@ -348,7 +348,7 @@
 				<button
 					class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
 				>
-					{m.homepageFeaturesSignIn()}
+					{m["home.features.signIn"]()}
 					<ChevronRight class="ml-2 h-4 w-4" />
 				</button>
 			</form>
@@ -357,7 +357,7 @@
 				href={localizeHref(`/user/${data.loggedIn.id}`)}
 				class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
 			>
-				{m.homepageFeaturesDashboard()}
+				{m["home.features.dashboard"]()}
 				<ChevronRight class="ml-2 h-4 w-4" />
 			</a>
 		{/if}
@@ -366,7 +366,7 @@
 			href={localizeHref("/about")}
 			class="btn preset-outlined-surface-500"
 		>
-			{m.homepageFeaturesLearnMore()}
+			{m["home.features.learnMore"]()}
 		</a>
 	</div>
 {/snippet}

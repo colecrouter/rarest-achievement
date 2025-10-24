@@ -21,32 +21,32 @@
 
 	let faqs = [
 		{
-			question: m["aboutFaq.question1"](),
-			answer: m["aboutFaq.answer1"](),
+			question: m["about.faq.question1"](),
+			answer: m["about.faq.answer1"](),
 		},
 		{
-			question: m["aboutFaq.question2"](),
-			answer: m["aboutFaq.answer2"](),
+			question: m["about.faq.question2"](),
+			answer: m["about.faq.answer2"](),
 		},
 		{
-			question: m["aboutFaq.question3"](),
-			answer: m["aboutFaq.answer3"](),
+			question: m["about.faq.question3"](),
+			answer: m["about.faq.answer3"](),
 		},
 		{
-			question: m["aboutFaq.question4"](),
-			answer: m["aboutFaq.answer4"](),
+			question: m["about.faq.question4"](),
+			answer: m["about.faq.answer4"](),
 		},
 		{
-			question: m["aboutFaq.question5"](),
-			answer: m["aboutFaq.answer5"](),
+			question: m["about.faq.question5"](),
+			answer: m["about.faq.answer5"](),
 		},
 		{
-			question: m["aboutFaq.question6"](),
-			answer: m["aboutFaq.answer6"](),
+			question: m["about.faq.question6"](),
+			answer: m["about.faq.answer6"](),
 		},
 		{
-			question: m["aboutFaq.question7"](),
-			answer: m["aboutFaq.answer7"](),
+			question: m["about.faq.question7"](),
+			answer: m["about.faq.answer7"](),
 		},
 	] satisfies Record<"question" | "answer", string>[];
 
@@ -54,23 +54,23 @@
 
 	let features = [
 		{
-			title: m["aboutFeatures.feature1.title"](),
-			shortDescription: m["aboutFeatures.feature1.shortDescription"](),
-			description: m["aboutFeatures.feature1.description"](),
+			title: m["about.features.feature1.title"](),
+			shortDescription: m["about.features.feature1.shortDescription"](),
+			description: m["about.features.feature1.description"](),
 			icon: Trophy,
 			iconType: "component",
 		},
 		{
-			title: m["aboutFeatures.feature2.title"](),
-			shortDescription: m["aboutFeatures.feature2.shortDescription"](),
-			description: m["aboutFeatures.feature2.description"](),
+			title: m["about.features.feature2.title"](),
+			shortDescription: m["about.features.feature2.shortDescription"](),
+			description: m["about.features.feature2.description"](),
 			icon: DollarSign,
 			iconType: "component",
 		},
 		{
-			title: m["aboutFeatures.feature3.title"](),
-			shortDescription: m["aboutFeatures.feature3.shortDescription"](),
-			description: m["aboutFeatures.feature3.description"](),
+			title: m["about.features.feature3.title"](),
+			shortDescription: m["about.features.feature3.shortDescription"](),
+			description: m["about.features.feature3.description"](),
 			icon: SlidersHorizontal,
 			iconType: "component",
 		},
@@ -78,11 +78,11 @@
 </script>
 
 <svelte:head>
-	<title>{m.aboutPageMetaTitle()}</title>
-	<meta name="description" content={m.aboutPageMetaDescription()} />
+	<title>{m["about.meta.title"]()}</title>
+	<meta name="description" content={m["about.meta.description"]()} />
 	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
-	<meta property="og:title" content={m.aboutPageMetaTitle()} />
-	<meta property="og:description" content={m.aboutPageMetaDescription()} />
+	<meta property="og:title" content={m["about.meta.title"]()} />
+	<meta property="og:description" content={m["about.meta.description"]()} />
 </svelte:head>
 
 <div
@@ -99,10 +99,10 @@
 				<Trophy class="text-primary-500 relative h-20 w-20" />
 			</div>
 			<h1 class="mb-4 text-4xl font-bold md:text-5xl">
-				{m.aboutPageHeroTitle()}
+				{m["about.hero.title"]()}
 			</h1>
 			<p class="text-surface-300 mx-auto max-w-3xl text-xl">
-				{m.aboutPageHeroSubtitle()}
+				{m["about.hero.subtitle"]()}
 			</p>
 		</section>
 
@@ -111,16 +111,16 @@
 			<div class="grid max-w-2xl items-center gap-12">
 				<div>
 					<h2 class="mb-6 text-center text-3xl font-bold">
-						{m.aboutMissionTitle()}
+						{m["about.mission.title"]()}
 					</h2>
 					<p class="text-surface-300 mb-4">
-						{m.aboutMissionParagraph1()}
+						{m["about.mission.paragraph1"]()}
 					</p>
 					<p class="text-surface-300 mb-4">
-						{m.aboutMissionParagraph2()}
+						{m["about.mission.paragraph2"]()}
 					</p>
 					<p class="text-surface-300">
-						{m.aboutMissionParagraph3()}
+						{m["about.mission.paragraph3"]()}
 					</p>
 				</div>
 			</div>
@@ -129,7 +129,7 @@
 		<!-- Key Features -->
 		<section class="mb-16">
 			<h2 class="mb-8 text-center text-3xl font-bold">
-				{m.aboutKeyFeaturesTitle()}
+				{m["about.features.title"]()}
 			</h2>
 			<div class="grid gap-6 md:grid-cols-3">
 				{#each Object.values(features) as feature}
@@ -164,7 +164,7 @@
 		<!-- Team -->
 		<section class="mb-16">
 			<h2 class="mb-8 text-center text-3xl font-bold">
-				{m.aboutTeamTitle()}
+				{m["about.team.title"]()}
 			</h2>
 			<div class="flex flex-wrap justify-center gap-8">
 				{#each team as member}
@@ -189,7 +189,7 @@
 		<!-- FAQ -->
 		<section class="mx-auto mb-16 max-w-[800px]">
 			<h2 class="mb-8 text-center text-3xl font-bold">
-				{m.aboutFaqTitle()}
+				{m["about.faq.title"]()}
 			</h2>
 			<Accordion multiple>
 				{#each faqs as faq, index}
@@ -212,10 +212,10 @@
 		<section class="mb-16">
 			<div class="card mx-auto max-w-3xl p-8">
 				<h2 class="mb-6 text-center text-3xl font-bold">
-					{m.aboutContactTitle()}
+					{m["about.contactTitle"]()}
 				</h2>
 				<p class="text-surface-300 mb-8 text-center">
-					{m.aboutSocialText()}
+					{m["about.socialText"]()}
 				</p>
 				<div class="grid gap-8 md:grid-cols-2">
 					<div>
@@ -288,17 +288,17 @@
 		<section>
 			<div class="text-center">
 				<h2 class="mb-4 text-3xl font-bold">
-					{m.ctaTitle()}
+					{m["home.cta.title"]()}
 				</h2>
 				<p class="text-surface-300 mx-auto mb-8 max-w-2xl">
-					{m.aboutCtaDescription()}
+					{m["about.ctaDescription"]()}
 				</p>
 
 				<div class="flex flex-wrap justify-center gap-4">
 					{#if !data.loggedIn}
 						<form action="?/login" method="POST">
 							<button class="btn preset-filled-primary-500 p-3">
-								{m.homepageFeaturesSignIn()}
+								{m["home.features.signIn"]()}
 								<ChevronRight class="ml-2 h-4 w-4" />
 							</button>
 						</form>
@@ -307,7 +307,7 @@
 							href={localizeHref(`/user/${data.loggedIn.id}`)}
 							class="btn preset-filled-primary-500 p-3"
 						>
-							{m.homepageFeaturesDashboard()}
+							{m["home.features.dashboard"]()}
 							<ChevronRight class="ml-2 h-4 w-4" />
 						</a>
 					{/if}

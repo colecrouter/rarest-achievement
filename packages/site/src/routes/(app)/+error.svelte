@@ -45,9 +45,9 @@
 
 	<!-- Error Message -->
 	<div class="mb-8 max-w-lg text-center">
-		<h2 class="mb-4 text-2xl font-bold">{m.errorPageTitle()}</h2>
+		<h2 class="mb-4 text-2xl font-bold">{m["error.page.title"]()}</h2>
 		<p class="text-surface-300 mb-6">
-			{m.errorPageMessage()}
+			{m["error.page.message"]()}
 		</p>
 		<!-- Error Details -->
 		<div
@@ -56,13 +56,13 @@
 			<div class="text-error-500">&gt; ERROR_UNEXPECTED_CRASH</div>
 			<div class="text-surface-300">
 				&gt;
-				{m.errorPageErrorCause({
+				{m["error.page.error.cause"]({
 					errorMessage: error?.message ?? "Unknown Error",
 				})}
 			</div>
 			<div class="text-surface-300">
 				&gt;
-				{m.errorPageErrorSuggestion()}
+				{m["error.page.error.suggestion"]()}
 			</div>
 			<div class="text-primary-500 animate-pulse">&gt; _</div>
 		</div>
@@ -75,14 +75,14 @@
 			class="btn flex items-center gap-2"
 		>
 			<RefreshCcw class="mr-2 h-4 w-4" />
-			{m.errorPageButtonReload()}
+			{m["error.page.button.reload"]()}
 		</button>
 		<a href={localizeHref("/")} class="inline-block">
 			<button
 				class="btn preset-outlined-surface-500 flex items-center gap-2"
 			>
 				<Home class="mr-2 h-4 w-4" />
-				{m.errorPageButtonHome()}
+				{m["error.page.button.home"]()}
 			</button>
 		</a>
 		<button
@@ -90,7 +90,7 @@
 			class="btn flex items-center gap-2"
 		>
 			<ArrowLeft class="mr-2 h-4 w-4" />
-			{m.errorPageButtonBack()}
+			{m["error.page.button.back"]()}
 		</button>
 	</div>
 </main>

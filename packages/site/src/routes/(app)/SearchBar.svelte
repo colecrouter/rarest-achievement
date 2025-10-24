@@ -70,7 +70,7 @@
 {#snippet loading()}
 	<li class="flex w-full flex-col gap-2">
 		<p class="text-surface-300 text-sm">
-			{m.searching({ query })}
+			{m["search.searching"]({ query })}
 		</p>
 	</li>
 {/snippet}
@@ -79,7 +79,7 @@
 {#snippet error(error: Error)}
 	<li class="flex w-full flex-col gap-2">
 		<p class="text-surface-300 text-sm">
-			{m.searchError({
+			{m["search.error"]({
 				message:
 					error instanceof Error ? error.message : "Unknown error",
 			})}
@@ -125,21 +125,23 @@
 		{#if res && res.total - list.length > 0}
 			<li>
 				<p class="text-surface-300 text-sm">
-					{m.searchMoreResults({ count: res.total - list.length })}
+					{m["search.moreResults"]({
+						count: res.total - list.length,
+					})}
 				</p>
 			</li>
 		{/if}
 		{#if res && list.length === 0}
 			<li>
 				<p class="text-surface-300 text-sm">
-					{m.searchNoMatches({ type: "apps", query })}
+					{m["search.noMatches"]({ type: "apps", query })}
 				</p>
 			</li>
 		{/if}
 	{:else}
 		<li>
 			<p class="text-surface-300 text-sm">
-				{m.searchNoResults({ query })}
+				{m["search.noResults"]({ query })}
 			</p>
 		</li>
 	{/if}
@@ -165,7 +167,7 @@
 		class="input {failed ? 'failed' : ''}"
 		type="text"
 		name="q"
-		placeholder={m.searchPlaceholder()}
+		placeholder={m["search.placeholder"]()}
 		autocomplete="off"
 		bind:value={query}
 		oninput={() => {

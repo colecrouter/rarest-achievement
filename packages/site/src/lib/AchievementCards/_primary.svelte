@@ -156,7 +156,7 @@
 					</p>
 					{#if achievement.hidden}
 						<p class="text-surface-300 text-xs font-bold italic">
-							{m.statusHidden()}
+							{m["status.hidden"]()}
 						</p>
 					{:else}
 						<p class="text-surface-100 line-clamp-3 text-xs">
@@ -165,7 +165,7 @@
 							{:else}
 								{#await translations.get(achievement)}
 									<span class="text-surface-500">
-										{m.loading()}
+										{m["loading.title"]()}
 									</span>
 								{:then translation}
 									{@html translation}
@@ -196,9 +196,9 @@
 			{#if achievement instanceof SteamUserAchievement}
 				<span>
 					{#if achievement.unlocked}
-						{m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString()}
+						{m["status.unlocked"]()}: {achievement.unlocked.toLocaleDateString()}
 					{:else}
-						{m.statusLocked()}
+						{m["status.locked"]()}
 					{/if}
 				</span>
 				<a
@@ -207,7 +207,7 @@
 					)}
 					class="text-primary-500 hover:text-primary-400"
 				>
-					{m.achievementDetails()}
+					{m["achievement.details"]()}
 				</a>
 			{/if}
 		</div>

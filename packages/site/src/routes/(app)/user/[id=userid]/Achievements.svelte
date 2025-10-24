@@ -26,29 +26,29 @@
 	<!-- Friend's achievements are private -->
 	<section class="mb-12">
 		<h2 class="mb-6 text-center text-2xl font-bold">
-			{m.userPageTitle({ displayName: user.displayName })}
+			{m["user.page.title"]({ displayName: user.displayName })}
 		</h2>
 
 		<div class="flex min-h-[400px] flex-col items-center justify-center">
 			<p class="text-surface-300 mb-8">
-				{m.profilePrivate()}
+				{m["profile.private"]()}
 			</p>
 
 			<div class="w-full max-w-[800px]">
 				<Accordion multiple>
 					<Accordion.Item value="0">
 						{#snippet control()}
-							{m.userPageFaqPrivateQuestion()}
+							{m["user.page.faq.private.question"]()}
 						{/snippet}
 						{#snippet panel()}
 							<p class="p-4">
-								{m.userPageFaqPrivateAnswer()}
+								{m["user.page.faq.private.answer"]()}
 							</p>
 						{/snippet}
 					</Accordion.Item>
 					<Accordion.Item value="1">
 						{#snippet control()}
-							{m.userPageFaqPublicQuestion()}
+							{m["user.page.faq.public.question"]()}
 						{/snippet}
 						{#snippet panel()}
 							<PublicProfile />
@@ -62,7 +62,7 @@
 	<!-- Hero Section with Podium -->
 	<section class="mb-12">
 		<h2 class="mb-6 text-center text-2xl font-bold">
-			{m.userPageTitle({ displayName: user.displayName })}
+			{m["user.page.title"]({ displayName: user.displayName })}
 		</h2>
 
 		<div
@@ -78,7 +78,7 @@
 				<!-- Base thing -->
 				<div class="flex h-full w-full items-center justify-center">
 					<p class="text-surface-300">
-						{m.userPageNoAchievements()}
+						{m["user.page.noAchievements"]()}
 					</p>
 				</div>
 			{/if}
@@ -99,15 +99,19 @@
 
 	<!-- Achievement Leaderboard -->
 	<section>
-		<h2 class="mb-4 text-2xl font-bold">{m.userPageLeaderboardTitle()}</h2>
+		<h2 class="mb-4 text-2xl font-bold">
+			{m["user.page.leaderboard.title"]()}
+		</h2>
 
 		<Toolbar data={achievements} />
 
 		<!-- Tabs -->
 		<Tabs value={activeTab} onValueChange={(e) => (activeTab = e.value)}>
 			{#snippet list()}
-				<Tabs.Control value="grid">{m.userViewTable()}</Tabs.Control>
-				<!-- <Tabs.Control value="list">{m.userViewList()}</Tabs.Control> -->
+				<Tabs.Control value="grid"
+					>{m["user.view.table"]()}</Tabs.Control
+				>
+				<!-- <Tabs.Control value="list">{m.user.view.list()}</Tabs.Control> -->
 			{/snippet}
 
 			{#snippet content()}
@@ -129,22 +133,22 @@
 									<th
 										class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
 									>
-										{m.userTableAchievement()}
+										{m["user.table.achievement"]()}
 									</th>
 									<th
 										class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
 									>
-										{m.userTableGame()}
+										{m["user.table.game"]()}
 									</th>
 									<th
 										class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
 									>
-										{m.userTableRarity()}
+										{m["user.table.rarity"]()}
 									</th>
 									<th
 										class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
 									>
-										{m.statusUnlocked()}
+										{m["status.unlocked"]()}
 									</th>
 								</tr>
 							</thead>

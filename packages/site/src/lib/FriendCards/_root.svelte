@@ -51,16 +51,16 @@
 						class="flex flex-col items-center justify-center py-12"
 					>
 						<h3 class="mb-2 text-xl font-bold">
-							{m.friendSignInTitle()}
+							{m["friend.signIn.title"]()}
 						</h3>
 						<p class="text-surface-300 mb-6 max-w-md">
-							{m.friendSignInDescription()}
+							{m["friend.signIn.description"]()}
 						</p>
 						<button
 							class="btn preset-filled-primary-500 px-4 py-2"
 							data-testid="friend-cards-signin-button"
 						>
-							{m.signIn()}
+							{m["auth.signIn"]()}
 						</button>
 					</form>
 				{:else}
@@ -86,7 +86,7 @@
 									class="text-surface-300 h-32 w-32"
 								/>
 								<div class="text-surface-300 text-sm">
-									{m.friendNoAchievementText()}
+									{m["friend.noAchievement.text"]()}
 								</div>
 							</div>
 						{:else}
@@ -103,7 +103,7 @@
 											class="text-surface-300 h-32 w-32"
 										/>
 										<div class="text-surface-300 text-sm">
-											{m.friendNoAchievementText()}
+											{m["friend.noAchievement.text"]()}
 										</div>
 									</div>
 								{/each}

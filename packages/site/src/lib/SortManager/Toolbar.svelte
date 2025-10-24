@@ -190,19 +190,28 @@
 		if (firstItem && hasUnlocked(firstItem)) {
 			// UserAchievement data - supports all methods including unlocked_at
 			return [
-				{ method: "rarity_pct", label: m.toolbarSortMethodRarity() },
+				{
+					method: "rarity_pct",
+					label: m["toolbar.sort.method.rarity"](),
+				},
 				{
 					method: "rarity_score",
-					label: m.toolbarSortMethodPlayerCount(),
+					label: m["toolbar.sort.method.playerCount"](),
 				},
-				{ method: "unlocked_at", label: m.toolbarSortMethodUnlocked() },
+				{
+					method: "unlocked_at",
+					label: m["toolbar.sort.method.unlocked"](),
+				},
 			] as const;
 		}
 
 		// AppAchievement data - only supports rarity methods
 		return [
-			{ method: "rarity_pct", label: m.toolbarSortMethodRarity() },
-			{ method: "rarity_score", label: m.toolbarSortMethodPlayerCount() },
+			{ method: "rarity_pct", label: m["toolbar.sort.method.rarity"]() },
+			{
+				method: "rarity_score",
+				label: m["toolbar.sort.method.playerCount"](),
+			},
 		] as const;
 	}
 
@@ -226,7 +235,7 @@
 		<!-- Initial loading state - no cached data available -->
 		<input
 			type="search"
-			placeholder={m.toolbarSearchPlaceholder()}
+			placeholder={m["toolbar.search.placeholder"]()}
 			disabled
 			class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3 opacity-50"
 		/>
@@ -235,7 +244,7 @@
 		</div>
 		<button
 			disabled
-			aria-label={m.toolbarSortDirectionToggle()}
+			aria-label={m["toolbar.sort.direction.toggle"]()}
 			class="btn preset-outlined-surface-300-700 text-surface-300 py-3 opacity-50"
 		>
 			<svg
@@ -263,7 +272,7 @@
 		<!-- Search Input -->
 		<input
 			type="search"
-			placeholder={m.toolbarSearchPlaceholder()}
+			placeholder={m["toolbar.search.placeholder"]()}
 			bind:value={sortManager.search}
 			class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3"
 			oninput={serverMode
@@ -281,7 +290,7 @@
 		<!-- Sort Method Selection -->
 		<div class="flex flex-col items-center gap-2 md:flex-row">
 			<label class="text-surface-300 text-sm">
-				<span hidden>{m.toolbarSortBy()}</span>
+				<span hidden>{m["toolbar.sort.by"]()}</span>
 				<Segment
 					value={currentMethod}
 					onValueChange={(e) => handleMethodChange(e.value as string)}
@@ -304,7 +313,7 @@
 		{#if supportsFiltering(resolvedData)}
 			<div class="flex flex-col items-center gap-2 md:flex-row">
 				<label class="text-surface-300 text-sm">
-					<span hidden>{m.toolbarFilterBy()}</span>
+					<span hidden>{m["toolbar.filter.by"]()}</span>
 					<Segment
 						value={sortManager.filter ?? "all"}
 						onValueChange={(e) => handleFilterChange(e.value ?? "")}
@@ -312,15 +321,15 @@
 						rounded={segmentRounded}
 					>
 						<Segment.Item labelClasses="text-sm" value="all">
-							<span hidden>{m.toolbarFilterAll()}</span>
+							<span hidden>{m["toolbar.filter.all"]()}</span>
 							<SquareDashed />
 						</Segment.Item>
 						<Segment.Item labelClasses="text-sm" value="unlocked">
-							<span hidden>{m.toolbarFilterUnlocked()}</span>
+							<span hidden>{m["toolbar.filter.unlocked"]()}</span>
 							<KeyRound />
 						</Segment.Item>
 						<Segment.Item labelClasses="text-sm" value="locked">
-							<span hidden>{m.toolbarFilterLocked()}</span>
+							<span hidden>{m["toolbar.filter.locked"]()}</span>
 							<Lock />
 						</Segment.Item>
 					</Segment>
@@ -331,7 +340,7 @@
 		<!-- Sort Direction Toggle -->
 		<button
 			onclick={handleDirectionToggle}
-			aria-label={m.toolbarSortDirectionToggle()}
+			aria-label={m["toolbar.sort.direction.toggle"]()}
 			class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
 		>
 			<!-- SVG content same as original -->

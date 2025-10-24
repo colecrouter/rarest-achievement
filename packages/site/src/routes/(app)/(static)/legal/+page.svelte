@@ -21,11 +21,11 @@
 </script>
 
 <svelte:head>
-	<title>{m.legalPageMetaTitle()}</title>
-	<meta name="description" content={m.legalPageMetaDescription()} />
+	<title>{m["legal.meta.title"]()}</title>
+	<meta name="description" content={m["legal.meta.description"]()} />
 	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
-	<meta property="og:title" content={m.legalPageMetaTitle()} />
-	<meta property="og:description" content={m.legalPageMetaDescription()} />
+	<meta property="og:title" content={m["legal.meta.title"]()} />
+	<meta property="og:description" content={m["legal.meta.description"]()} />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
@@ -40,16 +40,18 @@
 			<Shield class="text-primary-500 h-8 w-8" />
 		</div>
 		<div>
-			<h1 class="text-3xl font-bold">{m.legalHeaderTitle()}</h1>
-			<p class="text-surface-300">{m.legalHeaderSubtitle()}</p>
+			<h1 class="text-3xl font-bold">{m["legal.header.title"]()}</h1>
+			<p class="text-surface-300">{m["legal.header.subtitle"]()}</p>
 		</div>
 	</div>
 
 	<!-- Disclaimer -->
 	<div class="card mb-8 p-4">
 		<div>
-			<p class="font-bold">{m.legalDisclaimerTitle()}</p>
-			<p class="text-surface-300 text-xs">{m.legalDisclaimerText()}</p>
+			<p class="font-bold">{m["legal.disclaimer.title"]()}</p>
+			<p class="text-surface-300 text-xs">
+				{m["legal.disclaimer.text"]()}
+			</p>
 		</div>
 	</div>
 
@@ -67,97 +69,125 @@
 		}}
 	>
 		{#snippet list()}
-			<Tabs.Control value="privacy">{m.legalTabsPrivacy()}</Tabs.Control>
-			<Tabs.Control value="terms">{m.legalTabsTerms()}</Tabs.Control>
+			<Tabs.Control value="privacy"
+				>{m["legal.tabs.privacy"]()}</Tabs.Control
+			>
+			<Tabs.Control value="terms">{m["legal.tabs.terms"]()}</Tabs.Control>
 		{/snippet}
 
 		{#snippet content()}
 			<Tabs.Panel value="privacy">
 				<div class="prose !max-w-none pt-4">
-					<blockquote>{m.legalPrivacyBlockquote()}</blockquote>
+					<blockquote>{m["legal.privacy.blockquote"]()}</blockquote>
 
 					<!-- Section: Information We Collect -->
 					<section>
-						<h2>{m.legalPrivacySectionInformation()}</h2>
-						<p>{m.legalPrivacySectionInformationList()}</p>
+						<h2>
+							{m["legal.privacy.sections.information.title"]()}
+						</h2>
+						<p>{m["legal.privacy.sections.information.list"]()}</p>
 					</section>
 
 					<!-- Section: How We Use Your Information -->
 					<section>
-						<h2>{m.legalPrivacySectionHowWeUse()}</h2>
-						<p>{m.legalPrivacySectionHowWeUseList()}</p>
+						<h2>{m["legal.privacy.sections.howWeUse.title"]()}</h2>
+						<p>{m["legal.privacy.sections.howWeUse.list"]()}</p>
 					</section>
 
 					<!-- Section: Sharing Your Information -->
 					<section>
-						<h2>{m.legalPrivacySectionSharing()}</h2>
-						<p>{m.legalPrivacySectionSharingList()}</p>
+						<h2>{m["legal.privacy.sections.sharing.title"]()}</h2>
+						<p>{m["legal.privacy.sections.sharing.list"]()}</p>
 					</section>
 
 					<!-- Section: Data Security -->
 					<section>
-						<h2>{m.legalPrivacySectionDataSecurity()}</h2>
-						<p>{m.legalPrivacySectionDataSecurityText()}</p>
+						<h2>
+							{m["legal.privacy.sections.dataSecurity.title"]()}
+						</h2>
+						<p>{m["legal.privacy.sections.dataSecurity.text"]()}</p>
 					</section>
 
 					<!-- Section: Your Rights -->
 					<section>
-						<h2>{m.legalPrivacySectionYourRights()}</h2>
-						<p>{m.legalPrivacySectionYourRightsList()}</p>
+						<h2>
+							{m["legal.privacy.sections.yourRights.title"]()}
+						</h2>
+						<p>{m["legal.privacy.sections.yourRights.list"]()}</p>
 					</section>
 
 					<!-- Section: Cookies and Tracking Technologies -->
 					<section>
-						<h2>{m.legalPrivacySectionCookies()}</h2>
-						<p>{m.legalPrivacySectionCookiesText()}</p>
+						<h2>{m["legal.privacy.sections.cookies.title"]()}</h2>
+						<p>{m["legal.privacy.sections.cookies.text"]()}</p>
 					</section>
 
 					<!-- Section: Changes to This Privacy Policy -->
 					<section>
-						<h2>{m.legalPrivacySectionChanges()}</h2>
-						<p>{m.legalPrivacySectionChangesText()}</p>
+						<h2>{m["legal.privacy.sections.changes.title"]()}</h2>
+						<p>{m["legal.privacy.sections.changes.text"]()}</p>
 					</section>
 				</div>
 			</Tabs.Panel>
 
 			<Tabs.Panel value="terms">
 				<div class="prose !max-w-none pt-4">
-					<blockquote>{m.legalTermsBlockquote()}</blockquote>
+					<blockquote>{m["legal.terms.blockquote"]()}</blockquote>
 
 					<!-- Section: User Accounts -->
 					<section>
-						<h2>{m.legalTermsSectionUserAccounts()}</h2>
-						<p>{m.legalTermsSectionUserAccountsText()}</p>
+						<h2>
+							{m["legal.terms.sections.userAccounts.title"]()}
+						</h2>
+						<p>{m["legal.terms.sections.userAccounts.text"]()}</p>
 					</section>
 
 					<!-- Section: Acceptable Use -->
 					<section>
-						<h2>{m.legalTermsSectionAcceptableUse()}</h2>
-						<p>{m.legalTermsSectionAcceptableUseText()}</p>
+						<h2>
+							{m["legal.terms.sections.acceptableUse.title"]()}
+						</h2>
+						<p>{m["legal.terms.sections.acceptableUse.text"]()}</p>
 					</section>
 
 					<!-- Section: Intellectual Property Rights -->
 					<section>
-						<h2>{m.legalTermsSectionIntellectualProperty()}</h2>
-						<p>{m.legalTermsSectionIntellectualPropertyText()}</p>
+						<h2>
+							{m[
+								"legal.terms.sections.intellectualProperty.title"
+							]()}
+						</h2>
+						<p>
+							{m[
+								"legal.terms.sections.intellectualProperty.text"
+							]()}
+						</p>
 					</section>
 
 					<!-- Section: Limitation of Liability -->
 					<section>
-						<h2>{m.legalTermsSectionLimitationOfLiability()}</h2>
-						<p>{m.legalTermsSectionLimitationOfLiabilityText()}</p>
+						<h2>
+							{m[
+								"legal.terms.sections.limitationOfLiability.title"
+							]()}
+						</h2>
+						<p>
+							{m[
+								"legal.terms.sections.limitationOfLiability.text"
+							]()}
+						</p>
 					</section>
 
 					<!-- Section: Termination -->
 					<section>
-						<h2>{m.legalTermsSectionTermination()}</h2>
-						<p>{m.legalTermsSectionTerminationText()}</p>
+						<h2>{m["legal.terms.sections.termination.title"]()}</h2>
+						<p>{m["legal.terms.sections.termination.text"]()}</p>
 					</section>
 
 					<!-- Section: Changes to These Terms -->
 					<section>
-						<h2>{m.legalTermsSectionChanges()}</h2>
-						<p>{m.legalTermsSectionChangesText()}</p>
+						<h2>{m["legal.terms.sections.changes.title"]()}</h2>
+						<p>{m["legal.terms.sections.changes.text"]()}</p>
 					</section>
 				</div>
 			</Tabs.Panel>
@@ -167,10 +197,10 @@
 	<!-- Contact Information -->
 	<div class="card mb-8 p-6">
 		<h2 id="support" class="text-xl font-bold">
-			{m.legalContactHeading()}
+			{m["legal.contact.heading"]()}
 		</h2>
 		<p class="text-surface-300">
-			{m.legalContactIntro()}
+			{m["legal.contact.intro"]()}
 		</p>
 		<ul class="text-surface-300 space-y-2">
 			<li>
@@ -187,9 +217,11 @@
 		class="btn preset-outlined-surface-500 mb-8"
 		onclick={() => window.print()}
 	>
-		{m.legalPrintButton()}
+		{m["legal.print.button"]()}
 	</button>
 
 	<!-- Acknowledgment -->
-	<p class="text-surface-300 mb-8 text-sm">{m.legalAcknowledgmentText()}</p>
+	<p class="text-surface-300 mb-8 text-sm">
+		{m["legal.acknowledgment.text"]()}
+	</p>
 </main>

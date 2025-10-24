@@ -67,7 +67,7 @@
 			{integer}
 		{:else}
 			<Lock class="m-[0.2em] h-[1em] w-auto" />
-			<span hidden>{m.statusLocked()}</span>
+			<span hidden>{m["status.locked"]()}</span>
 		{/if}
 	{/if}
 </div>

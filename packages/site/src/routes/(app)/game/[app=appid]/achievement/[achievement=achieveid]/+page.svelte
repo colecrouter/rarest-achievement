@@ -70,7 +70,7 @@
 				labels: rarityChartData.map((d) => d.name),
 				datasets: [
 					{
-						label: m.achievementThisAchievementLabel(),
+						label: m["achievement.thisAchievement.label"](),
 						data: rarityChartData.map((d) => d.rarity),
 						backgroundColor: rarityChartColors,
 						// @ts-expect-error custom field
@@ -169,14 +169,14 @@
 
 <svelte:head>
 	<title>
-		{m.achievementPageMetaTitle({
+		{m["achievement.meta.title"]({
 			achievementName: achievement.name,
 			appName: app.name,
 		})}
 	</title>
 	<meta
 		name="description"
-		content={m.achievementPageMetaDescription({
+		content={m["achievement.meta.description"]({
 			achievementName: achievement.name,
 			appName: app.name,
 			percentage: achievement.globalPercentage,
@@ -185,14 +185,14 @@
 	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
 	<meta
 		property="og:title"
-		content={m.achievementPageMetaTitle({
+		content={m["achievement.meta.title"]({
 			achievementName: achievement.name,
 			appName: app.name,
 		})}
 	/>
 	<meta
 		property="og:description"
-		content={m.achievementPageMetaDescription({
+		content={m["achievement.meta.description"]({
 			achievementName: achievement.name,
 			appName: app.name,
 			percentage: achievement.globalPercentage,
@@ -290,7 +290,7 @@
 							{achievement.globalPercentage}%
 						</div>
 						<div class="text-surface-300 text-xs">
-							{m.achievementOfPlayers()}
+							{m["achievement.ofPlayers"]()}
 						</div>
 					</div>
 					<div class="flex gap-2">
@@ -303,7 +303,7 @@
 							arrow
 						>
 							{#snippet content()}
-								{m.viewOnSteam()}
+								{m["game.viewOnSteam"]()}
 							{/snippet}
 							{#snippet trigger()}
 								<a
@@ -318,7 +318,8 @@
 									rel="noopener noreferrer"
 									class="btn preset-outlined-surface-500 p-2"
 								>
-									<span hidden>{m.viewOnSteam()}</span>
+									<span hidden>{m["game.viewOnSteam"]()}</span
+									>
 									<BookOpenText
 										class="text-surface-500 h-4 w-4"
 										aria-hidden="true"
@@ -331,11 +332,11 @@
 							onclick={() =>
 								navigator.share({
 									title: `${achievement.name} - ${app.name}`,
-									text: `${m.achievementShareText()}`,
+									text: `${m["achievement.shareText"]()}`,
 									url: page.url.toString(),
 								})}
 						>
-							<span hidden>{m.achievementShareText()}</span>
+							<span hidden>{m["achievement.shareText"]()}</span>
 							<Share
 								class="text-surface-500 h-4 w-4"
 								aria-hidden="true"
@@ -370,19 +371,19 @@
 				onclick={() => goto("?tab=stats")}
 				class="py-2"
 				class:font-bold={activeTab === "stats"}
-				>{m.achievementTabStats()}</button
+				>{m["achievement.tabs.stats"]()}</button
 			>
 			<button
 				onclick={() => goto("?tab=friends")}
 				class="py-2"
 				class:font-bold={activeTab === "friends"}
-				>{m.achievementTabFriends()}</button
+				>{m["achievement.tabs.friends"]()}</button
 			>
 			<button
 				onclick={() => goto("?tab=articles")}
 				class="py-2"
 				class:font-bold={activeTab === "articles"}
-				>{m.achievementTabArticles()}</button
+				>{m["achievement.tabs.articles"]()}</button
 			>
 		</div>
 
@@ -392,10 +393,10 @@
 					<section class="mt-6 space-y-8">
 						<div class="card p-4">
 							<h2 class="font-bold">
-								{m.achievementRarityComparisonTitle()}
+								{m["achievement.rarityComparison.title"]()}
 							</h2>
 							<p class="text-surface-300 text-sm">
-								{m.achievementRarityComparisonDescription({
+								{m["achievement.rarityComparison.description"]({
 									achievementName: achievement.name,
 									appName: achievement.app.name,
 								})}
@@ -459,12 +460,14 @@
 
 						<div class="card p-4">
 							<h2 class="font-bold">
-								{m.achievementOtherAchievementsTitle({
+								{m["achievement.otherAchievements.title"]({
 									appName: achievement.app.name,
 								})}
 							</h2>
 							<p class="text-surface-300 text-sm">
-								{m.achievementOtherAchievementsDescription()}
+								{m[
+									"achievement.otherAchievements.description"
+								]()}
 							</p>
 							<div class="mt-4">
 								{#if gameAchievements}
@@ -495,14 +498,14 @@
 						{#await articles}
 							<!-- Loading state -->
 							<div class="text-surface-300 p-4 text-center">
-								{m.achievementArticlesLoading()}
+								{m["achievement.articles.loading"]()}
 							</div>
 						{:then res}
 							{#if res}
 								{@const { data: articleResult, error } = res}
 								{#if error}
 									<div class="p-4 text-red-400">
-										{m.achievementArticlesError({
+										{m["achievement.articles.error"]({
 											errorMessage: error.message,
 										})}
 									</div>
@@ -514,10 +517,14 @@
 												<NotebookText
 													class="text-primary-500 inline"
 												/>
-												{m.achievementArticlesSteamCommunityTitle()}
+												{m[
+													"achievement.articles.steamCommunity.title"
+												]()}
 											</h2>
 											<p class="text-surface-300 text-sm">
-												{m.achievementArticlesSteamCommunityDescription()}
+												{m[
+													"achievement.articles.steamCommunity.description"
+												]()}
 											</p>
 											<div class="mt-4 space-y-4">
 												{#each articleResult?.articles ?? [] as article}
@@ -567,7 +574,9 @@
 													<div
 														class="p-4 text-surface-400"
 													>
-														{m.achievementArticlesNotFound()}
+														{m[
+															"achievement.articles.notFound"
+														]()}
 													</div>
 												{/each}
 											</div>
@@ -578,10 +587,14 @@
 												<YouTube
 													class="inline text-red-500"
 												/>
-												{m.achievementArticlesYouTubeTitle()}
+												{m[
+													"achievement.articles.youtube.title"
+												]()}
 											</h2>
 											<p class="text-surface-300 text-sm">
-												{m.achievementArticlesYouTubeDescription()}
+												{m[
+													"achievement.articles.youtube.description"
+												]()}
 											</p>
 											<div class="mt-4 space-y-4">
 												{#each articleResult?.videos ?? [] as video}
@@ -640,7 +653,9 @@
 													<div
 														class="p-4 text-surface-400"
 													>
-														{m.achievementArticlesNotFound()}
+														{m[
+															"achievement.articles.notFound"
+														]()}
 													</div>
 												{/each}
 											</div>
@@ -650,7 +665,7 @@
 							{/if}
 						{:catch error}
 							<div class="p-4 text-red-400">
-								{m.achievementArticlesError({
+								{m["achievement.articles.error"]({
 									errorMessage: error.message,
 								})}
 							</div>

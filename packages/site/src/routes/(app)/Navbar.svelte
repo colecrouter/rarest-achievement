@@ -21,7 +21,7 @@
 		<a href={localizeHref("/")} class="flex items-center gap-2 md:pr-4">
 			<div class="logo bg-primary-500"></div>
 			<h1 class="relative hidden text-xl font-bold md:block">
-				{m.navbarCompanyName()}
+				{m["navbar.companyName"]()}
 				<span
 					class="badge text-primary-500 badge-icon preset-outlined-primary-500 heading-line-height absolute top-0 right-0 translate-x-1/2 -translate-y-1/2"
 				>
@@ -55,7 +55,7 @@
 						type="submit"
 					>
 						<LogOut class="my-1 h-4 w-4" />
-						<span hidden>{m.navbarLogout()}</span>
+						<span hidden>{m["navbar.logout"]()}</span>
 					</button>
 				</form>
 			{:else}
@@ -69,9 +69,9 @@
 						type="submit"
 					>
 						<div>
-							{m.navbarLogin()}
+							{m["navbar.login.login"]()}
 							<span class="hidden md:inline">
-								{m.navbarLoginWithSteamHidden()}
+								{m["navbar.login.withSteamHidden"]()}
 							</span>
 						</div>
 						<svg

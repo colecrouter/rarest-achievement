@@ -30,20 +30,29 @@
 </script>
 
 <svelte:head>
-	<title>{m.userPageMetaTitle({ displayName: data.user.displayName })}</title>
-	<meta name="description" content={m.userPageMetaDescription()} />
+	<title
+		>{m["user.page.meta.title"]({
+			displayName: data.user.displayName,
+		})}</title
+	>
+	<meta name="description" content={m["user.page.meta.description"]()} />
 	<meta
 		name="keywords"
-		content={m.userPageMetaKeywords({
+		content={m["user.page.meta.keywords"]({
 			userId: data.user.id,
 			displayName: data.user.displayName,
 		})}
 	/>
 	<meta
 		property="og:title"
-		content={m.userPageMetaTitle({ displayName: data.user.displayName })}
+		content={m["user.page.meta.title"]({
+			displayName: data.user.displayName,
+		})}
 	/>
-	<meta property="og:description" content={m.userPageMetaDescription()} />
+	<meta
+		property="og:description"
+		content={m["user.page.meta.description"]()}
+	/>
 	<meta property="og:image" content={data.user.avatar} />
 	<meta property="og:url" content={data.user.profileUrl} />
 	<meta property="og:type" content="summary" />

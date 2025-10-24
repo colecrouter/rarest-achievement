@@ -46,11 +46,11 @@
 	let donutchart: HTMLCanvasElement | null = null;
 
 	const rarities = [
-		[5, m.ChartRarityUltraRare()],
-		[10, m.ChartRarityRare()],
-		[50, m.ChartRarityUncommon()],
-		[100, m.ChartRarityCommon()],
-		[-1, m.statusLocked()],
+		[5, m["chart.rarity.ultraRare"]()],
+		[10, m["chart.rarity.rare"]()],
+		[50, m["chart.rarity.uncommon"]()],
+		[100, m["chart.rarity.common"]()],
+		[-1, m["status.locked"]()],
 	] as const;
 	let unlockedAchievementsGroupedByRarity = $derived([
 		...Map.groupBy(achievements.data.values() ?? [], (achievement) =>
@@ -59,7 +59,7 @@
 						([percentage]) =>
 							achievement.globalPercentage <= percentage,
 					)?.[1]
-				: m.statusLocked(),
+				: m["status.locked"](),
 		),
 	]);
 
@@ -110,7 +110,7 @@
 				labels: rarities.map(([, label]) => label),
 				datasets: [
 					{
-						label: m.chartAchievementsLabel(),
+						label: m["chart.achievements.label"](),
 						data: achievementCounts,
 						backgroundColor: bgPrimary,
 						borderWidth: 4,
@@ -118,7 +118,7 @@
 						borderRadius: 4,
 					},
 					{
-						label: m.chartUnlockedAchievementsLabel(),
+						label: m["chart.unlockedAchievements.label"](),
 						data: unlockedAchievementCounts,
 						backgroundColor: bgSecondary,
 						borderWidth: 4,
@@ -144,7 +144,7 @@
 					tooltip: {
 						callbacks: {
 							afterLabel(tooltipItem) {
-								return `${(100 * (Number(tooltipItem.raw) / totalCount)).toFixed(1)}${m.chartAfterLabelSuffix()}`;
+								return `${(100 * (Number(tooltipItem.raw) / totalCount)).toFixed(1)}${m["chart.after.label.suffix"]()}`;
 							},
 						},
 					},
@@ -164,10 +164,10 @@
 </script>
 
 <svelte:head>
-	<title>{m.appPageMetaTitle({ appName: app.name })}</title>
+	<title>{m["app.meta.title"]({ appName: app.name })}</title>
 	<meta
 		name="description"
-		content={m.appPageMetaDescription({
+		content={m["app.meta.description"]({
 			achievementCount: achievements.data.length,
 			appName: app.name,
 		})}
@@ -176,7 +176,7 @@
 	<meta property="og:title" content={app.name} />
 	<meta
 		property="og:description"
-		content={m.appPageMetaDescription({
+		content={m["app.meta.description"]({
 			achievementCount: achievements.data.length,
 			appName: app.name,
 		})}
@@ -186,7 +186,7 @@
 	<meta property="twitter:card" content="summary" />
 	<meta
 		property="keywords"
-		content={m.appPageMetaKeywords({
+		content={m["app.meta.keywords"]({
 			achievementCount: achievements.data.length,
 			appId: app.id,
 			appName: app.name,
@@ -266,7 +266,7 @@
 					class="btn preset-filled-primary-500 group flex w-full md:w-auto"
 				>
 					<GamepadIcon class="transition-all group-hover:rotate-12" />
-					{m.gamePagePlayOnSteam()}
+					{m["game.playOnSteam"]()}
 				</button>
 			</a>
 			<a href={`https://steamdb.info/app/${app.id}/`} target="_blank">
@@ -274,7 +274,7 @@
 					class="btn preset-outlined-surface-500 group flex w-full md:w-auto"
 				>
 					<Server class="h-4 w-4" />
-					<span>{m.gamePageViewOnSteamDB()}</span>
+					<span>{m["game.viewOnSteamDB"]()}</span>
 				</button>
 			</a>
 		</div>
@@ -286,10 +286,10 @@
 		<!-- Achievement Progress -->
 		<div class="card p-4 lg:col-span-2">
 			<h2 class="mb-1 text-xl font-bold">
-				{m.gamePageAchievementProgressTitle()}
+				{m["game.achievementProgress.title"]()}
 			</h2>
 			<p class="text-surface-300 mb-4">
-				{m.gamePageAchievementProgressDescription({
+				{m["game.achievementProgress.description"]({
 					unlockedCount,
 					totalCount,
 				})}
@@ -312,7 +312,7 @@
 				<!-- Recent Unlocks -->
 				<div class="w-full p-4">
 					<h3 class="mb-3 text-lg font-medium">
-						{m.gamePageRecentUnlocksTitle()}
+						{m["game.recentUnlocks.title"]()}
 					</h3>
 					<div class="space-y-3">
 						{#if recentUnlocks}
@@ -328,12 +328,14 @@
 										class="text-surface-500 mx-auto mb-4 h-12 w-12"
 									/>
 									<h3 class="mb-2 text-xl font-bold">
-										{m.gamePageNoRecentUnlocksTitle()}
+										{m["game.noRecentUnlocks.title"]()}
 									</h3>
 									<p
 										class="text-surface-300 mx-auto max-w-md"
 									>
-										{m.gamePageNoRecentUnlocksDescription()}
+										{m[
+											"game.noRecentUnlocks.description"
+										]()}
 									</p>
 								</div>
 							{/if}
@@ -344,10 +346,10 @@
 									class="text-surface-600 mx-auto mb-4 h-12 w-12"
 								/>
 								<h3 class="mb-2 text-xl font-bold">
-									{m.gamePageSignInCallToActionTitle()}
+									{m["game.signInCallToAction.title"]()}
 								</h3>
 								<p class="text-surface-300 mx-auto max-w-md">
-									{m.gamePageSignInCallToActionDescription()}
+									{m["game.signInCallToAction.description"]()}
 								</p>
 								<form action="/?/login" method="POST">
 									<input
@@ -358,7 +360,7 @@
 									<button
 										class="btn preset-filled-primary-500 mt-4 inline-block"
 									>
-										{m.signIn()}
+										{m["auth.signIn"]()}
 									</button>
 								</form>
 							</div>
@@ -371,12 +373,12 @@
 		<!-- Game Overview -->
 		<div class="card p-4">
 			<h2 class="mb-3 text-xl font-bold">
-				{m.gamePageGameInformationTitle()}
+				{m["game.gameInformation.title"]()}
 			</h2>
 			<div class="space-y-4 text-sm">
 				<div>
 					<div class="text-surface-300 mb-1">
-						{m.gamePageDeveloperLabel()}
+						{m["game.developer.label"]()}
 					</div>
 					<div>
 						{#each app.developers as developer, index}
@@ -387,7 +389,7 @@
 				</div>
 				<div>
 					<div class="text-surface-300 mb-1">
-						{m.gamePagePublisherLabel()}
+						{m["game.publisher.label"]()}
 					</div>
 					<div>
 						{#each app.publishers as publisher, index}
@@ -398,7 +400,7 @@
 				</div>
 				<div>
 					<div class="text-surface-300 mb-1">
-						{m.gamePageReleaseDateLabel()}
+						{m["game.releaseDate.label"]()}
 					</div>
 					<div>
 						{app.releaseDate?.toLocaleDateString(
@@ -411,7 +413,7 @@
 				</div>
 				<div>
 					<div class="text-surface-300 mb-1">
-						{m.gamePageDescriptionLabel()}
+						{m["game.description.label"]()}
 					</div>
 					<p>{app.description}</p>
 				</div>
@@ -423,7 +425,7 @@
 					rel="noopener noreferrer"
 				>
 					<button class="btn preset-outlined-surface-500 w-full">
-						{m.viewOnSteam()}
+						{m["game.viewOnSteam"]()}
 					</button>
 				</a>
 			</div>
@@ -433,7 +435,7 @@
 	<!-- Achievements List -->
 	<section class="mb-8">
 		<h2 class="mb-4 text-2xl font-bold">
-			{m.gamePageAchievementLeaderboardTitle()}
+			{m["game.achievementLeaderboard.title"]()}
 		</h2>
 
 		<Toolbar data={achievements} />
@@ -444,7 +446,7 @@
 	<!-- Friends Who Play -->
 	<div class="mb-8">
 		<h2 class="mb-6 text-2xl font-bold">
-			{m.gamePageFriendsWhoPlayTitle()}
+			{m["game.friendsWhoPlay.title"]()}
 		</h2>
 		<FriendCards data={data.friendsWithAchievement} />
 	</div>

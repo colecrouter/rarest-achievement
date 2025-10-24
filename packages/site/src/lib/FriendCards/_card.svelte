@@ -63,12 +63,12 @@
 				<div class="text-surface-300 text-xs">
 					{#if achievement}
 						{#if achievement.unlocked}
-							{m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString()}
+							{m["status.unlocked"]()}: {achievement.unlocked.toLocaleDateString()}
 						{:else}
-							{m.statusLocked()}
+							{m["status.locked"]()}
 						{/if}
 					{:else}
-						{m.friendHoursPlayed({
+						{m["friend.hoursPlayed"]({
 							hours: ((playTime ?? 0) / 60).toFixed(1),
 						})}
 					{/if}
@@ -78,12 +78,12 @@
 		<div class="mb-3">
 			{#if friend.private}
 				<div class="text-surface-800">
-					{m.profilePrivate()}
+					{m["profile.private"]()}
 				</div>
 			{:else}
 				<div class="mb-1 flex items-center justify-between">
 					<div class="text-surface-300 text-xs">
-						{m.friendAchievementProgress()}
+						{m["friend.achievementProgress"]()}
 					</div>
 					<div class="text-xs font-medium">
 						{completion.toFixed(0)}%

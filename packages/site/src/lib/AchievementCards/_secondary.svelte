@@ -53,14 +53,14 @@
 		{#if achievement instanceof SteamUserAchievement}
 			<div class="text-surface-300 mt-0.5 text-xs">
 				{#if achievement.unlocked}
-					{m.statusUnlocked()}: {achievement.unlocked.toLocaleDateString(
+					{m["status.unlocked"]()}: {achievement.unlocked.toLocaleDateString(
 						undefined,
 						{
 							dateStyle: "short",
 						},
 					)}
 				{:else}
-					{m.statusLocked()}
+					{m["status.locked"]()}
 				{/if}
 			</div>
 		{/if}

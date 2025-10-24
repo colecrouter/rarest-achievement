@@ -7,8 +7,8 @@
 <div data-testid="index-error">
 	<Alert
 		icon={TriangleAlert}
-		title={m.indexErrorTitle()}
-		description={m.indexErrorMessage()}
+		title={m["index.error.title"]()}
+		description={m["index.error.message"]()}
 		color="warning"
 	/>
 </div>

@@ -113,10 +113,10 @@
 	// Compute podium label from i18n messages
 	let podiumLabel =
 		place === 1
-			? m.podiumLabelFirst()
+			? m["podium.label.first"]()
 			: place === 2
-				? m.podiumLabelSecond()
-				: m.podiumLabelThird();
+				? m["podium.label.second"]()
+				: m["podium.label.third"]();
 </script>
 
 <div
@@ -137,7 +137,7 @@
 				{podiumLabel}
 			</span>
 			<span class={config.placeStatClass}>
-				{m.podiumPercentOfPlayers({
+				{m["podium.percentOfPlayers"]({
 					percentage: achievement.globalPercentage,
 				})}
 			</span>

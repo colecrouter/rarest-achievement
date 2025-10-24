@@ -22,15 +22,15 @@ export const getRarity = (percent: number | null): Rarity => {
 export const localizedRarity = (rarity: Rarity): string => {
 	switch (rarity) {
 		case "common":
-			return m.rarityCommon();
+			return m["rarity.common"]();
 		case "uncommon":
-			return m.rarityUncommon();
+			return m["rarity.uncommon"]();
 		case "rare":
-			return m.rarityRare();
+			return m["rarity.rare"]();
 		case "ultra-rare":
-			return m.rarityUltraRare();
+			return m["rarity.ultraRare"]();
 		case "locked":
-			return m.statusLocked();
+			return m["status.locked"]();
 		default:
 			throw new Error(`Unknown rarity: ${rarity}`);
 	}

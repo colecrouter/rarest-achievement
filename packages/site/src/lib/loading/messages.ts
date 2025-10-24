@@ -12,28 +12,28 @@ export type LoadingMessage = {
 export const randomMessage = () => {
 	const loadingMessages = [
 		{
-			title: m.loadingScreenTitle1(),
-			description: m.loadingScreenDescription1(),
+			title: m["loadingScreen.title1"](),
+			description: m["loadingScreen.description1"](),
 			source: {
 				text: "IGN",
 				url: new URL("https://www.ign.com/articles/2007/07/23/call-of-duty-4-au-interview"),
 			},
 		},
 		{
-			title: m.loadingScreenTitle2(),
-			description: m.loadingScreenDescription2(),
+			title: m["loadingScreen.title2"](),
+			description: m["loadingScreen.description2"](),
 		},
 		{
-			title: m.loadingScreenTitle3(),
-			description: m.loadingScreenDescription3(),
+			title: m["loadingScreen.title3"](),
+			description: m["loadingScreen.description3"](),
 			source: {
 				text: "The Cutting Room Floor",
 				url: new URL("https://tcrf.net/Super_Mario_Bros.#Enemy_04"),
 			},
 		},
 		{
-			title: m.loadingScreenTitle4(),
-			description: m.loadingScreenDescription4(),
+			title: m["loadingScreen.title4"](),
+			description: m["loadingScreen.description4"](),
 			source: {
 				text: "Mental Floss",
 				url: new URL(
@@ -42,12 +42,12 @@ export const randomMessage = () => {
 			},
 		},
 		{
-			title: m.loadingScreenTitle5(),
-			description: m.loadingScreenDescription5(),
+			title: m["loadingScreen.title5"](),
+			description: m["loadingScreen.description5"](),
 		},
 		{
-			title: m.loadingScreenTitle6(),
-			description: m.loadingScreenDescription6(),
+			title: m["loadingScreen.title6"](),
+			description: m["loadingScreen.description6"](),
 			source: {
 				text: "Amazon",
 				url: new URL(
@@ -56,8 +56,8 @@ export const randomMessage = () => {
 			},
 		},
 		{
-			title: m.loadingScreenTitle7(),
-			description: m.loadingScreenDescription7(),
+			title: m["loadingScreen.title7"](),
+			description: m["loadingScreen.description7"](),
 			source: {
 				text: "develop-online.net",
 				url: new URL(

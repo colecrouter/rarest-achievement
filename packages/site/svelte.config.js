@@ -36,6 +36,11 @@ const config = {
 				"script-src": ["self", "sha256-y2WkUILyE4eycy7x+pC0z99aZjTZlWfVwgUAfNc1sY8="],
 			},
 		},
+		experimental: {
+			instrumentation: {
+				server: true,
+			},
+		},
 	},
 };
 

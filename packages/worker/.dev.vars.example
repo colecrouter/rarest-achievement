@@ -1,1 +1,2 @@
 STEAM_API_KEY=1234567890
+SENTRY_AUTH_TOKEN=your_sentry_auth_token_here

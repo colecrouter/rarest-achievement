@@ -7,8 +7,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig((env) => ({
 	plugins: [
-		env.mode === "production"
+		env.mode === "production" && process.env.SENTRY_AUTH_TOKEN
 			? sentrySvelteKit({
+					org: "cole-crouter",
+					project: "steam-vault",
+					authToken: process.env.SENTRY_AUTH_TOKEN,
 					sourceMapsUploadOptions: {
 						org: "cole-crouter",
 						project: "steam-vault",

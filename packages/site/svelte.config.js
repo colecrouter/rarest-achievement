@@ -15,6 +15,7 @@ const config = {
 		csp: {
 			directives: {
 				"default-src": ["self"],
+				"connect-src": ["self", "https://*.ingest.us.sentry.io"],
 				"img-src": [
 					"self",
 					"data:",
@@ -33,7 +34,8 @@ const config = {
 					"https://i.ytimg.com/",
 				],
 				"style-src": ["self", "unsafe-inline"],
-				"script-src": ["self", "sha256-y2WkUILyE4eycy7x+pC0z99aZjTZlWfVwgUAfNc1sY8="],
+				"script-src": ["self", "unsafe-inline"],
+				"worker-src": ["self", "blob:"],
 			},
 		},
 		experimental: {

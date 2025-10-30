@@ -16,6 +16,7 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.7.5",
 		"@project/lib": "^1.0.0",
+		"@sentry/cloudflare": "^10.22.0",
 		"drizzle-orm": "0.42.0",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.12.0"

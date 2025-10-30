@@ -32,3 +32,5 @@ venv
 # /packages/lib/steam_model.json
 
 tsconfig.tsbuildinfo
+
+worker-configuration.d.ts

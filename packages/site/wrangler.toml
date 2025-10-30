@@ -9,22 +9,13 @@ assets.binding = "STATIC_ASSETS"
 [version_metadata]
 binding = "CF_VERSION_METADATA"
 
-[env.production.version_metadata]
-binding = "CF_VERSION_METADATA"
-
-[[env.production.kv_namespaces]]
-id = "a53fbe0165da4c21936a55c519e5b6a5"
-binding = "STEAM_CACHE"
-
 [[kv_namespaces]]
 id = "a53fbe0165da4c21936a55c519e5b6a5"
 binding = "STEAM_CACHE"
 
 [vars]
 NODE_VERSION = "23"
-
-[env.production.vars]
-NODE_VERSION = "23"
+PUBLIC_SENTRY_DSN = "https://1090e526411b74ec7e519ecf548c54b5@o4508581503172608.ingest.us.sentry.io/4509233074667520"
 
 [[d1_databases]]
 binding = "DB"
@@ -32,14 +23,5 @@ database_name = "steam-data"
 database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
 migrations_dir = "../../packages/lib/drizzle"
 
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "steam-data"
-database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
-migrations_dir = "../../packages/lib/drizzle"
-
 [ai]
-binding = "AI"
-
-[env.production.ai]
 binding = "AI"

@@ -1,6 +1,10 @@
 name = "rarest-achievement-janitor"
 main = "src/index.ts"
 compatibility_date = "2025-04-18"
+compatibility_flags = ["nodejs_als"]
+
+[version_metadata]
+binding = "CF_VERSION_METADATA"
 
 [observability.logs]
 enabled = true
@@ -28,17 +32,10 @@ crons = ["0 */2 * * *", "15 3 * * *", "45 4 * * 1"]
 
 [vars]
 NODE_VERSION = "23"
+PUBLIC_SENTRY_DSN = "https://1090e526411b74ec7e519ecf548c54b5@o4508581503172608.ingest.us.sentry.io/4509233074667520"
 
-[env.production.vars]
-NODE_VERSION = "23"
 
 [[d1_databases]]
-binding = "DB"
-database_name = "steam-data"
-database_id = "37158c60-c493-4928-b40b-7de3d1f25354"
-migrations_dir = "../../packages/lib/drizzle"
-
-[[env.production.d1_databases]]
 binding = "DB"
 database_name = "steam-data"
 database_id = "37158c60-c493-4928-b40b-7de3d1f25354"

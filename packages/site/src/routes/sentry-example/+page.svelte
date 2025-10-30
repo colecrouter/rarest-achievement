@@ -1,3 +1,3 @@
 <script>
-	throw new Error("Sentry Example Frontend Error");
+	throw new Error("Sentry Example Backend Error");
 </script>

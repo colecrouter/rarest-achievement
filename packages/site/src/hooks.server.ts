@@ -10,7 +10,7 @@ import {
 	VaultService,
 } from "@project/lib";
 import * as Sentry from "@sentry/sveltekit";
-import type { Handle, HandleFetch } from "@sveltejs/kit";
+import type { Handle, HandleFetch, HandleServerError } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { drizzle } from "drizzle-orm/d1";
 import { dev } from "$app/environment";
@@ -70,7 +70,10 @@ const authHandle: Handle = async ({ event, resolve }) => {
 const sentryHandle = Sentry.sentryHandle();
 
 // Handle errors with Sentry
-export const handleError = Sentry.handleErrorWithSentry();
+export const handleError: HandleServerError = (e) => {
+	console.log(e);
+	return Sentry.handleErrorWithSentry()(e);
+};
 
 // Define a no-op handle
 const noopHandle: Handle = async ({ event, resolve }) => resolve(event);

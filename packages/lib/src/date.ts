@@ -60,6 +60,18 @@ export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
 		trimmed = trimmed.replace(/\bAgu\b/, "Agt");
 	}
 
+	if (locale === "fr") {
+		// Steam omits the circumflex in "août"
+		trimmed = trimmed.replace(/\b[aA]out\b/g, "août");
+	}
+
+	if (locale === "de") {
+		// Normalise Steam's "Mrz." (March) and remove trailing dots from month abbreviations
+		trimmed = trimmed
+			.replace(/\bMrz\b\.?/g, "Mär")
+			.replace(/\b([A-Za-zÄÖÜäöüß]{3})\./g, "$1");
+	}
+
 	const formats = formatMap[locale] || ["d MMM yyyy"];
 	const dfnsLocale = localeMap[locale] || enUS;
 

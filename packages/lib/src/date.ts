@@ -55,6 +55,11 @@ export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
 		trimmed = trimmed.replace(/\/([a-z]{3})\./i, "/$1");
 	}
 
+	if (locale === "id") {
+		// date-fns expects "Agt" for Indonesian August but Steam returns "Agu"
+		trimmed = trimmed.replace(/\bAgu\b/, "Agt");
+	}
+
 	const formats = formatMap[locale] || ["d MMM yyyy"];
 	const dfnsLocale = localeMap[locale] || enUS;
 

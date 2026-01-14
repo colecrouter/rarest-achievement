@@ -109,7 +109,14 @@ export const friends = sqliteTable(
 	(table) => [
 		primaryKey({ columns: [table.user_id, table.friend_id] }),
 		foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
-		foreignKey({ columns: [table.friend_id], foreignColumns: [users.id] }),
+		// Intentionally no FK on friend_id.
+		//
+		// Rationale:
+		// - Our ensure flow inserts friendship edges first (cheap, avoids parameter explosion), then ensures
+		//   friend user profiles via a subquery derived from friends.
+		// - Enforcing FK(friend_id -> users) breaks that flow because the first insert of friendships can
+		//   occur before friend profiles are present.
+		// - This table is derived/cache data; integrity is enforced at query time by the ensure step.
 		index("idx_friends_since").on(table.friend_since),
 		index("idx_friends_timestamp").on(table.updated_at),
 	],

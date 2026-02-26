@@ -3,6 +3,7 @@
 	import { localizeHref } from "$lib/paraglide/runtime";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import User from "@lucide/svelte/icons/user";
+	import GitHub from "@lucide/svelte/icons/github";
 	import type { SteamUser } from "@project/lib";
 	import SearchBar from "./SearchBar.svelte";
 
@@ -37,6 +38,17 @@
 
 		<!-- Right aligned user actions -->
 		<div class="flex items-center justify-end gap-4">
+			<!-- GitHub repo link -->
+			<a
+				href="https://github.com/colecrouter/rarest-achievement"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="btn btn-sm preset-outlined-surface-500 ml-2"
+				aria-label="View project on GitHub"
+			>
+				<GitHub class="h-6 w-6" />
+				<span class="hidden">GitHub</span>
+			</a>
 			{#if user}
 				<a
 					href={localizeHref(`/user/${user.id}`)}

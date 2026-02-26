@@ -14,7 +14,7 @@
 		"dev:worker": "echo \"Skipping worker\"",
 		"test": "npm run test --workspaces",
 		"check": "biome ci && npm run check --workspaces --if-present",
-		"format": "prettier --log-level silent --write ./packages/*/src && biome format --write",
+		"format": "prettier --write . && biome format --write",
 		"db:push": "npm run db:push --workspaces",
 		"db:migrate": "npm run db:migrate --workspaces",
 		"db:migration": "npm run db:migration --workspace=@project/lib",

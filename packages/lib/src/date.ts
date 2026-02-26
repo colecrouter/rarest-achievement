@@ -67,9 +67,7 @@ export function parseLocalizedDate(dateStr: string, locale: LanguageCode) {
 
 	if (locale === "de") {
 		// Normalise Steam's "Mrz." (March) and remove trailing dots from month abbreviations
-		trimmed = trimmed
-			.replace(/\bMrz\b\.?/g, "Mär")
-			.replace(/\b([A-Za-zÄÖÜäöüß]{3})\./g, "$1");
+		trimmed = trimmed.replace(/\bMrz\b\.?/g, "Mär").replace(/\b([A-Za-zÄÖÜäöüß]{3})\./g, "$1");
 	}
 
 	const formats = formatMap[locale] || ["d MMM yyyy"];

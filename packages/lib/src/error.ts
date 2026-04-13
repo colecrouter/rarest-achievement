@@ -25,11 +25,12 @@ type HighestStatus<A extends AttemptStatus, B extends AttemptStatus> = A extends
 				: AttemptStatus.Ok;
 
 // helper: recurse into nested Attempts to find the highest status
-type FlatStatus<A> = A extends Attempt<infer Inner, infer S>
-	? Inner extends Attempt<unknown, AttemptStatus>
-		? HighestStatus<S, FlatStatus<Inner>>
-		: S
-	: AttemptStatus.Ok;
+type FlatStatus<A> =
+	A extends Attempt<infer Inner, infer S>
+		? Inner extends Attempt<unknown, AttemptStatus>
+			? HighestStatus<S, FlatStatus<Inner>>
+			: S
+		: AttemptStatus.Ok;
 
 // new FlatAttempt that flattens data and accumulates highest status
 type FlatAttempt<A> = Attempt<FlatData<A>, FlatStatus<A>>;

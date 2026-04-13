@@ -31,15 +31,9 @@ export const refreshStaleApps = async (ctx: CronCtx) => {
 		// Delete ALL language variants for this app - much cleaner and avoids consistency issues
 		await ctx.db.batch([
 			// Delete all languages for this app
-			ctx.db
-				.delete(apps)
-				.where(eq(apps.id, pair.id)),
-			ctx.db
-				.delete(achievementsMeta)
-				.where(eq(achievementsMeta.app_id, pair.id)), // Delete all language metadata
-			ctx.db
-				.delete(achievementsStats)
-				.where(eq(achievementsStats.app_id, pair.id)), // Delete stats (language-independent)
+			ctx.db.delete(apps).where(eq(apps.id, pair.id)),
+			ctx.db.delete(achievementsMeta).where(eq(achievementsMeta.app_id, pair.id)), // Delete all language metadata
+			ctx.db.delete(achievementsStats).where(eq(achievementsStats.app_id, pair.id)), // Delete stats (language-independent)
 		]);
 
 		const lang = getLanguageByAPICode(pair.lang);

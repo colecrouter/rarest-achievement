@@ -22,7 +22,7 @@
 		"postinstall": "patch-package || echo 'No patches to apply'"
 	},
 	"dependencies": {
-		"drizzle-orm": "0.42.0"
+		"drizzle-orm": "^0.45.2"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.2",
@@ -35,7 +35,6 @@
 		"zod": "^3.25.76"
 	},
 	"overrides": {
-		"drizzle-orm": "0.42.0",
 		"esm-env": "npm:esm-env-runtime@^0.1.1",
 		"wrangler": "^4.7.2"
 	},

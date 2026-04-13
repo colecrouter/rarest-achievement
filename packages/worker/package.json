@@ -14,9 +14,9 @@
 		"db:migrate": "wrangler d1 migrations apply steam-data"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.7.5",
+		"@cloudflare/vitest-pool-workers": "^0.14.5",
 		"@project/lib": "^1.0.0",
-		"drizzle-orm": "0.42.0",
+		"drizzle-orm": "0.45.2",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.12.0"
 	},

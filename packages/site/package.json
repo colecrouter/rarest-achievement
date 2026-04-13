@@ -20,7 +20,7 @@
 		"@sentry/sveltekit": "^8.55.1",
 		"@skeletonlabs/skeleton": "^3.1.2",
 		"@skeletonlabs/skeleton-svelte": "^1.2.1",
-		"@sveltejs/adapter-cloudflare": "^0.0.1",
+		"@sveltejs/adapter-cloudflare": "^7.2.8",
 		"@sveltejs/kit": "^2.57.1",
 		"@sveltejs/vite-plugin-svelte": "^5.1.0",
 		"@tailwindcss/forms": "^0.5.10",

@@ -36,7 +36,7 @@ export interface Learner {
 }
 
 export interface Attributes {
-	scikit_learn: string;
+	scikit_learn?: string;
 }
 
 export interface GradientBooster {
@@ -45,6 +45,11 @@ export interface GradientBooster {
 }
 
 export interface Model {
+	cats?: {
+		enc: unknown[];
+		feature_segments: unknown[];
+		sorted_idx: unknown[];
+	};
 	gbtree_model_param: GbtreeModelParam;
 	iteration_indptr: number[];
 	tree_info: number[];

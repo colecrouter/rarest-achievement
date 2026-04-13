@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
 	"files": {
 		"includes": ["**", "!**/worker-configuration.d.ts"]
 	},
@@ -20,6 +20,11 @@
 			"complexity": {
 				"noStaticOnlyClass": "off"
 			}
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
 		}
 	},
 	"overrides": [

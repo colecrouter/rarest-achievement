@@ -48,7 +48,7 @@ export const load = async ({ parent, url, locals, platform }) => {
 		// Getting all achievements uses too much memory
 
 		// biome-ignore lint/style/noNonNullAssertion: It shouldn't be possible for User to be nullish in this context
-		const usersMap = new Map(unlockedAchievementsAttempt.data.map((a) => [a.user?.id!, a.user!]));
+		const usersMap = new Map(unlockedAchievementsAttempt.data.map((a) => [a.user?.id, a.user!]));
 		const filteredUsers = usersMap
 			.values()
 			.filter((u) => u !== undefined)

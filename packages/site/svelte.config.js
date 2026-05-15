@@ -31,6 +31,8 @@ const config = {
 					"https://images.steamusercontent.com/",
 					// YouTube thumbnails
 					"https://i.ytimg.com/",
+					// GitHub avatars
+					"https://avatars.githubusercontent.com/",
 				],
 				"style-src": ["self", "unsafe-inline"],
 				"script-src": ["self", "sha256-y2WkUILyE4eycy7x+pC0z99aZjTZlWfVwgUAfNc1sY8="],

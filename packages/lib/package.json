@@ -39,9 +39,9 @@
 	"dependencies": {
 		"@cloudflare/vitest-pool-workers": "0.14.5",
 		"@inlang/paraglide-js": "2.15.3",
-		"@sentry/sveltekit": "8.55.1",
+		"@sentry/sveltekit": "^10.53.1",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
-		"@sveltejs/kit": "^2.57.1",
+		"@sveltejs/kit": "^2.60.1",
 		"date-fns": "^4.1.0"
 	}
 }

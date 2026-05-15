@@ -17,11 +17,11 @@
 		"@lucide/svelte": "^0.488.0",
 		"@number-flow/svelte": "^0.3.7",
 		"@project/lib": "^1.0.0",
-		"@sentry/sveltekit": "^8.55.1",
+		"@sentry/sveltekit": "^10.53.1",
 		"@skeletonlabs/skeleton": "^3.1.2",
 		"@skeletonlabs/skeleton-svelte": "^1.2.1",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",
-		"@sveltejs/kit": "^2.57.1",
+		"@sveltejs/kit": "^2.60.1",
 		"@sveltejs/vite-plugin-svelte": "^5.1.0",
 		"@tailwindcss/forms": "^0.5.10",
 		"@tailwindcss/typography": "^0.5.16",
@@ -31,7 +31,6 @@
 		"chart.js": "^4.4.8",
 		"drizzle-orm": "0.45.2",
 		"jsdom": "^26.0.0",
-		"patch-package": "^8.0.0",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
@@ -50,6 +49,7 @@
 		"esm-env": "npm:esm-env-runtime@^0.1.1"
 	},
 	"dependencies": {
-		"@cloudflare/vitest-pool-workers": "0.14.5"
+		"@cloudflare/vitest-pool-workers": "0.14.5",
+		"drizzle-kit": "^0.18.1"
 	}
 }

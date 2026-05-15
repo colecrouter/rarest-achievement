@@ -5,12 +5,18 @@
 		maximumFractionDigits: 0,
 	});
 
-	// Format Dates like "1d"
-	// biome-ignore lint/suspicious/noTsIgnore: Whatever, man
-	// @ts-ignore https://github.com/microsoft/TypeScript/issues/60608
-	const dateFormat = new Intl.DurationFormat(getLocale(), {
-		style: getLocale() === "ja" ? "short" : "narrow", // "narrow" for ja falls back to "Xd" format, so use "short" instead
-	});
+	function formatDaysSinceUnlocked(days: number) {
+		if ("DurationFormat" in Intl) {
+			const locale = getLocale();
+			const durationFormat = new Intl.DurationFormat(locale, {
+				style: locale === "ja" ? "short" : "narrow",
+			});
+
+			return durationFormat.format({ days });
+		}
+
+		return `${numberFormat.format(days)}d`;
+	}
 </script>
 
 <script lang="ts">
@@ -59,12 +65,7 @@
 				(Date.now() - achievement.unlocked.getTime()) /
 					(1000 * 60 * 60 * 24),
 			)}
-			{@const integer = dateFormat.format({ days: daysSinceUnlocked })}
-			<!-- {Math.floor(
-                (Date.now() - achievement.unlocked.getTime()) /
-                    (1000 * 60 * 60 * 24),
-            )}d -->
-			{integer}
+			{formatDaysSinceUnlocked(daysSinceUnlocked)}
 		{:else}
 			<Lock class="m-[0.2em] h-[1em] w-auto" />
 			<span hidden>{m["status.locked"]()}</span>

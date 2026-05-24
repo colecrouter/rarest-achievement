@@ -42,6 +42,7 @@
 		"terser": "^5.16.0",
 		"typescript": "^5.0.0",
 		"vite": "^6.2.6",
+		"vite-plugin-sveltekit-legacy": "^0.1.0",
 		"vitest": "^3.0.0"
 	},
 	"peerDependencies": {

@@ -3,7 +3,7 @@ import { sentrySvelteKit } from "@sentry/sveltekit";
 import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { svelteTesting } from "@testing-library/svelte/vite";
-import legacy from "@vitejs/plugin-legacy";
+import legacy from "vite-plugin-sveltekit-legacy";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig((env) => ({
@@ -26,9 +26,7 @@ export default defineConfig((env) => ({
 		}),
 		env.command === "build" && env.mode === "production" && !env.isSsrBuild
 			? legacy({
-					targets: ["defaults", "not IE 11"],
-					// SvelteKit's current build hook expects a single Rollup output.
-					renderLegacyChunks: false,
+					modernTargets: ["defaults", "not IE 11"],
 				})
 			: undefined,
 	],

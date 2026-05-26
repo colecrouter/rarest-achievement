@@ -18,7 +18,6 @@
 	import TrendingUp from "@lucide/svelte/icons/trending-up";
 	import Trophy from "@lucide/svelte/icons/trophy";
 	import Users from "@lucide/svelte/icons/users";
-	import NumberFlow from "@number-flow/svelte";
 	import { fly } from "svelte/transition";
 	import { Reveal, reveal } from "sveltersect";
 
@@ -76,6 +75,12 @@
 			data.stats.gameCount,
 		];
 	};
+
+	const formatStat = (value: number) =>
+		new Intl.NumberFormat(getLocale(), {
+			notation: "compact",
+			maximumSignificantDigits: 2,
+		}).format(value);
 
 	const cardRanks = [0, 1, 2] as const;
 
@@ -244,17 +249,7 @@
 							<stat.icon class="text-primary-500 h-8 w-8" />
 						</div>
 						<div class="mb-2 text-4xl font-bold">
-							<NumberFlow
-								{value}
-								format={{
-									style: "decimal",
-									notation: "compact",
-									roundingMode: "halfExpand",
-									maximumSignificantDigits: 2,
-								}}
-								trend={0}
-								suffix="+"
-							/>
+							{formatStat(value)}+
 						</div>
 						<div class="text-surface-300">{stat.label}</div>
 					</div>

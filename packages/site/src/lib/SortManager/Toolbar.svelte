@@ -153,7 +153,9 @@
 		currentMethod = method as any;
 
 		if (serverMode) {
-			goto(generateSortUrl({ method: method as any }));
+			goto(generateSortUrl({ method: method as any }), {
+				noScroll: true,
+			});
 		} else {
 			sortManager.method = method as any;
 		}
@@ -161,7 +163,7 @@
 
 	function handleFilterChange(filter: string) {
 		if (serverMode) {
-			goto(generateSortUrl({ filter }));
+			goto(generateSortUrl({ filter }), { noScroll: true });
 		} else {
 			(sortManager as AchievementClientSortManager).filter = filter;
 		}
@@ -176,6 +178,7 @@
 				generateSortUrl({
 					direction: currentDirection,
 				}),
+				{ noScroll: true },
 			);
 		} else {
 			const clientManager = sortManager as AchievementClientSortManager;

@@ -7,6 +7,7 @@ import {
 	resolveSteamID,
 	SteamApp,
 	SteamAppAchievement,
+	type SteamAppRaw,
 	type SteamID,
 	userAchievements,
 	userScores,
@@ -172,34 +173,47 @@ const getRareAchievements = async (locals: App.Locals, locale: Locale) => {
 		.limit(3);
 
 	const appIds = rareRows.map((row) => row.appId);
+	if (appIds.length === 0) return [];
 
-	const appsRes = await locals.steamCacheDB.select({ app: apps.data }).from(apps).where(inArray(apps.id, appIds));
+	const appsRes = await locals.steamCacheDB
+		.select({
+			id: apps.id,
+			app: apps.data,
+		})
+		.from(apps)
+		.where(and(eq(apps.lang, lang), inArray(apps.id, appIds), isNotNull(apps.data)));
 
-	const constructedApps = appsRes.map((a) => {
-		if (!a.app) throw new Error("Missing app data");
+	const renderableApps = appsRes.filter((a): a is { id: number; app: SteamAppRaw } => a.app !== null);
+
+	const constructedApps = renderableApps.map((a) => {
+		// Null app rows are intentional negative cache entries for Store appdetails failures.
+		// This query filters them out because SteamApp needs renderable Store metadata.
 		return new SteamApp({ data: a.app, lang, estimatedPlayers: 0 });
 	});
 
-	const constructedAchievements = rareRows.map((row) => {
+	const constructedAchievements = rareRows.flatMap((row) => {
 		const app = constructedApps.find((a) => a.id === row.appId);
-		if (!app) throw new Error(`App with ID ${row.appId} not found`);
-		return new SteamAppAchievement({
-			app,
-			meta: {
-				name: row.name,
-				defaultvalue: row.defaultValue,
-				description: row.description ?? undefined,
-				displayName: row.displayName,
-				hidden: row.hidden,
-				icon: row.icon,
-				icongray: row.iconGray,
-			},
-			globalStats: {
-				name: row.name,
-				percent: row.percent,
-			},
-			lang,
-		});
+		if (!app) return [];
+
+		return [
+			new SteamAppAchievement({
+				app,
+				meta: {
+					name: row.name,
+					defaultvalue: row.defaultValue,
+					description: row.description ?? undefined,
+					displayName: row.displayName,
+					hidden: row.hidden,
+					icon: row.icon,
+					icongray: row.iconGray,
+				},
+				globalStats: {
+					name: row.name,
+					percent: row.percent,
+				},
+				lang,
+			}),
+		];
 	});
 
 	return constructedAchievements;

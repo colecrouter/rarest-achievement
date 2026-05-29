@@ -1,5 +1,3 @@
-import { isBypassCdnEnabled } from "../config/cdnConfig";
-import { replaceCdnUrl } from "../config/dev";
 import { type APILanguageCode, getLanguageByAPICode } from "../repositories";
 import type { GetGlobalAchievementPercentagesForAppResponse } from "../repositories/api/steampowered/globalAchevement";
 import type { GetSchemaForGameResponse } from "../repositories/api/steampowered/schemaForGame";
@@ -54,15 +52,11 @@ export class SteamAppAchievement {
 	}
 
 	get iconUnlocked() {
-		// Previously:
-		// return bypassCdn ? replaceCdnUrl(this.#meta.icon) : this.#meta.icon;
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#meta.icon) : this.#meta.icon;
+		return this.#meta.icon;
 	}
 
 	get iconLocked() {
-		// Previously:
-		// return bypassCdn ? replaceCdnUrl(this.#meta.icongray) : this.#meta.icongray;
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#meta.icongray) : this.#meta.icongray;
+		return this.#meta.icongray;
 	}
 
 	get icon() {

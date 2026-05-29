@@ -4,7 +4,6 @@ import {
 	SteamAuthenticatedAPIClient,
 	SteamCommunityAPIClient,
 	SteamStoreAPIClient,
-	setBypassCdnEnabled,
 	setFetchManager,
 	TranslateClient,
 	VaultService,
@@ -82,8 +81,6 @@ export const handle = sequence(
 	paraglideHandle,
 	authHandle,
 );
-
-export const init = () => dev && setBypassCdnEnabled(true);
 
 // 10 concurrent fetches in dev mode
 // Needed because Miniflare gets overloaded with too many fetches

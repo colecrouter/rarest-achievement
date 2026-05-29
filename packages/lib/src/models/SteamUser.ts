@@ -1,5 +1,3 @@
-import { isBypassCdnEnabled } from "../config/cdnConfig";
-import { replaceCdnUrl } from "../config/dev";
 import type { OwnedGame } from "../repositories/api/steampowered/owned";
 import type { GetPlayerSummariesResponse } from "../repositories/api/steampowered/playerSummary";
 import { SteamOwnedGame } from "./SteamOwnedGame";
@@ -37,7 +35,7 @@ export class SteamUser<WithOwnedApps extends boolean = boolean> {
 	}
 
 	get avatar() {
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#player.avatarfull) : this.#player.avatarfull;
+		return this.#player.avatarfull;
 	}
 
 	get profileUrl() {

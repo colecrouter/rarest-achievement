@@ -1,6 +1,3 @@
-import { isBypassCdnEnabled } from "../config";
-import { replaceCdnUrl } from "../config/dev";
-
 export class SteamSearchUser {
 	#name: string;
 	#userId: string;
@@ -33,6 +30,6 @@ export class SteamSearchUser {
 	}
 
 	get avatar() {
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#avatarUrl) : this.#avatarUrl;
+		return this.#avatarUrl;
 	}
 }

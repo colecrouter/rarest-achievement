@@ -1,5 +1,3 @@
-import { isBypassCdnEnabled } from "../config";
-import { replaceCdnUrl } from "../config/dev";
 import { parseLocalizedDate } from "../date";
 import { type APILanguageCode, getLanguageByAPICode, type LanguageCode } from "../repositories";
 import type { AppDetailsData, GetAppDetailsResponse } from "../repositories/api/store/appdetails";
@@ -38,11 +36,11 @@ export class SteamApp {
 	}
 
 	get icon() {
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#app.header_image) : this.#app.header_image;
+		return this.#app.header_image;
 	}
 
 	get banner() {
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#app.background) : this.#app.background;
+		return this.#app.background;
 	}
 
 	get developers() {

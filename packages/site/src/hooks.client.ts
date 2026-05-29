@@ -1,4 +1,3 @@
-import { setBypassCdnEnabled } from "@project/lib";
 import * as Sentry from "@sentry/sveltekit";
 import { dev } from "$app/environment";
 
@@ -14,7 +13,5 @@ if (!dev) {
 		integrations: [Sentry.replayIntegration()],
 	});
 }
-
-export const init = () => dev && setBypassCdnEnabled(true);
 
 export const handleError = !dev && Sentry.handleErrorWithSentry();

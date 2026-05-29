@@ -1,5 +1,3 @@
-import { isBypassCdnEnabled } from "../config";
-import { replaceCdnUrl } from "../config/dev";
 import type { SearchAppsResponse } from "../repositories/api/store/searchapps";
 
 export class SteamSearchApp {
@@ -37,10 +35,10 @@ export class SteamSearchApp {
 	}
 
 	get icon() {
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#icon) : this.#icon;
+		return this.#icon;
 	}
 
 	get logo() {
-		return isBypassCdnEnabled() ? replaceCdnUrl(this.#logo) : this.#logo;
+		return this.#logo;
 	}
 }

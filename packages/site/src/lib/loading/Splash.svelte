@@ -62,7 +62,7 @@
 	}
 
 	.show2 {
-		transform: translateY(0) !important;
+		transform: translateY(0);
 		animation-delay: 10s;
 	}
 

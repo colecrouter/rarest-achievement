@@ -210,11 +210,7 @@
 					</div>
 					<div>
 						<div class="mb-1 flex items-center gap-3">
-							<a
-								href={localizeHref(
-									"/game/" + achievement.app.id,
-								)}
-							>
+							<a href={localizeHref(`/game/${achievement.app.id}`)}>
 								<span class="text-surface-300">{achievement.app.name}</span>
 							</a>
 						</div>

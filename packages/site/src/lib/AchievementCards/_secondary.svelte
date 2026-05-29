@@ -4,7 +4,11 @@
 	import { localizeHref } from "$lib/paraglide/runtime";
 	import Badge from "./_badge.svelte";
 
-	export let achievement: SteamUserAchievement | SteamAppAchievement;
+	interface Props {
+		achievement: SteamUserAchievement | SteamAppAchievement;
+	}
+
+	let { achievement }: Props = $props();
 
 	const size = 36;
 

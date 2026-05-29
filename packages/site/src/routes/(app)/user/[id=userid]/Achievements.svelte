@@ -16,6 +16,14 @@
 	let { achievements, topThree, user }: Props = $props();
 
 	let activeTab = $state("grid");
+
+	const podiumAchievements = $derived.by(
+		(): [SteamUserAchievement, SteamUserAchievement, SteamUserAchievement] | null => {
+			const [first, second, third] = topThree;
+			if (!first || !second || !third) return null;
+			return [first, second, third];
+		},
+	);
 </script>
 
 {#if user.private}
@@ -62,12 +70,12 @@
 		</h2>
 
 		<div class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4">
-			{#if topThree.length === 3}
-				<Podium place={2} achievement={topThree[1]!} />
+			{#if podiumAchievements}
+				<Podium place={2} achievement={podiumAchievements[1]} />
 
-				<Podium place={1} achievement={topThree[0]!} />
+				<Podium place={1} achievement={podiumAchievements[0]} />
 
-				<Podium place={3} achievement={topThree[2]!} />
+				<Podium place={3} achievement={podiumAchievements[2]} />
 			{:else}
 				<!-- Base thing -->
 				<div class="flex h-full w-full items-center justify-center">

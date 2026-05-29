@@ -20,7 +20,7 @@
 	let { data } = $props();
 
 	// Stats for the home page
-	const stats = [
+	const stats = $derived([
 		{
 			label: m["home.stats.trackedAchievements"](),
 			value: data.stats.achievementCount,
@@ -36,7 +36,7 @@
 			value: data.stats.gameCount,
 			icon: TrendingUp,
 		},
-	];
+	]);
 
 	const textCards = [
 		{

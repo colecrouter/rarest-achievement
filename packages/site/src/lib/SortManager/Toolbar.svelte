@@ -61,6 +61,8 @@
 		getAchievementSortManager,
 	} from "./AchievementSortManager";
 
+	type AchievementSortMethod = "rarity_pct" | "rarity_score" | "unlocked_at";
+
 	interface Props<TData extends SteamUserAchievement | SteamAppAchievement> {
 		data: MaybePromise<RepositoryResult<TData>>;
 	}
@@ -118,7 +120,7 @@
 
 	// Helper function to generate URLs for server mode using the sort manager's URL generation
 	function generateSortUrl(overrides: {
-		method?: "rarity_pct" | "rarity_score" | "unlocked_at";
+		method?: AchievementSortMethod;
 		filter?: string;
 		direction?: SortDirection;
 		search?: string;
@@ -129,15 +131,17 @@
 
 	// Helper function to handle clicks in client mode or navigate in server mode
 	function handleMethodChange(method: string) {
+		const nextMethod = method as AchievementSortMethod;
+
 		// Optimistically update
-		currentMethod = method as any;
+		currentMethod = nextMethod;
 
 		if (serverMode) {
-			goto(generateSortUrl({ method: method as any }), {
+			goto(generateSortUrl({ method: nextMethod }), {
 				noScroll: true,
 			});
 		} else {
-			sortManager.method = method as any;
+			sortManager.method = nextMethod;
 		}
 	}
 

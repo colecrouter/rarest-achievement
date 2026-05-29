@@ -103,12 +103,13 @@
 		animate = true;
 	});
 
-	let gameURL = `/game/${achievement.app.id}`;
-	let achievementURL = `/game/${achievement.app.id}/achievement/${achievement.id}`;
+	const gameURL = $derived(`/game/${achievement.app.id}`);
+	const achievementURL = $derived(`/game/${achievement.app.id}/achievement/${achievement.id}`);
 
 	// Compute podium label from i18n messages
-	let podiumLabel =
-		place === 1 ? m["podium.label.first"]() : place === 2 ? m["podium.label.second"]() : m["podium.label.third"]();
+	const podiumLabel = $derived(
+		place === 1 ? m["podium.label.first"]() : place === 2 ? m["podium.label.second"]() : m["podium.label.third"](),
+	);
 </script>
 
 <div

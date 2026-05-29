@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Languages from "@lucide/svelte/icons/languages";
 	import Trophy from "@lucide/svelte/icons/trophy";
-	import { page } from "$app/stores";
+	import { page } from "$app/state";
 	import { m } from "$lib/paraglide/messages.js";
 	import { deLocalizeHref, getLocale, locales, localizeHref } from "$lib/paraglide/runtime";
 
 	// Build localized links for all available locales, excluding the current one
-	$: currentPath = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
-	$: baseHref = deLocalizeHref(currentPath);
-	$: currentLocale = getLocale();
-	$: otherLocales = locales.filter((l) => l !== currentLocale);
+	const currentPath = $derived(`${page.url.pathname}${page.url.search}${page.url.hash}`);
+	const baseHref = $derived(deLocalizeHref(currentPath));
+	const currentLocale = $derived(getLocale());
+	const otherLocales = $derived(locales.filter((l) => l !== currentLocale));
 
 	// Temporary typing-safe access until Paraglide recompiles message types
 	const getMsg = (key: string): (() => string) | undefined => {
@@ -17,7 +17,7 @@
 		const maybeFn = table[key];
 		return typeof maybeFn === "function" ? (maybeFn as () => string) : undefined;
 	};
-	$: languagePrompt = getMsg("footer.languagePrompt")?.() ?? "View this page in another language";
+	const languagePrompt = $derived(getMsg("footer.languagePrompt")?.() ?? "View this page in another language");
 
 	const getAutonym = (tag: string) => {
 		try {

@@ -69,7 +69,7 @@
 			{m["user.page.title"]({ displayName: user.displayName })}
 		</h2>
 
-		<div class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4">
+		<div class="relative mb-8 flex items-end justify-center gap-2 pt-4 sm:gap-4">
 			{#if podiumAchievements}
 				<Podium place={2} achievement={podiumAchievements[1]} />
 

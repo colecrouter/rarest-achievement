@@ -83,6 +83,7 @@
 	import Crown from "@lucide/svelte/icons/crown";
 	import Medal from "@lucide/svelte/icons/medal";
 	import type { SteamAppAchievement } from "@project/lib";
+	import { onMount } from "svelte";
 	import { cubicOut } from "svelte/easing";
 	import { fade } from "svelte/transition";
 	import { m } from "$lib/paraglide/messages";
@@ -99,7 +100,7 @@
 	const IconComponent = $derived(config.iconComponent);
 
 	let animate = $state(false);
-	$effect(() => {
+	onMount(() => {
 		animate = true;
 	});
 
@@ -117,11 +118,11 @@
 		"z- relative",
 		config.zIndex,
 		config.width,
-		"flex flex-col items-center",
+		"flex min-w-0 shrink flex-col items-center",
 	]}
 >
-	{#if animate}
-		<div transition:fade={{ duration: 300, delay: 100 * place + 400 }} class="mb-2 flex flex-col items-center">
+	<div aria-hidden="true" class="pointer-events-none invisible flex w-full flex-col items-center">
+		<div class="mb-2 flex flex-col items-center">
 			<IconComponent class={config.iconWrapper} />
 			<span class={config.labelTextClass}>
 				{podiumLabel}
@@ -133,33 +134,67 @@
 			</span>
 		</div>
 		<div class={config.cardWrapper}>
-			<div class="flex flex-col items-center" transition:fade={{ duration: 300, delay: 100 * place + 400 }}>
-				<a href={localizeHref(achievementURL)}>
-					<img
-						src={achievement.icon}
-						alt={achievement.name}
-						width={config.iconSize.width}
-						height={config.iconSize.height}
-						class={config.iconSize.imgClass}
-					>
-				</a>
-				<a href={localizeHref(achievementURL)}>
-					<h3 class="hover:underline {config.nameTextClass}">
-						{achievement.name}
-					</h3>
-				</a>
-				<a href={localizeHref(gameURL)} class="hover:underline {config.appTextClass}">
+			<div class="flex flex-col items-center">
+				<img
+					src={achievement.icon}
+					alt=""
+					width={config.iconSize.width}
+					height={config.iconSize.height}
+					class={config.iconSize.imgClass}
+				>
+				<h3 class={config.nameTextClass}>
+					{achievement.name}
+				</h3>
+				<span class={config.appTextClass}>
 					{achievement.app.name}
-				</a>
+				</span>
 			</div>
 		</div>
-		<div
-			transition:grow={{
-				duration: 300,
-				delay: 100 * place + 200,
-				easing: cubicOut,
-			}}
-			class={[config.gradientBar]}
-		></div>
+		<div class={config.gradientBar}></div>
+	</div>
+
+	{#if animate}
+		<div class="absolute inset-x-0 bottom-0 flex flex-col items-center">
+			<div transition:fade={{ duration: 300, delay: 100 * place + 400 }} class="mb-2 flex flex-col items-center">
+				<IconComponent class={config.iconWrapper} />
+				<span class={config.labelTextClass}>
+					{podiumLabel}
+				</span>
+				<span class={config.placeStatClass}>
+					{m["podium.percentOfPlayers"]({
+						percentage: achievement.globalPercentage,
+					})}
+				</span>
+			</div>
+			<div class={config.cardWrapper}>
+				<div class="flex flex-col items-center" transition:fade={{ duration: 300, delay: 100 * place + 400 }}>
+					<a href={localizeHref(achievementURL)}>
+						<img
+							src={achievement.icon}
+							alt={achievement.name}
+							width={config.iconSize.width}
+							height={config.iconSize.height}
+							class={config.iconSize.imgClass}
+						>
+					</a>
+					<a href={localizeHref(achievementURL)}>
+						<h3 class="hover:underline {config.nameTextClass}">
+							{achievement.name}
+						</h3>
+					</a>
+					<a href={localizeHref(gameURL)} class="hover:underline {config.appTextClass}">
+						{achievement.app.name}
+					</a>
+				</div>
+			</div>
+			<div
+				transition:grow={{
+					duration: 300,
+					delay: 100 * place + 200,
+					easing: cubicOut,
+				}}
+				class={[config.gradientBar]}
+			></div>
+		</div>
 	{/if}
 </div>

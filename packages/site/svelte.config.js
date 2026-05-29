@@ -41,6 +41,13 @@ const config = {
 			},
 		},
 	},
+	vitePlugin: {
+		inspector: {
+			toggleKeyCombo: "alt-x", // Or change to your preferred shortcut (e.g., 'control-shift-i')
+			showToggleButton: "always",
+			toggleButtonPos: "bottom-right",
+		},
+	},
 };
 
 export default config;

@@ -243,7 +243,7 @@
 				}}
 			>
 				{#each stats as stat, i}
-					{@const value = tracked[i]}
+					{@const value = tracked[i] ?? 0}
 					<div class="flex flex-col items-center text-center">
 						<div class="bg-primary-500/10 mb-4 rounded-full p-4">
 							<stat.icon class="text-primary-500 h-8 w-8" />

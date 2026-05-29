@@ -30,14 +30,13 @@
 		"node-resolve-ts": "^1.0.2",
 		"npm-run-all": "^4.1.5",
 		"tsx": "^4.19.4",
-		"typescript": "^5.8.3",
+		"typescript": "^6.0.3",
 		"watch": "^0.13.0"
 	},
 	"peerDependencies": {
 		"drizzle-orm": "0.45.2"
 	},
 	"dependencies": {
-		"@cloudflare/vitest-pool-workers": "0.14.5",
 		"@inlang/paraglide-js": "2.15.3",
 		"@sentry/sveltekit": "^10.53.1",
 		"@sveltejs/adapter-cloudflare": "^7.2.8",

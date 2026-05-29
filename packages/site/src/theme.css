@@ -3,8 +3,7 @@
 	--base-font-color: var(--color-surface-950);
 	--base-font-color-dark: var(--color-surface-50);
 	--base-font-family:
-		Bahnschrift, "DIN Alternate", "Franklin Gothic Medium",
-		"Nimbus Sans Narrow", sans-serif-condensed, sans-serif;
+		Bahnschrift, "DIN Alternate", "Franklin Gothic Medium", "Nimbus Sans Narrow", sans-serif-condensed, sans-serif;
 	--base-font-size: inherit;
 	--base-line-height: inherit;
 	--base-font-weight: normal;

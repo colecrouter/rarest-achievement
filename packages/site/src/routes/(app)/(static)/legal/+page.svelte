@@ -1,10 +1,10 @@
 <script lang="ts">
+	import Shield from "@lucide/svelte/icons/shield";
+	import { Tabs } from "@skeletonlabs/skeleton-svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { m } from "$lib/paraglide/messages.js";
 	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
-	import Shield from "@lucide/svelte/icons/shield";
-	import { Tabs } from "@skeletonlabs/skeleton-svelte";
 	import Breadcrumbs from "../../Breadcrumbs.svelte";
 
 	let activeTab = $derived.by(() => {
@@ -22,11 +22,11 @@
 
 <svelte:head>
 	<title>{m["legal.meta.title"]()}</title>
-	<meta name="description" content={m["legal.meta.description"]()} />
-	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
-	<meta property="og:title" content={m["legal.meta.title"]()} />
-	<meta property="og:description" content={m["legal.meta.description"]()} />
-	<meta property="og:type" content="website" />
+	<meta name="description" content={m["legal.meta.description"]()}>
+	<link rel="canonical" href={deLocalizeUrl(page.url).toString()}>
+	<meta property="og:title" content={m["legal.meta.title"]()}>
+	<meta property="og:description" content={m["legal.meta.description"]()}>
+	<meta property="og:type" content="website">
 </svelte:head>
 
 <!-- Main content translated from React (skipping header and footer) -->
@@ -69,9 +69,7 @@
 		}}
 	>
 		{#snippet list()}
-			<Tabs.Control value="privacy"
-				>{m["legal.tabs.privacy"]()}</Tabs.Control
-			>
+			<Tabs.Control value="privacy">{m["legal.tabs.privacy"]()}</Tabs.Control>
 			<Tabs.Control value="terms">{m["legal.tabs.terms"]()}</Tabs.Control>
 		{/snippet}
 
@@ -205,18 +203,13 @@
 		<ul class="text-surface-300 space-y-2">
 			<li>
 				<strong>Email:</strong>
-				<a href="mailto:support@steamvault.info" class="underline">
-					support@steamvault.info
-				</a>
+				<a href="mailto:support@steamvault.info" class="underline"> support@steamvault.info </a>
 			</li>
 		</ul>
 	</div>
 
 	<!-- Print and Download Options -->
-	<button
-		class="btn preset-outlined-surface-500 mb-8"
-		onclick={() => window.print()}
-	>
+	<button type="button" class="btn preset-outlined-surface-500 mb-8" onclick={() => window.print()}>
 		{m["legal.print.button"]()}
 	</button>
 

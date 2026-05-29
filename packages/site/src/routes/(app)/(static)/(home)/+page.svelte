@@ -1,16 +1,4 @@
 <script lang="ts">
-	import { page } from "$app/state";
-	import AchievementCards from "$lib/AchievementCards";
-	import {
-		AchievementClientSortManager,
-		setAchievementClientSortManager,
-	} from "$lib/SortManager/AchievementSortManager.js";
-	import { m } from "$lib/paraglide/messages.js";
-	import {
-		deLocalizeUrl,
-		getLocale,
-		localizeHref,
-	} from "$lib/paraglide/runtime";
 	import Award from "@lucide/svelte/icons/award";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import Crown from "@lucide/svelte/icons/crown";
@@ -20,6 +8,14 @@
 	import Users from "@lucide/svelte/icons/users";
 	import { fly } from "svelte/transition";
 	import { Reveal, reveal } from "sveltersect";
+	import { page } from "$app/state";
+	import AchievementCards from "$lib/AchievementCards";
+	import { m } from "$lib/paraglide/messages.js";
+	import { deLocalizeUrl, getLocale, localizeHref } from "$lib/paraglide/runtime";
+	import {
+		AchievementClientSortManager,
+		setAchievementClientSortManager,
+	} from "$lib/SortManager/AchievementSortManager.js";
 
 	let { data } = $props();
 
@@ -69,11 +65,7 @@
 	let tracked = $state<[number, number, number]>([0, 0, 0]);
 
 	const setTracked = () => {
-		tracked = [
-			data.stats.achievementCount,
-			data.stats.userCount,
-			data.stats.gameCount,
-		];
+		tracked = [data.stats.achievementCount, data.stats.userCount, data.stats.gameCount];
 	};
 
 	const formatStat = (value: number) =>
@@ -93,26 +85,22 @@
 
 <svelte:head>
 	<title>{m["home.meta.title"]()}</title>
-	<meta name="description" content={m["home.meta.description"]()} />
-	<meta name="keywords" content={m["layout.meta.keywords"]()} />
+	<meta name="description" content={m["home.meta.description"]()}>
+	<meta name="keywords" content={m["layout.meta.keywords"]()}>
 
-	<meta property="og:title" content={m["home.meta.title"]()} />
-	<meta property="og:description" content={m["home.meta.description"]()} />
-	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
+	<meta property="og:title" content={m["home.meta.title"]()}>
+	<meta property="og:description" content={m["home.meta.description"]()}>
+	<link rel="canonical" href={deLocalizeUrl(page.url).toString()}>
 </svelte:head>
 
 <main>
 	<!-- Hero Section -->
 	<section class="hero relative overflow-hidden">
-		<div
-			class="from-surface-950/0 to-surface-950/50 bg-gradient-to-l py-20"
-		>
+		<div class="from-surface-950/0 to-surface-950/50 bg-gradient-to-l py-20">
 			<div class="container">
 				<div class="grid items-center gap-8 md:grid-cols-2">
 					<div class="space-y-6">
-						<h1
-							class="text-4xl leading-tight font-bold md:text-5xl lg:text-6xl"
-						>
+						<h1 class="text-4xl leading-tight font-bold md:text-5xl lg:text-6xl">
 							{m["home.hero.title"]()}
 						</h1>
 						<p class="max-w-lg text-lg">
@@ -124,12 +112,8 @@
 						<div class="card border p-6 shadow-xl">
 							<div class="absolute -top-6 -right-2 md:-right-6">
 								<div class="relative">
-									<div
-										class="bg-primary-500/20 absolute inset-0 animate-pulse rounded-full"
-									></div>
-									<Crown
-										class="text-primary-500 relative z-10 h-16 w-16 p-2"
-									/>
+									<div class="bg-primary-500/20 absolute inset-0 animate-pulse rounded-full"></div>
+									<Crown class="text-primary-500 relative z-10 h-16 w-16 p-2" />
 								</div>
 							</div>
 							<div class="mb-6 flex items-center gap-4">
@@ -140,9 +124,7 @@
 							</div>
 							<div class="space-y-4">
 								{#each cardRanks as rank}
-									<div
-										class="card secondary flex items-center gap-3 p-3"
-									>
+									<div class="card secondary flex items-center gap-3 p-3">
 										<div
 											class="bg-surface-800 text-primary-500 flex h-8 w-8 items-center justify-center rounded-full font-bold"
 										>
@@ -154,16 +136,14 @@
 											width="40"
 											height="40"
 											class="border-surface-700 rounded-full border"
-										/>
+										>
 										<div>
 											<div class="font-medium">
 												{m["home.achievement.player"]({
 													rank: rank + 1,
 												})}
 											</div>
-											<div
-												class="text-surface-300 text-xs"
-											>
+											<div class="text-surface-300 text-xs">
 												{m["home.rareAchievements"]({
 													count: data.random[rank],
 												})}
@@ -195,10 +175,7 @@
 					{m["home.explore.description"]()}
 				</p>
 			</div>
-			<div
-				class="grid grid-cols-1 gap-6 pt-4 transition-all"
-				bind:this={exploreTarget}
-			>
+			<div class="grid grid-cols-1 gap-6 pt-4 transition-all" bind:this={exploreTarget}>
 				{#each data.showcase2 as achievement, i}
 					<Reveal
 						in={{
@@ -248,9 +225,7 @@
 						<div class="bg-primary-500/10 mb-4 rounded-full p-4">
 							<stat.icon class="text-primary-500 h-8 w-8" />
 						</div>
-						<div class="mb-2 text-4xl font-bold">
-							{formatStat(value)}+
-						</div>
+						<div class="mb-2 text-4xl font-bold">{formatStat(value)}+</div>
 						<div class="text-surface-300">{stat.label}</div>
 					</div>
 				{/each}
@@ -261,9 +236,7 @@
 	<!-- Featured Achievements -->
 	<section class="py-16">
 		<div class="container mx-auto px-4">
-			<div
-				class="mb-10 flex flex-col items-start justify-between md:flex-row md:items-center"
-			>
+			<div class="mb-10 flex flex-col items-start justify-between md:flex-row md:items-center">
 				<div>
 					<h2 class="mb-2 text-3xl font-bold">
 						{m["home.featured.title"]()}
@@ -273,14 +246,13 @@
 					</p>
 				</div>
 				<button
+					type="button"
 					class="btn preset-outlined-surface-500 relative mt-4 flex items-center gap-2 rounded"
 					disabled
 				>
 					{m["home.viewAll"]()}
 					<ChevronRight class="ml-2 h-4 w-4" />
-					<span
-						class="badge preset-filled-primary-500 absolute -top-4 -right-4"
-					>
+					<span class="badge preset-filled-primary-500 absolute -top-4 -right-4">
 						{m["home.comingSoon"]()}
 					</span>
 				</button>
@@ -303,9 +275,7 @@
 			<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
 				{#each textCards as card}
 					<div class="card p-6 text-center">
-						<div
-							class="bg-primary-500/10 mb-4 inline-flex items-center justify-center rounded-full p-3"
-						>
+						<div class="bg-primary-500/10 mb-4 inline-flex items-center justify-center rounded-full p-3">
 							<card.icon class="text-primary-500 h-6 w-6" />
 						</div>
 						<h3 class="mb-2 text-xl font-bold">{card.title}</h3>
@@ -340,9 +310,7 @@
 	<div class="flex flex-wrap gap-4">
 		{#if !data.loggedIn}
 			<form action="?/login" method="POST">
-				<button
-					class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3"
-				>
+				<button type="submit" class="btn preset-filled-primary-500 flex items-center gap-2 rounded p-3">
 					{m["home.features.signIn"]()}
 					<ChevronRight class="ml-2 h-4 w-4" />
 				</button>
@@ -357,10 +325,7 @@
 			</a>
 		{/if}
 
-		<a
-			href={localizeHref("/about")}
-			class="btn preset-outlined-surface-500"
-		>
+		<a href={localizeHref("/about")} class="btn preset-outlined-surface-500">
 			{m["home.features.learnMore"]()}
 		</a>
 	</div>

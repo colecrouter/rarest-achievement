@@ -1,8 +1,5 @@
 <script lang="ts">
-	import type {
-		SteamAppAchievement,
-		SteamUserAchievement,
-	} from "@project/lib/models";
+	import type { SteamAppAchievement, SteamUserAchievement } from "@project/lib/models";
 	import Primary from "./_primary.svelte";
 	import Secondary from "./_secondary.svelte";
 

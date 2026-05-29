@@ -1,14 +1,9 @@
 <script lang="ts">
-	import { m } from "$lib/paraglide/messages.js";
-	import {
-		localizeHref,
-		deLocalizeHref,
-		getLocale,
-		locales,
-	} from "$lib/paraglide/runtime";
-	import Trophy from "@lucide/svelte/icons/trophy";
 	import Languages from "@lucide/svelte/icons/languages";
+	import Trophy from "@lucide/svelte/icons/trophy";
 	import { page } from "$app/stores";
+	import { m } from "$lib/paraglide/messages.js";
+	import { deLocalizeHref, getLocale, locales, localizeHref } from "$lib/paraglide/runtime";
 
 	// Build localized links for all available locales, excluding the current one
 	$: currentPath = `${$page.url.pathname}${$page.url.search}${$page.url.hash}`;
@@ -20,13 +15,9 @@
 	const getMsg = (key: string): (() => string) | undefined => {
 		const table = m as unknown as Record<string, unknown>;
 		const maybeFn = table[key];
-		return typeof maybeFn === "function"
-			? (maybeFn as () => string)
-			: undefined;
+		return typeof maybeFn === "function" ? (maybeFn as () => string) : undefined;
 	};
-	$: languagePrompt =
-		getMsg("footer.languagePrompt")?.() ??
-		"View this page in another language";
+	$: languagePrompt = getMsg("footer.languagePrompt")?.() ?? "View this page in another language";
 
 	const getAutonym = (tag: string) => {
 		try {
@@ -46,27 +37,13 @@
 		<div class="flex flex-col items-center justify-between md:flex-row">
 			<div class="mb-4 flex items-center gap-2 md:mb-0">
 				<Trophy class="text-primary-500 h-6 w-6" />
-				<span class="text-xl font-bold"
-					>{m["footer.companyName"]()}</span
-				>
+				<span class="text-xl font-bold">{m["footer.companyName"]()}</span>
 			</div>
-			<div
-				class="text-surface-300 flex flex-wrap justify-center gap-6 text-sm"
-			>
-				<a href={localizeHref("/about")} class="hover:text-surface-100"
-					>{m["footer.about"]()}</a
-				>
-				<a
-					href={localizeHref("/legal#support")}
-					class="hover:text-surface-100">{m["footer.support"]()}</a
-				>
-				<a href={localizeHref("/legal")} class="hover:text-surface-100"
-					>{m["footer.privacy"]()}</a
-				>
-				<a
-					href={localizeHref("/legal?tab=terms")}
-					class="hover:text-surface-100">{m["footer.terms"]()}</a
-				>
+			<div class="text-surface-300 flex flex-wrap justify-center gap-6 text-sm">
+				<a href={localizeHref("/about")} class="hover:text-surface-100">{m["footer.about"]()}</a>
+				<a href={localizeHref("/legal#support")} class="hover:text-surface-100">{m["footer.support"]()}</a>
+				<a href={localizeHref("/legal")} class="hover:text-surface-100">{m["footer.privacy"]()}</a>
+				<a href={localizeHref("/legal?tab=terms")} class="hover:text-surface-100">{m["footer.terms"]()}</a>
 			</div>
 		</div>
 
@@ -74,9 +51,7 @@
 		<div class="mt-6">
 			<div class="text-surface-400">
 				<div class="mb-2 flex items-center gap-2">
-					<Languages
-						class="text-surface-500 hidden h-4 w-4 sm:block"
-					/>
+					<Languages class="text-surface-500 hidden h-4 w-4 sm:block" />
 					<p class="text-sm">{languagePrompt}</p>
 				</div>
 				<div
@@ -97,9 +72,7 @@
 				</div>
 			</div>
 		</div>
-		<div
-			class="text-surface-300 border-surface-800 mt-8 border-t pt-6 text-center text-sm"
-		>
+		<div class="text-surface-300 border-surface-800 mt-8 border-t pt-6 text-center text-sm">
 			{m["footer.rights"]({ year: new Date().getFullYear() })}
 		</div>
 	</div>

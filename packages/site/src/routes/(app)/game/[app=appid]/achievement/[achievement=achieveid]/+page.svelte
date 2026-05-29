@@ -20,14 +20,7 @@
 
 	let { data } = $props();
 
-	let {
-		achievement,
-		gameAchievements,
-		app,
-		friendsWithAchievement,
-		articles,
-		translation,
-	} = $derived(data);
+	let { achievement, gameAchievements, app, friendsWithAchievement, articles, translation } = $derived(data);
 
 	let rarity = $derived(getRarity(achievement.globalPercentage));
 
@@ -38,10 +31,7 @@
 		const rarityChartData = gameAchievements.data
 			.toSorted((a, b) => a.globalPercentage - b.globalPercentage)
 			.map((current) => ({
-				name:
-					current.name.length > 20
-						? `${current.name.substring(0, 20)}...`
-						: current.name,
+				name: current.name.length > 20 ? `${current.name.substring(0, 20)}...` : current.name,
 				rarity: current.globalPercentage,
 				id: current.id,
 				isCurrent: current.id === achievement.id,
@@ -56,9 +46,7 @@
 			return style.getPropertyValue(`--color-${rarity}-dark`);
 		});
 
-		const currentIndex = rarityChartData.findIndex(
-			(data) => data.isCurrent,
-		);
+		const currentIndex = rarityChartData.findIndex((data) => data.isCurrent);
 		const selectedColor = rarityChartColors[currentIndex];
 
 		const ctx = statsChart?.getContext("2d");
@@ -114,18 +102,11 @@
 					const index = first.index;
 					const selectedAchievement = rarityChartData[index]?.id;
 					if (!selectedAchievement) return;
-					const selectedAchievementId = gameAchievements.data.find(
-						(a) => a.id === selectedAchievement,
-					)?.id;
+					const selectedAchievementId = gameAchievements.data.find((a) => a.id === selectedAchievement)?.id;
 					if (!selectedAchievementId) return;
-					goto(
-						localizeHref(
-							`/game/${achievement.app.id}/achievement/${selectedAchievementId}`,
-						),
-						{
-							keepFocus: true,
-						},
-					);
+					goto(localizeHref(`/game/${achievement.app.id}/achievement/${selectedAchievementId}`), {
+						keepFocus: true,
+					});
 				},
 				onHover(_, elements, chart) {
 					// Reset
@@ -136,9 +117,7 @@
 					const index = first.index;
 					const selectedAchievement = rarityChartData[index]?.id;
 					if (!selectedAchievement) return;
-					const selectedAchievementId = gameAchievements.data.find(
-						(a) => a.id === selectedAchievement,
-					)?.id;
+					const selectedAchievementId = gameAchievements.data.find((a) => a.id === selectedAchievement)?.id;
 					if (!selectedAchievementId) return;
 
 					chart.canvas.style.cursor = "pointer";
@@ -149,18 +128,16 @@
 		return () => chart.destroy();
 	});
 
-	let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(
-		() => {
-			switch (page.url.searchParams.get("tab")) {
-				case "friends":
-					return "friends";
-				case "articles":
-					return "articles";
-				default:
-					return "stats";
-			}
-		},
-	);
+	let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(() => {
+		switch (page.url.searchParams.get("tab")) {
+			case "friends":
+				return "friends";
+			case "articles":
+				return "articles";
+			default:
+				return "stats";
+		}
+	});
 
 	let viewHover = $state(false);
 	let shareHover = $state(false);
@@ -181,15 +158,15 @@
 			appName: app.name,
 			percentage: achievement.globalPercentage,
 		})}
-	/>
-	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
+	>
+	<link rel="canonical" href={deLocalizeUrl(page.url).toString()}>
 	<meta
 		property="og:title"
 		content={m["achievement.meta.title"]({
 			achievementName: achievement.name,
 			appName: app.name,
 		})}
-	/>
+	>
 	<meta
 		property="og:description"
 		content={m["achievement.meta.description"]({
@@ -197,56 +174,38 @@
 			appName: app.name,
 			percentage: achievement.globalPercentage,
 		})}
-	/>
-	<meta property="og:image" content={achievement.icon} />
-	<meta
-		property="og:url"
-		content={`/game/${app.id}/achievement/${achievement.id}`}
-	/>
-	<meta property="og:type" content="summary" />
-	<meta property="twitter:card" content="summary" />
-	<meta
-		property="keywords"
-		content={`Steam, ${app.name}, ${achievement.name}`}
-	/>
+	>
+	<meta property="og:image" content={achievement.icon}>
+	<meta property="og:url" content={`/game/${app.id}/achievement/${achievement.id}`}>
+	<meta property="og:type" content="summary">
+	<meta property="twitter:card" content="summary">
+	<meta property="keywords" content={`Steam, ${app.name}, ${achievement.name}`}>
 </svelte:head>
 
 <main class="container mx-auto px-4 py-8">
 	<Breadcrumbs path={data.breadcrumbs} />
 
-	<div
-		class="text border-surface-700 bg-surface-800 rounded-container mb-8 border"
-	>
-		<div
-			class="to-surface-800 from-primary-900/30 rounded-container relative min-h-40 bg-gradient-to-r"
-		>
+	<div class="text border-surface-700 bg-surface-800 rounded-container mb-8 border">
+		<div class="to-surface-800 from-primary-900/30 rounded-container relative min-h-40 bg-gradient-to-r">
 			<div
 				class="rounded-container absolute inset-0 bg-cover bg-center opacity-50"
 				style:background-image={`url("${app.banner}")`}
 			></div>
 			<div class="rounded-container absolute inset-0 overflow-hidden">
-				<div
-					class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"
-				></div>
+				<div class="from-{rarity} to-{rarity}-dark absolute top-0 left-0 h-1 w-full bg-gradient-to-r"></div>
 			</div>
-			<div
-				class="relative flex flex-col items-center px-6 py-4 md:flex-row"
-			>
+			<div class="relative flex flex-col items-center px-6 py-4 md:flex-row">
 				<div class="mb-2 flex items-center gap-6">
 					<div class="relative">
-						<div
-							class="bg-{rarity}/20 rounded-container absolute -inset-1 blur-sm"
-						></div>
-						<div
-							class="border-{rarity}/50 bg-surface-900 rounded-container relative border p-1"
-						>
+						<div class="bg-{rarity}/20 rounded-container absolute -inset-1 blur-sm"></div>
+						<div class="border-{rarity}/50 bg-surface-900 rounded-container relative border p-1">
 							<img
 								src={achievement.icon}
 								alt={achievement.name}
 								width="96"
 								height="96"
 								class="max-w-[initial] rounded"
-							/>
+							>
 						</div>
 					</div>
 					<div>
@@ -256,17 +215,13 @@
 									"/game/" + achievement.app.id,
 								)}
 							>
-								<span class="text-surface-300"
-									>{achievement.app.name}</span
-								>
+								<span class="text-surface-300">{achievement.app.name}</span>
 							</a>
 						</div>
 						<h1 class="mb-1 text-3xl font-bold">
 							{achievement.name}
 						</h1>
-						<p
-							class="text-surface-200 flex w-full grow items-start"
-						>
+						<p class="text-surface-200 flex w-full grow items-start">
 							{#if translation}
 								<TranslationToggle bind:translate />
 							{/if}
@@ -277,18 +232,14 @@
 					</div>
 				</div>
 				<!-- Tinted card with "ultra-rare 1.1% of players" -->
-				<div
-					class="flex min-w-[120px] flex-col items-center md:ml-auto md:items-end"
-				>
+				<div class="flex min-w-[120px] flex-col items-center md:ml-auto md:items-end">
 					<div
 						class="w-full text-center md:w-auto md:text-left border-{rarity}/30 bg-{rarity}/10 mb-2 rounded border px-4 py-2"
 					>
 						<div class="text-sm font-medium text-{rarity}">
 							{localizedRarity(rarity)}
 						</div>
-						<div class="text-2xl font-bold text-{rarity}-dark">
-							{achievement.globalPercentage}%
-						</div>
+						<div class="text-2xl font-bold text-{rarity}-dark">{achievement.globalPercentage}%</div>
 						<div class="text-surface-300 text-xs">
 							{m["achievement.ofPlayers"]()}
 						</div>
@@ -318,16 +269,13 @@
 									rel="noopener noreferrer"
 									class="btn preset-outlined-surface-500 p-2"
 								>
-									<span hidden>{m["game.viewOnSteam"]()}</span
-									>
-									<BookOpenText
-										class="text-surface-500 h-4 w-4"
-										aria-hidden="true"
-									/>
+									<span hidden>{m["game.viewOnSteam"]()}</span>
+									<BookOpenText class="text-surface-500 h-4 w-4" aria-hidden="true" />
 								</a>
 							{/snippet}
 						</Tooltip>
 						<button
+							type="button"
 							class="btn preset-outlined-surface-500 p-2"
 							onclick={() =>
 								navigator.share({
@@ -337,17 +285,14 @@
 								})}
 						>
 							<span hidden>{m["achievement.shareText"]()}</span>
-							<Share
-								class="text-surface-500 h-4 w-4"
-								aria-hidden="true"
-							/>
+							<Share class="text-surface-500 h-4 w-4" aria-hidden="true" />
 						</button>
 					</div>
 				</div>
 			</div>
 		</div>
 		{#if isSignedIn}
-			<!-- <div class="flex items-center justify-between border-t border-surface-700 bg-surface-900/50 px-6 py-3">
+		<!-- <div class="flex items-center justify-between border-t border-surface-700 bg-surface-900/50 px-6 py-3">
                     <div class="flex items-center gap-3">
                         <span class="text-sm">
                             Unlocked on
@@ -368,23 +313,29 @@
 	<div>
 		<div class="border-surface-700 flex gap-4 border-b">
 			<button
+				type="button"
 				onclick={() => goto("?tab=stats")}
 				class="py-2"
 				class:font-bold={activeTab === "stats"}
-				>{m["achievement.tabs.stats"]()}</button
 			>
+				{m["achievement.tabs.stats"]()}
+			</button>
 			<button
+				type="button"
 				onclick={() => goto("?tab=friends")}
 				class="py-2"
 				class:font-bold={activeTab === "friends"}
-				>{m["achievement.tabs.friends"]()}</button
 			>
+				{m["achievement.tabs.friends"]()}
+			</button>
 			<button
+				type="button"
 				onclick={() => goto("?tab=articles")}
 				class="py-2"
 				class:font-bold={activeTab === "articles"}
-				>{m["achievement.tabs.articles"]()}</button
 			>
+				{m["achievement.tabs.articles"]()}
+			</button>
 		</div>
 
 		<TransitionWrapper>
@@ -404,16 +355,13 @@
 							<div class="max-h-[480px]">
 								<!-- Need to key, chartjs not updated when soft-navigating to a different achievement page -->
 								{#key achievement}
-									<canvas
-										bind:this={statsChart}
-										class="h-full w-full"
-									></canvas>
+									<canvas bind:this={statsChart} class="h-full w-full"></canvas>
 								{/key}
 							</div>
 						</div>
 
 						{#if isSignedIn}
-							<!-- <div class="rounded-container border border-surface-700 bg-surface-800 p-4">
+						<!-- <div class="rounded-container border border-surface-700 bg-surface-800 p-4">
                     <h2 class="font-bold">Achievement Activity</h2>
                     <p class="text-sm text-surface-300">
                         Your achievement unlocks around the time you
@@ -485,11 +433,7 @@
 			{:else if activeTab === "friends"}
 				<Transition>
 					<div class="mt-6 space-y-8">
-						<FriendCards
-							secondary
-							hideLocked
-							data={friendsWithAchievement}
-						/>
+						<FriendCards secondary hideLocked data={friendsWithAchievement} />
 					</div>
 				</Transition>
 			{:else if activeTab === "articles"}
@@ -514,9 +458,7 @@
 										<!-- Steam Community Guides Card -->
 										<div class="card secondary p-4">
 											<h2 class="font-bold">
-												<NotebookText
-													class="text-primary-500 inline"
-												/>
+												<NotebookText class="text-primary-500 inline" />
 												{m[
 													"achievement.articles.steamCommunity.title"
 												]()}
@@ -534,33 +476,23 @@
 															target="_blank"
 															rel="noopener noreferrer"
 														>
-															<div
-																class="flex gap-4"
-															>
+															<div class="flex gap-4">
 																<img
 																	src={article.thumbnail ||
 																		"/placeholder.svg"}
 																	alt={article.title}
 																	class="h-24 w-24 rounded object-cover"
-																/>
+																>
 																<div>
-																	<div
-																		class="mb-1"
-																	>
-																		<h3
-																			class="text-primary-500 font-bold"
-																		>
+																	<div class="mb-1">
+																		<h3 class="text-primary-500 font-bold">
 																			{article.title}
 																		</h3>
-																		<span
-																			class="text-surface-300 text-sm"
-																		>
+																		<span class="text-surface-300 text-sm">
 																			{article.author}
 																		</span>
 																	</div>
-																	<p
-																		class="text-surface-200 text-sm"
-																	>
+																	<p class="text-surface-200 text-sm">
 																		{article.description}
 																	</p>
 																	<!-- <a href={article.url} class="mt-2 inline-block text-xs text-primary-400 hover:underline">
@@ -571,9 +503,7 @@
 														</a>
 													</div>
 												{:else}
-													<div
-														class="p-4 text-surface-400"
-													>
+													<div class="p-4 text-surface-400">
 														{m[
 															"achievement.articles.notFound"
 														]()}
@@ -584,9 +514,7 @@
 										<!-- YouTube Video Guides Card -->
 										<div class="card secondary p-4">
 											<h2 class="font-bold">
-												<YouTube
-													class="inline text-red-500"
-												/>
+												<YouTube class="inline text-red-500" />
 												{m[
 													"achievement.articles.youtube.title"
 												]()}
@@ -604,9 +532,7 @@
 															target="_blank"
 															rel="noopener noreferrer"
 														>
-															<div
-																class="flex flex-col gap-4 md:flex-row"
-															>
+															<div class="flex flex-col gap-4 md:flex-row">
 																<div
 																	class="relative h-[135px] w-full flex-shrink-0 overflow-hidden rounded md:w-[240px]"
 																>
@@ -616,33 +542,23 @@
 																		class="h-full w-full object-cover"
 																		width="240"
 																		height="135"
-																	/>
-																</div>
-																<div
-																	class="flex-1"
-																>
-																	<h3
-																		class="text-primary-500 font-bold"
 																	>
+																</div>
+																<div class="flex-1">
+																	<h3 class="text-primary-500 font-bold">
 																		{video.title}
 																	</h3>
-																	<div
-																		class="mb-1 flex items-center gap-2"
-																	>
+																	<div class="mb-1 flex items-center gap-2">
 																		<!-- <img src={video.channelAvatar ||
                                                                         "/placeholder.svg"} alt={video.channel} width="20" height="20" class="rounded-full" /> -->
-																		<span
-																			class="text-surface-300 text-sm"
-																		>
+																		<span class="text-surface-300 text-sm">
 																			{video.channel}
 																		</span>
 																		<!-- <span class="text-xs text-surface-500">
                                                                     {video.date}
                                                                 </span> -->
 																	</div>
-																	<p
-																		class="text-surface-200 mb-3 text-sm"
-																	>
+																	<p class="text-surface-200 mb-3 text-sm">
 																		{video.description}
 																	</p>
 																</div>
@@ -650,9 +566,7 @@
 														</a>
 													</div>
 												{:else}
-													<div
-														class="p-4 text-surface-400"
-													>
+													<div class="p-4 text-surface-400">
 														{m[
 															"achievement.articles.notFound"
 														]()}

@@ -26,14 +26,7 @@
 		icon: typeof TriangleAlert;
 		title: string;
 		description: string;
-		color:
-			| "primary"
-			| "secondary"
-			| "tertiary"
-			| "success"
-			| "warning"
-			| "error"
-			| "surface";
+		color: "primary" | "secondary" | "tertiary" | "success" | "warning" | "error" | "surface";
 	}
 
 	let { icon: Icon, title, description, color }: Props = $props();

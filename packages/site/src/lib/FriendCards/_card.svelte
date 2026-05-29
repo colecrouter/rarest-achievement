@@ -8,11 +8,11 @@
 </script>
 
 <script lang="ts">
+	import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
+	import { Progress } from "@skeletonlabs/skeleton-svelte";
 	import { m } from "$lib/paraglide/messages.js";
 	import { localizeHref } from "$lib/paraglide/runtime";
 	import type { Rarity } from "$lib/rarity";
-	import { SteamUserAchievement, SteamUserStatus } from "@project/lib";
-	import { Progress } from "@skeletonlabs/skeleton-svelte";
 
 	interface Props {
 		totalCount: number;
@@ -28,10 +28,7 @@
 	let color = $derived(barColor(completion / 100));
 
 	// DO NOT USE `owned` or `achievement` because it can be undefined
-	let playTime = $derived(
-		friend?.ownedApps.find((g) => g.id === achievement?.app.id)?.playtime ??
-			0,
-	);
+	let playTime = $derived(friend?.ownedApps.find((g) => g.id === achievement?.app.id)?.playtime ?? 0);
 </script>
 
 {#if friend}
@@ -44,7 +41,7 @@
 					width="48"
 					height="48"
 					class="card rounded-full !border-2"
-				/>
+				>
 				<div
 					class="card absolute right-0 bottom-0 h-3 w-3 rounded-full !border-2 {friend.status !==
 					SteamUserStatus.Offline
@@ -85,16 +82,9 @@
 					<div class="text-surface-300 text-xs">
 						{m["friend.achievementProgress"]()}
 					</div>
-					<div class="text-xs font-medium">
-						{completion.toFixed(0)}%
-					</div>
+					<div class="text-xs font-medium">{completion.toFixed(0)}%</div>
 				</div>
-				<Progress
-					value={completion}
-					max={100}
-					meterBg={`bg-${color}`}
-					trackBg={"bg-surface-700"}
-				></Progress>
+				<Progress value={completion} max={100} meterBg={`bg-${color}`} trackBg={"bg-surface-700"}></Progress>
 			{/if}
 		</div>
 		<div class="text-surface-500 flex items-center justify-between text-xs">

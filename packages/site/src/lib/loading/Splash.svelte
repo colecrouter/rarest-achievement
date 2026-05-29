@@ -1,8 +1,8 @@
 <script lang="ts">
+	import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
 	import Alert from "$lib/Alert.svelte";
 	import { m } from "$lib/paraglide/messages.js"; // new import
 	import { localizeHref } from "$lib/paraglide/runtime";
-	import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
 	import type { LoadingMessage } from "./messages";
 
 	interface Props {
@@ -25,16 +25,12 @@
 			</div>
 		</div>
 
-		<h1
-			class="text-surface-200 animate-pulse text-center text-2xl font-bold"
-		>
+		<h1 class="text-surface-200 animate-pulse text-center text-2xl font-bold">
 			{m["loading.title"]()}
 		</h1>
 
 		<div class="show flex min-h-[400px] flex-col justify-center">
-			<h2 class="mb-4 text-center text-lg font-bold">
-				"{message.title}"
-			</h2>
+			<h2 class="mb-4 text-center text-lg font-bold">"{message.title}"</h2>
 			<p class="text-md/8 text-surface-300 mb-4">
 				{@html message.description}
 			</p>

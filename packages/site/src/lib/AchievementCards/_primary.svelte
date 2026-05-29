@@ -8,42 +8,30 @@
 	let achievements = new SvelteSet<SteamAppAchievement>();
 
 	function translateAchievements(lang: LanguageCode) {
-		console.debug(
-			`Translating achievements for language: ${lang}, total: ${achievements.size}`,
-		);
+		console.debug(`Translating achievements for language: ${lang}, total: ${achievements.size}`);
 
 		const missingTranslations = achievements
 			.values()
-			.filter(
-				(achievement) =>
-					!translations.has(achievement) &&
-					achievement.language !== lang,
-			)
+			.filter((achievement) => !translations.has(achievement) && achievement.language !== lang)
 			.toArray();
 		if (missingTranslations.length === 0) return;
 
 		// Group achievements by app ID to reduce API calls
-		const appIds = new Set(missingTranslations.map((a) => a.app.id))
-			.values()
-			.toArray();
+		const appIds = new Set(missingTranslations.map((a) => a.app.id)).values().toArray();
 
 		const resMap = fetch(`/translate?lang=${lang}`, {
 			method: "POST",
 			body: JSON.stringify(appIds),
 		}).then((res) => {
 			if (!res.ok) {
-				throw new Error(
-					`Failed to fetch translations: ${res.status} ${res.statusText}`,
-				);
+				throw new Error(`Failed to fetch translations: ${res.status} ${res.statusText}`);
 			}
 			return res.json() as Promise<Record<string, string>>;
 		});
 
 		for (const achievement of missingTranslations) {
 			// Assign promise back to the map
-			const res = resMap.then(
-				(res) => res[`${achievement.app.id}:${achievement.id}`] ?? "",
-			);
+			const res = resMap.then((res) => res[`${achievement.app.id}:${achievement.id}`] ?? "");
 			translations.set(achievement, res);
 		}
 	}
@@ -59,12 +47,10 @@
 </script>
 
 <script lang="ts">
-	import { SteamAppAchievement, type LanguageCode } from "@project/lib";
-	// biome-ignore lint/style/useImportType: <explanation>
+	import { type LanguageCode, SteamAppAchievement, SteamUserAchievement } from "@project/lib";
 	import { m } from "$lib/paraglide/messages.js";
 	import { getLocale, localizeHref } from "$lib/paraglide/runtime";
 	import TranslationToggle from "$lib/TranslationToggle.svelte";
-	import { SteamUserAchievement } from "@project/lib";
 	import Badge from "./_badge.svelte";
 
 	interface Props {
@@ -107,24 +93,18 @@
 							width={size}
 							height={size}
 							class={imgClass}
-						/>
+						>
 						<img
 							src={achievement.iconUnlocked}
 							alt={achievement.name}
 							width={size}
 							height={size}
 							class={`unlocked ${imgClass}`}
-						/>
+						>
 					</div>
 				{:else}
 					<div class="icon-container">
-						<img
-							src={achievement.icon}
-							alt={achievement.name}
-							width={size}
-							height={size}
-							class={imgClass}
-						/>
+						<img src={achievement.icon} alt={achievement.name} width={size} height={size} class={imgClass}>
 					</div>
 				{/if}
 				<!-- badge snippet -->
@@ -147,10 +127,7 @@
 					</h3>
 					<!-- Game name & description -->
 					<p class="text-surface-300 mb-1 text-xs">
-						<a
-							class="hover:underline"
-							href={localizeHref(`/game/${achievement.app.id}`)}
-						>
+						<a class="hover:underline" href={localizeHref(`/game/${achievement.app.id}`)}>
 							{achievement.app.name}
 						</a>
 					</p>
@@ -170,9 +147,7 @@
 								{:then translation}
 									{@html translation}
 								{:catch error}
-									<span class="text-error"
-										>{error.message}</span
-									>
+									<span class="text-error">{error.message}</span>
 								{/await}
 							{/if}
 						</p>
@@ -190,9 +165,7 @@
 		</div>
 
 		<!-- Footer section -->
-		<div
-			class="text-surface-300 bg-surface-900 flex items-center justify-between px-4 py-2 text-xs"
-		>
+		<div class="text-surface-300 bg-surface-900 flex items-center justify-between px-4 py-2 text-xs">
 			{#if achievement instanceof SteamUserAchievement}
 				<span>
 					{#if achievement.unlocked}
@@ -241,12 +214,7 @@
 		left: -100%;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(
-			120deg,
-			transparent,
-			rgba(255, 255, 255, 0.6),
-			transparent
-		);
+		background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.6), transparent);
 		transform: skewX(-20deg);
 		animation: shine 0.8s forwards;
 		pointer-events: none;

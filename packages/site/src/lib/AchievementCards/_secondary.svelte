@@ -1,10 +1,7 @@
 <script lang="ts">
+	import { type SteamAppAchievement, SteamUserAchievement } from "@project/lib/models";
 	import { m } from "$lib/paraglide/messages.js";
 	import { localizeHref } from "$lib/paraglide/runtime";
-	import {
-		type SteamAppAchievement,
-		SteamUserAchievement,
-	} from "@project/lib/models";
 	import Badge from "./_badge.svelte";
 
 	export let achievement: SteamUserAchievement | SteamAppAchievement;
@@ -22,28 +19,16 @@
 >
 	<div class="icon-container">
 		{#if achievement instanceof SteamUserAchievement && !achievement.unlocked}
-			<img
-				src={achievement.iconLocked}
-				alt={achievement.name}
-				width={size}
-				height={size}
-				class={imgClass}
-			/>
+			<img src={achievement.iconLocked} alt={achievement.name} width={size} height={size} class={imgClass}>
 			<img
 				src={achievement.iconUnlocked}
 				alt={achievement.name}
 				width={size}
 				height={size}
 				class={`unlocked ${imgClass}`}
-			/>
+			>
 		{:else}
-			<img
-				src={achievement.icon}
-				alt={achievement.name}
-				width={size}
-				height={size}
-				class={imgClass}
-			/>
+			<img src={achievement.icon} alt={achievement.name} width={size} height={size} class={imgClass}>
 		{/if}
 	</div>
 	<div class="w-full truncate text-left text-sm">
@@ -53,7 +38,8 @@
 		{#if achievement instanceof SteamUserAchievement}
 			<div class="text-surface-300 mt-0.5 text-xs">
 				{#if achievement.unlocked}
-					{m["status.unlocked"]()}: {achievement.unlocked.toLocaleDateString(
+					{m["status.unlocked"]()}:
+					{achievement.unlocked.toLocaleDateString(
 						undefined,
 						{
 							dateStyle: "short",

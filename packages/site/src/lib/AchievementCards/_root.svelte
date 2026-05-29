@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getAchievementSortManager } from "$lib/SortManager/AchievementSortManager";
-	import Transition from "$lib/Transition.svelte";
 	import type { SteamAppAchievement, SteamUserAchievement } from "lib";
 	import { flip } from "svelte/animate";
 	import { quintOut } from "svelte/easing";
 	import { crossfade } from "svelte/transition";
+	import { getAchievementSortManager } from "$lib/SortManager/AchievementSortManager";
+	import Transition from "$lib/Transition.svelte";
 	import Card from "./_card.svelte";
 	import Placeholder from "./_placeholder.svelte";
 
@@ -12,15 +12,12 @@
 	const ACHIEVEMENT_COUNT = 30;
 
 	interface Props {
-		achievements: MaybePromise<
-			Array<SteamUserAchievement | SteamAppAchievement>
-		>;
+		achievements: MaybePromise<Array<SteamUserAchievement | SteamAppAchievement>>;
 		secondary?: boolean;
 	}
 	let { achievements, secondary = false }: Props = $props();
 
-	const grid =
-		"grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+	const grid = "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
 	const [send, receive] = crossfade({
 		duration: (d) => Math.sqrt(d * 200),
@@ -32,10 +29,7 @@
 			return {
 				duration: 300,
 				easing: quintOut,
-				css: (t) => `
-				transform: ${transform} translateY(${(1 - t) * 100}px);
-				opacity: ${t}
-			`,
+				css: (t) => `transform: ${transform} translateY(${(1 - t) * 100}px); opacity: ${t}`,
 			};
 		},
 	});
@@ -43,9 +37,7 @@
 	const sortManager = getAchievementSortManager();
 
 	// State caching - track the last resolved data and loading state
-	let cachedAchievements: Array<
-		SteamUserAchievement | SteamAppAchievement
-	> | null = $state(null);
+	let cachedAchievements: Array<SteamUserAchievement | SteamAppAchievement> | null = $state(null);
 	let isLoading = $state(false);
 
 	// Update cached data when new data resolves, and track loading state
@@ -81,21 +73,13 @@
 	{@const sortedAchievements = sortManager.sort(cachedAchievements) as Array<
 		SteamUserAchievement | SteamAppAchievement
 	>}
-	<div
-		class={grid}
-		class:opacity-75={isLoading}
-		class:pointer-events-none={isLoading}
-	>
+	<div class={grid} class:opacity-75={isLoading} class:pointer-events-none={isLoading}>
 		{#if !sortedAchievements || sortedAchievements.length === 0}
 			<Transition>
 				<!-- No achievements available -->
 				<div class="card p-8 text-center">
-					<h3 class="mb-2 text-xl font-bold">
-						No achievements found
-					</h3>
-					<p class="text-surface-300 mx-auto max-w-md">
-						No achievements available.
-					</p>
+					<h3 class="mb-2 text-xl font-bold">No achievements found</h3>
+					<p class="text-surface-300 mx-auto max-w-md">No achievements available.</p>
 				</div>
 			</Transition>
 		{:else}

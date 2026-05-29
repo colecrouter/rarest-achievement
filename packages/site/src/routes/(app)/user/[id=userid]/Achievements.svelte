@@ -1,14 +1,10 @@
 <script lang="ts">
+	import type { RepositoryResult, SteamUser, SteamUserAchievement } from "@project/lib";
+	import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
 	import AchievementCards from "$lib/AchievementCards";
 	import IndexError from "$lib/IndexError.svelte";
-	import Toolbar from "$lib/SortManager/Toolbar.svelte";
 	import { m } from "$lib/paraglide/messages.js";
-	import type {
-		RepositoryResult,
-		SteamUser,
-		SteamUserAchievement,
-	} from "@project/lib";
-	import { Accordion, Tabs } from "@skeletonlabs/skeleton-svelte";
+	import Toolbar from "$lib/SortManager/Toolbar.svelte";
 	import PublicProfile from "../../(static)/about/PublicProfile.svelte";
 	import Podium from "./Podium.svelte";
 
@@ -65,9 +61,7 @@
 			{m["user.page.title"]({ displayName: user.displayName })}
 		</h2>
 
-		<div
-			class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4"
-		>
+		<div class="relative mt-12 mb-8 flex h-[400px] items-end justify-center gap-4">
 			{#if topThree.length === 3}
 				<Podium place={2} achievement={topThree[1]!} />
 
@@ -84,9 +78,7 @@
 			{/if}
 
 			<!-- Base -->
-			<div
-				class="bg-surface-700 absolute bottom-0 h-8 w-full rounded"
-			></div>
+			<div class="bg-surface-700 absolute bottom-0 h-8 w-full rounded"></div>
 		</div>
 	</section>
 
@@ -108,28 +100,20 @@
 		<!-- Tabs -->
 		<Tabs value={activeTab} onValueChange={(e) => (activeTab = e.value)}>
 			{#snippet list()}
-				<Tabs.Control value="grid"
-					>{m["user.view.table"]()}</Tabs.Control
-				>
-				<!-- <Tabs.Control value="list">{m.user.view.list()}</Tabs.Control> -->
+				<Tabs.Control value="grid">{m["user.view.table"]()}</Tabs.Control>
+			<!-- <Tabs.Control value="list">{m.user.view.list()}</Tabs.Control> -->
 			{/snippet}
 
 			{#snippet content()}
 				<Tabs.Panel value="grid">
-					<AchievementCards
-						achievements={achievements.then((d) => d.data)}
-					/>
+					<AchievementCards achievements={achievements.then((d) => d.data)} />
 				</Tabs.Panel>
 
 				<Tabs.Panel value="list">
-					<div
-						class="border-surface-700 bg-surface-800 overflow-hidden rounded border"
-					>
+					<div class="border-surface-700 bg-surface-800 overflow-hidden rounded border">
 						<table class="w-full">
 							<thead>
-								<tr
-									class="border-surface-700 bg-surface-900/50 border-b"
-								>
+								<tr class="border-surface-700 bg-surface-900/50 border-b">
 									<th
 										class="text-surface-300 px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
 									>

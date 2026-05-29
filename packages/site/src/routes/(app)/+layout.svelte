@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { locales, localizeHref } from "$lib/paraglide/runtime";
 	import Transition from "$lib/Transition.svelte";
 	import TransitionWrapper from "$lib/TransitionWrapper.svelte";
-	import { locales, localizeHref } from "$lib/paraglide/runtime";
 	import "../../app.css";
 	import Footer from "./Footer.svelte";
 	import Navbar from "./Navbar.svelte";

@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { page } from "$app/state";
-	import { m } from "$lib/paraglide/messages.js";
-	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
 	import ArrowRight from "@lucide/svelte/icons/arrow-right";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import DollarSign from "@lucide/svelte/icons/dollar-sign";
@@ -10,6 +7,9 @@
 	import SlidersHorizontal from "@lucide/svelte/icons/sliders-horizontal";
 	import Trophy from "@lucide/svelte/icons/trophy";
 	import { Accordion } from "@skeletonlabs/skeleton-svelte";
+	import { page } from "$app/state";
+	import { m } from "$lib/paraglide/messages.js";
+	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
 
 	let team = [
 		{
@@ -79,23 +79,19 @@
 
 <svelte:head>
 	<title>{m["about.meta.title"]()}</title>
-	<meta name="description" content={m["about.meta.description"]()} />
-	<link rel="canonical" href={deLocalizeUrl(page.url).toString()} />
-	<meta property="og:title" content={m["about.meta.title"]()} />
-	<meta property="og:description" content={m["about.meta.description"]()} />
+	<meta name="description" content={m["about.meta.description"]()}>
+	<link rel="canonical" href={deLocalizeUrl(page.url).toString()}>
+	<meta property="og:title" content={m["about.meta.title"]()}>
+	<meta property="og:description" content={m["about.meta.description"]()}>
 </svelte:head>
 
-<div
-	class="from-surface-900 to-surface-950 text-surface-100 min-h-screen bg-gradient-to-b"
->
+<div class="from-surface-900 to-surface-950 text-surface-100 min-h-screen bg-gradient-to-b">
 	<main class="container mx-auto px-4 py-12">
 		<!-- Hero Section -->
 		<section class="mb-16 text-center">
 			<div class="relative mb-6 inline-block">
 				<!-- Icon thing -->
-				<div
-					class="bg-primary-500/20 absolute inset-0 rounded-full blur-xl"
-				></div>
+				<div class="bg-primary-500/20 absolute inset-0 rounded-full blur-xl"></div>
 				<Trophy class="text-primary-500 relative h-20 w-20" />
 			</div>
 			<h1 class="mb-4 text-4xl font-bold md:text-5xl">
@@ -135,21 +131,15 @@
 				{#each Object.values(features) as feature}
 					<div class="card p-4">
 						<div class="flex flex-col items-center">
-							<div
-								class="bg-primary-500/10 mb-4 flex h-12 w-12 items-center justify-center rounded"
-							>
+							<div class="bg-primary-500/10 mb-4 flex h-12 w-12 items-center justify-center rounded">
 								{#if feature.iconType === "component"}
-									<feature.icon
-										class="text-primary-500 h-6 w-6"
-									/>
+									<feature.icon class="text-primary-500 h-6 w-6" />
 								{:else}
 									{@html feature.icon}
 								{/if}
 							</div>
 							<h3 class="mb-2 font-bold">{feature.title}</h3>
-							<p
-								class="text-surface-300 mb-4 text-center text-sm"
-							>
+							<p class="text-surface-300 mb-4 text-center text-sm">
 								{feature.shortDescription}
 							</p>
 						</div>
@@ -172,12 +162,7 @@
 						<div
 							class="border-surface-700 bg-surface-800 mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full border"
 						>
-							<img
-								src={member.avatar}
-								alt={member.name}
-								width="96"
-								height="96"
-							/>
+							<img src={member.avatar} alt={member.name} width="96" height="96">
 						</div>
 						<h3 class="font-bold">{member.name}</h3>
 						<p class="text-surface-300 text-sm">{member.role}</p>
@@ -194,7 +179,9 @@
 			<Accordion multiple>
 				{#each faqs as faq, index}
 					<Accordion.Item value={index.toString()}>
-						{#snippet control()}{faq.question}{/snippet}
+						{#snippet control()}
+							{faq.question}
+						{/snippet}
 						{#snippet panel()}
 							<p class="p-4">
 								{faq.answer}
@@ -202,7 +189,7 @@
 						{/snippet}
 					</Accordion.Item>
 					{#if index < faqs.length - 1}
-						<hr class="hr" />
+						<hr class="hr">
 					{/if}
 				{/each}
 			</Accordion>
@@ -220,9 +207,7 @@
 				<div class="grid gap-8 md:grid-cols-2">
 					<div>
 						<div class="mb-6 flex items-center gap-4">
-							<div
-								class="bg-primary-500/10 flex h-10 w-10 items-center justify-center rounded-full"
-							>
+							<div class="bg-primary-500/10 flex h-10 w-10 items-center justify-center rounded-full">
 								<Mail class="text-primary-500 h-5 w-5" />
 							</div>
 							<div>
@@ -249,9 +234,7 @@
                             </div>
                         </div> -->
 						<div class="flex items-center gap-4">
-							<div
-								class="bg-primary-500/10 flex h-10 w-10 items-center justify-center rounded-full"
-							>
+							<div class="bg-primary-500/10 flex h-10 w-10 items-center justify-center rounded-full">
 								<Github class="text-primary-500 h-5 w-5" />
 							</div>
 							<div>
@@ -269,10 +252,11 @@
 					</div>
 					<div class="flex flex-col justify-center">
 						<p class="text-surface-300/20 mb-4">
-							Follow us on social media for updates, tips, and to
-							join our growing community of achievement hunters.
+							Follow us on social media for updates, tips, and to join our growing community of
+							achievement hunters.
 						</p>
 						<button
+							type="button"
 							disabled
 							class="btn preset-filled-primary-500 flex w-full items-center justify-center py-2"
 						>
@@ -297,16 +281,13 @@
 				<div class="flex flex-wrap justify-center gap-4">
 					{#if !data.loggedIn}
 						<form action="?/login" method="POST">
-							<button class="btn preset-filled-primary-500 p-3">
+							<button type="submit" class="btn preset-filled-primary-500 p-3">
 								{m["home.features.signIn"]()}
 								<ChevronRight class="ml-2 h-4 w-4" />
 							</button>
 						</form>
 					{:else}
-						<a
-							href={localizeHref(`/user/${data.loggedIn.id}`)}
-							class="btn preset-filled-primary-500 p-3"
-						>
+						<a href={localizeHref(`/user/${data.loggedIn.id}`)} class="btn preset-filled-primary-500 p-3">
 							{m["home.features.dashboard"]()}
 							<ChevronRight class="ml-2 h-4 w-4" />
 						</a>

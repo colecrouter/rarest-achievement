@@ -31,4 +31,4 @@ Avoid reading generated or very large files into the agent session.
 
 ## Formatting
 
-Biome formats and lints TypeScript/JavaScript. Prettier handles Svelte, CSS, HTML, and related frontend formatting. Prefer the package scripts over ad hoc formatting commands.
+Biome formats and lints. Prefer the package scripts over ad hoc formatting commands.

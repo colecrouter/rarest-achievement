@@ -1,8 +1,8 @@
 <script lang="ts">
 	import IndexError from "$lib/IndexError.svelte";
-	import Transition from "$lib/Transition.svelte";
 	import Splash from "$lib/loading/Splash.svelte";
 	import { m } from "$lib/paraglide/messages.js";
+	import Transition from "$lib/Transition.svelte";
 	import Breadcrumbs from "../../Breadcrumbs.svelte";
 	import type { PageData } from "./$types.js";
 	import Achievements from "./Achievements.svelte";
@@ -30,33 +30,30 @@
 </script>
 
 <svelte:head>
-	<title
-		>{m["user.page.meta.title"]({
+	<title>
+		{m["user.page.meta.title"]({
 			displayName: data.user.displayName,
-		})}</title
-	>
-	<meta name="description" content={m["user.page.meta.description"]()} />
+		})}
+	</title>
+	<meta name="description" content={m["user.page.meta.description"]()}>
 	<meta
 		name="keywords"
 		content={m["user.page.meta.keywords"]({
 			userId: data.user.id,
 			displayName: data.user.displayName,
 		})}
-	/>
+	>
 	<meta
 		property="og:title"
 		content={m["user.page.meta.title"]({
 			displayName: data.user.displayName,
 		})}
-	/>
-	<meta
-		property="og:description"
-		content={m["user.page.meta.description"]()}
-	/>
-	<meta property="og:image" content={data.user.avatar} />
-	<meta property="og:url" content={data.user.profileUrl} />
-	<meta property="og:type" content="summary" />
-	<meta property="twitter:card" content="summary" />
+	>
+	<meta property="og:description" content={m["user.page.meta.description"]()}>
+	<meta property="og:image" content={data.user.avatar}>
+	<meta property="og:url" content={data.user.profileUrl}>
+	<meta property="og:type" content="summary">
+	<meta property="twitter:card" content="summary">
 </svelte:head>
 
 <!-- Main Content -->
@@ -69,11 +66,7 @@
 			{#if cachedTopThree.isError()}
 				<IndexError />
 			{/if}
-			<Achievements
-				topThree={cachedTopThree.data}
-				user={data.user}
-				achievements={data.achievements}
-			/>
+			<Achievements topThree={cachedTopThree.data} user={data.user} achievements={data.achievements} />
 		</Transition>
 	{:else}
 		<!-- Show loading state and await first time -->
@@ -86,11 +79,7 @@
 				{#if topThree.isError()}
 					<IndexError />
 				{/if}
-				<Achievements
-					topThree={topThree.data}
-					user={data.user}
-					achievements={data.achievements}
-				/>
+				<Achievements topThree={topThree.data} user={data.user} achievements={data.achievements} />
 			</Transition>
 		{/await}
 	{/if}

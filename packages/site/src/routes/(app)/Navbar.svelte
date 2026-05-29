@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { m } from "$lib/paraglide/messages.js";
-	import { localizeHref } from "$lib/paraglide/runtime";
+	import GitHub from "@lucide/svelte/icons/github";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import User from "@lucide/svelte/icons/user";
-	import GitHub from "@lucide/svelte/icons/github";
 	import type { SteamUser } from "@project/lib";
+	import { m } from "$lib/paraglide/messages.js";
+	import { localizeHref } from "$lib/paraglide/runtime";
 	import SearchBar from "./SearchBar.svelte";
 
 	interface Props {
@@ -50,36 +50,19 @@
 				<span class="hidden">GitHub</span>
 			</a>
 			{#if user}
-				<a
-					href={localizeHref(`/user/${user.id}`)}
-					class="btn btn-sm preset-outlined-primary-500"
-				>
+				<a href={localizeHref(`/user/${user.id}`)} class="btn btn-sm preset-outlined-primary-500">
 					<User class="mr-2 h-6 w-6" />
 					<span>{user.displayName}</span>
 				</a>
-				<form
-					action={localizeHref("/?/logout")}
-					method="post"
-					class="flex items-center gap-4"
-				>
-					<button
-						class="btn btn-sm preset-outlined-surface-500"
-						type="submit"
-					>
+				<form action={localizeHref("/?/logout")} method="post" class="flex items-center gap-4">
+					<button class="btn btn-sm preset-outlined-surface-500" type="submit">
 						<LogOut class="my-1 h-4 w-4" />
 						<span hidden>{m["navbar.logout"]()}</span>
 					</button>
 				</form>
 			{:else}
-				<form
-					action="/?/login"
-					method="post"
-					class="flex items-center gap-4"
-				>
-					<button
-						class="btn btn-sm preset-filled-primary-500"
-						type="submit"
-					>
+				<form action="/?/login" method="post" class="flex items-center gap-4">
+					<button class="btn btn-sm preset-filled-primary-500" type="submit">
 						<div>
 							{m["navbar.login.login"]()}
 							<span class="hidden md:inline">

@@ -1,28 +1,22 @@
 <script lang="ts">
-	import { page } from "$app/state";
-	import { m } from "$lib/paraglide/messages.js";
-	import { localizeHref } from "$lib/paraglide/runtime";
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Home from "@lucide/svelte/icons/home";
 	import RefreshCcw from "@lucide/svelte/icons/refresh-ccw";
+	import { page } from "$app/state";
+	import { m } from "$lib/paraglide/messages.js";
+	import { localizeHref } from "$lib/paraglide/runtime";
 
 	let error = page.error;
 
 	$effect(() => console.error(error?.message));
 </script>
 
-<main
-	class="container mx-auto flex flex-col items-center justify-center px-4 py-16"
->
+<main class="container mx-auto flex flex-col items-center justify-center px-4 py-16">
 	<!-- Error Illustration -->
 	<div class="relative mb-20">
 		<div class="relative mx-auto h-32 w-32">
-			<div
-				class="bg-error-500/20 absolute inset-0 rounded-full blur-xl"
-			></div>
-			<div
-				class="border-surface-700 bg-surface-800 relative rounded-full border p-6"
-			>
+			<div class="bg-error-500/20 absolute inset-0 rounded-full blur-xl"></div>
+			<div class="border-surface-700 bg-surface-800 relative rounded-full border p-6">
 				<div class="text-error-500 animate-pulse">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -31,6 +25,7 @@
 						stroke-width="1.5"
 						stroke="currentColor"
 						class="h-full w-full"
+						aria-hidden="true"
 					>
 						<path
 							stroke-linecap="round"
@@ -70,25 +65,17 @@
 
 	<!-- Navigation Options -->
 	<div class="flex flex-wrap justify-center gap-4">
-		<button
-			onclick={() => window.location.reload()}
-			class="btn flex items-center gap-2"
-		>
+		<button type="button" onclick={() => window.location.reload()} class="btn flex items-center gap-2">
 			<RefreshCcw class="mr-2 h-4 w-4" />
 			{m["error.page.button.reload"]()}
 		</button>
 		<a href={localizeHref("/")} class="inline-block">
-			<button
-				class="btn preset-outlined-surface-500 flex items-center gap-2"
-			>
+			<button type="button" class="btn preset-outlined-surface-500 flex items-center gap-2">
 				<Home class="mr-2 h-4 w-4" />
 				{m["error.page.button.home"]()}
 			</button>
 		</a>
-		<button
-			onclick={() => window.history.back()}
-			class="btn flex items-center gap-2"
-		>
+		<button type="button" onclick={() => window.history.back()} class="btn flex items-center gap-2">
 			<ArrowLeft class="mr-2 h-4 w-4" />
 			{m["error.page.button.back"]()}
 		</button>

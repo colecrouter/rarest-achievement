@@ -20,14 +20,13 @@
 </script>
 
 <script lang="ts">
+	import Lock from "@lucide/svelte/icons/lock";
+	import type { SteamAppAchievement } from "@project/lib";
+	import { SteamUserAchievement } from "@project/lib";
 	import { m } from "$lib/paraglide/messages.js";
 	import { getLocale } from "$lib/paraglide/runtime";
 	import { getRarity } from "$lib/rarity";
 	import { getAchievementSortManager } from "$lib/SortManager/AchievementSortManager";
-	import Lock from "@lucide/svelte/icons/lock";
-	import type { SteamAppAchievement } from "@project/lib";
-	// biome-ignore lint/style/useImportType: <explanation>
-	import { SteamUserAchievement } from "@project/lib";
 
 	interface Props {
 		achievement: SteamUserAchievement | SteamAppAchievement;
@@ -39,9 +38,7 @@
 	const rarity = $derived(getRarity(achievement.globalPercentage));
 </script>
 
-<div
-	class="badge bg-{rarity} text-surface-900 heading-line-height px-1.5 py-0 text-xs font-bold"
->
+<div class="badge bg-{rarity} text-surface-900 heading-line-height px-1.5 py-0 text-xs font-bold">
 	{#if sortManager.method === "rarity_pct"}
 		{#if achievement.globalPercentage < 0.1}
 			&lt;0.1%

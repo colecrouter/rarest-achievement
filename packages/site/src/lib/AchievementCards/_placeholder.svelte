@@ -8,14 +8,10 @@
 <div class="card p-4">
 	{#if secondary}
 		<div class="flex items-center gap-3">
-			<div
-				class="bg-surface-600 aspect-square h-12 w-12 animate-pulse rounded-full"
-			></div>
+			<div class="bg-surface-600 aspect-square h-12 w-12 animate-pulse rounded-full"></div>
 			<div class="flex-1 space-y-2">
 				<div class="bg-surface-600 h-4 animate-pulse rounded"></div>
-				<div
-					class="bg-surface-600 h-4 w-3/4 animate-pulse rounded"
-				></div>
+				<div class="bg-surface-600 h-4 w-3/4 animate-pulse rounded"></div>
 			</div>
 		</div>
 	{:else}

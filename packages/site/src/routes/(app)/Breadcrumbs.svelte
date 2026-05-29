@@ -1,9 +1,9 @@
 <script lang="ts">
+	import ChevronRight from "@lucide/svelte/icons/chevron-right";
+	import House from "@lucide/svelte/icons/house";
 	import { page } from "$app/state";
 	import type { Breadcrumb } from "$lib/breadcrumbs";
 	import { localizeHref } from "$lib/paraglide/runtime";
-	import ChevronRight from "@lucide/svelte/icons/chevron-right";
-	import House from "@lucide/svelte/icons/house";
 
 	interface Props {
 		path: Breadcrumb[];
@@ -47,16 +47,11 @@
 			{/snippet}
 
 			{#if breadcrumb.href && i !== path.length - 1}
-				<a
-					class="opacity-60 hover:opacity-100"
-					href={localizeHref(breadcrumb.href)}
-				>
+				<a class="opacity-60 hover:opacity-100" href={localizeHref(breadcrumb.href)}>
 					{@render content(breadcrumb)}
 				</a>
 			{:else}
-				<span>
-					{@render content(breadcrumb)}
-				</span>
+				<span> {@render content(breadcrumb)} </span>
 			{/if}
 		</li>
 	{/each}

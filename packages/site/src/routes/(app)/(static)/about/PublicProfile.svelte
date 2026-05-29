@@ -1,8 +1,8 @@
 <script lang="ts">
+	import GlobeLock from "@lucide/svelte/icons/globe-lock";
 	import Alert from "$lib/Alert.svelte";
 	import { m } from "$lib/paraglide/messages.js";
 	import { localizeHref } from "$lib/paraglide/runtime";
-	import GlobeLock from "@lucide/svelte/icons/globe-lock";
 </script>
 
 <article>
@@ -25,9 +25,7 @@
 						<div class="flex-1">
 							<div class="flex items-start justify-between">
 								<div>
-									<h3 class="mb-2 text-2xl font-bold">
-										Username
-									</h3>
+									<h3 class="mb-2 text-2xl font-bold">Username</h3>
 
 									<!-- Name -->
 									<div class="placeholder mb-4 w-24"></div>
@@ -41,12 +39,8 @@
 
 										<div class="flex flex-col gap-2">
 											<div class="flex gap-2">
-												<div
-													class="placeholder w-32"
-												></div>
-												<div
-													class="placeholder w-32"
-												></div>
+												<div class="placeholder w-32"></div>
+												<div class="placeholder w-32"></div>
 											</div>
 										</div>
 									</div>
@@ -54,9 +48,7 @@
 
 								<div class="flex w-48 flex-col items-start">
 									<h2 class="mb-2 text-xl">Level 50</h2>
-									<button
-										class="bg-surface-800 pointer-events-none rounded px-4 py-2"
-									>
+									<button type="button" class="bg-surface-800 pointer-events-none rounded px-4 py-2">
 										Edit Profile
 									</button>
 								</div>
@@ -65,14 +57,10 @@
 					</div>
 
 					<div class="bg-surface-950 rounded-container p-4">
-						<h4 class="text-surface-300 mb-2">
-							Rarest Achievement Showcase
-						</h4>
+						<h4 class="text-surface-300 mb-2">Rarest Achievement Showcase</h4>
 						<div class="mb-4 grid grid-cols-6 gap-2">
-							{#each Array(6)}
-								<div
-									class="placeholder aspect-square w-full rounded"
-								></div>
+							{#each Array(6) as _, i (i)}
+								<div class="placeholder aspect-square w-full rounded"></div>
 							{/each}
 						</div>
 
@@ -95,9 +83,7 @@
 
 				<p>
 					{m["profile.steps.step1.action"]()}
-					<strong class="text-white"
-						>{m["profile.editProfile.button"]()}</strong
-					>.
+					<strong class="text-white">{m["profile.editProfile.button"]()}</strong>.
 				</p>
 			</div>
 		</section>
@@ -114,14 +100,10 @@
 				<div class="text-surface-300 mb-6">
 					<div class="flex p-4">
 						<div class="flex items-center">
-							<div
-								class="placeholder mr-3 h-12 w-12 rounded"
-							></div>
+							<div class="placeholder mr-3 h-12 w-12 rounded"></div>
 							<div class="flex items-center">
 								<h3 class="text-xl">Username</h3>
-								<span class="text-surface-500 mx-2"
-									>&raquo;</span
-								>
+								<span class="text-surface-500 mx-2">&raquo;</span>
 								<div class="text-sm">Edit Profile</div>
 							</div>
 						</div>
@@ -136,13 +118,9 @@
 								</div>
 							{/each}
 
-							<hr class="border-surface-700" />
+							<hr class="border-surface-700">
 
-							<div
-								class="bg-surface-700 rounded px-2 py-1 text-white"
-							>
-								Privacy Settings
-							</div>
+							<div class="bg-surface-700 rounded px-2 py-1 text-white">Privacy Settings</div>
 						</div>
 
 						<!-- Main Content -->
@@ -178,9 +156,7 @@
 					<div class="p-6">
 						<div class="mb-4 flex flex-col gap-2">
 							<h3 class=" text-surface-300">
-								My profile: <span class="text-white"
-									>Public</span
-								>
+								My profile: <span class="text-white">Public</span>
 								<span>▼</span>
 							</h3>
 							<div class="flex gap-2">
@@ -196,9 +172,7 @@
 						</div>
 
 						<div class="ml-12">
-							<div
-								class="bg-surface-950 rounded-container -mx-4 mb-2 p-4"
-							>
+							<div class="bg-surface-950 rounded-container -mx-4 mb-2 p-4">
 								<h3 class="text-surface-300 mb-2">
 									Game details:
 									<span class="text-white">Public</span>
@@ -264,9 +238,7 @@
 				</p>
 				<p>
 					{m["profile.privacy.concerns.more"]()}
-					<a
-						href={localizeHref("/legal")}
-						class="text-primary-500 hover:underline"
+					<a href={localizeHref("/legal")} class="text-primary-500 hover:underline"
 						>{m["profile.privacy.linkText"]()}</a
 					>.
 				</p>

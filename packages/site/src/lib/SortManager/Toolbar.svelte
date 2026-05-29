@@ -23,12 +23,7 @@
 -->
 
 <script lang="ts" module>
-	import type {
-		RepositoryResult,
-		SortDirection,
-		SteamAppAchievement,
-		SteamUserAchievement,
-	} from "@project/lib";
+	import type { RepositoryResult, SortDirection, SteamAppAchievement, SteamUserAchievement } from "@project/lib";
 
 	// Type guard to check if manager has URL generation capabilities
 	function isServerSortManager(
@@ -38,41 +33,28 @@
 	}
 
 	// Helper function to determine if data has unlocked property (UserAchievement)
-	function hasUnlocked(
-		item: SteamUserAchievement | SteamAppAchievement,
-	): item is SteamUserAchievement {
+	function hasUnlocked(item: SteamUserAchievement | SteamAppAchievement): item is SteamUserAchievement {
 		return "unlocked" in item;
 	}
 
 	// Helper function to check if data supports filtering (has unlocked achievements)
-	function supportsFiltering<
-		TData extends SteamUserAchievement | SteamAppAchievement,
-	>(data: TData[]): boolean {
+	function supportsFiltering<TData extends SteamUserAchievement | SteamAppAchievement>(data: TData[]): boolean {
 		if (!data.length) return false;
-		const userAchievements = data.filter(
-			hasUnlocked,
-		) as SteamUserAchievement[];
+		const userAchievements = data.filter(hasUnlocked) as SteamUserAchievement[];
 		if (userAchievements.length !== data.length) return false;
 
-		return (
-			userAchievements.some((a) => a.unlocked) &&
-			userAchievements.some((a) => !a.unlocked)
-		);
+		return userAchievements.some((a) => a.unlocked) && userAchievements.some((a) => !a.unlocked);
 	}
 </script>
 
-<script
-	lang="ts"
-	generics="TData extends SteamUserAchievement | SteamAppAchievement"
->
-	import { m } from "$lib/paraglide/messages.js";
+<script lang="ts" generics="TData extends SteamUserAchievement | SteamAppAchievement">
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import Lock from "@lucide/svelte/icons/lock";
 	import SquareDashed from "@lucide/svelte/icons/square-dashed";
-
-	import { goto } from "$app/navigation";
 	import { Segment } from "@skeletonlabs/skeleton-svelte";
 	import { crossfade } from "svelte/transition";
+	import { goto } from "$app/navigation";
+	import { m } from "$lib/paraglide/messages.js";
 	import {
 		AchievementClientSortManager,
 		AchievementServerSortManager,
@@ -142,9 +124,7 @@
 		search?: string;
 	}): string {
 		if (!serverMode) return "#";
-		return (sortManager as AchievementServerSortManager).generateUrl(
-			overrides,
-		);
+		return (sortManager as AchievementServerSortManager).generateUrl(overrides);
 	}
 
 	// Helper function to handle clicks in client mode or navigate in server mode
@@ -219,13 +199,8 @@
 	}
 
 	// Helper function to check if we have an error state that should be displayed
-	function shouldShowError(
-		repositoryResult: RepositoryResult<TData>,
-	): boolean {
-		return (
-			repositoryResult.isFailure() ||
-			(repositoryResult.isPartial() && repositoryResult.data.length === 0)
-		);
+	function shouldShowError(repositoryResult: RepositoryResult<TData>): boolean {
+		return repositoryResult.isFailure() || (repositoryResult.isPartial() && repositoryResult.data.length === 0);
 	}
 </script>
 
@@ -241,11 +216,12 @@
 			placeholder={m["toolbar.search.placeholder"]()}
 			disabled
 			class="input border-surface-700 bg-surface-800 text-surface-100 grow py-3 opacity-50"
-		/>
+		>
 		<div class="flex flex-col items-center gap-2 md:flex-row">
 			<div class="bg-surface-700 h-10 w-32 animate-pulse rounded"></div>
 		</div>
 		<button
+			type="button"
 			disabled
 			aria-label={m["toolbar.sort.direction.toggle"]()}
 			class="btn preset-outlined-surface-300-700 text-surface-300 py-3 opacity-50"
@@ -261,6 +237,7 @@
 				stroke-linecap="round"
 				stroke-linejoin="round"
 				class="lucide-icon lucide lucide-arrow-up-wide-narrow"
+				aria-hidden="true"
 			>
 				<path d="m3 8 4-4 4 4"></path>
 				<path d="M7 4v16"></path>
@@ -288,7 +265,7 @@
 						}, 300);
 					}
 				: undefined}
-		/>
+		>
 
 		<!-- Sort Method Selection -->
 		<div class="flex flex-col items-center gap-2 md:flex-row">
@@ -301,10 +278,7 @@
 					rounded={segmentRounded}
 				>
 					{#each availableMethods as methodConfig}
-						<Segment.Item
-							classes="text-sm"
-							value={methodConfig.method}
-						>
+						<Segment.Item classes="text-sm" value={methodConfig.method}>
 							{methodConfig.label}
 						</Segment.Item>
 					{/each}
@@ -342,6 +316,7 @@
 
 		<!-- Sort Direction Toggle -->
 		<button
+			type="button"
 			onclick={handleDirectionToggle}
 			aria-label={m["toolbar.sort.direction.toggle"]()}
 			class="btn preset-outlined-surface-300-700 text-surface-300 py-3"
@@ -358,59 +333,20 @@
 				stroke-linecap="round"
 				stroke-linejoin="round"
 				class="lucide-icon lucide lucide-arrow-up-wide-narrow top-0 left-0"
+				aria-hidden="true"
 			>
 				{#if currentDirection === "asc"}
-					<path
-						d="m3 8 4-4 4 4"
-						in:receive={{ key: 0 }}
-						out:send={{ key: 0 }}
-					></path>
-					<path
-						d="M7 4v16"
-						in:receive={{ key: 1 }}
-						out:send={{ key: 1 }}
-					></path>
-					<path
-						d="M11 12h10"
-						in:receive={{ key: 2 }}
-						out:send={{ key: 2 }}
-					></path>
-					<path
-						d="M11 16h7"
-						in:receive={{ key: 3 }}
-						out:send={{ key: 3 }}
-					></path>
-					<path
-						d="M11 20h4"
-						in:receive={{ key: 4 }}
-						out:send={{ key: 4 }}
-					></path>
+					<path d="m3 8 4-4 4 4" in:receive={{ key: 0 }} out:send={{ key: 0 }}></path>
+					<path d="M7 4v16" in:receive={{ key: 1 }} out:send={{ key: 1 }}></path>
+					<path d="M11 12h10" in:receive={{ key: 2 }} out:send={{ key: 2 }}></path>
+					<path d="M11 16h7" in:receive={{ key: 3 }} out:send={{ key: 3 }}></path>
+					<path d="M11 20h4" in:receive={{ key: 4 }} out:send={{ key: 4 }}></path>
 				{:else}
-					<path
-						d="m3 16 4 4 4-4"
-						in:receive={{ key: 0 }}
-						out:send={{ key: 0 }}
-					></path>
-					<path
-						d="M7 20V4"
-						in:receive={{ key: 1 }}
-						out:send={{ key: 1 }}
-					></path>
-					<path
-						d="M11 4h4"
-						in:receive={{ key: 2 }}
-						out:send={{ key: 2 }}
-					></path>
-					<path
-						d="M11 8h7"
-						in:receive={{ key: 3 }}
-						out:send={{ key: 3 }}
-					></path>
-					<path
-						d="M11 12h10"
-						in:receive={{ key: 4 }}
-						out:send={{ key: 4 }}
-					></path>
+					<path d="m3 16 4 4 4-4" in:receive={{ key: 0 }} out:send={{ key: 0 }}></path>
+					<path d="M7 20V4" in:receive={{ key: 1 }} out:send={{ key: 1 }}></path>
+					<path d="M11 4h4" in:receive={{ key: 2 }} out:send={{ key: 2 }}></path>
+					<path d="M11 8h7" in:receive={{ key: 3 }} out:send={{ key: 3 }}></path>
+					<path d="M11 12h10" in:receive={{ key: 4 }} out:send={{ key: 4 }}></path>
 				{/if}
 			</svg>
 		</button>

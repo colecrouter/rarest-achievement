@@ -13,9 +13,9 @@
 		"dev:site": "npm run dev -w @project/site",
 		"dev:worker": "echo \"Skipping worker\"",
 		"test": "npm run test --workspaces",
-		"format:check": "prettier --check . && biome ci .",
-		"check": "biome lint && npm run check --workspaces --if-present",
-		"format": "prettier --write . && biome format --write",
+		"format:check": "biome ci .",
+		"check": "biome ci . && npm run check --workspaces --if-present",
+		"format": "biome format --write && biome check --write --linter-enabled false",
 		"db:push": "npm run db:push --workspaces",
 		"db:migrate": "npm run db:migrate --workspaces",
 		"db:migration": "npm run db:migration --workspace=@project/lib",
@@ -25,15 +25,12 @@
 		"drizzle-orm": "^0.45.2"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.2",
+		"@biomejs/biome": "^2.4.16",
 		"@cloudflare/workers-types": "4.20260529.1",
 		"@modelcontextprotocol/sdk": "^1.20.2",
 		"@types/better-sqlite3": "^7.6.13",
 		"better-sqlite3": "^12.2.0",
 		"npm-run-all": "^4.1.5",
-		"prettier": "^3.5.3",
-		"prettier-plugin-svelte": "^3.3.3",
-		"prettier-plugin-tailwindcss": "^0.6.11",
 		"zod": "^3.25.76"
 	},
 	"overrides": {

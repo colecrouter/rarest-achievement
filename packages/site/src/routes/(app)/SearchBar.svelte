@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { enhance } from "$app/forms";
-	import { page } from "$app/state";
-	import { m } from "$lib/paraglide/messages.js";
-	import { localizeHref } from "$lib/paraglide/runtime";
 	import Gamepad from "@lucide/svelte/icons/gamepad";
 	import User from "@lucide/svelte/icons/user";
 	import { Popover } from "@skeletonlabs/skeleton-svelte";
 	import { SteamSearchApp, SteamSearchUser } from "lib";
 	import { fade } from "svelte/transition";
+	import { enhance } from "$app/forms";
+	import { page } from "$app/state";
+	import { m } from "$lib/paraglide/messages.js";
+	import { localizeHref } from "$lib/paraglide/runtime";
 	import type { AppsResponse } from "../(api)/search/apps/+server";
 	import type { UsersResponse } from "../(api)/search/users/+server";
 
@@ -19,9 +19,7 @@
 
 	// Seperate error state, to manage red outline + shake animation
 	let returnedError = $state(false);
-	let failed = $derived(
-		query !== "" && (returnedError || page.status === 400),
-	);
+	let failed = $derived(query !== "" && (returnedError || page.status === 400));
 
 	// Bound property used to animate the height of the popover
 	let maxHeight = $state<number>(0);
@@ -43,15 +41,11 @@
 	function debouncedSearchGames(q: string) {
 		clearTimeout(debounceTimeout);
 		debounceTimeout = setTimeout(() => {
-			appsPromise = fetch(`/search/apps?q=${encodeURIComponent(q)}`).then(
-				(response) => {
-					if (!response.ok) throw new Error("Network error for apps");
-					return response.json();
-				},
-			);
-			usersPromise = fetch(
-				`/search/users?q=${encodeURIComponent(q)}`,
-			).then((response) => {
+			appsPromise = fetch(`/search/apps?q=${encodeURIComponent(q)}`).then((response) => {
+				if (!response.ok) throw new Error("Network error for apps");
+				return response.json();
+			});
+			usersPromise = fetch(`/search/users?q=${encodeURIComponent(q)}`).then((response) => {
 				if (!response.ok) throw new Error("Network error for users");
 				return response.json();
 			});
@@ -112,7 +106,7 @@
 							: obj.avatar}
 						alt={obj.name}
 						class="h-8 w-8 rounded"
-					/>
+					>
 					<span class="flex-grow truncate">{obj.name}</span>
 					{#if obj instanceof SteamSearchUser}
 						<User class="h-4 w-4 flex-shrink-0" />
@@ -175,7 +169,7 @@
 			debouncedSearchGames(query);
 		}}
 		onfocus={() => (isFocused = true)}
-	/>
+	>
 
 	<Popover
 		open={isFocused}
@@ -183,7 +177,7 @@
 		contentBase="card left-0 w-[calc(100vw-16px)] md:w-[360px] lg:w-[480px] bg-surface-200-800 p-4 space-y-4"
 		triggerClasses="block h-0"
 		zIndex={"10"}
-		autoFocus={false}
+		{...{ autoFocus: false }}
 	>
 		{#snippet content()}
 			<div
@@ -199,7 +193,7 @@
 					{:catch err}
 						{@render error(err)}
 					{/await}
-					<hr class="text-surface-500 my-2" />
+					<hr class="text-surface-500 my-2">
 					{#await usersPromise}
 						{@render loading()}
 					{:then usersRes}
@@ -218,6 +212,8 @@
 
 {#if isFocused}
 	<button
+		type="button"
+		aria-label="Close search results"
 		class="popover-overlay"
 		use:portal
 		onclick={() => {
@@ -267,7 +263,8 @@
 		background-color: rgba(0, 0, 0, 0.5);
 		cursor: pointer;
 	}
-	:global(html, body) {
+	:global(html),
+	:global(body) {
 		height: 100%;
 	}
 </style>

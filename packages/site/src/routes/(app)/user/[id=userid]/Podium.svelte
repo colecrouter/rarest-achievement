@@ -12,8 +12,7 @@
 			iconSize: {
 				width: 80,
 				height: 80,
-				imgClass:
-					"z-10 rounded border-2 border-amber-500 bg-surface-900",
+				imgClass: "z-10 rounded border-2 border-amber-500 bg-surface-900",
 			},
 			nameTextClass: "mt-2 text-center font-bold text-amber-100",
 			appTextClass: "mt-1 text-center text-xs text-amber-300/70",
@@ -27,8 +26,7 @@
 			iconWrapper: "h-8 w-8 text-surface-300",
 			labelTextClass: "text-sm font-medium text-surface-300",
 			placeStatClass: "text-xs text-amber-500",
-			cardWrapper:
-				"w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
+			cardWrapper: "w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
 			iconSize: {
 				width: 64,
 				height: 64,
@@ -46,8 +44,7 @@
 			iconWrapper: "h-7 w-7 text-amber-700",
 			labelTextClass: "text-sm font-medium text-amber-700",
 			placeStatClass: "text-xs text-amber-500",
-			cardWrapper:
-				"w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
+			cardWrapper: "w-full rounded-t-(--radius-container) border border-surface-700 bg-surface-800 p-4",
 			iconSize: {
 				width: 56,
 				height: 56,
@@ -82,14 +79,13 @@
 </script>
 
 <script lang="ts">
-	import { m } from "$lib/paraglide/messages";
-
 	import Award from "@lucide/svelte/icons/award";
 	import Crown from "@lucide/svelte/icons/crown";
 	import Medal from "@lucide/svelte/icons/medal";
 	import type { SteamAppAchievement } from "@project/lib";
 	import { cubicOut } from "svelte/easing";
 	import { fade } from "svelte/transition";
+	import { m } from "$lib/paraglide/messages";
 	import { localizeHref } from "$lib/paraglide/runtime";
 
 	interface Props {
@@ -112,11 +108,7 @@
 
 	// Compute podium label from i18n messages
 	let podiumLabel =
-		place === 1
-			? m["podium.label.first"]()
-			: place === 2
-				? m["podium.label.second"]()
-				: m["podium.label.third"]();
+		place === 1 ? m["podium.label.first"]() : place === 2 ? m["podium.label.second"]() : m["podium.label.third"]();
 </script>
 
 <div
@@ -128,10 +120,7 @@
 	]}
 >
 	{#if animate}
-		<div
-			transition:fade={{ duration: 300, delay: 100 * place + 400 }}
-			class="mb-2 flex flex-col items-center"
-		>
+		<div transition:fade={{ duration: 300, delay: 100 * place + 400 }} class="mb-2 flex flex-col items-center">
 			<IconComponent class={config.iconWrapper} />
 			<span class={config.labelTextClass}>
 				{podiumLabel}
@@ -143,10 +132,7 @@
 			</span>
 		</div>
 		<div class={config.cardWrapper}>
-			<div
-				class="flex flex-col items-center"
-				transition:fade={{ duration: 300, delay: 100 * place + 400 }}
-			>
+			<div class="flex flex-col items-center" transition:fade={{ duration: 300, delay: 100 * place + 400 }}>
 				<a href={localizeHref(achievementURL)}>
 					<img
 						src={achievement.icon}
@@ -154,17 +140,14 @@
 						width={config.iconSize.width}
 						height={config.iconSize.height}
 						class={config.iconSize.imgClass}
-					/>
+					>
 				</a>
 				<a href={localizeHref(achievementURL)}>
 					<h3 class="hover:underline {config.nameTextClass}">
 						{achievement.name}
 					</h3>
 				</a>
-				<a
-					href={localizeHref(gameURL)}
-					class="hover:underline {config.appTextClass}"
-				>
+				<a href={localizeHref(gameURL)} class="hover:underline {config.appTextClass}">
 					{achievement.app.name}
 				</a>
 			</div>

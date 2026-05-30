@@ -1,0 +1,29 @@
+{
+  "source": "SteamSpy catalog/appdetails, Steam store appdetails/reviews, SteamCharts chart-data",
+  "generated_at": "2026-05-30T00:41:04Z",
+  "pages": 5,
+  "sample_per_bucket": 8,
+  "max_apps": 160,
+  "seed": 42,
+  "row_count": 160,
+  "owner_buckets": [
+    "100k_500k",
+    "2m_10m",
+    "500k_2m",
+    "gte_10m"
+  ],
+  "activity_buckets": [
+    "500_5k",
+    "50_500",
+    "gte_5k",
+    "lt_50",
+    "zero"
+  ],
+  "review_buckets": [
+    "100_1k",
+    "10k_100k",
+    "1k_10k",
+    "gte_100k",
+    "lt_100"
+  ]
+}

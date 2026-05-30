@@ -36,7 +36,9 @@ export interface Learner {
 }
 
 export interface Attributes {
+	feature_set?: string;
 	scikit_learn?: string;
+	target_transform?: "raw" | "log1p";
 }
 
 export interface GradientBooster {

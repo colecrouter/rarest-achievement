@@ -57,6 +57,13 @@
 			"when": 1768358862157,
 			"tag": "0007_relax_friends_friend_id_fk",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "6",
+			"when": 1770062400000,
+			"tag": "0008_clear_player_estimate_cache_for_log_model",
+			"breakpoints": true
 		}
 	]
 }

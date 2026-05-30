@@ -6,6 +6,7 @@ node_modules
 .netlify
 .wrangler
 .svelte-kit
+python/xgboost_model/output
 
 # OS
 .DS_Store
@@ -29,6 +30,7 @@ src/lib/paraglide
 *.db
 
 venv
+__pycache__
 # /packages/lib/steam_model.json
 
 tsconfig.tsbuildinfo

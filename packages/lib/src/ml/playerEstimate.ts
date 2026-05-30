@@ -26,7 +26,14 @@ import { predict } from "./predict.js";
 
 export const estimatePlayerCount = async (features: Features) => {
 	const { default: json } = await import("../../steam_model.json", { with: { type: "json" } });
-	return predict(json as SearchResults, features);
+	const model = json as SearchResults;
+	const prediction = predict(model, features);
+
+	if (model.learner.attributes.target_transform === "log1p") {
+		return Math.max(0, Math.expm1(prediction));
+	}
+
+	return prediction;
 };
 
 // // === new benchmark ===

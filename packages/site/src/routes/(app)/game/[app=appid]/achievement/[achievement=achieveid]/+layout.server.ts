@@ -1,12 +1,15 @@
-import { TranslateRepository } from "@project/lib";
+import { TranslateClient, TranslateRepository } from "@project/lib";
 import { error } from "@sveltejs/kit";
+import { env } from "$env/dynamic/private";
 import type { Breadcrumb } from "$lib/breadcrumbs";
 import { getLocale } from "$lib/paraglide/runtime.js";
 
-export const load = async ({ params, parent, locals }) => {
+export const load = async ({ params, parent, locals, platform }) => {
 	const achievementId = decodeURIComponent(params.achievement);
 
-	const translate = new TranslateRepository(locals.translateClient, locals.miscCache);
+	const cache = platform?.env.STEAM_CACHE;
+	if (!cache) throw new Error("STEAM_CACHE is not available in this environment");
+	const translate = new TranslateRepository(new TranslateClient(env.GOOGLE_API_KEY), cache);
 
 	const { app, breadcrumbs: parentBreadcrumbs } = await parent();
 

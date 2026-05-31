@@ -1,10 +1,10 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 import type {
 	ProjectDB,
+	SteamAuthenticatedAPIClient,
 	SteamCommunityAPI,
 	SteamStoreAPI,
 	SteamUser,
-	TranslateClient,
 	VaultService,
 } from "@project/lib";
 
@@ -13,13 +13,11 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			translateClient: TranslateClient;
-			steamClient: SteamAuthenticatedAPI;
+			steamClient: SteamAuthenticatedAPIClient;
 			steamStoreClient: SteamStoreAPI;
 			steamUser: SteamUser | null;
 			steamCommunityClient: SteamCommunityAPI;
 			steamCacheDB: ProjectDB;
-			miscCache: KVNamespace;
 			vault: VaultService;
 		}
 		// interface PageData {}

@@ -1,53 +1,10 @@
 <script lang="ts" module>
-	import { SvelteMap, SvelteSet } from "svelte/reactivity";
-
 	let translate = $state(false); // default to false, because oof my wallet
-
-	// I wanted to use a WeakMap here, but it's not reactive.
-	let translations = new SvelteMap<SteamAppAchievement, Promise<string>>();
-	let achievements = new SvelteSet<SteamAppAchievement>();
-
-	function translateAchievements(lang: LanguageCode) {
-		console.debug(`Translating achievements for language: ${lang}, total: ${achievements.size}`);
-
-		const missingTranslations = achievements
-			.values()
-			.filter((achievement) => !translations.has(achievement) && achievement.language !== lang)
-			.toArray();
-		if (missingTranslations.length === 0) return;
-
-		// Group achievements by app ID to reduce API calls
-		const appIds = new Set(missingTranslations.map((a) => a.app.id)).values().toArray();
-
-		const resMap = fetch(`/translate?lang=${lang}`, {
-			method: "POST",
-			body: JSON.stringify(appIds),
-		}).then((res) => {
-			if (!res.ok) {
-				throw new Error(`Failed to fetch translations: ${res.status} ${res.statusText}`);
-			}
-			return res.json() as Promise<Record<string, string>>;
-		});
-
-		for (const achievement of missingTranslations) {
-			// Assign promise back to the map
-			const res = resMap.then((res) => res[`${achievement.app.id}:${achievement.id}`] ?? "");
-			translations.set(achievement, res);
-		}
-	}
-
-	// I'm fairly confident this is another memory leak, but it's fine for now
-	$effect.root(() => {
-		$effect(() => {
-			if (translate) translateAchievements(getLocale());
-		});
-
-		return () => {};
-	});
 </script>
 
 <script lang="ts">
 	import { type LanguageCode, SteamAppAchievement, SteamUserAchievement } from "@project/lib";
+	import { getAchievementTranslation } from "$lib/translation.remote";
 	import { m } from "$lib/paraglide/messages.js";
 	import { getLocale, localizeHref } from "$lib/paraglide/runtime";
 	import TranslationToggle from "$lib/TranslationToggle.svelte";
@@ -62,15 +19,7 @@
 	const size = 64;
 
 	const imgClass = "border-surface-300 bg-surface-900 rounded border";
-
-	$effect(() => {
-		achievements.add(achievement);
-
-		return () => {
-			achievements.delete(achievement);
-			translations.delete(achievement);
-		};
-	});
+	const targetLanguage = $derived(getLocale() as LanguageCode);
 </script>
 
 <div class="card">
@@ -137,15 +86,19 @@
 						</p>
 					{:else}
 						<p class="text-surface-100 line-clamp-3 text-xs">
-							{#if !translate || achievement.language === getLocale()}
+							{#if !translate || achievement.language === targetLanguage}
 								{achievement.description}
 							{:else}
-								{#await translations.get(achievement)}
+								{#await getAchievementTranslation({
+									appId: achievement.app.id,
+									achievementId: achievement.id,
+									lang: targetLanguage,
+								})}
 									<span class="text-surface-500">
 										{m["loading.title"]()}
 									</span>
 								{:then translation}
-									{@html translation}
+									{@html translation ?? ""}
 								{:catch error}
 									<span class="text-error">{error.message}</span>
 								{/await}
@@ -154,7 +107,7 @@
 					{/if}
 				</div>
 				<div class="z-50">
-					{#if achievement.language !== getLocale()}
+					{#if achievement.language !== targetLanguage}
 						<TranslationToggle
 							class="preset-outlined-surface-500 text-surface-600-400 h-7 w-7"
 							bind:translate

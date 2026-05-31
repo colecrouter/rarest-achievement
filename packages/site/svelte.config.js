@@ -9,6 +9,9 @@ const config = {
 
 	kit: {
 		adapter: adapter(),
+		experimental: {
+			remoteFunctions: true,
+		},
 		alias: {
 			lib: "../../packages/lib/src/index",
 		},
@@ -46,6 +49,11 @@ const config = {
 			toggleKeyCombo: "alt-x", // Or change to your preferred shortcut (e.g., 'control-shift-i')
 			showToggleButton: "always",
 			toggleButtonPos: "bottom-right",
+		},
+	},
+	compilerOptions: {
+		experimental: {
+			async: true,
 		},
 	},
 };

@@ -5,7 +5,6 @@ import {
 	SteamCommunityAPIClient,
 	SteamStoreAPIClient,
 	setFetchManager,
-	TranslateClient,
 	VaultService,
 } from "@project/lib";
 import type { Handle, HandleFetch } from "@sveltejs/kit";
@@ -56,10 +55,6 @@ const authHandle: Handle = async ({ event, resolve }) => {
 			event.locals.steamUser = user;
 		}
 	}
-
-	// Initialize the TranslateClient
-	event.locals.translateClient = new TranslateClient(env.GOOGLE_API_KEY);
-	event.locals.miscCache = event.platform.env.STEAM_CACHE;
 
 	return resolve(event);
 };

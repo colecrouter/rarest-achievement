@@ -10,8 +10,9 @@
 	import { Reveal, reveal } from "sveltersect";
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
+	import AnimatedNumber from "$lib/AnimatedNumber.svelte";
 	import { m } from "$lib/paraglide/messages.js";
-	import { deLocalizeUrl, getLocale, localizeHref } from "$lib/paraglide/runtime";
+	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
 	import {
 		AchievementClientSortManager,
 		setAchievementClientSortManager,
@@ -68,11 +69,10 @@
 		tracked = [data.stats.achievementCount, data.stats.userCount, data.stats.gameCount];
 	};
 
-	const formatStat = (value: number) =>
-		new Intl.NumberFormat(getLocale(), {
-			notation: "compact",
-			maximumSignificantDigits: 2,
-		}).format(value);
+	const statNumberFormat = {
+		notation: "compact",
+		maximumSignificantDigits: 2,
+	} satisfies Intl.NumberFormatOptions;
 
 	const cardRanks = [0, 1, 2] as const;
 
@@ -225,7 +225,9 @@
 						<div class="bg-primary-500/10 mb-4 rounded-full p-4">
 							<stat.icon class="text-primary-500 h-8 w-8" />
 						</div>
-						<div class="mb-2 text-4xl font-bold">{formatStat(value)}+</div>
+						<div class="mb-2 text-4xl font-bold">
+							<AnimatedNumber {value} format={statNumberFormat} suffix="+" />
+						</div>
 						<div class="text-surface-300">{stat.label}</div>
 					</div>
 				{/each}

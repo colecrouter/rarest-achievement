@@ -4,10 +4,10 @@
 
 <script lang="ts">
 	import { type LanguageCode, SteamAppAchievement, SteamUserAchievement } from "@project/lib";
-	import { getAchievementTranslation } from "$lib/translation.remote";
 	import { m } from "$lib/paraglide/messages.js";
 	import { getLocale, localizeHref } from "$lib/paraglide/runtime";
 	import TranslationToggle from "$lib/TranslationToggle.svelte";
+	import { getAchievementTranslation } from "$lib/translation.remote";
 	import Badge from "./_badge.svelte";
 
 	interface Props {

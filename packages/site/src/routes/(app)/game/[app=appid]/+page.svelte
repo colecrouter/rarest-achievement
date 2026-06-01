@@ -63,6 +63,29 @@
 		),
 	]);
 
+	let summaryBuckets = $derived([
+		{
+			label: m["chart.achievements.label"](),
+			value: totalCount,
+			lineClass: "bg-primary-500/20",
+		},
+		{
+			label: m["chart.rarity.ultraRare"](),
+			value: achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.ultraRare"]())?.[1].length ?? 0,
+			lineClass: "bg-ultra-rare/20",
+		},
+		{
+			label: m["chart.rarity.rare"](),
+			value: achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.rare"]())?.[1].length ?? 0,
+			lineClass: "bg-rare/20",
+		},
+		{
+			label: m["chart.rarity.uncommon"](),
+			value: achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.uncommon"]())?.[1].length ?? 0,
+			lineClass: "bg-uncommon/20",
+		},
+	]);
+
 	$effect(() => {
 		if (!donutchart) return;
 
@@ -241,6 +264,16 @@
 </div>
 
 <main class="container mx-auto mt-4 px-4 py-8">
+	<div class="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+		{#each summaryBuckets as bucket (bucket.label)}
+			<div class="card secondary relative p-4">
+				<div class="{bucket.lineClass} absolute inset-x-0 top-0 h-1"></div>
+				<div class="text-surface-300 mb-1 text-sm">{bucket.label}</div>
+				<div class="text-3xl font-bold">{bucket.value}</div>
+			</div>
+		{/each}
+	</div>
+
 	<div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
 		<!-- Achievement Progress -->
 		<div class="card p-4 lg:col-span-2">

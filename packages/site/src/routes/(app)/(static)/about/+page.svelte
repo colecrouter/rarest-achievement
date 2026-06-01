@@ -103,21 +103,40 @@
 		</section>
 
 		<!-- Our Mission -->
-		<section class="mb-16 flex flex-col items-center">
-			<div class="grid max-w-2xl items-center gap-12">
+		<section class="mb-16">
+			<div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
 				<div>
-					<h2 class="mb-6 text-center text-3xl font-bold">
+					<h2 class="mb-6 text-3xl font-bold">
 						{m["about.mission.title"]()}
 					</h2>
-					<p class="text-surface-300 mb-4">
+					<p class="text-surface-300 mb-4 max-w-3xl text-lg">
 						{m["about.mission.paragraph1"]()}
 					</p>
-					<p class="text-surface-300 mb-4">
+					<p class="text-surface-300 mb-4 max-w-3xl">
 						{m["about.mission.paragraph2"]()}
 					</p>
-					<p class="text-surface-300">
+					<p class="text-surface-300 max-w-3xl">
 						{m["about.mission.paragraph3"]()}
 					</p>
+				</div>
+				<div class="grid gap-3">
+					{#each Object.values(features) as feature (feature.title)}
+						<div class="card secondary flex gap-4 p-4">
+							<div class="bg-primary-500/10 flex h-10 w-10 shrink-0 items-center justify-center rounded">
+								{#if feature.iconType === "component"}
+									<feature.icon class="text-primary-500 h-5 w-5" />
+								{:else}
+									{@html feature.icon}
+								{/if}
+							</div>
+							<div>
+								<h3 class="font-bold">{feature.title}</h3>
+								<p class="text-surface-300 text-sm">
+									{feature.shortDescription}
+								</p>
+							</div>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</section>
@@ -128,7 +147,7 @@
 				{m["about.features.title"]()}
 			</h2>
 			<div class="grid gap-6 md:grid-cols-3">
-				{#each Object.values(features) as feature}
+				{#each Object.values(features) as feature (feature.title)}
 					<div class="card p-4">
 						<div class="flex flex-col items-center">
 							<div class="bg-primary-500/10 mb-4 flex h-12 w-12 items-center justify-center rounded">
@@ -251,7 +270,7 @@
 						</div>
 					</div>
 					<div class="flex flex-col justify-center">
-						<p class="text-surface-300/20 mb-4">
+						<p class="text-surface-300 mb-4">
 							Follow us on social media for updates, tips, and to join our growing community of
 							achievement hunters.
 						</p>

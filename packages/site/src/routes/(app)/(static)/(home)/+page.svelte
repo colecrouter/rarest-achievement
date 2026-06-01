@@ -13,10 +13,7 @@
 	import AnimatedNumber from "$lib/AnimatedNumber.svelte";
 	import { m } from "$lib/paraglide/messages.js";
 	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
-	import {
-		AchievementClientSortManager,
-		setAchievementClientSortManager,
-	} from "$lib/SortManager/AchievementSortManager.js";
+	import { setAchievementClientSortManager } from "$lib/SortManager/AchievementSortManager.js";
 
 	let { data } = $props();
 
@@ -76,10 +73,6 @@
 
 	const cardRanks = [0, 1, 2] as const;
 
-	let exploreTarget = $state<HTMLElement | null>(null);
-
-	$inspect(exploreTarget);
-
 	setAchievementClientSortManager();
 </script>
 
@@ -97,8 +90,8 @@
 	<!-- Hero Section -->
 	<section class="hero relative overflow-hidden">
 		<div class="from-surface-950/0 to-surface-950/50 bg-gradient-to-l py-20">
-			<div class="container">
-				<div class="grid items-center gap-8 md:grid-cols-2">
+			<div class="container max-w-6xl">
+				<div class="grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_minmax(320px,520px)]">
 					<div class="space-y-6">
 						<h1 class="text-4xl leading-tight font-bold md:text-5xl lg:text-6xl">
 							{m["home.hero.title"]()}
@@ -123,7 +116,7 @@
 								</h3>
 							</div>
 							<div class="space-y-4">
-								{#each cardRanks as rank}
+								{#each cardRanks as rank (rank)}
 									<div class="card secondary flex items-center gap-3 p-3">
 										<div
 											class="bg-surface-800 text-primary-500 flex h-8 w-8 items-center justify-center rounded-full font-bold"
@@ -165,18 +158,10 @@
 	</section>
 
 	<!-- Example achievements -->
-	<section class="p-8">
-		<div class="container mx-auto md:flex md:flex-row-reverse">
-			<div class="p-4 text-center md:flex md:flex-col md:justify-center">
-				<h2 class="mb-8 text-3xl font-bold">
-					{m["home.explore.title"]()}
-				</h2>
-				<p>
-					{m["home.explore.description"]()}
-				</p>
-			</div>
-			<div class="grid grid-cols-1 gap-6 pt-4 transition-all" bind:this={exploreTarget}>
-				{#each data.showcase2 as achievement, i}
+	<section class="px-4 py-16">
+		<div class="container grid max-w-6xl items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_360px]">
+			<div class="grid grid-cols-1 gap-6 transition-all">
+				{#each data.showcase2 as achievement, i (achievement.id)}
 					<Reveal
 						in={{
 							animation: fly,
@@ -188,24 +173,27 @@
 							threshold: 0.5,
 						}}
 						once
-						target={exploreTarget}
 					>
-						<div
-							class="shadow-primary-500/30 float even:shadow-lg {rotations[
-								i % rotations.length
-							]}"
-						>
+						<div class="float {rotations[i % rotations.length]}">
 							<AchievementCards.Card {achievement} />
 						</div>
 					</Reveal>
 				{/each}
+			</div>
+			<div class="text-center lg:text-left">
+				<h2 class="mb-4 text-3xl font-bold">
+					{m["home.explore.title"]()}
+				</h2>
+				<p class="text-surface-300">
+					{m["home.explore.description"]()}
+				</p>
 			</div>
 		</div>
 	</section>
 
 	<!-- Stats Section -->
 	<section class="bg-surface-900/30 py-16">
-		<div class="container mx-auto px-4">
+		<div class="container max-w-6xl">
 			<div
 				class="grid grid-cols-1 gap-8 md:grid-cols-3"
 				use:reveal={{
@@ -237,7 +225,7 @@
 
 	<!-- Featured Achievements -->
 	<section class="py-16">
-		<div class="container mx-auto px-4">
+		<div class="container max-w-6xl">
 			<div class="mb-10 flex flex-col items-start justify-between md:flex-row md:items-center">
 				<div>
 					<h2 class="mb-2 text-3xl font-bold">
@@ -270,7 +258,7 @@
 
 	<!-- Features Section -->
 	<section class="bg-surface-900/30 py-16">
-		<div class="container mx-auto px-4">
+		<div class="container max-w-6xl">
 			<h2 class="mb-12 text-center text-3xl font-bold">
 				{m["home.features.title"]()}
 			</h2>
@@ -290,7 +278,7 @@
 
 	<!-- CTA Section -->
 	<section class="py-20">
-		<div class="container mx-auto px-4">
+		<div class="container max-w-6xl">
 			<div
 				class="border-surface-700 from-surface-800 to-surface-900 card bg-gradient-to-r p-8 text-center md:p-12"
 			>

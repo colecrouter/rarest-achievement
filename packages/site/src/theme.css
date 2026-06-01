@@ -1,6 +1,6 @@
 [data-theme="theme"] {
 	--text-scaling: 1.067;
-	--base-font-color: var(--color-surface-950);
+	--base-font-color: var(--color-surface-50);
 	--base-font-color-dark: var(--color-surface-50);
 	--base-font-family:
 		Bahnschrift, "DIN Alternate", "Franklin Gothic Medium", "Nimbus Sans Narrow", sans-serif-condensed, sans-serif;
@@ -33,7 +33,7 @@
 	--default-border-width: 1px;
 	--default-divide-width: 1px;
 	--default-ring-width: 1px;
-	--body-background-color: var(--color-surface-50);
+	--body-background-color: var(--color-surface-950);
 	--body-background-color-dark: var(--color-surface-950);
 	--color-primary-50: oklch(97.76% 0.13 108.57deg);
 	--color-primary-100: oklch(93.34% 0.14 99.76deg);

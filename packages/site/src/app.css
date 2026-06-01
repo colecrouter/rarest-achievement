@@ -61,8 +61,15 @@ html {
 }
 
 @layer base {
+	:root {
+		color-scheme: dark;
+	}
+
+	html,
 	body {
-		background-color: transparent;
+		min-height: 100%;
+		background-color: var(--body-background-color);
+		color: var(--base-font-color);
 	}
 }
 

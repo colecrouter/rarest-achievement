@@ -70,19 +70,26 @@ export class YouTubeRepository {
 			console.time("AI relevance determination");
 
 			// Use the AI to determine relevance
-			const { response: aiResponse } = await this.#ai.run("@cf/google/gemma-3-12b-it", {
+			const aiResult = await this.#ai.run("@cf/qwen/qwen3-30b-a3b-fp8", {
 				messages,
-				guided_json: {
-					type: "array",
-					items: {
-						type: "boolean",
+				response_format: {
+					type: "json_schema",
+					json_schema: {
+						type: "array",
+						items: {
+							type: "boolean",
+						},
 					},
 				},
 			});
 
 			console.timeEnd("AI relevance determination");
 
-			const relevance = JSON.parse(aiResponse) as unknown;
+			const aiResponse =
+				typeof aiResult === "object" && aiResult !== null && "response" in aiResult
+					? aiResult.response
+					: aiResult;
+			const relevance = typeof aiResponse === "string" ? (JSON.parse(aiResponse) as unknown) : aiResponse;
 
 			// Validate the AI response
 			if (

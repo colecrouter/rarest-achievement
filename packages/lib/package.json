@@ -24,6 +24,7 @@
 		"test": "tsx --import ./test/setup.js --test \"**/*.spec.ts\""
 	},
 	"devDependencies": {
+		"@effect/sql-drizzle": "^0.50.0",
 		"drizzle-kit": "^0.18.1",
 		"drizzle-orm": "0.45.2",
 		"htmlrewriter": "^0.0.12",

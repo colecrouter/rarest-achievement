@@ -21,10 +21,10 @@
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"db:migration": "drizzle-kit generate",
-		"test": "tsx --import ./test/setup.js --test \"**/*.spec.ts\""
+		"test": "tsx --import ./test/setup.js --test test/**/*.spec.ts"
 	},
 	"devDependencies": {
-		"drizzle-kit": "^0.18.1",
+		"drizzle-kit": "^0.31.10",
 		"drizzle-orm": "0.45.2",
 		"htmlrewriter": "^0.0.12",
 		"node-resolve-ts": "^1.0.2",

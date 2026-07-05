@@ -17,9 +17,11 @@ import {
 	type SteamAuthenticatedAPI,
 	type SteamChartsAPI,
 	type SteamStoreAPI,
+	steamChartsSnapshots,
 } from "../..";
 import { estimatePlayerCount } from "../../ml/playerEstimate";
 import { SteamApp, type SteamAppRaw } from "../../models";
+import type { ChartDataPoint, GetAppChartDataResponse } from "../api/steamcharts/types";
 import {
 	type ComposableQueryOptions,
 	type ComposableQueryResult,
@@ -32,6 +34,45 @@ import { excluded, jsonExtract } from "./operators";
 import { safeInsert, searchTerms } from "./utils";
 
 type AppSortMethod = "id";
+
+const RECENT_STEAM_CHART_POINTS_LIMIT = 120;
+
+type SteamChartsSnapshot = {
+	allTimePeak: number;
+	avgCount: number;
+	dayPeak: number;
+	recentPoints: ChartDataPoint[];
+};
+
+function getRecentSteamChartPoints(chartData: GetAppChartDataResponse): ChartDataPoint[] {
+	const configuredLimit = Math.floor(RECENT_STEAM_CHART_POINTS_LIMIT);
+	const limit = Number.isFinite(configuredLimit) ? Math.max(0, configuredLimit) : 0;
+	if (limit === 0) return [];
+	return chartData.slice(-limit);
+}
+
+function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChartsSnapshot | null {
+	if (chartData.length === 0) return null;
+
+	const dayCutoff = Date.now() / 1000 - 60 * 60 * 24;
+	let allTimePeak = 0;
+	let total = 0;
+	let dayPeak = 0;
+
+	for (const point of chartData) {
+		const [timestamp, value] = point;
+		allTimePeak = Math.max(allTimePeak, value);
+		total += value;
+		if (timestamp > dayCutoff) dayPeak = Math.max(dayPeak, value);
+	}
+
+	return {
+		allTimePeak,
+		avgCount: total / chartData.length,
+		dayPeak,
+		recentPoints: getRecentSteamChartPoints(chartData),
+	};
+}
 
 // Precise CTE type for "required apps" subquery: must expose a single column "app_id"
 type RequiredAppsSubquery = WithSubqueryWithSelection<{ app_id: typeof apps.id }, string>;
@@ -1002,21 +1043,63 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	}
 
 	/**
-	 * Fetch and upsert player count estimates with full calculation
+	 * Fetch and cache SteamCharts data for an app.
+	 */
+	private async fetchAndCacheSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshot | null> {
+		const chartData = await this.steamChartsApi.getAppChartData(appId);
+		if (chartData === null) return null;
+
+		const snapshot = summarizeSteamChartsData(chartData);
+		if (snapshot === null) return null;
+
+		await this.db
+			.insert(steamChartsSnapshots)
+			.values({
+				app_id: appId,
+				all_time_peak: snapshot.allTimePeak,
+				avg_count: snapshot.avgCount,
+				day_peak: snapshot.dayPeak,
+				recent_points: snapshot.recentPoints,
+				updated_at: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: steamChartsSnapshots.app_id,
+				set: {
+					all_time_peak: excluded(steamChartsSnapshots.all_time_peak),
+					avg_count: excluded(steamChartsSnapshots.avg_count),
+					day_peak: excluded(steamChartsSnapshots.day_peak),
+					recent_points: excluded(steamChartsSnapshots.recent_points),
+					updated_at: new Date(),
+				},
+			});
+
+		return snapshot;
+	}
+
+	/**
+	 * Fetch and upsert player count estimates with full calculation.
 	 */
 	private async fetchAndUpsertPlayerEstimates(appIds: number[]): Promise<Attempt<undefined, AttemptStatus>> {
 		if (appIds.length === 0) return Attempt.ok(undefined);
 
 		console.debug(`[AppRepository] Requesting ${appIds.length} entries`);
 
-		// Use composition to find missing estimates and get app details
 		const lang = getLanguageByCode(this.lang)?.apiCode || "english";
-
 		let appDetailsRows: Array<{ id: number; data: unknown }>;
 
 		if (this.requiredAppsSubquery) {
-			// Use provided subquery from cross-repository dependency to avoid parameter explosion
-			// Use .as() instead of raw alias for consistency & type-safety
+			const estimateExistsQuery = this.db
+				.select({ app_id: estimatedPlayers.app_id })
+				.from(estimatedPlayers)
+				.where(
+					this.freshnessCutoff
+						? and(
+								eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
+								gte(estimatedPlayers.updated_at, this.freshnessCutoff),
+							)
+						: eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
+				);
+
 			appDetailsRows = await this.db
 				.select({
 					id: apps.id,
@@ -1024,36 +1107,16 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				})
 				.from(this.requiredAppsSubquery)
 				.innerJoin(apps, eq(this.requiredAppsSubquery.app_id, apps.id))
-				.where(
-					and(
-						eq(apps.lang, lang),
-						notExists(
-							this.db
-								.select({ app_id: estimatedPlayers.app_id })
-								.from(estimatedPlayers)
-								.where(eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id)),
-						),
-					),
-				);
+				.where(and(eq(apps.lang, lang), notExists(estimateExistsQuery)));
 		} else {
+			const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
 			appDetailsRows = await this.db
 				.select({
 					id: apps.id,
 					data: apps.data,
 				})
 				.from(apps)
-				.where(
-					and(
-						eq(apps.lang, lang),
-						inArray(apps.id, appIds),
-						notExists(
-							this.db
-								.select({ app_id: estimatedPlayers.app_id })
-								.from(estimatedPlayers)
-								.where(eq(estimatedPlayers.app_id, apps.id)),
-						),
-					),
-				);
+				.where(and(...allConditions));
 		}
 
 		if (appDetailsRows.length === 0) {
@@ -1070,8 +1133,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			const appId = row.id;
 			const appDetails = appDetailsMap.get(appId);
 			if (!appDetails) {
-				// Suppress non-build/count warnings per logging standard
-				// Still insert a record with null/undefined to mark that we attempted estimation
 				return Attempt.ok({
 					app_id: appId,
 					estimated_players: null,
@@ -1081,35 +1142,28 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			getFetchManager().reset({ maxFetches: 200 });
 			const playerCountData = await Attempt.all([
 				this.steamStoreApi.getAppReviews(appId, { num_per_page: "0" }),
-				this.steamChartsApi.getAppChartData(appId),
+				this.fetchAndCacheSteamChartsSnapshot(appId),
 			]);
 
 			const playerCount = await playerCountData.chainAsync(async (data) => {
 				const [appReviews, appPlayerCount] = data;
 
-				// Only tolerate missing player count data by inserting a null estimate.
 				if (appPlayerCount === undefined) {
 					return Attempt.ok(null);
 				}
 
-				// If reviews are missing or null, propagate an error (do not silently continue).
 				if (appReviews == null) {
-					// Treat as partial: skip inserting a row so tests relying on absence continue to work.
 					return Attempt.partial<number>(0, new Error(`Missing review or chart data for app ${appId}`));
 				}
 
-				// Sometimes chart data is null, so we'll just return null
 				if (appPlayerCount === null) return Attempt.ok(null);
 
-				// Narrow reviews to non-null after guards above
 				const reviews = appReviews as NonNullable<typeof appReviews>;
 
 				const estimate = await estimatePlayerCount({
-					all_time_peak: appPlayerCount.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
-					avg_count: appPlayerCount.reduce((acc, curr) => acc + curr[1], 0) / appPlayerCount.length,
-					day_peak: appPlayerCount
-						.filter((curr) => curr[0] > Date.now() / 1000 - 60 * 60 * 24)
-						.reduce((acc, curr) => Math.max(acc, curr[1]), 0),
+					all_time_peak: appPlayerCount.allTimePeak,
+					avg_count: appPlayerCount.avgCount,
+					day_peak: appPlayerCount.dayPeak,
 					release_date_numeric: new Date(appDetails.release_date?.date ?? 0).getTime() / 1000,
 					review_score: reviews.query_summary.review_score,
 					total_reviews: reviews.query_summary.total_reviews,
@@ -1128,7 +1182,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		const playerCountData = await Promise.all(playerEstimateAttempts);
 		const filteredData = playerCountData.filter((d) => d.isOk()).map((d) => d.data);
 
-		// Insert estimated player counts (database operation - let it throw)
 		if (filteredData.length > 0) {
 			console.debug(`[AppRepository] Upsert ${filteredData.length} entries`);
 			await safeInsert(this.db, filteredData, (chunk) =>
@@ -1145,7 +1198,6 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			);
 		}
 
-		// Return success or partial based on whether we encountered errors
 		const firstError = playerCountData.find((d) => d.isError());
 		return Attempt.from(undefined, firstError ? firstError.error : null);
 	}

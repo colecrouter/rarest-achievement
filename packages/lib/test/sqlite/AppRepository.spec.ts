@@ -10,6 +10,7 @@ import {
 	achievementsStats,
 	apps,
 	estimatedPlayers,
+	steamChartsSnapshots,
 	ownedGames,
 	users,
 } from "../../src/repositories/sqlite/schema.js";
@@ -397,6 +398,88 @@ describe("AppRepository - SQLite (in-memory)", () => {
 		const ep = rows.find((r) => r.app_id === appId);
 		assert.ok(ep, "Estimated players row should be inserted");
 		assert.strictEqual(ep?.est, null, "Estimated players value should be null");
+	});
+
+	test("stores SteamCharts snapshot while estimating player count", async () => {
+		const { repo, store, charts } = ctx;
+		const appId = 81002;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+
+		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Charted App") });
+		store.setAppReviews(appId, {
+			success: 1,
+			cursor: "",
+			reviews: [],
+			query_summary: {
+				num_reviews: 100,
+				review_score: 8,
+				review_score_desc: "Very Positive",
+				total_positive: 90,
+				total_negative: 10,
+				total_reviews: 100,
+			},
+		});
+		charts.setAppChartData(appId, [
+			[nowSeconds - 60 * 60 * 48, 10],
+			[nowSeconds - 60 * 60 * 2, 25],
+			[nowSeconds - 60 * 30, 20],
+		]);
+
+		const result = await repo.compose().withLanguage("en").withAppIds(appId).build();
+		assert.ok(result.isOk(), "player estimate should complete");
+
+		const rows = await db
+			.select({
+				app_id: steamChartsSnapshots.app_id,
+				allTimePeak: steamChartsSnapshots.all_time_peak,
+				avgCount: steamChartsSnapshots.avg_count,
+				dayPeak: steamChartsSnapshots.day_peak,
+				recentPoints: steamChartsSnapshots.recent_points,
+			})
+			.from(steamChartsSnapshots);
+		const snapshot = rows.find((row) => row.app_id === appId);
+		assert.ok(snapshot, "SteamCharts snapshot should be stored");
+		assert.strictEqual(snapshot.allTimePeak, 25);
+		assert.strictEqual(snapshot.avgCount, 55 / 3);
+		assert.strictEqual(snapshot.dayPeak, 25);
+		assert.deepStrictEqual(snapshot.recentPoints, [
+			[nowSeconds - 60 * 60 * 48, 10],
+			[nowSeconds - 60 * 60 * 2, 25],
+			[nowSeconds - 60 * 30, 20],
+		]);
+	});
+
+	test("withCutoff refreshes stale player estimates", async () => {
+		const { repo, store, charts } = ctx;
+		const appId = 81003;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+		const staleDate = new Date(Date.now() - 60 * 60 * 1000);
+		const cutoff = new Date(Date.now() - 5 * 60 * 1000);
+
+		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Stale Estimate App") });
+		await db.insert(estimatedPlayers).values({ app_id: appId, estimated_players: 123, updated_at: staleDate });
+		store.setAppReviews(appId, {
+			success: 1,
+			cursor: "",
+			reviews: [],
+			query_summary: {
+				num_reviews: 100,
+				review_score: 8,
+				review_score_desc: "Very Positive",
+				total_positive: 90,
+				total_negative: 10,
+				total_reviews: 100,
+			},
+		});
+		charts.setAppChartData(appId, [[nowSeconds - 60, 42]]);
+
+		const result = await repo.compose().withLanguage("en").withAppIds(appId).withCutoff(cutoff).build();
+		assert.ok(result.isOk(), "stale estimate refresh should complete");
+
+		const rows = await db
+			.select({ app_id: steamChartsSnapshots.app_id, allTimePeak: steamChartsSnapshots.all_time_peak })
+			.from(steamChartsSnapshots);
+		assert.strictEqual(rows.find((row) => row.app_id === appId)?.allTimePeak, 42);
 	});
 
 	test("withCutoff refetches stale app data", async () => {

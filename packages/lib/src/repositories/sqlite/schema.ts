@@ -1,7 +1,8 @@
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { foreignKey, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { foreignKey, index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { APILanguageCode } from "../../lang";
 import type { SteamAppRaw, SteamUserRaw } from "../../models";
+import type { ChartDataPoint } from "../api/steamcharts/types";
 
 export const users = sqliteTable(
 	"users",
@@ -134,6 +135,21 @@ export const estimatedPlayers = sqliteTable(
 	(table) => [index("idx_estimated_players_timestamp").on(table.updated_at)],
 );
 
+export const steamChartsSnapshots = sqliteTable(
+	"steam_charts_snapshots",
+	{
+		app_id: integer("app_id").notNull().primaryKey(),
+		all_time_peak: integer("all_time_peak").notNull(),
+		avg_count: real("avg_count").notNull(),
+		day_peak: integer("day_peak").notNull(),
+		recent_points: text("recent_points", { mode: "json" }).notNull().$type<ChartDataPoint[]>(),
+		updated_at: integer("updated_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(table) => [index("idx_steam_charts_snapshots_timestamp").on(table.updated_at)],
+);
+
 export const userScores = sqliteTable(
 	"user_scores",
 	{
@@ -160,6 +176,7 @@ const schema = {
 	ownedGames,
 	friends,
 	estimatedPlayers,
+	steamChartsSnapshots,
 	userScores,
 };
 

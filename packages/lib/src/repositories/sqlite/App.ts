@@ -297,31 +297,18 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			estimated_players: typeof estimatedPlayers.$inferSelect;
 		}> = [];
 		if (appRows.length > 0) {
-			// Build app IDs subquery with the same conditions as the main query
-			let appIdsQuery = this.db.select({ id: apps.id }).from(apps).$dynamic();
+			const returnedAppIds = [...new Set(appRows.map((row) => row.apps.id))];
+			const estimateIdConditions = returnedAppIds.map((appId) => eq(estimatedPlayers.app_id, appId));
+			const estimateIdsCondition = or(...estimateIdConditions);
 
-			// Add CTEs if any exist
-			if (this.ctes.length > 0) {
-				appIdsQuery = this.db
-					.with(...this.ctes)
-					.select({ id: apps.id })
-					.from(apps)
-					.$dynamic();
+			if (estimateIdsCondition !== undefined) {
+				estimatedPlayersRows = await this.db
+					.select({
+						estimated_players: estimatedPlayers,
+					})
+					.from(estimatedPlayers)
+					.where(estimateIdsCondition);
 			}
-
-			// Add language filter and all other where conditions (same as main query)
-			const lang = getLanguageByCode(this.lang)?.apiCode || "english";
-			const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
-			if (allConditions.length > 0) {
-				appIdsQuery = appIdsQuery.where(and(...allConditions));
-			}
-
-			estimatedPlayersRows = await this.db
-				.select({
-					estimated_players: estimatedPlayers,
-				})
-				.from(estimatedPlayers)
-				.where(inArray(estimatedPlayers.app_id, appIdsQuery));
 		}
 
 		// Map results to SteamApp objects
@@ -1113,7 +1100,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			const appIdsCondition = or(...appIdConditions);
 			if (appIdsCondition === undefined) return Attempt.ok(undefined);
 
-			const allConditions = [eq(apps.lang, lang), ...this.whereConditions, appIdsCondition];
+			const allConditions = [eq(apps.lang, lang), appIdsCondition];
 			appDetailsRows = await this.db
 				.select({
 					id: apps.id,

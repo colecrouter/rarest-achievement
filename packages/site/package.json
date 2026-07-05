@@ -29,7 +29,6 @@
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/svelte": "^5.2.4",
 		"@vitejs/plugin-legacy": "^6.1.1",
-		"chart.js": "^4.4.8",
 		"drizzle-orm": "0.45.2",
 		"jsdom": "^26.0.0",
 		"svelte": "^5.34.3",
@@ -49,6 +48,7 @@
 		"esm-env": "npm:esm-env-runtime@^0.1.1"
 	},
 	"dependencies": {
-		"drizzle-kit": "^0.18.1"
+		"drizzle-kit": "^0.18.1",
+		"layerchart": "^2.0.1"
 	}
 }

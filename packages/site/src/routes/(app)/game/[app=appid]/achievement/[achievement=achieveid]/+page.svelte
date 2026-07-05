@@ -4,11 +4,10 @@
 	import Share from "@lucide/svelte/icons/share";
 	import YouTube from "@lucide/svelte/icons/youtube";
 	import { Tooltip } from "@skeletonlabs/skeleton-svelte";
-	import Chart from "chart.js/auto";
-	import Colors from "tailwindcss/colors";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
+	import AchievementRarityChart from "$lib/charts/AchievementRarityChart.svelte";
 	import FriendCards from "$lib/FriendCards";
 	import { m } from "$lib/paraglide/messages.js";
 	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
@@ -26,107 +25,6 @@
 
 	let isSignedIn = true;
 
-	let statsChart = $state<HTMLCanvasElement>();
-	$effect(() => {
-		const rarityChartData = gameAchievements.data
-			.toSorted((a, b) => a.globalPercentage - b.globalPercentage)
-			.map((current) => ({
-				name: current.name.length > 20 ? `${current.name.substring(0, 20)}...` : current.name,
-				rarity: current.globalPercentage,
-				id: current.id,
-				isCurrent: current.id === achievement.id,
-			}));
-
-		const style = getComputedStyle(document.documentElement);
-		const rarityChartColors = rarityChartData.map((data) => {
-			const rarity = getRarity(data.rarity);
-			if (data.isCurrent) {
-				return style.getPropertyValue(`--color-${rarity}-light`);
-			}
-			return style.getPropertyValue(`--color-${rarity}-dark`);
-		});
-
-		const currentIndex = rarityChartData.findIndex((data) => data.isCurrent);
-		const selectedColor = rarityChartColors[currentIndex];
-
-		const ctx = statsChart?.getContext("2d");
-		if (!ctx) return;
-
-		const chart = new Chart(ctx, {
-			type: "bar",
-			data: {
-				labels: rarityChartData.map((d) => d.name),
-				datasets: [
-					{
-						label: m["achievement.thisAchievement.label"](),
-						data: rarityChartData.map((d) => d.rarity),
-						backgroundColor: rarityChartColors,
-						// @ts-expect-error custom field
-						selectedColor, // custom field for legend use
-					},
-				],
-			},
-			options: {
-				scales: {
-					y: {
-						beginAtZero: true,
-					},
-					x: {
-						ticks: {
-							color: Colors.gray[300],
-							maxRotation: 60,
-						},
-					},
-				},
-				color: Colors.gray[300],
-				plugins: {
-					legend: {
-						labels: {
-							generateLabels: (chart) => {
-								const dataset = chart.data.datasets[0];
-								return [
-									{
-										text: dataset?.label ?? "",
-										fontColor: Colors.gray[300],
-										// @ts-expect-error custom field
-										fillStyle: dataset?.selectedColor ?? "",
-									},
-								];
-							},
-						},
-					},
-				},
-				onClick(_, elements) {
-					const first = elements[0];
-					if (!first) return;
-					const index = first.index;
-					const selectedAchievement = rarityChartData[index]?.id;
-					if (!selectedAchievement) return;
-					const selectedAchievementId = gameAchievements.data.find((a) => a.id === selectedAchievement)?.id;
-					if (!selectedAchievementId) return;
-					goto(localizeHref(`/game/${achievement.app.id}/achievement/${selectedAchievementId}`), {
-						keepFocus: true,
-					});
-				},
-				onHover(_, elements, chart) {
-					// Reset
-					chart.canvas.style.cursor = "default";
-
-					const first = elements[0];
-					if (!first) return;
-					const index = first.index;
-					const selectedAchievement = rarityChartData[index]?.id;
-					if (!selectedAchievement) return;
-					const selectedAchievementId = gameAchievements.data.find((a) => a.id === selectedAchievement)?.id;
-					if (!selectedAchievementId) return;
-
-					chart.canvas.style.cursor = "pointer";
-				},
-			},
-		});
-
-		return () => chart.destroy();
-	});
 
 	let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(() => {
 		switch (page.url.searchParams.get("tab")) {
@@ -348,12 +246,11 @@
 									appName: achievement.app.name,
 								})}
 							</p>
-							<div class="max-h-[480px]">
-								<!-- Need to key, chartjs not updated when soft-navigating to a different achievement page -->
-								{#key achievement}
-									<canvas bind:this={statsChart} class="h-full w-full"></canvas>
-								{/key}
-							</div>
+							<AchievementRarityChart
+								achievements={gameAchievements.data}
+								currentAchievementId={achievement.id}
+								appId={achievement.app.id}
+							/>
 						</div>
 
 						{#if isSignedIn}

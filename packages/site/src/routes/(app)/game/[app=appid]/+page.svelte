@@ -5,11 +5,10 @@
 	import Trophy from "@lucide/svelte/icons/trophy";
 	import { SteamUserAchievement } from "@project/lib";
 	import { Progress } from "@skeletonlabs/skeleton-svelte";
-	import Chart from "chart.js/auto";
-	import colors from "tailwindcss/colors";
 	import { browser } from "$app/environment";
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
+	import RarityDonutChart from "$lib/charts/RarityDonutChart.svelte";
 	import FriendCards from "$lib/FriendCards";
 	import { m } from "$lib/paraglide/messages";
 	import { deLocalizeUrl, getLocale } from "$lib/paraglide/runtime";
@@ -39,14 +38,13 @@
 	let totalCount = $derived(achievements.data.length);
 
 	let isSignedIn = true;
-	let donutchart: HTMLCanvasElement | null = null;
 
 	const rarities = [
-		[5, m["chart.rarity.ultraRare"]()],
-		[10, m["chart.rarity.rare"]()],
-		[50, m["chart.rarity.uncommon"]()],
-		[100, m["chart.rarity.common"]()],
-		[-1, m["status.locked"]()],
+		[5, m["chart.rarity.ultraRare"](), "ultra-rare"],
+		[10, m["chart.rarity.rare"](), "rare"],
+		[50, m["chart.rarity.uncommon"](), "uncommon"],
+		[100, m["chart.rarity.common"](), "common"],
+		[-1, m["status.locked"](), "locked"],
 	] as const;
 	let unlockedAchievementsGroupedByRarity = $derived([
 		...Map.groupBy(achievements.data.values() ?? [], (achievement) =>
@@ -62,6 +60,20 @@
 			(achievement) => rarities.find(([percentage]) => achievement.globalPercentage <= percentage)?.[1],
 		),
 	]);
+
+	let rarityBuckets = $derived(
+		rarities.map(([, label, key]) => {
+			const totalGroup = achievementsGroupedByRarity.find(([groupLabel]) => groupLabel === label);
+			const unlockedGroup = unlockedAchievementsGroupedByRarity.find(([groupLabel]) => groupLabel === label);
+
+			return {
+				key,
+				label,
+				total: totalGroup ? totalGroup[1].length : 0,
+				unlocked: unlockedGroup ? unlockedGroup[1].length : 0,
+			};
+		}),
+	);
 
 	let summaryBuckets = $derived([
 		{
@@ -85,73 +97,6 @@
 			lineClass: "bg-uncommon/20",
 		},
 	]);
-
-	$effect(() => {
-		if (!donutchart) return;
-
-		// Ensure we have counts for each rarity in declared order.
-		const unlockedAchievementCounts = rarities.map(([, label]) => {
-			const group = unlockedAchievementsGroupedByRarity.find(([groupLabel]) => groupLabel === label);
-			return group ? group[1].length : 0;
-		});
-		const achievementCounts = rarities.map(([, label]) => {
-			const group = achievementsGroupedByRarity.find(([groupLabel]) => groupLabel === label);
-			return group ? group[1].length : 0;
-		});
-
-		const style = getComputedStyle(document.body);
-		const bgVars = ["--color-ultra-rare", "--color-rare", "--color-uncommon", "--color-common", "--color-locked"];
-		const bgPrimary = bgVars.map((key) => style.getPropertyValue(key));
-		const bgSecondary = bgVars.map((key) => style.getPropertyValue(`${key}-dark`));
-		const bgColor = style.getPropertyValue("--color-surface-800");
-		new Chart(donutchart, {
-			type: "doughnut",
-			data: {
-				labels: rarities.map(([, label]) => label),
-				datasets: [
-					{
-						label: m["chart.achievements.label"](),
-						data: achievementCounts,
-						backgroundColor: bgPrimary,
-						borderWidth: 4,
-						borderColor: bgColor,
-						borderRadius: 4,
-					},
-					{
-						label: m["chart.unlockedAchievements.label"](),
-						data: unlockedAchievementCounts,
-						backgroundColor: bgSecondary,
-						borderWidth: 4,
-						borderColor: bgColor,
-						borderRadius: 4,
-					},
-				],
-			},
-			options: {
-				responsive: true,
-				plugins: {
-					legend: {
-						position: "bottom",
-						align: "start",
-						labels: {
-							color: colors.gray[300],
-							font: {
-								size: 14,
-								family: "Segoe UI",
-							},
-						},
-					},
-					tooltip: {
-						callbacks: {
-							afterLabel(tooltipItem) {
-								return `${(100 * (Number(tooltipItem.raw) / totalCount)).toFixed(1)}${m["chart.after.label.suffix"]()}`;
-							},
-						},
-					},
-				},
-			},
-		});
-	});
 
 	const barColor = (ratio: number): Rarity => {
 		if (ratio >= 1) return "ultra-rare";
@@ -298,7 +243,7 @@
 			</div>
 			<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 				<div class="w-full p-4">
-					<canvas bind:this={donutchart} class="h-full w-full"></canvas>
+					<RarityDonutChart buckets={rarityBuckets} {unlockedCount} {totalCount} />
 				</div>
 				<!-- Recent Unlocks -->
 				<div class="w-full p-4">

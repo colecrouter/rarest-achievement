@@ -1109,7 +1109,11 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				.innerJoin(apps, eq(this.requiredAppsSubquery.app_id, apps.id))
 				.where(and(eq(apps.lang, lang), notExists(estimateExistsQuery)));
 		} else {
-			const allConditions = [eq(apps.lang, lang), ...this.whereConditions];
+			const appIdConditions = appIds.map((appId) => eq(apps.id, appId));
+			const appIdsCondition = or(...appIdConditions);
+			if (appIdsCondition === undefined) return Attempt.ok(undefined);
+
+			const allConditions = [eq(apps.lang, lang), ...this.whereConditions, appIdsCondition];
 			appDetailsRows = await this.db
 				.select({
 					id: apps.id,

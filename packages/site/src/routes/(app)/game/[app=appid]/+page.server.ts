@@ -104,8 +104,11 @@ export const load = async ({ parent, locals }) => {
 			.map(() => summaries);
 	})();
 
+	const steamChartsSnapshot = await locals.vault.apps.getSteamChartsSnapshot(app.id);
+
 	return {
 		achievements,
 		friendsWithAchievement,
+		steamChartsSnapshot,
 	};
 };

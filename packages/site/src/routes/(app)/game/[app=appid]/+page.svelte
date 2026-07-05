@@ -9,6 +9,7 @@
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
 	import RarityDonutChart from "$lib/charts/RarityDonutChart.svelte";
+	import SteamChartsActivityChart from "$lib/charts/SteamChartsActivityChart.svelte";
 	import FriendCards from "$lib/FriendCards";
 	import { m } from "$lib/paraglide/messages";
 	import { deLocalizeUrl, getLocale } from "$lib/paraglide/runtime";
@@ -17,7 +18,7 @@
 	import Breadcrumbs from "../../Breadcrumbs.svelte";
 
 	let { data } = $props();
-	let { app, achievements, loggedIn: user } = $derived(data);
+	let { app, achievements, loggedIn: user, steamChartsSnapshot } = $derived(data);
 
 	let recentUnlocks = $derived(
 		!user
@@ -221,7 +222,7 @@
 		{/each}
 	</div>
 
-	<div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+	<div class="mb-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
 		<!-- Achievement Progress -->
 		<div class="card p-4 lg:col-span-2">
 			<h2 class="mb-1 text-xl font-bold">
@@ -243,110 +244,111 @@
 					{((unlockedCount / totalCount) * 100).toFixed(1)}%
 				</Progress>
 			</div>
-			<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-				<div class="w-full p-4">
-					<RarityDonutChart buckets={rarityBuckets} {unlockedCount} {totalCount} />
-				</div>
-				<!-- Recent Unlocks -->
-				<div class="w-full p-4">
-					<h3 class="mb-3 text-lg font-medium">
-						{m["game.recentUnlocks.title"]()}
-					</h3>
-					<div class="space-y-3">
-						{#if recentUnlocks}
+			<div class="py-4">
+				<RarityDonutChart buckets={rarityBuckets} {unlockedCount} {totalCount} />
+			</div>
+			<div class="mt-6 border-t border-surface-700 pt-6">
+				<h3 class="mb-3 text-lg font-medium">
+					{m["game.recentUnlocks.title"]()}
+				</h3>
+				{#if recentUnlocks}
+					{#if recentUnlocks.length > 0}
+						<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 							{#each recentUnlocks as achievement}
 								<AchievementCards.Card {achievement} secondary />
 							{/each}
-							{#if recentUnlocks.length === 0}
-								<div class="card secondary p-8 text-center">
-									<Trophy class="text-surface-500 mx-auto mb-4 h-12 w-12" />
-									<h3 class="mb-2 text-xl font-bold">
-										{m["game.noRecentUnlocks.title"]()}
-									</h3>
-									<p class="text-surface-300 mx-auto max-w-md">
-										{m[
-											"game.noRecentUnlocks.description"
-										]()}
-									</p>
-								</div>
-							{/if}
-						{:else}
-							<!-- Call to action -> sign in -->
-							<div class="card secondary p-8 text-center">
-								<Trophy class="text-surface-600 mx-auto mb-4 h-12 w-12" />
-								<h3 class="mb-2 text-xl font-bold">
-									{m["game.signInCallToAction.title"]()}
-								</h3>
-								<p class="text-surface-300 mx-auto max-w-md">
-									{m["game.signInCallToAction.description"]()}
-								</p>
-								<form action="/?/login" method="POST">
-									<input type="hidden" name="redirect" value={page.url.pathname}>
-									<button type="submit" class="btn preset-filled-primary-500 mt-4 inline-block">
-										{m["auth.signIn"]()}
-									</button>
-								</form>
-							</div>
-						{/if}
+						</div>
+					{:else}
+						<div class="card secondary p-8 text-center">
+							<Trophy class="text-surface-500 mx-auto mb-4 h-12 w-12" />
+							<h3 class="mb-2 text-xl font-bold">
+								{m["game.noRecentUnlocks.title"]()}
+							</h3>
+							<p class="text-surface-300 mx-auto max-w-md">
+								{m["game.noRecentUnlocks.description"]()}
+							</p>
+						</div>
+					{/if}
+				{:else}
+					<div class="card secondary p-8 text-center">
+						<Trophy class="text-surface-600 mx-auto mb-4 h-12 w-12" />
+						<h3 class="mb-2 text-xl font-bold">
+							{m["game.signInCallToAction.title"]()}
+						</h3>
+						<p class="text-surface-300 mx-auto max-w-md">
+							{m["game.signInCallToAction.description"]()}
+						</p>
+						<form action="/?/login" method="POST">
+							<input type="hidden" name="redirect" value={page.url.pathname}>
+							<button type="submit" class="btn preset-filled-primary-500 mt-4 inline-block">
+								{m["auth.signIn"]()}
+							</button>
+						</form>
 					</div>
-				</div>
+				{/if}
 			</div>
 		</div>
 
-		<!-- Game Overview -->
-		<div class="card p-4">
-			<h2 class="mb-3 text-xl font-bold">
-				{m["game.gameInformation.title"]()}
-			</h2>
-			<div class="space-y-4 text-sm">
-				<div>
-					<div class="text-surface-300 mb-1">
-						{m["game.developer.label"]()}
+		<div class="space-y-4">
+			<!-- Game Overview -->
+			<div class="card p-4">
+				<h2 class="mb-3 text-xl font-bold">
+					{m["game.gameInformation.title"]()}
+				</h2>
+				<div class="space-y-4 text-sm">
+					<div>
+						<div class="text-surface-300 mb-1">
+							{m["game.developer.label"]()}
+						</div>
+						<div>
+							{#each app.developers as developer, index}
+								{index > 0 ? ", " : ""}
+								{developer}
+							{/each}
+						</div>
 					</div>
 					<div>
-						{#each app.developers as developer, index}
-							{index > 0 ? ", " : ""}
-							{developer}
-						{/each}
-					</div>
-				</div>
-				<div>
-					<div class="text-surface-300 mb-1">
-						{m["game.publisher.label"]()}
-					</div>
-					<div>
-						{#each app.publishers as publisher, index}
-							{index > 0 ? ", " : ""}
-							{publisher}
-						{/each}
-					</div>
-				</div>
-				<div>
-					<div class="text-surface-300 mb-1">
-						{m["game.releaseDate.label"]()}
+						<div class="text-surface-300 mb-1">
+							{m["game.publisher.label"]()}
+						</div>
+						<div>
+							{#each app.publishers as publisher, index}
+								{index > 0 ? ", " : ""}
+								{publisher}
+							{/each}
+						</div>
 					</div>
 					<div>
-						{app.releaseDate?.toLocaleDateString(
+						<div class="text-surface-300 mb-1">
+							{m["game.releaseDate.label"]()}
+						</div>
+						<div>
+							{app.releaseDate?.toLocaleDateString(
 							browser ? undefined : getLocale(),
 							{
 								dateStyle: "long",
 							},
 						) ?? "Unreleased"}
+						</div>
+					</div>
+					<div>
+						<div class="text-surface-300 mb-1">
+							{m["game.description.label"]()}
+						</div>
+						<p>{app.description}</p>
 					</div>
 				</div>
-				<div>
-					<div class="text-surface-300 mb-1">
-						{m["game.description.label"]()}
-					</div>
-					<p>{app.description}</p>
+				<div class="mt-4">
+					<a href={`https://store.steampowered.com/app/${app.id}`} target="_blank" rel="noopener noreferrer">
+						<button type="button" class="btn preset-outlined-surface-500 w-full">
+							{m["game.viewOnSteam"]()}
+						</button>
+					</a>
 				</div>
 			</div>
-			<div class="mt-4">
-				<a href={`https://store.steampowered.com/app/${app.id}`} target="_blank" rel="noopener noreferrer">
-					<button type="button" class="btn preset-outlined-surface-500 w-full">
-						{m["game.viewOnSteam"]()}
-					</button>
-				</a>
+
+			<div class="card p-4">
+				<SteamChartsActivityChart snapshot={steamChartsSnapshot} />
 			</div>
 		</div>
 	</div>

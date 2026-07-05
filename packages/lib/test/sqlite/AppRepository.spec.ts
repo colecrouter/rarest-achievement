@@ -403,7 +403,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
 	test("stores SteamCharts snapshot while estimating player count", async () => {
 		const { repo, store, charts } = ctx;
 		const appId = 81002;
-		const nowSeconds = Math.floor(Date.now() / 1000);
+		const nowTimestamp = Date.now();
 
 		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Charted App") });
 		store.setAppReviews(appId, {
@@ -420,9 +420,9 @@ describe("AppRepository - SQLite (in-memory)", () => {
 			},
 		});
 		charts.setAppChartData(appId, [
-			[nowSeconds - 60 * 60 * 48, 10],
-			[nowSeconds - 60 * 60 * 2, 25],
-			[nowSeconds - 60 * 30, 20],
+			[nowTimestamp - 60 * 60 * 48 * 1000, 10],
+			[nowTimestamp - 60 * 60 * 2 * 1000, 25],
+			[nowTimestamp - 60 * 30 * 1000, 20],
 		]);
 
 		const result = await repo.compose().withLanguage("en").withAppIds(appId).build();
@@ -443,10 +443,18 @@ describe("AppRepository - SQLite (in-memory)", () => {
 		assert.strictEqual(snapshot.avgCount, 55 / 3);
 		assert.strictEqual(snapshot.dayPeak, 25);
 		assert.deepStrictEqual(snapshot.recentPoints, [
-			[nowSeconds - 60 * 60 * 48, 10],
-			[nowSeconds - 60 * 60 * 2, 25],
-			[nowSeconds - 60 * 30, 20],
+			[nowTimestamp - 60 * 60 * 48 * 1000, 10],
+			[nowTimestamp - 60 * 60 * 2 * 1000, 25],
+			[nowTimestamp - 60 * 30 * 1000, 20],
 		]);
+
+		const cachedSnapshot = await repo.getSteamChartsSnapshot(appId);
+		assert.ok(cachedSnapshot, "SteamCharts snapshot should be readable from the repository");
+		assert.strictEqual(cachedSnapshot.appId, appId);
+		assert.strictEqual(cachedSnapshot.allTimePeak, 25);
+		assert.strictEqual(cachedSnapshot.dayPeak, 25);
+		assert.deepStrictEqual(cachedSnapshot.recentPoints, snapshot.recentPoints);
+		assert.ok(cachedSnapshot.updatedAt instanceof Date);
 	});
 
 	test("withCutoff refreshes stale player estimates", async () => {

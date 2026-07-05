@@ -36,13 +36,22 @@ import { safeInsert, searchTerms } from "./utils";
 type AppSortMethod = "id";
 
 const RECENT_STEAM_CHART_POINTS_LIMIT = 120;
+const UNIX_MILLISECONDS_THRESHOLD = 10_000_000_000;
 
-type SteamChartsSnapshot = {
+function toUnixMilliseconds(timestamp: number): number {
+	return timestamp >= UNIX_MILLISECONDS_THRESHOLD ? timestamp : timestamp * 1000;
+}
+
+export type SteamChartsSnapshot = {
+	appId: number;
 	allTimePeak: number;
 	avgCount: number;
 	dayPeak: number;
 	recentPoints: ChartDataPoint[];
+	updatedAt: Date;
 };
+
+type SteamChartsSnapshotSummary = Omit<SteamChartsSnapshot, "appId" | "updatedAt">;
 
 function getRecentSteamChartPoints(chartData: GetAppChartDataResponse): ChartDataPoint[] {
 	const configuredLimit = Math.floor(RECENT_STEAM_CHART_POINTS_LIMIT);
@@ -51,10 +60,10 @@ function getRecentSteamChartPoints(chartData: GetAppChartDataResponse): ChartDat
 	return chartData.slice(-limit);
 }
 
-function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChartsSnapshot | null {
+function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChartsSnapshotSummary | null {
 	if (chartData.length === 0) return null;
 
-	const dayCutoff = Date.now() / 1000 - 60 * 60 * 24;
+	const dayCutoff = Date.now() - 60 * 60 * 24 * 1000;
 	let allTimePeak = 0;
 	let total = 0;
 	let dayPeak = 0;
@@ -63,7 +72,7 @@ function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChar
 		const [timestamp, value] = point;
 		allTimePeak = Math.max(allTimePeak, value);
 		total += value;
-		if (timestamp > dayCutoff) dayPeak = Math.max(dayPeak, value);
+		if (toUnixMilliseconds(timestamp) > dayCutoff) dayPeak = Math.max(dayPeak, value);
 	}
 
 	return {
@@ -1032,7 +1041,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	/**
 	 * Fetch and cache SteamCharts data for an app.
 	 */
-	private async fetchAndCacheSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshot | null> {
+	private async fetchAndCacheSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshotSummary | null> {
 		const chartData = await this.steamChartsApi.getAppChartData(appId);
 		if (chartData === null) return null;
 
@@ -1207,5 +1216,22 @@ export class AppRepository implements Repository<SteamApp, AppSortMethod> {
 	 */
 	compose(): AppQueryComposer {
 		return new AppQueryComposer(this.sqlite, this.steamApi, this.steamChartsApi, this.steamStoreApi);
+	}
+
+	async getSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshot | null> {
+		const [snapshot] = await this.sqlite
+			.select({
+				appId: steamChartsSnapshots.app_id,
+				allTimePeak: steamChartsSnapshots.all_time_peak,
+				avgCount: steamChartsSnapshots.avg_count,
+				dayPeak: steamChartsSnapshots.day_peak,
+				recentPoints: steamChartsSnapshots.recent_points,
+				updatedAt: steamChartsSnapshots.updated_at,
+			})
+			.from(steamChartsSnapshots)
+			.where(eq(steamChartsSnapshots.app_id, appId))
+			.limit(1);
+
+		return snapshot ?? null;
 	}
 }

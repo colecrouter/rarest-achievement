@@ -25,7 +25,6 @@
 
 	let isSignedIn = true;
 
-
 	let activeTab = $derived.by<"activeTab" | "stats" | "friends" | "articles">(() => {
 		switch (page.url.searchParams.get("tab")) {
 			case "friends":

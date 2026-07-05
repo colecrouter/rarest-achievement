@@ -26,8 +26,7 @@
 	}>();
 
 	const shortLabel = (value: string) => (value.length > 26 ? `${value.slice(0, 23)}...` : value);
-	const colorFor = (row: Row) =>
-		`var(--color-${row.rarityKey}${row.isCurrent ? "-light" : "-dark"})`;
+	const colorFor = (row: Row) => `var(--color-${row.rarityKey}${row.isCurrent ? "-light" : "-dark"})`;
 
 	let rows: Row[] = $derived(
 		achievements

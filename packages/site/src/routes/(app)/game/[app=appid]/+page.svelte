@@ -83,7 +83,8 @@
 		},
 		{
 			label: m["chart.rarity.ultraRare"](),
-			value: achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.ultraRare"]())?.[1].length ?? 0,
+			value:
+				achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.ultraRare"]())?.[1].length ?? 0,
 			lineClass: "bg-ultra-rare/20",
 		},
 		{
@@ -93,7 +94,8 @@
 		},
 		{
 			label: m["chart.rarity.uncommon"](),
-			value: achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.uncommon"]())?.[1].length ?? 0,
+			value:
+				achievementsGroupedByRarity.find(([label]) => label === m["chart.rarity.uncommon"]())?.[1].length ?? 0,
 			lineClass: "bg-uncommon/20",
 		},
 	]);

@@ -10,8 +10,8 @@ import {
 	achievementsStats,
 	apps,
 	estimatedPlayers,
-	steamChartsSnapshots,
 	ownedGames,
+	steamChartsSnapshots,
 	users,
 } from "../../src/repositories/sqlite/schema.js";
 import {

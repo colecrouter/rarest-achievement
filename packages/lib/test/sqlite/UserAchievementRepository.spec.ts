@@ -766,7 +766,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			assert.strictEqual(only.id, "P1");
 		});
 
-		test("rarity_score refreshes null player estimates before filtering", async () => {
+		test("rarity_score falls back when player estimates are not cached", async () => {
 			const { repo, store, charts } = makeUserAchievementRepoWithMocks(db);
 			const userId = "u-rscore-refresh";
 			const appId = 97104;
@@ -814,7 +814,13 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 
 			assert.strictEqual(res.data.length, 1);
 			assert.strictEqual(res.data[0]?.id, "RE1");
-			assert.ok((res.data[0]?.app.estimatedPlayers ?? 0) > 0);
+			assert.strictEqual(res.data[0]?.app.estimatedPlayers, null);
+
+			const estimateRows = await db
+				.select({ estimate: estimatedPlayers.estimated_players })
+				.from(estimatedPlayers)
+				.where(eq(estimatedPlayers.app_id, appId));
+			assert.strictEqual(estimateRows[0]?.estimate, null);
 		});
 
 		test("withRarityThreshold filters by max rarity percent", async () => {

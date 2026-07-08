@@ -571,6 +571,47 @@ describe("AppRepository - SQLite (in-memory)", () => {
 		assert.ok((rows[0]?.estimate ?? 0) > 0, "required subquery should replace null estimated_players");
 	});
 
+	test("can skip player estimate refresh for request-time app ensures", async () => {
+		const { repo, store, charts } = ctx;
+		const appId = 81006;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+
+		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Skip Estimate Refresh App") });
+		await db.insert(estimatedPlayers).values({
+			app_id: appId,
+			estimated_players: null,
+			updated_at: new Date(),
+		});
+		store.setAppReviews(appId, {
+			success: 1,
+			cursor: "",
+			reviews: [],
+			query_summary: {
+				num_reviews: 500,
+				review_score: 9,
+				review_score_desc: "Overwhelmingly Positive",
+				total_positive: 475,
+				total_negative: 25,
+				total_reviews: 500,
+			},
+		});
+		charts.setAppChartData(appId, [[nowSeconds - 60, 120]]);
+
+		const result = await repo
+			.compose()
+			.withLanguage("en")
+			.withAppIds(appId)
+			.withPlayerEstimateRefresh(false)
+			.ensureDataExists();
+		assert.ok(result.isOk(), "app ensure should complete without estimate refresh");
+
+		const rows = await db
+			.select({ app_id: estimatedPlayers.app_id, estimate: estimatedPlayers.estimated_players })
+			.from(estimatedPlayers)
+			.where(eq(estimatedPlayers.app_id, appId));
+		assert.strictEqual(rows[0]?.estimate, null, "null estimated_players row should remain untouched");
+	});
+
 	test("withCutoff refetches stale app data", async () => {
 		const { repo, auth, store } = ctx;
 		const appId = 88001;

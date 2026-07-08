@@ -102,6 +102,8 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	private requiredAppsSubquery?: RequiredAppsSubquery;
 	/** When true, prefer small FIFO and micro-batch inserts to minimize memory (used by unlocked_at ensure path) */
 	private unlockedAtMode = false;
+	/** When false, ensureDataExists skips external player-estimate work. */
+	private refreshPlayerEstimates = true;
 	/** If set, treat rows with updated_at older than this Date as missing */
 	private freshnessCutoff: Date | undefined;
 
@@ -244,6 +246,15 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 */
 	withUnlockedAtMode(enabled: boolean): this {
 		this.unlockedAtMode = !!enabled;
+		return this;
+	}
+
+	/**
+	 * Toggle player-estimate refresh. User-achievement request paths should not fan out
+	 * into Steam Store/SteamCharts estimate work for every owned app while rendering.
+	 */
+	withPlayerEstimateRefresh(enabled: boolean): this {
+		this.refreshPlayerEstimates = !!enabled;
 		return this;
 	}
 
@@ -418,10 +429,10 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			combinedResult = combinedResult.and(appsResult);
 		}
 
+		if (!this.refreshPlayerEstimates) return combinedResult;
+
 		// Player estimates is still relatively important (in order for player count scores, see above comment)
 		getFetchManager().reset({ maxFetches: 150 }); // (150 apps * 1 request per app = 150)
-
-		// Check for missing player estimates
 		const missingPlayerIds = await this.findMissingPlayerEstimates();
 		if (missingPlayerIds.length > 0) {
 			const playerEstimatesResult = await this.fetchAndUpsertPlayerEstimates(missingPlayerIds);

@@ -295,6 +295,20 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				: this.executeDirectQuery(options));
 		}
 
+		if (options.sort?.method === "rarity_score" && resultsAttempt.hasData() && resultsAttempt.data.length === 0) {
+			const fallbackOptions: ComposableQueryOptions<UserAchievementSortMethod> = {
+				...options,
+				sort: { method: "rarity_pct", direction: "asc" },
+			};
+			const shouldUseComprehensiveSQL = this.shouldUseComprehensiveSQL();
+			const fallbackAttempt = await (shouldUseComprehensiveSQL
+				? this.executeWithComprehensiveSQL(fallbackOptions)
+				: this.executeDirectQuery(fallbackOptions));
+			if (fallbackAttempt.hasData() && fallbackAttempt.data.length > 0) {
+				resultsAttempt = Attempt.from(fallbackAttempt.data, resultsAttempt.error ?? fallbackAttempt.error);
+			}
+		}
+
 		// If we got no results but the caller requested a specific app (e.g. viewing a single game page),
 		// fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
 		// non-owners still see the app's achievements (mirrors anonymous behavior).
@@ -1320,7 +1334,8 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			.compose()
 			.withLanguage(this.lang)
 			.withRequiredEntitySubquery("apps", requiredAppsSubquery)
-			.withUnlockedAtMode(this.ensurePolicy?.mode === "unlocked_at");
+			.withUnlockedAtMode(this.ensurePolicy?.mode === "unlocked_at")
+			.withPlayerEstimateRefresh(false);
 		// Intentionally don't check for app freshness
 		// if (this.freshnessCutoff) appDataComposer.withCutoff(this.freshnessCutoff);
 		// Ensure only; avoid selecting potentially hundreds of app rows

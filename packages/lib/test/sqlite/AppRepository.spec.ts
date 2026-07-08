@@ -362,7 +362,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
 		assert.ok(true, "pagination and sorting execute without throwing");
 	});
 
-	test("does not throw when player estimates are unavailable (stores null estimate)", async () => {
+	test("does not cache null when player estimates are unavailable", async () => {
 		const { repo, store, charts } = ctx;
 		const appId = 81001;
 
@@ -385,19 +385,52 @@ describe("AppRepository - SQLite (in-memory)", () => {
 		});
 		charts.setAppChartData(appId, null);
 
-		// Build should not throw; estimatedPlayers should be null
+		// Build should not throw; estimatedPlayers should be null in the response because no valid cache row exists.
 		const result = await repo.compose().withLanguage("en").withAppIds(appId).build();
 		assert.strictEqual(result.data.length, 1, "Should return 1 app");
 		assert.strictEqual(result.data[0]?.id, appId, "App ID should match");
 		assert.strictEqual(result.data[0]?.estimatedPlayers, null, "Estimated players should be null when unavailable");
 
-		// Verify an estimated_players row exists with null value
 		const rows = await db
 			.select({ app_id: estimatedPlayers.app_id, est: estimatedPlayers.estimated_players })
 			.from(estimatedPlayers);
 		const ep = rows.find((r) => r.app_id === appId);
-		assert.ok(ep, "Estimated players row should be inserted");
-		assert.strictEqual(ep?.est, null, "Estimated players value should be null");
+		assert.strictEqual(ep, undefined, "Unavailable estimates should not create null estimated_players rows");
+	});
+
+	test("does not overwrite a positive player estimate when charts are unavailable", async () => {
+		const { repo, store, charts } = ctx;
+		const appId = 81007;
+
+		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Existing Estimate App") });
+		await db.insert(estimatedPlayers).values({
+			app_id: appId,
+			estimated_players: 1234,
+			updated_at: new Date(Date.now() - 60 * 60 * 1000),
+		});
+		store.setAppReviews(appId, {
+			success: 1,
+			cursor: "",
+			reviews: [],
+			query_summary: {
+				num_reviews: 0,
+				review_score: 0,
+				review_score_desc: "None",
+				total_positive: 0,
+				total_negative: 0,
+				total_reviews: 0,
+			},
+		});
+		charts.setAppChartData(appId, null);
+
+		const result = await repo.compose().withLanguage("en").withAppIds(appId).withCutoff(new Date()).build();
+		assert.ok(result.isPartial(), "missing chart data should be reported as partial");
+
+		const rows = await db
+			.select({ app_id: estimatedPlayers.app_id, estimate: estimatedPlayers.estimated_players })
+			.from(estimatedPlayers)
+			.where(eq(estimatedPlayers.app_id, appId));
+		assert.strictEqual(rows[0]?.estimate, 1234, "Existing positive estimate should not be overwritten");
 	});
 
 	test("stores SteamCharts snapshot while estimating player count", async () => {
@@ -638,7 +671,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
 	});
 
 	test("ensureDataExists respects fetch manager limits", async () => {
-		const { repo, auth, store } = ctx;
+		const { repo, auth, store, charts } = ctx;
 		let cleanupFetch: (() => void) | undefined;
 
 		try {
@@ -655,6 +688,20 @@ describe("AppRepository - SQLite (in-memory)", () => {
 					[appId]: { success: true as const, data: appData },
 				};
 				store.setAppDetails(appId, appResp);
+				store.setAppReviews(appId, {
+					success: 1,
+					query_summary: {
+						num_reviews: 1000,
+						review_score: 8,
+						review_score_desc: "Very Positive",
+						total_positive: 900,
+						total_negative: 100,
+						total_reviews: 1000,
+					},
+					reviews: [],
+					cursor: "",
+				});
+				charts.setAppChartData(appId, [[Date.now(), 100]]);
 
 				// Setup achievement schema
 				auth.setSchemaForGame(
@@ -674,7 +721,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
 	});
 
 	test("fetchAndUpsertPlayerEstimates respects fetch manager limits", async () => {
-		const { repo, store } = ctx;
+		const { repo, store, charts } = ctx;
 		let cleanupFetch: (() => void) | undefined;
 
 		try {
@@ -702,8 +749,8 @@ describe("AppRepository - SQLite (in-memory)", () => {
 					success: 1,
 					query_summary: {
 						num_reviews: 1000,
-						review_score: 0,
-						review_score_desc: "No user reviews",
+						review_score: 8,
+						review_score_desc: "Very Positive",
 						total_positive: 500,
 						total_negative: 500,
 						total_reviews: 1000,
@@ -711,7 +758,7 @@ describe("AppRepository - SQLite (in-memory)", () => {
 					reviews: [],
 					cursor: "",
 				});
-				// Steam Charts API can fail gracefully, so we don't need to mock it
+				charts.setAppChartData(appId, [[Date.now(), 100]]);
 			}
 
 			// Build repository with the app IDs - this will call ensureDataExists internally

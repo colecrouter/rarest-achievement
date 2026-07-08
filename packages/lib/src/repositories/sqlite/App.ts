@@ -58,6 +58,15 @@ type SteamChartsSnapshot = {
 	recentPoints: ChartDataPoint[];
 };
 
+type PlayerEstimateRow = {
+	app_id: number;
+	estimated_players: number | null;
+};
+
+function hasPositivePlayerEstimate(row: PlayerEstimateRow): row is { app_id: number; estimated_players: number } {
+	return row.estimated_players !== null && Number.isFinite(row.estimated_players) && row.estimated_players > 0;
+}
+
 function getRecentSteamChartPoints(chartData: GetAppChartDataResponse): ChartDataPoint[] {
 	const configuredLimit = Math.floor(RECENT_STEAM_CHART_POINTS_LIMIT);
 	const limit = Number.isFinite(configuredLimit) ? Math.max(0, configuredLimit) : 0;
@@ -65,10 +74,14 @@ function getRecentSteamChartPoints(chartData: GetAppChartDataResponse): ChartDat
 	return chartData.slice(-limit);
 }
 
+function steamChartTimestampToMs(timestamp: number): number {
+	return timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp;
+}
+
 function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChartsSnapshot | null {
 	if (chartData.length === 0) return null;
 
-	const dayCutoff = Date.now() / 1000 - 60 * 60 * 24;
+	const dayCutoff = Date.now() - 60 * 60 * 24 * 1000;
 	let allTimePeak = 0;
 	let total = 0;
 	let dayPeak = 0;
@@ -77,7 +90,7 @@ function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChar
 		const [timestamp, value] = point;
 		allTimePeak = Math.max(allTimePeak, value);
 		total += value;
-		if (timestamp > dayCutoff) dayPeak = Math.max(dayPeak, value);
+		if (steamChartTimestampToMs(timestamp) > dayCutoff) dayPeak = Math.max(dayPeak, value);
 	}
 
 	return {
@@ -1162,10 +1175,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			const appId = row.id;
 			const appDetails = appDetailsMap.get(appId);
 			if (!appDetails) {
-				return Attempt.ok({
-					app_id: appId,
-					estimated_players: null,
-				});
+				return Attempt.partial(
+					{
+						app_id: appId,
+						estimated_players: null,
+					},
+					new Error(`Missing app details for app ${appId}`),
+				);
 			}
 
 			getFetchManager().reset({ maxFetches: 200 });
@@ -1178,14 +1194,16 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 				const [appReviews, appPlayerCount] = data;
 
 				if (appPlayerCount === undefined) {
-					return Attempt.ok(null);
+					return Attempt.partial<number | null>(null, new Error(`Missing chart data for app ${appId}`));
 				}
 
 				if (appReviews == null) {
 					return Attempt.partial<number>(0, new Error(`Missing review or chart data for app ${appId}`));
 				}
 
-				if (appPlayerCount === null) return Attempt.ok(null);
+				if (appPlayerCount === null) {
+					return Attempt.partial<number | null>(null, new Error(`Missing chart data for app ${appId}`));
+				}
 
 				const reviews = appReviews as NonNullable<typeof appReviews>;
 
@@ -1199,6 +1217,12 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 					is_free: appDetails.is_free ? 1 : 0,
 					price: appDetails.price_overview?.final ?? 0,
 				});
+				if (!Number.isFinite(estimate) || estimate <= 0) {
+					return Attempt.partial<number | null>(
+						null,
+						new Error(`Invalid player estimate for app ${appId}: ${estimate}`),
+					);
+				}
 				return Attempt.ok(estimate);
 			});
 
@@ -1209,7 +1233,11 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		});
 
 		const playerCountData = await Promise.all(playerEstimateAttempts);
-		const filteredData = playerCountData.filter((d) => d.isOk()).map((d) => d.data);
+		const filteredData = playerCountData
+			.filter((d): d is Attempt<{ app_id: number; estimated_players: number }, AttemptStatus.Ok> => {
+				return d.isOk() && hasPositivePlayerEstimate(d.data);
+			})
+			.map((d) => d.data);
 
 		if (filteredData.length > 0) {
 			console.debug(`[AppRepository] Upsert ${filteredData.length} entries`);

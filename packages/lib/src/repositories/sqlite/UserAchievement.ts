@@ -295,20 +295,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				: this.executeDirectQuery(options));
 		}
 
-		if (options.sort?.method === "rarity_score" && resultsAttempt.hasData() && resultsAttempt.data.length === 0) {
-			const fallbackOptions: ComposableQueryOptions<UserAchievementSortMethod> = {
-				...options,
-				sort: { method: "rarity_pct", direction: "asc" },
-			};
-			const shouldUseComprehensiveSQL = this.shouldUseComprehensiveSQL();
-			const fallbackAttempt = await (shouldUseComprehensiveSQL
-				? this.executeWithComprehensiveSQL(fallbackOptions)
-				: this.executeDirectQuery(fallbackOptions));
-			if (fallbackAttempt.hasData() && fallbackAttempt.data.length > 0) {
-				resultsAttempt = Attempt.from(fallbackAttempt.data, resultsAttempt.error ?? fallbackAttempt.error);
-			}
-		}
-
 		// If we got no results but the caller requested a specific app (e.g. viewing a single game page),
 		// fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
 		// non-owners still see the app's achievements (mirrors anonymous behavior).

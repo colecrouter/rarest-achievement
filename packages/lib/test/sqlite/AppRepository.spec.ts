@@ -22,7 +22,7 @@ import {
 	makeAchievementSchema,
 	makeAppData,
 } from "../fixtures/appData";
-import { insertAchievementMeta, insertApp } from "../fixtures/dbHelpers";
+import { insertAchievementMeta, insertApp, insertOwnedGame } from "../fixtures/dbHelpers";
 import { makeAppRepoWithMocks } from "../fixtures/mockHelpers";
 import { makeUserData } from "../fixtures/userData";
 import { createLocalBudget, decorateWithBudget } from "../helpers/fetchBudget";
@@ -480,6 +480,95 @@ describe("AppRepository - SQLite (in-memory)", () => {
 			.select({ app_id: steamChartsSnapshots.app_id, allTimePeak: steamChartsSnapshots.all_time_peak })
 			.from(steamChartsSnapshots);
 		assert.strictEqual(rows.find((row) => row.app_id === appId)?.allTimePeak, 42);
+	});
+
+	test("refreshes null player estimates for explicit app scopes", async () => {
+		const { repo, store, charts } = ctx;
+		const appId = 81004;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+
+		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Null Estimate App") });
+		await db.insert(estimatedPlayers).values({
+			app_id: appId,
+			estimated_players: null,
+			updated_at: new Date(),
+		});
+		store.setAppReviews(appId, {
+			success: 1,
+			cursor: "",
+			reviews: [],
+			query_summary: {
+				num_reviews: 250,
+				review_score: 8,
+				review_score_desc: "Very Positive",
+				total_positive: 225,
+				total_negative: 25,
+				total_reviews: 250,
+			},
+		});
+		charts.setAppChartData(appId, [[nowSeconds - 60, 80]]);
+
+		const result = await repo.compose().withLanguage("en").withAppIds(appId).build();
+		assert.ok(result.isOk(), "null estimate refresh should complete");
+
+		const rows = await db
+			.select({ app_id: estimatedPlayers.app_id, estimate: estimatedPlayers.estimated_players })
+			.from(estimatedPlayers)
+			.where(eq(estimatedPlayers.app_id, appId));
+		assert.ok((rows[0]?.estimate ?? 0) > 0, "null estimated_players row should be replaced");
+	});
+
+	test("refreshes null player estimates for required app subquery scopes", async () => {
+		const { repo, store, charts } = ctx;
+		const userId = "required-estimate-user";
+		const appId = 81005;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+
+		await db.insert(users).values({ id: userId, data: makeUserData(userId), updated_at: new Date() });
+		await insertOwnedGame(db, {
+			user_id: userId,
+			app_id: appId,
+			last_played_at: new Date(),
+		});
+		await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Required Null Estimate App") });
+		await db.insert(estimatedPlayers).values({
+			app_id: appId,
+			estimated_players: null,
+			updated_at: new Date(),
+		});
+		store.setAppReviews(appId, {
+			success: 1,
+			cursor: "",
+			reviews: [],
+			query_summary: {
+				num_reviews: 500,
+				review_score: 9,
+				review_score_desc: "Overwhelmingly Positive",
+				total_positive: 475,
+				total_negative: 25,
+				total_reviews: 500,
+			},
+		});
+		charts.setAppChartData(appId, [[nowSeconds - 60, 120]]);
+
+		const requiredApps = db
+			.selectDistinct({ app_id: ownedGames.app_id })
+			.from(ownedGames)
+			.where(eq(ownedGames.user_id, userId))
+			.as("required_apps");
+
+		const result = await repo
+			.compose()
+			.withLanguage("en")
+			.withRequiredEntitySubquery("apps", requiredApps)
+			.ensureDataExists();
+		assert.ok(result.isOk(), "required subquery null estimate refresh should complete");
+
+		const rows = await db
+			.select({ app_id: estimatedPlayers.app_id, estimate: estimatedPlayers.estimated_players })
+			.from(estimatedPlayers)
+			.where(eq(estimatedPlayers.app_id, appId));
+		assert.ok((rows[0]?.estimate ?? 0) > 0, "required subquery should replace null estimated_players");
 	});
 
 	test("withCutoff refetches stale app data", async () => {

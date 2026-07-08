@@ -1,4 +1,18 @@
-import { and, asc, countDistinct, desc, eq, gte, inArray, notExists, or, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	countDistinct,
+	desc,
+	eq,
+	gt,
+	gte,
+	inArray,
+	isNotNull,
+	notExists,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	type APILanguageCode,
@@ -491,6 +505,11 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	 */
 	private async findMissingPlayerEstimates(): Promise<number[]> {
 		if (this.requiredAppsSubquery) {
+			const validEstimateConditions = [
+				eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
+				isNotNull(estimatedPlayers.estimated_players),
+				gt(estimatedPlayers.estimated_players, 0),
+			];
 			if (this.freshnessCutoff) {
 				const missingPlayerEstimatesQuery = this.db
 					.select({ app_id: this.requiredAppsSubquery.app_id })
@@ -502,7 +521,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 								.from(estimatedPlayers)
 								.where(
 									and(
-										eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
+										...validEstimateConditions,
 										gte(estimatedPlayers.updated_at, this.freshnessCutoff),
 									),
 								),
@@ -519,7 +538,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 						this.db
 							.select()
 							.from(estimatedPlayers)
-							.where(eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id)),
+							.where(and(...validEstimateConditions)),
 					),
 				);
 			const result = await missingPlayerEstimatesQuery;
@@ -532,7 +551,13 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 			let existingPlayerEstimatesQ = this.db
 				.selectDistinct({ app_id: estimatedPlayers.app_id, updated_at: estimatedPlayers.updated_at })
 				.from(estimatedPlayers)
-				.where(inArray(estimatedPlayers.app_id, appIdsArray))
+				.where(
+					and(
+						inArray(estimatedPlayers.app_id, appIdsArray),
+						isNotNull(estimatedPlayers.estimated_players),
+						gt(estimatedPlayers.estimated_players, 0),
+					),
+				)
 				.$dynamic();
 			if (this.freshnessCutoff) {
 				existingPlayerEstimatesQ = existingPlayerEstimatesQ.where(
@@ -1075,16 +1100,18 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 		let appDetailsRows: Array<{ id: number; data: unknown }>;
 
 		if (this.requiredAppsSubquery) {
+			const validEstimateConditions = [
+				eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
+				isNotNull(estimatedPlayers.estimated_players),
+				gt(estimatedPlayers.estimated_players, 0),
+			];
 			const estimateExistsQuery = this.db
 				.select({ app_id: estimatedPlayers.app_id })
 				.from(estimatedPlayers)
 				.where(
 					this.freshnessCutoff
-						? and(
-								eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
-								gte(estimatedPlayers.updated_at, this.freshnessCutoff),
-							)
-						: eq(estimatedPlayers.app_id, this.requiredAppsSubquery.app_id),
+						? and(...validEstimateConditions, gte(estimatedPlayers.updated_at, this.freshnessCutoff))
+						: and(...validEstimateConditions),
 				);
 
 			appDetailsRows = await this.db

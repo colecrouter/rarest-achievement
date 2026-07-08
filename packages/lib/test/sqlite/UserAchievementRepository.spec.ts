@@ -766,6 +766,57 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			assert.strictEqual(only.id, "P1");
 		});
 
+		test("rarity_score refreshes null player estimates before filtering", async () => {
+			const { repo, store, charts } = makeUserAchievementRepoWithMocks(db);
+			const userId = "u-rscore-refresh";
+			const appId = 97104;
+			const nowSeconds = Math.floor(Date.now() / 1000);
+
+			await insertUser(db, { id: userId, data: makeUserData(userId) });
+			await insertOwnedGame(db, { user_id: userId, app_id: appId });
+			await insertApp(db, { id: appId, lang: "english", data: makeAppData(appId, "Refresh Estimate") });
+			await db.insert(estimatedPlayers).values({
+				app_id: appId,
+				estimated_players: null,
+				updated_at: new Date(),
+			});
+			await seedStats(db, appId, [{ ach: "RE1", percent: 5 }]);
+			await seedMetaByCode(db, appId, "en", [{ ach: "RE1", display: "Refresh One" }]);
+			await insertUserAchievement(db, {
+				user_id: userId,
+				app_id: appId,
+				ach_id: "RE1",
+				unlocked_at: new Date(),
+			});
+			store.setAppReviews(appId, {
+				success: 1,
+				cursor: "",
+				reviews: [],
+				query_summary: {
+					num_reviews: 500,
+					review_score: 9,
+					review_score_desc: "Overwhelmingly Positive",
+					total_positive: 475,
+					total_negative: 25,
+					total_reviews: 500,
+				},
+			});
+			charts.setAppChartData(appId, [[nowSeconds - 60, 120]]);
+
+			const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+			const res = await repo
+				.compose()
+				.withLanguage("en")
+				.withUserIds(userId)
+				.withCutoff(oneDayAgo)
+				.withUnlockedStatus(true)
+				.build({ sort: { method: "rarity_score", direction: "desc" } });
+
+			assert.strictEqual(res.data.length, 1);
+			assert.strictEqual(res.data[0]?.id, "RE1");
+			assert.ok((res.data[0]?.app.estimatedPlayers ?? 0) > 0);
+		});
+
 		test("withRarityThreshold filters by max rarity percent", async () => {
 			const userId = "u-b2";
 			const appId = 93002;

@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Informasi Game"
 		},
+		"playerActivity": {
+			"allTimePeak": "Puncak sepanjang masa",
+			"average": "Rata-rata",
+			"dayPeak": "Puncak 24 jam",
+			"description": "Pemain bersamaan menurut SteamCharts.",
+			"latestSample": "Sampel terbaru",
+			"series": "Pemain bersamaan",
+			"title": "Aktivitas pemain",
+			"unavailable": "Aktivitas pemain akan muncul setelah pembaruan berikutnya melalui SteamCharts.",
+			"updated": "Diperbarui: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Anda belum membuka pencapaian baru-baru ini.",
 			"title": "Tidak Ada Pembukaan Terbaru"

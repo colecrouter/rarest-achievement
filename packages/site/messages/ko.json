@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "게임 정보"
 		},
+		"playerActivity": {
+			"allTimePeak": "역대 최고",
+			"average": "평균",
+			"dayPeak": "24시간 최고",
+			"description": "SteamCharts 기준 동시 접속 플레이어 수입니다.",
+			"latestSample": "최근 표본",
+			"series": "동시 접속 플레이어",
+			"title": "플레이어 활동",
+			"unavailable": "SteamCharts를 통한 다음 업데이트 후 플레이어 활동이 표시됩니다.",
+			"updated": "업데이트: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "최근에 해제한 업적이 없습니다.",
 			"title": "최근 해제 업적 없음"

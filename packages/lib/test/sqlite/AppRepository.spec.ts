@@ -480,6 +480,15 @@ describe("AppRepository - SQLite (in-memory)", () => {
 			[nowSeconds - 60 * 60 * 2, 25],
 			[nowSeconds - 60 * 30, 20],
 		]);
+
+		const cachedSnapshot = await repo.getSteamChartsSnapshot(appId);
+		assert.ok(cachedSnapshot, "SteamCharts snapshot should be readable from the repository");
+		assert.strictEqual(cachedSnapshot.appId, appId);
+		assert.strictEqual(cachedSnapshot.allTimePeak, 25);
+		assert.strictEqual(cachedSnapshot.avgCount, 55 / 3);
+		assert.strictEqual(cachedSnapshot.dayPeak, 25);
+		assert.deepStrictEqual(cachedSnapshot.recentPoints, snapshot.recentPoints);
+		assert.ok(cachedSnapshot.updatedAt instanceof Date);
 	});
 
 	test("withCutoff refreshes stale player estimates", async () => {

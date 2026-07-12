@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Oyun Bilgileri"
 		},
+		"playerActivity": {
+			"allTimePeak": "Tüm zamanların zirvesi",
+			"average": "Ortalama",
+			"dayPeak": "24 saatlik zirve",
+			"description": "SteamCharts verilerine göre eş zamanlı oyuncular.",
+			"latestSample": "Son ölçüm",
+			"series": "Eş zamanlı oyuncular",
+			"title": "Oyuncu etkinliği",
+			"unavailable": "Oyuncu etkinliği, SteamCharts üzerinden yapılacak bir sonraki güncellemeden sonra görünecek.",
+			"updated": "Güncellendi: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Son zamanlarda herhangi bir başarı açmadınız.",
 			"title": "Son Açılan Başarı Yok"

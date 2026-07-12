@@ -9,6 +9,7 @@
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
 	import RarityDonutChart from "$lib/charts/RarityDonutChart.svelte";
+	import SteamChartsActivityChart from "$lib/charts/SteamChartsActivityChart.svelte";
 	import FriendCards from "$lib/FriendCards";
 	import { m } from "$lib/paraglide/messages";
 	import { deLocalizeUrl, getLocale } from "$lib/paraglide/runtime";
@@ -17,7 +18,7 @@
 	import Breadcrumbs from "../../Breadcrumbs.svelte";
 
 	let { data } = $props();
-	let { app, achievements, loggedIn: user } = $derived(data);
+	let { app, achievements, loggedIn: user, steamChartsSnapshot } = $derived(data);
 
 	let recentUnlocks = $derived(
 		!user
@@ -350,6 +351,10 @@
 			</div>
 		</div>
 	</div>
+
+	<section class="card mb-8 p-4">
+		<SteamChartsActivityChart snapshot={steamChartsSnapshot} />
+	</section>
 
 	<!-- Achievements List -->
 	<section class="mb-8">

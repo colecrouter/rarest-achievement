@@ -51,12 +51,16 @@ type AppSortMethod = "id";
 
 const RECENT_STEAM_CHART_POINTS_LIMIT = 120;
 
-type SteamChartsSnapshot = {
+export type SteamChartsSnapshot = {
+	appId: number;
 	allTimePeak: number;
 	avgCount: number;
 	dayPeak: number;
 	recentPoints: ChartDataPoint[];
+	updatedAt: Date;
 };
+
+type SteamChartsSnapshotSummary = Omit<SteamChartsSnapshot, "appId" | "updatedAt">;
 
 type PlayerEstimateRow = {
 	app_id: number;
@@ -78,7 +82,7 @@ function steamChartTimestampToMs(timestamp: number): number {
 	return timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp;
 }
 
-function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChartsSnapshot | null {
+function summarizeSteamChartsData(chartData: GetAppChartDataResponse): SteamChartsSnapshotSummary | null {
 	if (chartData.length === 0) return null;
 
 	const dayCutoff = Date.now() - 60 * 60 * 24 * 1000;
@@ -1081,7 +1085,7 @@ class AppQueryComposer implements SubqueryConsumer<SteamApp, AppSortMethod> {
 	/**
 	 * Fetch and cache SteamCharts data for an app.
 	 */
-	private async fetchAndCacheSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshot | null> {
+	private async fetchAndCacheSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshotSummary | null> {
 		const chartData = await this.steamChartsApi.getAppChartData(appId);
 		if (chartData === null) return null;
 
@@ -1273,5 +1277,27 @@ export class AppRepository implements Repository<SteamApp, AppSortMethod> {
 	 */
 	compose(): AppQueryComposer {
 		return new AppQueryComposer(this.sqlite, this.steamApi, this.steamChartsApi, this.steamStoreApi);
+	}
+
+	async getSteamChartsSnapshot(appId: number): Promise<SteamChartsSnapshot | null> {
+		try {
+			const [snapshot] = await this.sqlite
+				.select({
+					appId: steamChartsSnapshots.app_id,
+					allTimePeak: steamChartsSnapshots.all_time_peak,
+					avgCount: steamChartsSnapshots.avg_count,
+					dayPeak: steamChartsSnapshots.day_peak,
+					recentPoints: steamChartsSnapshots.recent_points,
+					updatedAt: steamChartsSnapshots.updated_at,
+				})
+				.from(steamChartsSnapshots)
+				.where(eq(steamChartsSnapshots.app_id, appId))
+				.limit(1);
+
+			return snapshot ?? null;
+		} catch (error) {
+			console.warn(`[AppRepository] Failed to read SteamCharts snapshot for app ${appId}`, error);
+			return null;
+		}
 	}
 }

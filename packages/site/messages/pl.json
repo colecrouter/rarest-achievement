@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Informacje o grze"
 		},
+		"playerActivity": {
+			"allTimePeak": "Rekord wszech czasów",
+			"average": "Średnia",
+			"dayPeak": "Szczyt z 24 godz.",
+			"description": "Liczba jednoczesnych graczy według SteamCharts.",
+			"latestSample": "Najnowszy pomiar",
+			"series": "Jednocześni gracze",
+			"title": "Aktywność graczy",
+			"unavailable": "Aktywność graczy pojawi się po następnej aktualizacji przez SteamCharts.",
+			"updated": "Zaktualizowano: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Nie odblokowałeś ostatnio żadnych osiągnięć.",
 			"title": "Brak ostatnich odblokowań"

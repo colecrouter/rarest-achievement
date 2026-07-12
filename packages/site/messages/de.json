@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Spielinformationen"
 		},
+		"playerActivity": {
+			"allTimePeak": "Allzeithoch",
+			"average": "Durchschnitt",
+			"dayPeak": "24-Std.-Höchstwert",
+			"description": "Gleichzeitige Spieler laut SteamCharts.",
+			"latestSample": "Letzte Messung",
+			"series": "Gleichzeitige Spieler",
+			"title": "Spieleraktivität",
+			"unavailable": "Die Spieleraktivität wird nach der nächsten Aktualisierung über SteamCharts angezeigt.",
+			"updated": "Aktualisiert: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Du hast kürzlich keine Erfolge freigeschaltet.",
 			"title": "Keine kürzlichen Freischaltungen"

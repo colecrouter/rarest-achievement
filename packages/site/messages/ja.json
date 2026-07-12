@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "ゲーム情報"
 		},
+		"playerActivity": {
+			"allTimePeak": "過去最高",
+			"average": "平均",
+			"dayPeak": "24時間ピーク",
+			"description": "SteamCharts による同時接続プレイヤー数。",
+			"latestSample": "最新の計測",
+			"series": "同時接続プレイヤー",
+			"title": "プレイヤーアクティビティ",
+			"unavailable": "SteamCharts による次回の更新後にプレイヤーアクティビティが表示されます。",
+			"updated": "更新: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "最近、達成を解除していません。",
 			"title": "最近の解除なし"

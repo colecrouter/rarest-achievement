@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Інформація про гру"
 		},
+		"playerActivity": {
+			"allTimePeak": "Історичний максимум",
+			"average": "Середнє",
+			"dayPeak": "Пік за 24 години",
+			"description": "Одночасні гравці за даними SteamCharts.",
+			"latestSample": "Останній вимір",
+			"series": "Одночасні гравці",
+			"title": "Активність гравців",
+			"unavailable": "Активність гравців з’явиться після наступного оновлення через SteamCharts.",
+			"updated": "Оновлено: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Останнім часом ви не отримали жодного досягнення.",
 			"title": "Немає останніх досягнень"

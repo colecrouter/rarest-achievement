@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Informações do Jogo"
 		},
+		"playerActivity": {
+			"allTimePeak": "Pico histórico",
+			"average": "Média",
+			"dayPeak": "Pico em 24 h",
+			"description": "Jogadores simultâneos segundo o SteamCharts.",
+			"latestSample": "Amostra mais recente",
+			"series": "Jogadores simultâneos",
+			"title": "Atividade dos jogadores",
+			"unavailable": "A atividade dos jogadores aparecerá após a próxima atualização pelo SteamCharts.",
+			"updated": "Atualizado: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Você não desbloqueou nenhuma conquista recentemente.",
 			"title": "Sem Desbloqueios Recentes"

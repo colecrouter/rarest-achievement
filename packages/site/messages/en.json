@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Game Information"
 		},
+		"playerActivity": {
+			"allTimePeak": "All-time peak",
+			"average": "Average",
+			"dayPeak": "24h peak",
+			"description": "Concurrent players sampled from SteamCharts.",
+			"latestSample": "Latest sample",
+			"series": "Concurrent players",
+			"title": "Player activity",
+			"unavailable": "Player activity will appear after the next SteamCharts-backed update.",
+			"updated": "Updated {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "You haven't unlocked any achievements recently.",
 			"title": "No Recent Unlocks"

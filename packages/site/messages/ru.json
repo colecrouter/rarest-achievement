@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "Информация об игре"
 		},
+		"playerActivity": {
+			"allTimePeak": "Исторический максимум",
+			"average": "Среднее",
+			"dayPeak": "Пик за 24 часа",
+			"description": "Одновременные игроки по данным SteamCharts.",
+			"latestSample": "Последний замер",
+			"series": "Одновременные игроки",
+			"title": "Активность игроков",
+			"unavailable": "Активность игроков появится после следующего обновления через SteamCharts.",
+			"updated": "Обновлено: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "Недавно вы не разблокировали новые достижения.",
 			"title": "Нет новых достижений"

@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "游戏信息"
 		},
+		"playerActivity": {
+			"allTimePeak": "历史峰值",
+			"average": "平均值",
+			"dayPeak": "24 小时峰值",
+			"description": "SteamCharts 提供的同时在线玩家数。",
+			"latestSample": "最新采样",
+			"series": "同时在线玩家",
+			"title": "玩家活跃度",
+			"unavailable": "玩家活跃度将在 SteamCharts 下次更新后显示。",
+			"updated": "更新于：{date}"
+		},
 		"noRecentUnlocks": {
 			"description": "你最近没有解锁任何成就。",
 			"title": "近期无解锁"

@@ -180,6 +180,17 @@
 		"gameInformation": {
 			"title": "ข้อมูลเกม"
 		},
+		"playerActivity": {
+			"allTimePeak": "สูงสุดตลอดกาล",
+			"average": "เฉลี่ย",
+			"dayPeak": "สูงสุดใน 24 ชม.",
+			"description": "จำนวนผู้เล่นพร้อมกันตามข้อมูลจาก SteamCharts",
+			"latestSample": "ข้อมูลล่าสุด",
+			"series": "ผู้เล่นพร้อมกัน",
+			"title": "กิจกรรมของผู้เล่น",
+			"unavailable": "กิจกรรมของผู้เล่นจะแสดงหลังการอัปเดตครั้งถัดไปผ่าน SteamCharts",
+			"updated": "อัปเดต: {date}"
+		},
 		"noRecentUnlocks": {
 			"description": "คุณยังไม่ได้ปลดล็อกความสำเร็จใด ๆ เมื่อเร็ว ๆ นี้.",
 			"title": "ไม่มีความสำเร็จใหม่"

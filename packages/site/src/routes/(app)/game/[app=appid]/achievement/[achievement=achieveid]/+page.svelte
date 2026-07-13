@@ -7,7 +7,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
-	import AchievementRarityChart from "$lib/charts/AchievementRarityChart.svelte";
+	import AchievementRarityDistribution from "$lib/charts/AchievementRarityDistribution.svelte";
 	import FriendCards from "$lib/FriendCards";
 	import { m } from "$lib/paraglide/messages.js";
 	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
@@ -245,10 +245,9 @@
 									appName: achievement.app.name,
 								})}
 							</p>
-							<AchievementRarityChart
+							<AchievementRarityDistribution
 								achievements={gameAchievements.data}
 								currentAchievementId={achievement.id}
-								appId={achievement.app.id}
 							/>
 						</div>
 

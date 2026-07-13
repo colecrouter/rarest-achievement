@@ -8,7 +8,8 @@
 	import { browser } from "$app/environment";
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
-	import RarityDonutChart from "$lib/charts/RarityDonutChart.svelte";
+	import AchievementCompletionTimeline from "$lib/charts/AchievementCompletionTimeline.svelte";
+	import AchievementRarityDistribution from "$lib/charts/AchievementRarityDistribution.svelte";
 	import SteamChartsActivityChart from "$lib/charts/SteamChartsActivityChart.svelte";
 	import FriendCards from "$lib/FriendCards";
 	import { m } from "$lib/paraglide/messages";
@@ -37,6 +38,11 @@
 					.filter((achievement) => achievement.unlocked).length,
 	);
 	let totalCount = $derived(achievements.data.length);
+	let userAchievements = $derived(
+		achievements.data.filter(
+			(achievement): achievement is SteamUserAchievement => achievement instanceof SteamUserAchievement,
+		),
+	);
 
 	let isSignedIn = true;
 
@@ -47,34 +53,12 @@
 		[100, m["chart.rarity.common"](), "common"],
 		[-1, m["status.locked"](), "locked"],
 	] as const;
-	let unlockedAchievementsGroupedByRarity = $derived([
-		...Map.groupBy(achievements.data.values() ?? [], (achievement) =>
-			"unlocked" in achievement && achievement.unlocked
-				? rarities.find(([percentage]) => achievement.globalPercentage <= percentage)?.[1]
-				: m["status.locked"](),
-		),
-	]);
-
 	let achievementsGroupedByRarity = $derived([
 		...Map.groupBy(
 			achievements.data.values() ?? [],
 			(achievement) => rarities.find(([percentage]) => achievement.globalPercentage <= percentage)?.[1],
 		),
 	]);
-
-	let rarityBuckets = $derived(
-		rarities.map(([, label, key]) => {
-			const totalGroup = achievementsGroupedByRarity.find(([groupLabel]) => groupLabel === label);
-			const unlockedGroup = unlockedAchievementsGroupedByRarity.find(([groupLabel]) => groupLabel === label);
-
-			return {
-				key,
-				label,
-				total: totalGroup ? totalGroup[1].length : 0,
-				unlocked: unlockedGroup ? unlockedGroup[1].length : 0,
-			};
-		}),
-	);
 
 	let summaryBuckets = $derived([
 		{
@@ -143,8 +127,8 @@
 </svelte:head>
 
 <!-- Game Banner -->
-<div class="relative flex h-[200px] flex-col justify-end">
-	<div class="from-surface-900 absolute inset-0 bg-gradient-to-t to-transparent"></div>
+<div class="relative flex h-50 flex-col justify-end">
+	<div class="from-surface-900 absolute inset-0 bg-linear-to-t to-transparent"></div>
 	<img src={app.banner} alt={app.name} class="h-full w-full object-cover">
 	<div class="absolute top-0 right-0 left-0 container pt-8">
 		<!-- Breadcrumb Navigation -->
@@ -153,7 +137,7 @@
 </div>
 
 <!-- Game Header -->
-<div class="pointer-events-none relative container mx-auto -mb-[160px] -translate-y-[160px] px-4 pt-8 pb-6 md:pt-0">
+<div class="pointer-events-none relative container mx-auto -mb-40 -translate-y-40 px-4 pt-8 pb-6 md:pt-0">
 	<div class="pointer-events-auto flex translate-y-0 flex-wrap items-end gap-6 md:translate-y-10">
 		<div>
 			<div class="bg-surface-900/50 rounded-container blur-sm"></div>
@@ -246,7 +230,7 @@
 			</div>
 			<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 				<div class="w-full p-4">
-					<RarityDonutChart buckets={rarityBuckets} {unlockedCount} {totalCount} />
+					<AchievementRarityDistribution achievements={achievements.data} />
 				</div>
 				<!-- Recent Unlocks -->
 				<div class="w-full p-4">
@@ -292,6 +276,11 @@
 					</div>
 				</div>
 			</div>
+			{#if userAchievements.length > 0}
+				<div class="mt-6">
+					<AchievementCompletionTimeline achievements={userAchievements} {totalCount} />
+				</div>
+			{/if}
 		</div>
 
 		<!-- Game Overview -->

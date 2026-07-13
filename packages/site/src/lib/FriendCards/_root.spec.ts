@@ -38,6 +38,7 @@ describe("FriendCards/_root", () => {
 		expect(friendLinks).toHaveLength(2);
 		expect(friendLinks.some((link) => link.getAttribute("href")?.includes("/user/u1"))).toBe(true);
 		expect(friendLinks.some((link) => link.getAttribute("href")?.includes("/user/u2"))).toBe(true);
+		expect(screen.getByRole("figure", { name: "Achievement Progress" })).toBeTruthy();
 	});
 	it("filters out friends without unlocked target when hideLocked is true", async () => {
 		const app = makeApp(10, "Test Game");

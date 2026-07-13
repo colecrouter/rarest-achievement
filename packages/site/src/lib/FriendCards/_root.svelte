@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TrophyIcon from "@lucide/svelte/icons/trophy";
 	import { type Attempt, SteamUserAchievement } from "lib";
+	import FriendsCompletionChart from "$lib/charts/FriendsCompletionChart.svelte";
 	import IndexError from "$lib/IndexError.svelte";
 	import { m } from "$lib/paraglide/messages.js";
 	import Transition from "$lib/Transition.svelte";
@@ -83,6 +84,7 @@
 								</div>
 							</div>
 						{:else}
+							<FriendsCompletionChart summaries={filtered} />
 							<div class={grid}>
 								{#each filtered as item}
 									<FriendCard {secondary} {...item} />

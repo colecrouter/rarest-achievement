@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Jeux indexés",
 			"indexedUsers": "Utilisateurs indexés",
-			"trackedAchievements": "Succès suivis"
+			"trackedAchievements": "Succès suivis",
+			"rarityHistogramDescription": "Tous les succès indexés par Steam Vault, regroupés selon le pourcentage de joueurs Steam qui les ont débloqués."
 		},
 		"textCard1": {
 			"description": "Consultez les succès de tous vos jeux en un seul endroit. Comparez-vous aux autres.",

@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "เกมในดัชนี",
 			"indexedUsers": "ผู้ใช้ในดัชนี",
-			"trackedAchievements": "ความสำเร็จที่ติดตาม"
+			"trackedAchievements": "ความสำเร็จที่ติดตาม",
+			"rarityHistogramDescription": "ความสำเร็จทั้งหมดที่ Steam Vault จัดทำดัชนีไว้ แบ่งกลุ่มตามเปอร์เซ็นต์ของผู้เล่น Steam ที่ปลดล็อก"
 		},
 		"textCard1": {
 			"description": "ดูความสำเร็จของทุกเกมของคุณในที่เดียว. ดูการเปรียบเทียบของคุณกับผู้อื่น.",

@@ -104,6 +104,12 @@ const getStats = async (locals: App.Locals) => {
 		locals.steamCacheDB
 			.select({
 				achievementCount: count(achievementsStats.ach_id),
+				rarityUnderOne: sql<number>`sum(case when ${achievementsStats.percent} >= 0 and ${achievementsStats.percent} < 1 then 1 else 0 end)`,
+				rarityUnderFive: sql<number>`sum(case when ${achievementsStats.percent} >= 1 and ${achievementsStats.percent} < 5 then 1 else 0 end)`,
+				rarityUnderTen: sql<number>`sum(case when ${achievementsStats.percent} >= 5 and ${achievementsStats.percent} < 10 then 1 else 0 end)`,
+				rarityUnderTwentyFive: sql<number>`sum(case when ${achievementsStats.percent} >= 10 and ${achievementsStats.percent} < 25 then 1 else 0 end)`,
+				rarityUnderFifty: sql<number>`sum(case when ${achievementsStats.percent} >= 25 and ${achievementsStats.percent} < 50 then 1 else 0 end)`,
+				rarityFiftyAndOver: sql<number>`sum(case when ${achievementsStats.percent} >= 50 and ${achievementsStats.percent} <= 100 then 1 else 0 end)`,
 			})
 			.from(achievementsStats),
 	]);
@@ -119,6 +125,14 @@ const getStats = async (locals: App.Locals) => {
 		userCount,
 		gameCount,
 		achievementCount,
+		rarityBuckets: [
+			achievementsIndexed?.rarityUnderOne ?? 0,
+			achievementsIndexed?.rarityUnderFive ?? 0,
+			achievementsIndexed?.rarityUnderTen ?? 0,
+			achievementsIndexed?.rarityUnderTwentyFive ?? 0,
+			achievementsIndexed?.rarityUnderFifty ?? 0,
+			achievementsIndexed?.rarityFiftyAndOver ?? 0,
+		] as [number, number, number, number, number, number],
 		random,
 	};
 };

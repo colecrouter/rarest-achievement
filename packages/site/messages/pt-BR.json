@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Jogos Indexados",
 			"indexedUsers": "Usuários Indexados",
-			"trackedAchievements": "Conquistas Monitoradas"
+			"trackedAchievements": "Conquistas Monitoradas",
+			"rarityHistogramDescription": "Todas as conquistas indexadas pelo Steam Vault, agrupadas pela porcentagem de jogadores da Steam que as desbloquearam."
 		},
 		"textCard1": {
 			"description": "Veja as conquistas de todos os seus jogos em um só lugar. Compare seu desempenho com outros.",

@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Indexierte Spiele",
 			"indexedUsers": "Indexierte Nutzer",
-			"trackedAchievements": "Verfolgte Erfolge"
+			"trackedAchievements": "Verfolgte Erfolge",
+			"rarityHistogramDescription": "Alle von Steam Vault indexierten Errungenschaften, gruppiert nach dem Prozentsatz der Steam-Spieler, die sie freigeschaltet haben."
 		},
 		"textCard1": {
 			"description": "Sieh dir alle Erfolge deiner Spiele an einem Ort an. Vergleiche dich mit anderen.",

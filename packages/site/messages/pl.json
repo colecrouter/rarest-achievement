@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Zindeksowane gry",
 			"indexedUsers": "Zindeksowani gracze",
-			"trackedAchievements": "Śledzone osiągnięcia"
+			"trackedAchievements": "Śledzone osiągnięcia",
+			"rarityHistogramDescription": "Wszystkie osiągnięcia zindeksowane przez Steam Vault, pogrupowane według odsetka graczy Steam, którzy je odblokowali."
 		},
 		"textCard1": {
 			"description": "Przeglądaj osiągnięcia ze wszystkich gier w jednym miejscu. Porównaj swój postęp z innymi.",

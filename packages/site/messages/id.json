@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Game Terindeks",
 			"indexedUsers": "Pengguna Terindeks",
-			"trackedAchievements": "Pencapaian yang Dilacak"
+			"trackedAchievements": "Pencapaian yang Dilacak",
+			"rarityHistogramDescription": "Semua pencapaian yang diindeks oleh Steam Vault, dikelompokkan berdasarkan persentase pemain Steam yang telah membukanya."
 		},
 		"textCard1": {
 			"description": "Lihat pencapaian semua game Anda dalam satu tempat. Bandingkan dengan orang lain.",

@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "索引游戏",
 			"indexedUsers": "索引用戶",
-			"trackedAchievements": "追踪成就"
+			"trackedAchievements": "追踪成就",
+			"rarityHistogramDescription": "Steam Vault 已索引的所有成就，按解锁它们的 Steam 玩家百分比分组。"
 		},
 		"textCard1": {
 			"description": "一览无余地查看你所有游戏的成就，比较你与他人的差距。",

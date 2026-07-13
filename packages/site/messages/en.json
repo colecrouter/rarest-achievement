@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Indexed Games",
 			"indexedUsers": "Indexed Users",
-			"trackedAchievements": "Tracked Achievements"
+			"trackedAchievements": "Tracked Achievements",
+			"rarityHistogramDescription": "All achievements indexed by Steam Vault, grouped by the percentage of Steam players who unlocked them."
 		},
 		"textCard1": {
 			"description": "View achievements for all your games in one place. See how you compare to others.",

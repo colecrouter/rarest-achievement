@@ -11,6 +11,7 @@
 	import { page } from "$app/state";
 	import AchievementCards from "$lib/AchievementCards";
 	import AnimatedNumber from "$lib/AnimatedNumber.svelte";
+	import IndexedRarityHistogram from "$lib/charts/IndexedRarityHistogram.svelte";
 	import { m } from "$lib/paraglide/messages.js";
 	import { deLocalizeUrl, localizeHref } from "$lib/paraglide/runtime";
 	import { setAchievementClientSortManager } from "$lib/SortManager/AchievementSortManager.js";
@@ -219,6 +220,10 @@
 						<div class="text-surface-300">{stat.label}</div>
 					</div>
 				{/each}
+			</div>
+
+			<div class="card mt-12 p-4 sm:p-6">
+				<IndexedRarityHistogram counts={data.stats.rarityBuckets} />
 			</div>
 		</div>
 	</section>

@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Juegos Indexados",
 			"indexedUsers": "Usuarios Indexados",
-			"trackedAchievements": "Logros Rastreados"
+			"trackedAchievements": "Logros Rastreados",
+			"rarityHistogramDescription": "Todos los logros indexados por Steam Vault, agrupados por el porcentaje de jugadores de Steam que los han desbloqueado."
 		},
 		"textCard1": {
 			"description": "Consulta los logros de todos tus juegos en un solo lugar. Compara tu rendimiento con el de otros.",

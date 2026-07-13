@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "인덱스된 게임",
 			"indexedUsers": "인덱스된 사용자",
-			"trackedAchievements": "추적 중인 업적"
+			"trackedAchievements": "추적 중인 업적",
+			"rarityHistogramDescription": "Steam Vault에 색인된 모든 업적을 달성한 Steam 플레이어 비율에 따라 그룹화했습니다."
 		},
 		"textCard1": {
 			"description": "한눈에 모든 게임의 업적을 확인하세요. 다른 플레이어와 비교할 수 있습니다.",

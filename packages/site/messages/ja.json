@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "インデックスされたゲーム",
 			"indexedUsers": "インデックスされたユーザー",
-			"trackedAchievements": "追跡された達成"
+			"trackedAchievements": "追跡された達成",
+			"rarityHistogramDescription": "Steam Vault がインデックスしたすべての実績を、解除した Steam プレイヤーの割合別にグループ化しています。"
 		},
 		"textCard1": {
 			"description": "全ゲームの達成を一括で表示。他のユーザーと比較してみましょう。",

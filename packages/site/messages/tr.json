@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "İndekslenmiş Oyunlar",
 			"indexedUsers": "İndekslenmiş Kullanıcılar",
-			"trackedAchievements": "Takip Edilen Başarılar"
+			"trackedAchievements": "Takip Edilen Başarılar",
+			"rarityHistogramDescription": "Steam Vault tarafından indekslenen tüm başarımlar, bunları açan Steam oyuncularının yüzdesine göre gruplandırılmıştır."
 		},
 		"textCard1": {
 			"description": "Tüm oyunlarınızın başarılarını tek bir yerde görüntüleyin. Diğerleriyle nasıl rekabet ettiğinizi görün.",

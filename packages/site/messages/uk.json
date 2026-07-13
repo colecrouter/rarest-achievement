@@ -247,7 +247,8 @@
 		"stats": {
 			"indexedGames": "Індексовані ігри",
 			"indexedUsers": "Індексовані користувачі",
-			"trackedAchievements": "Відстежувані досягнення"
+			"trackedAchievements": "Відстежувані досягнення",
+			"rarityHistogramDescription": "Усі досягнення, проіндексовані Steam Vault, згруповані за відсотком гравців Steam, які їх розблокували."
 		},
 		"textCard1": {
 			"description": "Перегляньте досягнення усіх ваших ігор в одному місці. Порівняйте себе з іншими.",

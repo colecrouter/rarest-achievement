@@ -1,7 +1,8 @@
 <script lang="ts">
 	import Activity from "@lucide/svelte/icons/activity";
 	import type { SteamChartsSnapshot } from "@project/lib";
-	import { LineChart } from "layerchart/svg";
+	import type { AnnotationLineProps, AnnotationPointProps } from "layerchart/svg";
+	import { AreaChart } from "layerchart/svg";
 	import { m } from "$lib/paraglide/messages";
 	import { getLocale } from "$lib/paraglide/runtime";
 
@@ -9,6 +10,9 @@
 		timestampMs: number;
 		players: number;
 	};
+	type ActivityAnnotation =
+		| ({ type: "line"; layer?: "above" | "below" } & AnnotationLineProps)
+		| ({ type: "point"; layer?: "above" | "below" } & AnnotationPointProps);
 
 	let { snapshot } = $props<{
 		snapshot: SteamChartsSnapshot | null;
@@ -20,6 +24,16 @@
 		maximumFractionDigits: 1,
 	});
 	const exactNumberFormat = new Intl.NumberFormat(locale);
+	const signedCompactNumberFormat = new Intl.NumberFormat(locale, {
+		notation: "compact",
+		maximumFractionDigits: 1,
+		signDisplay: "always",
+	});
+	const signedPercentFormat = new Intl.NumberFormat(locale, {
+		maximumFractionDigits: 1,
+		signDisplay: "always",
+		style: "percent",
+	});
 	const dateFormat = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
 	const updatedFormat = new Intl.DateTimeFormat(locale, {
 		dateStyle: "medium",
@@ -31,6 +45,8 @@
 		value == null ? "--" : compactNumberFormat.format(Math.round(value));
 	const formatExact = (value: number | null | undefined) =>
 		value == null ? "--" : exactNumberFormat.format(Math.round(value));
+	const formatSignedCompact = (value: number | null | undefined) =>
+		value == null ? "--" : signedCompactNumberFormat.format(Math.round(value));
 	const formatPointDate = (timestampMs: number | null | undefined) =>
 		timestampMs == null ? "" : dateFormat.format(new Date(timestampMs));
 
@@ -53,6 +69,19 @@
 	let latestPoint = $derived(points.at(-1));
 	let midpoint = $derived(points[Math.floor((points.length - 1) / 2)]);
 	let hasTrend = $derived(points.length > 1 && firstPoint?.timestampMs !== latestPoint?.timestampMs);
+	let periodPeak = $derived(
+		points.reduce<ActivityPoint | undefined>(
+			(peak, point) => (!peak || point.players > peak.players ? point : peak),
+			undefined,
+		),
+	);
+	let recentAverage = $derived(
+		points.length === 0 ? 0 : points.reduce((total, point) => total + point.players, 0) / points.length,
+	);
+	let playerChange = $derived(firstPoint && latestPoint ? latestPoint.players - firstPoint.players : null);
+	let playerChangeRatio = $derived(
+		playerChange != null && firstPoint && firstPoint.players > 0 ? playerChange / firstPoint.players : null,
+	);
 	let updatedAt = $derived(snapshot ? new Date(snapshot.updatedAt) : null);
 	let maxPlayers = $derived(Math.max(1, ...points.map((point) => point.players)));
 	let yDomain = $derived([0, Math.ceil(maxPlayers * 1.1)] as [number, number]);
@@ -66,6 +95,66 @@
 			(point, index, allPoints) =>
 				allPoints.findIndex((candidate) => candidate.timestampMs === point.timestampMs) === index,
 		);
+	});
+	let annotations = $derived.by(() => {
+		const result: ActivityAnnotation[] = [
+			{
+				type: "line" as const,
+				layer: "below" as const,
+				y: recentAverage,
+				props: {
+					line: {
+						stroke: "var(--color-surface-400)",
+						dashArray: "5 5",
+						strokeWidth: 1,
+					},
+				},
+			},
+		];
+
+		if (periodPeak && periodPeak.timestampMs !== latestPoint?.timestampMs) {
+			result.push({
+				type: "point" as const,
+				layer: "above" as const,
+				x: periodPeak.timestampMs,
+				y: periodPeak.players,
+				label: formatCompact(periodPeak.players),
+				labelPlacement: "top-right" as const,
+				labelXOffset: 5,
+				labelYOffset: 5,
+				props: {
+					circle: {
+						fill: "var(--color-surface-100)",
+						stroke: "var(--color-surface-900)",
+						strokeWidth: 2,
+					},
+					label: { fill: "var(--color-surface-200)" },
+				},
+			});
+		}
+
+		if (latestPoint) {
+			result.push({
+				type: "point" as const,
+				layer: "above" as const,
+				x: latestPoint.timestampMs,
+				y: latestPoint.players,
+				label: formatCompact(latestPoint.players),
+				labelPlacement: "top-left" as const,
+				labelXOffset: 6,
+				labelYOffset: 5,
+				props: {
+					circle: {
+						fill: "var(--color-primary-500)",
+						stroke: "var(--color-surface-900)",
+						strokeWidth: 2,
+					},
+					label: { fill: "var(--color-surface-100)", "font-weight": 600 },
+				},
+			});
+		}
+
+		return result;
 	});
 </script>
 
@@ -85,6 +174,17 @@
 				<div class="mt-1 text-lg font-semibold tabular-nums" title={formatExact(latestPoint?.players)}>
 					{formatCompact(latestPoint?.players)}
 				</div>
+				{#if playerChange != null}
+					<div
+						class="text-xs font-medium tabular-nums"
+						class:text-green-400={playerChange > 0}
+						class:text-red-400={playerChange < 0}
+						class:text-surface-400={playerChange === 0}
+						title={formatSignedCompact(playerChange)}
+					>
+						{playerChangeRatio == null ? formatSignedCompact(playerChange) : signedPercentFormat.format(playerChangeRatio)}
+					</div>
+				{/if}
 			</div>
 			<div class="bg-surface-900/60 rounded p-3">
 				<div class="text-surface-400">{m["game.playerActivity.dayPeak"]()}</div>
@@ -110,9 +210,15 @@
 			class="space-y-2"
 			aria-label={`${m["game.playerActivity.series"]()}: ${formatExact(latestPoint?.players)}`}
 		>
-			<div class="text-surface-300 flex items-center gap-2 text-xs">
-				<span class="bg-primary-500 h-0.5 w-5 rounded-full" aria-hidden="true"></span>
-				<span>{m["game.playerActivity.series"]()}</span>
+			<div class="text-surface-300 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+				<span class="flex items-center gap-2">
+					<span class="bg-primary-500 h-0.5 w-5 rounded-full" aria-hidden="true"></span>
+					<span>{m["game.playerActivity.series"]()}</span>
+				</span>
+				<span class="flex items-center gap-2">
+					<span class="border-surface-400 w-5 border-t border-dashed" aria-hidden="true"></span>
+					<span>{m["game.playerActivity.average"]()}: {formatCompact(recentAverage)}</span>
+				</span>
 			</div>
 
 			<div class="border-surface-700 bg-surface-900/40 h-56 overflow-hidden rounded border p-2">
@@ -125,7 +231,7 @@
 						{/each}
 					</div>
 					<div class="min-w-0">
-						<LineChart
+						<AreaChart
 							data={points}
 							x="timestampMs"
 							y="players"
@@ -135,6 +241,7 @@
 							grid={true}
 							highlight={false}
 							tooltipContext={false}
+							{annotations}
 							padding={{ top: 8, right: 8, bottom: 8, left: 0 }}
 							series={[
 								{
@@ -144,7 +251,7 @@
 									color: "var(--color-primary-500)",
 								},
 							]}
-							props={{ spline: { class: "stroke-2" } }}
+							props={{ area: { fillOpacity: 0.22 }, spline: { class: "stroke-2" } }}
 						/>
 					</div>
 					<div></div>

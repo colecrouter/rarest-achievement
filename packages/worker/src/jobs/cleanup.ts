@@ -48,7 +48,7 @@ export const refreshStaleApps = async (ctx: CronCtx) => {
 };
 
 // Single-pass cleanup:
-// 1. Delete stale rows from user-scoped tables (achievements, owned games, friends) using their own updated_at / friend_since heuristics.
+// 1. Delete stale rows from user-scoped tables using cache freshness timestamps.
 // 2. Delete users that no longer have any related data in those tables.
 // NOTE: user_scores retained (no FK) so orphan scores may remain intentionally for historical purposes.
 const STALE_ACHIEVEMENT_DAYS = 7;
@@ -68,7 +68,7 @@ export const cleanupUserData = async (ctx: CronCtx) => {
 	await ctx.db.delete(userAchievements).where(lt(userAchievements.updated_at, achCutoff));
 
 	// 2. Delete stale owned games
-	await ctx.db.delete(ownedGames).where(lt(ownedGames.last_played_at, ownedCutoff));
+	await ctx.db.delete(ownedGames).where(lt(ownedGames.updated_at, ownedCutoff));
 
 	// 3. Delete stale friends (by updated_at)
 	await ctx.db.delete(friends).where(lt(friends.updated_at, friendCutoff));

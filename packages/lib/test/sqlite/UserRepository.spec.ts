@@ -66,6 +66,11 @@ describe("UserRepository - SQLite (in-memory)", () => {
 		assert.strictEqual(result.data.length, 2, "Should return two users");
 		const ids = result.data.map((u) => u.id).sort();
 		assert.deepStrictEqual(ids, ["123", "456"]);
+		const ownedRows = await db
+			.select({ updatedAt: ownedGames.updated_at })
+			.from(ownedGames)
+			.where(eq(ownedGames.user_id, "123"));
+		assert.ok(ownedRows[0]?.updatedAt instanceof Date, "owned game cache timestamp should be recorded");
 	});
 
 	test("returns cached users without API", async () => {

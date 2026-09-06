@@ -305,6 +305,7 @@ class UserQueryComposer<WithOwnedApps extends boolean = false>
 									: null,
 								playtime_2w_minutes: data.ownedGames.playtime_2weeks ?? null,
 								playtime_total_minutes: data.ownedGames.playtime_forever ?? null,
+								updated_at: new Date(),
 							})),
 						)
 						.onConflictDoUpdate({
@@ -313,6 +314,7 @@ class UserQueryComposer<WithOwnedApps extends boolean = false>
 								last_played_at: excluded(ownedGames.last_played_at),
 								playtime_2w_minutes: excluded(ownedGames.playtime_2w_minutes),
 								playtime_total_minutes: excluded(ownedGames.playtime_total_minutes),
+								updated_at: excluded(ownedGames.updated_at),
 							},
 						}),
 			),

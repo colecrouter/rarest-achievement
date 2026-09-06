@@ -71,6 +71,13 @@
 			"when": 1783274358912,
 			"tag": "0009_stiff_wolverine",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "6",
+			"when": 1788676885737,
+			"tag": "0010_owned-game-cache-freshness",
+			"breakpoints": true
 		}
 	]
 }

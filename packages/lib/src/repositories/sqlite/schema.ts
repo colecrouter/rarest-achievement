@@ -88,10 +88,12 @@ export const ownedGames = sqliteTable(
 		playtime_2w_minutes: integer("playtime_last_two_weeks"),
 		playtime_total_minutes: integer("playtime_total"),
 		last_played_at: integer("last_played_at", { mode: "timestamp" }),
+		updated_at: integer("updated_at", { mode: "timestamp" }),
 	},
 	(table) => [
 		primaryKey({ columns: [table.user_id, table.app_id] }),
 		foreignKey({ columns: [table.user_id], foreignColumns: [users.id] }),
+		index("idx_owned_games_timestamp").on(table.updated_at),
 	],
 );
 

@@ -402,11 +402,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				),
 			})
 			.from(userAchievements)
-			// Enforce "owned" semantics identical to build()
-			.innerJoin(
-				ownedGames,
-				and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
-			)
 			// Provide achievementsStats so rarity/search CTE EXISTS correlate to these columns (same as build)
 			.leftJoin(
 				achievementsStats,
@@ -461,7 +456,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 	 * Use comprehensive SQL when:
 	 * 1. Filtering by unlocked status (more complex filtering)
 	 * 2. Using search functionality (needs achievement metadata)
-	 * 3. No explicit app IDs provided (would need "all owned games" logic)
+	 * 3. No explicit app IDs provided (needs comprehensive metadata hydration)
 	 * 4. Filtering by rarity threshold (needs rarity data)
 	 */
 	private shouldUseComprehensiveSQL(): boolean {
@@ -511,11 +506,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				rarity_pct: achievementsStats.percent,
 			})
 			.from(userAchievements)
-			// JOIN to ensure user owns the game (avoids parameter explosion)
-			.innerJoin(
-				ownedGames,
-				and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
-			)
 			// LEFT JOIN for rarity data
 			.leftJoin(
 				achievementsStats,
@@ -606,10 +596,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				rarity_pct: achievementsStats.percent,
 			})
 			.from(userAchievements)
-			.innerJoin(
-				ownedGames,
-				and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
-			)
 			.leftJoin(
 				achievementsStats,
 				and(
@@ -733,11 +719,6 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				estimated_players: estimatedPlayers.estimated_players,
 			})
 			.from(userAchievements)
-			// JOIN to ensure user owns the game (handles "all owned games" case)
-			.innerJoin(
-				ownedGames,
-				and(eq(userAchievements.user_id, ownedGames.user_id), eq(userAchievements.app_id, ownedGames.app_id)),
-			)
 			// JOIN for achievement metadata with fallback logic (requested language -> English)
 			.innerJoin(
 				achievementsMeta,

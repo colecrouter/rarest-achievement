@@ -60,6 +60,59 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 		assert.ok(res.data.length === 0 || res.data.length === 1);
 	});
 
+	test("historical achievements remain readable when the game is no longer currently owned", async () => {
+		const repo = getRepo();
+		const userId = "historical-user";
+		const appId = 93000;
+		const unlockedAt = new Date("2025-07-06T20:03:22Z");
+
+		await insertUser(db, { id: userId, data: makeUserData(userId) });
+		await seedAppWithPlayers(db, appId, "Historical App", 1500);
+		await seedStats(db, appId, [{ ach: "HIST1", percent: 0.6 }]);
+		await seedMetaByCode(db, appId, "en", [{ ach: "HIST1", display: "Historical Unlock" }]);
+		await insertUserAchievement(db, {
+			user_id: userId,
+			app_id: appId,
+			ach_id: "HIST1",
+			unlocked_at: unlockedAt,
+		});
+
+		const comprehensive = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.withUnlockedStatus(true)
+			.build({ limit: 10, sort: { method: "rarity_pct", direction: "asc" } });
+		assert.deepStrictEqual(
+			comprehensive.data.map((achievement) => achievement.id),
+			["HIST1"],
+		);
+
+		const direct = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.withAppIds(appId)
+			.build({ limit: 10, sort: { method: "rarity_pct", direction: "asc" } });
+		assert.deepStrictEqual(
+			direct.data.map((achievement) => achievement.id),
+			["HIST1"],
+		);
+
+		const unlockedAtSorted = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.build({ limit: 10, sort: { method: "unlocked_at", direction: "desc" } });
+		assert.deepStrictEqual(
+			unlockedAtSorted.data.map((achievement) => achievement.id),
+			["HIST1"],
+		);
+
+		const count = await repo.compose().withLanguage("en").withUserIds(userId).withUnlockedStatus(true).count();
+		assert.strictEqual(count.data, 1);
+	});
+
 	test("withCutoff refetches stale user profile for achievements", async () => {
 		const repo = getRepo();
 		const userId = "fresh-ach-user";

@@ -10,17 +10,17 @@ test("achievement icons use the current Steam Community asset path for cached le
 	});
 	assert.strictEqual(
 		achievement.iconUnlocked,
-		"https://shared.fastly.steamstatic.com/community_assets/images/apps/3812600/unlocked.jpg",
+		"https://shared.akamai.steamstatic.com/community_assets/images/apps/3812600/unlocked.jpg",
 	);
 	assert.strictEqual(
 		achievement.iconLocked,
-		"https://shared.fastly.steamstatic.com/community_assets/images/apps/3812600/locked.jpg",
+		"https://shared.akamai.steamstatic.com/community_assets/images/apps/3812600/locked.jpg",
 	);
 	assert.strictEqual(achievement.icon, achievement.iconUnlocked);
 });
 
 test("achievement icons preserve current URLs and other image sources", () => {
-	const icon = "https://shared.fastly.steamstatic.com/community_assets/images/apps/3812600/current.jpg";
+	const icon = "https://shared.akamai.steamstatic.com/community_assets/images/apps/3812600/current.jpg";
 	const achievement = makeAppAchievement(makeApp(3812600, "ReStory"), "ACH_TEST", "Test", 10, {
 		icon,
 		icongray: "/placeholder.svg",

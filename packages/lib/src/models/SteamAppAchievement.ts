@@ -15,7 +15,7 @@ export type SteamAchievementRawGlobalStats =
 const achievementIconUrl = (url: string) =>
 	url.replace(
 		/^https?:\/\/steamcdn-a\.akamaihd\.net\/steamcommunity\/public\/images\/apps\//,
-		"https://shared.fastly.steamstatic.com/community_assets/images/apps/",
+		"https://shared.akamai.steamstatic.com/community_assets/images/apps/",
 	);
 
 export class SteamAppAchievement {

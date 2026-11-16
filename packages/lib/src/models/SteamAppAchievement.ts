@@ -10,6 +10,14 @@ export type SteamAchievementRawMeta = NonNullable<
 export type SteamAchievementRawGlobalStats =
 	NonNullable<GetGlobalAchievementPercentagesForAppResponse>["achievementpercentages"]["achievements"][number];
 
+// Steam's schema API still returns this legacy path for some achievement icons.
+// Steam Community serves the same files under community_assets instead.
+const achievementIconUrl = (url: string) =>
+	url.replace(
+		/^https?:\/\/steamcdn-a\.akamaihd\.net\/steamcommunity\/public\/images\/apps\//,
+		"https://shared.fastly.steamstatic.com/community_assets/images/apps/",
+	);
+
 export class SteamAppAchievement {
 	#app: SteamApp;
 	#meta: SteamAchievementRawMeta;
@@ -52,11 +60,11 @@ export class SteamAppAchievement {
 	}
 
 	get iconUnlocked() {
-		return this.#meta.icon;
+		return achievementIconUrl(this.#meta.icon);
 	}
 
 	get iconLocked() {
-		return this.#meta.icongray;
+		return achievementIconUrl(this.#meta.icongray);
 	}
 
 	get icon() {

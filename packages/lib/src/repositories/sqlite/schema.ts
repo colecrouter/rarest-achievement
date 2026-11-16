@@ -8,6 +8,7 @@ export const users = sqliteTable(
 	"users",
 	{
 		id: text("user_id").notNull().primaryKey(),
+		ownedGamesUpdatedAt: integer("owned_games_updated_at", { mode: "timestamp" }),
 		data: text("data", { mode: "json" }).notNull().$type<SteamUserRaw>(),
 		updated_at: integer("updated_at", { mode: "timestamp" })
 			.notNull()

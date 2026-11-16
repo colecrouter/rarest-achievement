@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import type { APILanguageCode } from "../../src/lang";
 import type { SteamAppRaw, SteamUserRaw } from "../../src/models";
 import type { ProjectDB } from "../../src/repositories/sqlite/schema";
@@ -139,6 +140,8 @@ export async function insertOwnedGame(
 		playtime_total_minutes: playtime_total_minutes ?? null,
 		last_played_at: last_played_at ?? null,
 	});
+	// This helper seeds a completed cached library, matching the migration backfill.
+	await db.update(users).set({ ownedGamesUpdatedAt: new Date() }).where(eq(users.id, user_id));
 }
 
 /**

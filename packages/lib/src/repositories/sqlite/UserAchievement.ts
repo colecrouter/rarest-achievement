@@ -295,28 +295,17 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 				: this.executeDirectQuery(options));
 		}
 
-		// If we got no results but the caller requested a specific app (e.g. viewing a single game page),
-		// fall back to returning the global AppAchievement list for that app with userStats=null so logged-in
-		// non-owners still see the app's achievements (mirrors anonymous behavior).
-		//
-		// Fallback semantics:
-		// - Trigger: results are empty AND the composition narrowed by explicit appIds.
-		// - Action: fetch app achievements via AppAchievementRepository and map to SteamUserAchievement with
-		//   userStats=null (unlocked=null). This allows the UI to render achievements even when the user/friend
-		//   does not have an owned_games row for the app.
-		// - Primary user: if a specific userId or friendsOf(userId) was provided, we attempt to attach that
-		//   user object (profile only) to the returned items; otherwise user may be undefined. This does not
-		//   imply ownership or unlocks.
-		//
-		// Why this matters:
-		// - Strict JOINs against owned_games are intentional to avoid parameter explosion and to respect
-		//   ownership semantics. However, in real deployments partial/stale data can temporarily omit an
-		//   owned_games row (e.g., friends fetched without their library). The fallback ensures the page remains
-		//   useful instead of appearing blank.
-		// - When a freshness cutoff is supplied upstream (withCutoff), the ensure layer should re-fetch the
-		//   missing friend profile + owned games, at which point the direct JOIN path yields proper results and
-		//   this fallback typically will not execute.
-		if (resultsAttempt.hasData() && resultsAttempt.data.length === 0 && this.appIds.size > 0) {
+		// A single user's game page can still display the global achievement list when
+		// no user rows exist. Never synthesize results for friends or unlocked-only
+		// queries: placeholder rows do not satisfy those filters.
+		if (
+			resultsAttempt.hasData() &&
+			resultsAttempt.data.length === 0 &&
+			this.appIds.size > 0 &&
+			this.userIds.size === 1 &&
+			!this.friendsOfUserId &&
+			this.unlockedFilter !== true
+		) {
 			const appIds = Array.from(this.appIds);
 			// Fetch app achievements
 			const appAchComposer = this.appAchievementRepository.compose().withLanguage(this.lang).withAppIds(appIds);
@@ -325,10 +314,9 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 			const finalData: SteamUserAchievement[] = [];
 			if (appAchResult.hasData()) {
-				// Determine a primary user to attach (if available). Prefer explicit userIds, otherwise use friendsOfUserId.
+				// Attach the explicitly requested user to the placeholder achievements.
 				let primaryUserId: string | undefined;
 				if (this.userIds.size > 0) primaryUserId = Array.from(this.userIds)[0];
-				else if (this.friendsOfUserId) primaryUserId = this.friendsOfUserId;
 
 				// Fetch user object if we have an ID to attach
 				let userObj = null;
@@ -961,7 +949,8 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 
 			const friendUsersComposer = this.userRepository
 				.compose()
-				.withRequiredEntitySubquery("user", friendUserIdsSubquery);
+				.withRequiredEntitySubquery("user", friendUserIdsSubquery)
+				.withOwnedApps();
 			if (this.freshnessCutoff) friendUsersComposer.withCutoff(this.freshnessCutoff);
 			result = await friendUsersComposer.ensureDataExists();
 		} else {
@@ -969,7 +958,7 @@ class UserAchievementQueryComposer extends BaseAchievementQueryComposer<
 			if (userIds.length === 0) return Attempt.ok(undefined);
 
 			// First, ensure user profile and owned games data exists
-			const userEnsureComposer = this.userRepository.compose().withUserIds(userIds);
+			const userEnsureComposer = this.userRepository.compose().withUserIds(userIds).withOwnedApps();
 			if (this.freshnessCutoff) userEnsureComposer.withCutoff(this.freshnessCutoff);
 			result = await userEnsureComposer.ensureDataExists();
 		}

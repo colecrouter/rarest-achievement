@@ -18,11 +18,12 @@ import type { MockSteamAuthenticatedAPIClient } from "../mocks/steamAuthenticate
 
 describe("UserRepository - SQLite (in-memory)", () => {
 	let db: ProjectDB;
+	let sqlite: InstanceType<typeof Database>;
 	let authMock: MockSteamAuthenticatedAPIClient;
 
 	beforeEach(async () => {
 		// Fresh in-memory DB per test case
-		const sqlite = new Database(":memory:");
+		sqlite = new Database(":memory:");
 		// Align sqlite behavior
 		sqlite.exec("PRAGMA case_sensitive_like = ON;");
 		sqlite.exec("PRAGMA journal_mode = WAL;");
@@ -71,6 +72,132 @@ describe("UserRepository - SQLite (in-memory)", () => {
 			.from(ownedGames)
 			.where(eq(ownedGames.user_id, "123"));
 		assert.ok(ownedRows[0]?.updatedAt instanceof Date, "owned game cache timestamp should be recorded");
+	});
+
+	test("failed libraries retry independently of a freshly cached profile", async () => {
+		const repo = getRepo();
+		const id = "retry-library";
+		authMock.setPlayerSummaries({ response: { players: [makeUserData(id)] } });
+		let libraryCalls = 0;
+		authMock.getOwnedGames = async () => {
+			libraryCalls++;
+			if (libraryCalls === 1) throw new Error("Steam unavailable");
+			return { response: { game_count: 1, games: [{ appid: 205100, playtime_forever: 60 }] } };
+		};
+		const first = await repo.compose().withUserIds(id).withOwnedApps().build();
+		assert.ok(first.isPartial());
+		assert.strictEqual(first.data.length, 1, "the profile should remain usable");
+		const [failed] = await db.select().from(users).where(eq(users.id, id));
+		assert.ok(failed?.updated_at instanceof Date);
+		assert.strictEqual(failed?.ownedGamesUpdatedAt, null);
+
+		authMock.getPlayerSummaries = async () => {
+			throw new Error("fresh profiles must not be fetched again");
+		};
+		const recovered = await repo.compose().withUserIds(id).withOwnedApps().build();
+		assert.ok(recovered.isOk());
+		assert.strictEqual(recovered.data[0]?.ownedApps[0]?.id, 205100);
+		assert.strictEqual(libraryCalls, 2);
+		const [success] = await db.select().from(users).where(eq(users.id, id));
+		assert.ok(success?.ownedGamesUpdatedAt instanceof Date);
+		await repo.compose().withUserIds(id).withOwnedApps().build();
+		assert.strictEqual(libraryCalls, 2, "a successfully stored library should be cached");
+	});
+
+	test("stale libraries refresh even when the profile is fresh", async () => {
+		const repo = getRepo();
+		const id = "stale-library";
+		const stale = new Date(Date.now() - 60_000);
+		await db.insert(users).values({
+			id,
+			data: makeUserData(id),
+			updated_at: new Date(),
+			ownedGamesUpdatedAt: stale,
+		});
+		authMock.setOwnedGames(
+			{ steamid: id, include_played_free_games: true },
+			{
+				response: { game_count: 1, games: [{ appid: 205100, playtime_forever: 60 }] },
+			},
+		);
+		const result = await repo
+			.compose()
+			.withUserIds(id)
+			.withOwnedApps()
+			.withCutoff(new Date(Date.now() - 30_000))
+			.build();
+		assert.ok(result.isOk(), "the fresh profile should not require a player summaries request");
+		assert.strictEqual(result.data[0]?.ownedApps[0]?.id, 205100);
+		const [row] = await db.select().from(users).where(eq(users.id, id));
+		assert.ok(row?.ownedGamesUpdatedAt && row.ownedGamesUpdatedAt > stale);
+	});
+
+	test("null and incomplete library responses stay retryable; private and empty libraries are cached", async () => {
+		const repo = getRepo();
+		const ids = ["null-library", "incomplete-library", "private-library", "empty-library"];
+		for (const id of ids) {
+			await db.insert(users).values({ id, data: makeUserData(id), updated_at: new Date() });
+		}
+		const calls = new Map<string, number>();
+		authMock.getOwnedGames = async ({ steamid }) => {
+			calls.set(steamid, (calls.get(steamid) ?? 0) + 1);
+			if (steamid === "null-library") return null;
+			if (steamid === "incomplete-library") return { response: { game_count: 1 } };
+			if (steamid === "private-library") return { response: {} };
+			return { response: { game_count: 0 } };
+		};
+		for (let attempt = 0; attempt < 2; attempt++) {
+			const result = await repo.compose().withUserIds(ids).withOwnedApps().build();
+			assert.ok(result.isPartial());
+		}
+		assert.strictEqual(calls.get("null-library"), 2);
+		assert.strictEqual(calls.get("incomplete-library"), 2);
+		assert.strictEqual(calls.get("private-library"), 1);
+		assert.strictEqual(calls.get("empty-library"), 1);
+	});
+
+	test("library refreshes are bounded and leave deferred users retryable", async () => {
+		const repo = getRepo();
+		const ids = Array.from({ length: 34 }, (_, i) => `bounded-${i.toString().padStart(2, "0")}`);
+		for (const id of ids) {
+			await db.insert(users).values({ id, data: makeUserData(id), updated_at: new Date() });
+		}
+		let calls = 0;
+		authMock.getOwnedGames = async () => {
+			calls++;
+			return { response: { game_count: 0 } };
+		};
+		const first = await repo.compose().withUserIds(ids).withOwnedApps().build();
+		assert.ok(first.isPartial());
+		assert.strictEqual(calls, 32);
+		const second = await repo.compose().withUserIds(ids).withOwnedApps().build();
+		assert.ok(second.isOk());
+		assert.strictEqual(calls, 34);
+	});
+
+	test("a partially written library is retried until every game is persisted", async () => {
+		const repo = getRepo();
+		const id = "interrupted-library";
+		await db.insert(users).values({ id, data: makeUserData(id), updated_at: new Date() });
+		const games = Array.from({ length: 20 }, (_, i) => ({ appid: i + 1, playtime_forever: 1 }));
+		let calls = 0;
+		authMock.getOwnedGames = async () => {
+			calls++;
+			return { response: { game_count: games.length, games } };
+		};
+		sqlite.exec(
+			"CREATE TRIGGER interrupt_library BEFORE INSERT ON owned_games WHEN NEW.app_id = 20 BEGIN SELECT RAISE(ABORT, 'interrupted library write'); END",
+		);
+		await assert.rejects(repo.compose().withUserIds(id).withOwnedApps().build(), /interrupted library write/);
+		const [interrupted] = await db.select().from(users).where(eq(users.id, id));
+		assert.strictEqual(interrupted?.ownedGamesUpdatedAt, null);
+		const partial = await db.select().from(ownedGames).where(eq(ownedGames.user_id, id));
+		assert.ok(partial.length > 0 && partial.length < games.length);
+		sqlite.exec("DROP TRIGGER interrupt_library");
+		const recovered = await repo.compose().withUserIds(id).withOwnedApps().build();
+		assert.ok(recovered.isOk());
+		assert.strictEqual(calls, 2);
+		assert.strictEqual(recovered.data[0]?.ownedApps.length, games.length);
 	});
 
 	test("returns cached users without API", async () => {
@@ -162,7 +289,7 @@ describe("UserRepository - SQLite (in-memory)", () => {
 	});
 
 	// Parallel fetch: summaries + per-user owned games under a tight budget
-	test("parallel upsert: owned-games only for subset under budget", async () => {
+	test("partial library upserts under a fetch budget", async () => {
 		const repo = getRepo();
 
 		// Prepare 20 users with deterministic IDs

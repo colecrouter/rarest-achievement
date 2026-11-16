@@ -78,6 +78,13 @@
 			"when": 1788676885737,
 			"tag": "0010_owned-game-cache-freshness",
 			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "6",
+			"when": 1794801831595,
+			"tag": "0011_user_library_freshness",
+			"breakpoints": true
 		}
 	]
 }

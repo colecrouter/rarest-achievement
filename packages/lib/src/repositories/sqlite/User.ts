@@ -1,4 +1,4 @@
-import { asc, countDistinct, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import type { WithSubqueryWithSelection } from "drizzle-orm/sqlite-core/subquery";
 import {
 	Attempt,
@@ -171,13 +171,12 @@ class UserQueryComposer<WithOwnedApps extends boolean = false>
 		// Note: Database errors (SQL issues) should bubble up, not be caught
 		const missingUserIds = await this.findMissingUsers();
 
-		if (missingUserIds.length === 0) {
-			return Attempt.ok(undefined);
-		}
-
-		// Fetch and insert missing user data
-		// Note: API errors are handled inside fetchAndUpsertUsers, DB errors bubble up
-		return await this.fetchAndUpsertUsers(missingUserIds);
+		const profiles = await this.fetchAndUpsertUsers(missingUserIds);
+		// New users still load their libraries. Existing profiles only need a library
+		// refresh when a caller explicitly needs ownership data.
+		if (missingUserIds.length === 0 && !this.includeOwnedGames) return profiles;
+		const libraries = await this.ensureOwnedGamesDataExists();
+		return Attempt.from(undefined, profiles.error ?? libraries.error);
 	}
 
 	/**
@@ -230,101 +229,96 @@ class UserQueryComposer<WithOwnedApps extends boolean = false>
 
 		console.debug(`[UserRepository] Requesting ${missingUserIds.length} entries`);
 
-		const validData = [];
-
-		// Fetch user summaries
-		const missingPlayerSummaries = await Attempt.try(() => {
-			return this.steamApi.getPlayerSummaries(missingUserIds);
-		});
-
-		// Fetch owned games for each user
-		getFetchManager().reset({ maxFetches: 150 }); // We'll say max 150 users for now (who am I kidding, I am making this up as I go)
-		const missingOwnedGames = await Attempt.all(
-			missingUserIds.map((userId) => {
-				return this.steamApi
-					.getOwnedGames({ steamid: userId, include_played_free_games: true })
-					.then((d) => (d && "games" in d.response && d.response.games ? d.response.games : []))
-					.then((d) => ({ user: userId, games: d }));
-			}),
+		const summaries = await Attempt.try(() => this.steamApi.getPlayerSummaries(missingUserIds));
+		const players = summaries.data?.response.players ?? [];
+		await safeInsert(this.db, players, (chunk) =>
+			this.db
+				.insert(users)
+				.values(
+					chunk.map((data) => ({
+						id: data.steamid,
+						data,
+						updated_at: new Date(),
+					})),
+				)
+				.onConflictDoUpdate({
+					target: users.id,
+					set: { data: excluded(users.data), updated_at: excluded(users.updated_at) },
+				}),
 		);
+		return summaries.map(() => undefined);
+	}
 
-		// Combine user data
-		for (const userId of missingUserIds) {
-			const userData = missingPlayerSummaries.data?.response.players.find((u) => u.steamid === userId);
-			const ownedGamesData = missingOwnedGames.data.find((o) => o?.user === userId);
-
-			if (userData) {
-				validData.push({
-					id: userData.steamid,
-					user: userData,
-					ownedGames: ownedGamesData ? ownedGamesData.games : [],
-				});
+	private async ensureOwnedGamesDataExists(): Promise<Attempt<void, AttemptStatus>> {
+		if (!this.requiredUserSubquery && this.userIds.size === 0) return Attempt.ok(undefined);
+		const stale = this.freshnessCutoff
+			? or(isNull(users.ownedGamesUpdatedAt), lt(users.ownedGamesUpdatedAt, this.freshnessCutoff))
+			: isNull(users.ownedGamesUpdatedAt);
+		const scope = this.requiredUserSubquery
+			? inArray(users.id, this.db.select({ id: this.requiredUserSubquery.id }).from(this.requiredUserSubquery))
+			: inArray(users.id, Array.from(this.userIds));
+		// Bound external requests and the amount of library data held in memory.
+		const limit = 32;
+		const missing = await this.db
+			.select({ id: users.id })
+			.from(users)
+			.where(and(scope, stale))
+			.orderBy(asc(users.ownedGamesUpdatedAt), asc(users.id))
+			.limit(limit + 1);
+		let error: Error | null =
+			missing.length > limit
+				? new Error("More Steam libraries need refreshing; deferred to a later request")
+				: null;
+		getFetchManager().reset({ maxFetches: 150 });
+		for (const { id } of missing.slice(0, limit)) {
+			const attempt = await Attempt.try(() =>
+				this.steamApi.getOwnedGames({
+					steamid: id,
+					include_played_free_games: true,
+				}),
+			);
+			if (attempt.error || !attempt.data) {
+				// Keep this library stale. A successful profile fetch must not suppress retries.
+				const reason =
+					attempt.error?.message.replace(/https?:\/\/\S+/g, "[Steam API URL]") ?? "empty API response";
+				error ??= new Error(`Steam library fetch failed for user ${id}: ${reason}`);
+				continue;
 			}
-		}
-
-		console.debug(`[UserRepository] Upsert ${validData.length} entries`);
-
-		// Insert missing data into the database
-		// Note: Database errors should bubble up, not be caught
-		await Promise.all([
-			safeInsert(this.db, validData, (u) =>
+			const response = attempt.data.response;
+			const games = "games" in response && Array.isArray(response.games) ? response.games : [];
+			if ("game_count" in response && Number(response.game_count) > 0 && games.length === 0) {
+				error ??= new Error(`Steam returned an incomplete library for user ${id}`);
+				continue;
+			}
+			const updatedAt = new Date();
+			// Write the completion timestamp only after every game has been persisted.
+			// Private libraries ({response:{}}) and genuinely empty libraries are cacheable.
+			await safeInsert(this.db, games, (chunk) =>
 				this.db
-					.insert(users)
+					.insert(ownedGames)
 					.values(
-						u.map((data) => ({
-							id: data.id,
-							data: data.user,
-							updated_at: new Date(),
+						chunk.map((game) => ({
+							user_id: id,
+							app_id: game.appid,
+							last_played_at: game.rtime_last_played ? new Date(game.rtime_last_played * 1000) : null,
+							playtime_2w_minutes: game.playtime_2weeks ?? null,
+							playtime_total_minutes: game.playtime_forever ?? null,
+							updated_at: updatedAt,
 						})),
 					)
 					.onConflictDoUpdate({
-						target: users.id,
+						target: [ownedGames.user_id, ownedGames.app_id],
 						set: {
-							data: excluded(users.data),
-							updated_at: new Date(),
+							last_played_at: excluded(ownedGames.last_played_at),
+							playtime_2w_minutes: excluded(ownedGames.playtime_2w_minutes),
+							playtime_total_minutes: excluded(ownedGames.playtime_total_minutes),
+							updated_at: excluded(ownedGames.updated_at),
 						},
 					}),
-			),
-			safeInsert(
-				this.db,
-				validData.flatMap((d) =>
-					d.ownedGames.map((g) => ({
-						user_id: d.id,
-						ownedGames: g,
-					})),
-				),
-				(u) =>
-					this.db
-						.insert(ownedGames)
-						.values(
-							u.map((data) => ({
-								user_id: data.user_id,
-								app_id: data.ownedGames.appid,
-								last_played_at: data.ownedGames.rtime_last_played
-									? new Date(data.ownedGames.rtime_last_played * 1000) // Convert seconds to milliseconds
-									: null,
-								playtime_2w_minutes: data.ownedGames.playtime_2weeks ?? null,
-								playtime_total_minutes: data.ownedGames.playtime_forever ?? null,
-								updated_at: new Date(),
-							})),
-						)
-						.onConflictDoUpdate({
-							target: [ownedGames.user_id, ownedGames.app_id],
-							set: {
-								last_played_at: excluded(ownedGames.last_played_at),
-								playtime_2w_minutes: excluded(ownedGames.playtime_2w_minutes),
-								playtime_total_minutes: excluded(ownedGames.playtime_total_minutes),
-								updated_at: excluded(ownedGames.updated_at),
-							},
-						}),
-			),
-		]);
-
-		console.debug(`[UserRepository] Upsert ${validData.length} entries`);
-
-		// Combine errors from both API calls using Attempt chaining
-		const combinedResult = missingPlayerSummaries.and(missingOwnedGames.map(() => undefined));
-		return combinedResult;
+			);
+			await this.db.update(users).set({ ownedGamesUpdatedAt: updatedAt }).where(eq(users.id, id));
+		}
+		return Attempt.from(undefined, error);
 	}
 
 	/**

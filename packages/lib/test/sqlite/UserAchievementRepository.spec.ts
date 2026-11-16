@@ -491,6 +491,53 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 		// Items should have unlocked null (user may be undefined or present depending on implementation)\n        for (const item of res.data) {\n            assert.strictEqual(item.unlocked, null);\n        }
 	});
 
+	test("empty friend queries never substitute the requesting user's achievements", async () => {
+		const id = "requester-with-unlocks";
+		const appId = 96003;
+		await insertUser(db, { id, data: makeUserData(id) });
+		await insertOwnedGame(db, { user_id: id, app_id: appId });
+		await seedAppWithPlayers(db, appId, "Requester Game", 1500);
+		await seedStats(db, appId, [{ ach: "ONLY_ME", percent: 10 }]);
+		await seedMetaByCode(db, appId, "en", [{ ach: "ONLY_ME", display: "Only Me" }]);
+		await insertUserAchievement(db, { user_id: id, app_id: appId, ach_id: "ONLY_ME", unlocked_at: new Date() });
+		authMock.setFriendsList({ steamid: id, relationship: "friend" }, makeFriendsListResponse([]));
+		const result = await getRepo()
+			.compose()
+			.withLanguage("en")
+			.withFriendsOf(id)
+			.withAppIds(appId)
+			.withUnlockedStatus(true)
+			.build();
+		assert.deepStrictEqual(result.data, []);
+	});
+
+	test("empty unlocked-only queries do not return locked placeholders", async () => {
+		const userId = "u-empty-unlocked";
+		const appId = 96002;
+		await insertUser(db, { id: userId, data: makeUserData(userId) });
+		await seedAppWithPlayers(db, appId, "Empty Unlocks", 1500);
+		await seedStats(db, appId, [{ ach: "LOCKED", percent: 10 }]);
+		await seedMetaByCode(db, appId, "en", [{ ach: "LOCKED", display: "Locked" }]);
+
+		const repo = getRepo();
+		const result = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.withAppIds(appId)
+			.withUnlockedStatus(true)
+			.build();
+		assert.deepStrictEqual(result.data, []);
+		const count = await repo
+			.compose()
+			.withLanguage("en")
+			.withUserIds(userId)
+			.withAppIds(appId)
+			.withUnlockedStatus(true)
+			.count();
+		assert.strictEqual(count.data, 0);
+	});
+
 	test("mixed presence: existing user achievement plus missing ones fetched and upserted; no duplicates", async () => {
 		const userId = "u-mixed";
 		const appId = 91027;
@@ -1289,7 +1336,7 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 			assert.ok(item.unlocked instanceof Date);
 		});
 
-		test("friends-of: existing friend user without owned games yields empty until cutoff refresh", async () => {
+		test("friends-of: fresh friend profile without a library still fetches ownership and achievements", async () => {
 			const main = "main-missing-owned";
 			const friend = "friend-missing-owned";
 			const appId = 93021;
@@ -1324,7 +1371,11 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 				{ steamid: main, relationship: "friend" },
 				makeFriendsListResponse([friend], Date.now() - 10_000),
 			);
-			authMock.setPlayerSummaries(makePlayerSummariesResponse([friend]));
+			authMock.setPlayerSummaries(makePlayerSummariesResponse([main, friend]));
+			authMock.setOwnedGames(
+				{ steamid: main, include_played_free_games: true },
+				{ response: { game_count: 0, games: [] } },
+			);
 			authMock.setPlayerAchievements(
 				{ steamid: friend, appid: appId },
 				makePlayerAchievementsPayload({
@@ -1336,38 +1387,17 @@ describe("UserAchievementRepository - SQLite (in-memory)", () => {
 
 			const repo = getRepo();
 
-			// 1) Without cutoff: user exists and is fresh; owned_games missing -> direct join returns empty,
-			//    but repository provides fallback to app achievements (user-less) when appIds are specified.
-			const resNoCutoff = await repo
+			// The fresh profile must not prevent the missing library from being fetched.
+			const result = await repo
 				.compose()
 				.withLanguage("en")
 				.withFriendsOf(main)
 				.withAppIds(appId)
-				.build({ sort: { method: "rarity_pct", direction: "asc" } });
-			assert.strictEqual(
-				resNoCutoff.data.length,
-				1,
-				"expected fallback to app achievements when owned games missing and no cutoff",
-			);
-			assert.strictEqual(resNoCutoff.data[0]?.id, "MO1");
-			assert.strictEqual(resNoCutoff.data[0]?.unlocked, null, "fallback items should have no unlocked date");
-
-			// 2) With cutoff: treat friend user as stale so ensure refetches summaries + owned games
-			const resWithCutoff = await repo
-				.compose()
-				.withLanguage("en")
-				.withFriendsOf(main)
-				.withAppIds(appId)
-				.withCutoff(new Date())
-				.build({ sort: { method: "rarity_pct", direction: "asc" } });
-
-			assert.ok(
-				resWithCutoff.data.some((a) => a.id === "MO1"),
-				"expected friend to appear after cutoff triggers ensure (either ensured or via fallback)",
-			);
-
-			// Note: we rely on observable behavior (unlocked present) instead of directly asserting
-			// owned_games was inserted to avoid test flakiness from synthetic fetch-budget limits.
+				.withUnlockedStatus(true)
+				.build();
+			assert.strictEqual(result.data.length, 1);
+			assert.strictEqual(result.data[0]?.user?.id, friend);
+			assert.ok(result.data[0]?.unlocked instanceof Date);
 		});
 	});
 
